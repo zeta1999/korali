@@ -28,7 +28,7 @@ CFLAGS += -Wall -Wno-unused-function
 CFLAGS += `gsl-config --cflags`
 
 CXXFLAGS += -O3 -std=c++11
-CXXFLAGS += -Wall -Wno-unused-function
+CXXFLAGS += -Wall -Wno-unused-function -Wfatal-errors
 
 LDLIBS += `gsl-config --libs` -lm -lpthread
 LDXLIBS += `gsl-config --libs` -lm -lpthread
