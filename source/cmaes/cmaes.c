@@ -977,7 +977,7 @@ void cmaes_WriteToFileAW(cmaes_t *t, const char *key, const char *name,
 
     if (appendwrite[0] == 'w') {
         /* write a header line, very rudimentary */
-        fprintf(fp, "%% # %s (randomSeed=%d, %s)\n", key, t->sp.seed, getTimeStr());
+        printf("%% # %s (randomSeed=%d, %s)\n", key, t->sp.seed, getTimeStr());
     } else 
         if (t->gen > 0 || strncmp(name, "outcmaesfit", 11) != 0)
             cmaes_WriteToFilePtr(t, key, fp); /* do not write fitness for gen==0 */
@@ -1291,25 +1291,25 @@ void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
             for(i=0; i<N; ++i)
                 fprintf(fp, " %12g%c", t->rgxmean[i], 
                         (i%5==4||i==N-1)?'\n':' ');
-            fprintf(fp, "Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
+            printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
             for(i=0; i<N; ++i)
-                fprintf(fp, " %12g%c", t->sigma*sqrt(t->C[i][i]), 
+                printf(" %12g%c", t->sigma*sqrt(t->C[i][i]),
                         (i%5==4||i==N-1)?'\n':' ');
-            fprintf(fp, "Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
+            printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
             for (i = 0; i < N; ++i)
                 t->rgdTmp[i] = t->rgD[i];
             qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff);
             for(i=0; i<N; ++i)
                 fprintf(fp, " %12g%c", t->sigma*t->rgdTmp[N-1-i], 
                         (i%5==4||i==N-1)?'\n':' ');
-            fprintf(fp, "Longest axis (b_i where d_ii=max(diag(D))\n");
+            printf("Longest axis (b_i where d_ii=max(diag(D))\n");
             k = MaxIdx(t->rgD, N);
             for(i=0; i<N; ++i)
-                fprintf(fp, " %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
-            fprintf(fp, "Shortest axis (b_i where d_ii=max(diag(D))\n");
+                printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+            printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
             k = MinIdx(t->rgD, N);
             for(i=0; i<N; ++i)
-                fprintf(fp, " %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+                printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
             while (*key != '+' && *key != '\0' && key < keyend)
                 ++key;
         } /* "all" */

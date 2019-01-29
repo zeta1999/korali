@@ -1,0 +1,34 @@
+*.o
+*.a
+*.swp
+*.out
+
+.DS_Store
+
+tags
+.tags
+.tags1
+
+*.txt
+*.err
+
+build/
+runs/
+
+doc/mkdocs/site/
+
+# CMA test relevant files
+source/CMAES/test/*/*.dat
+source/CMAES/test/*/*.err
+source/CMAES/test/*/*.par
+
+# Torc libs
+lib/torc_lite/
+
+# Executables
+source/CMAES/cma
+source/CMAES/test/*/cma
+source/CMAES/test/testxx
+
+actparcmaes.par
+allcmaes.dat
