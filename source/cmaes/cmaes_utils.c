@@ -4,16 +4,6 @@
 
 #include "cmaes_utils.h"
 
-#if defined(_USE_TORC_)
-
-#include <mpi.h>
-#include <torc.h>
-
-double get_time() {
-    return torc_gettime();
-}
-
-#else
 
 #include <sys/time.h>
 double get_time() {
@@ -22,7 +12,6 @@ double get_time() {
     return (double)t.tv_sec + (double)t.tv_usec*1.0E-6;
 }
 
-#endif
 
 #include <sys/stat.h>
 

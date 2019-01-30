@@ -7,140 +7,13 @@
      Copyright 1996, 2003, 2007, 2013 Nikolaus Hansen
      e-mail: hansen .AT. lri.fr
 
-SOURCE: 
-https://github.com/cma-es/c-cma-es
-https://github.com/cma-es/c-cma-es/blob/master/src/cmaes.c
-
 LICENSE: this library is free/open software and may be used 
-either under the
-
-Apache License 2.0
-
-or under the
-
-GNU Lesser General Public License 2.1 or later
-
-whichever suits best. 
+either under theApache License 2.0 or under the GNU Lesser General
+Public License 2.1 or laterwhichever suits best.
 
 See also the LICENSE file
 https://github.com/cma-es/c-cma-es/blob/master/LICENSE 
 */
-
-/* --- Changes : --- 
-   03/03/21: argument const double *rgFunVal of
-   cmaes_ReestimateDistribution() was treated incorrectly.
-   03/03/29: restart via cmaes_resume_distribution() implemented.  
-   03/03/30: Always max std dev / largest axis is printed first. 
-   03/08/30: Damping is adjusted for large mueff. 
-   03/10/30: Damping is adjusted for large mueff always. 
-   04/04/22: Cumulation time and damping for step size adjusted. 
-   No iniphase but conditional update of pc. 
-   05/03/15: in ccov-setting mucov replaced by mueff. 
-   05/10/05: revise comment on resampling in example.c
-   05/10/13: output of "coorstddev" changed from sigma * C[i][i] 
-   to correct sigma * sqrt(C[i][i]).  
-   05/11/09: Numerical problems are not anymore handled by increasing 
-   sigma, but lead to satisfy a stopping criterion in 
-   cmaes_Test(). 
-   05/11/09: Update of eigensystem and test for numerical problems 
-   moved right before sampling. 
-   06/02/24: Non-ansi array definitions replaced (thanks to Marc 
-   Toussaint). 
-   06/02/25: Overflow in time measurement for runs longer than 
-   2100 seconds. This could lead to stalling the 
-   covariance matrix update for long periods. 
-   Time measurement completely rewritten. 
-   06/02/26: Included population size lambda as parameter to 
-   cmaes_init (thanks to MT). 
-   06/02/26: Allow no initial reading/writing of parameters via
-   "non" and "writeonly" keywords for input parameter 
-   filename in cmaes_init. 
-   06/02/27: Optimized code regarding time spent in updating the 
-   covariance matrix in function Adapt_C2(). 
-   07/08/03: clean up and implementation of an exhaustive test 
-   of the eigendecomposition (via #ifdef for now) 
-   07/08/04: writing of output improved 
-   07/08/xx: termination criteria revised and more added, 
-   damp replaced by damps=damp*cs, documentation improved.
-   Interface significantly changed, evaluateSample function
-   and therefore the function pointer argument removed. 
-   Renaming of functions in accordance with Java code. 
-   Clean up of parameter names, mainly in accordance with
-   Matlab conventions. Most termination criteria can be
-   changed online now. Many more small changes, but not in 
-   the core procedure. 
-   07/10/29: ReSampleSingle() got a better interface. ReSampleSingle()
-   is now ReSampleSingle_old only for backward
-   compatibility. Also fixed incorrect documentation. The new
-   function SampleSingleInto() has an interface similar to
-   the old ReSampleSingle(), but is not really necessary.
-   07/11/20: bug: stopMaxIter did not translate into the correct default
-   value but into -1 as default. This lead to a too large 
-   damps and the termination test became true from the first
-   iteration. (Thanks to Michael Calonder)
-   07/11/20: new default stopTolFunHist = 1e-13;  (instead of zero)
-   08/09/26: initial diagonal covariance matrix in code, but not
-   yet in interface
-   08/09/27: diagonalCovarianceMatrix option in initials.par provided
-   08/10/17: uncertainty handling implemented in example3.c. 
-   PerturbSolutionInto() provides the optional small 
-   perturbations before reevaluation.
-   10/10/16: TestForTermination changed such that diagonalCovarianceMatrix 
-   option now yields linear time behavior 
-   12/05/28: random seed > 2e9 prohibited to avoid an infinite loop on 32bit systems
-   12/10/21: input parameter file values "no", "none" now work as "non". 
-   12/10/xx: tentative implementation of cmaes_Optimize
-   12/10/xx: some small changes with char * mainly to prevent warnings in C++
-   12/10/xx: added some string convenience functions isNoneStr, new_string, assign_string
-   13/01/03: rename files example?, initials.par, signals.par
-   14/04/29: removed bug, au = t->al[...], from the (new) boundary handling 
-   code (thanks to Emmanuel Benazera for the hint) 
-   14/06/16: test of un-initialized version number removed (thanks to Paul Zimmermann)
-   14/10/18: splitted cmaes_init() into cmaes_init_para() and cmaes_init_final(),
-such that parameters can be set also comparatively safely within the
-code, namely after calling cmaes_init_para(). The order of parameters
-    of readpara_init() has changed to be the same as for cmaes_init().
-14/11/25  fix warnings from Microsoft C compiler (sherm)
-    14/11/26: renamed exported symbols so they begin with a cmaes_prefix.
-
-    Wish List
-o make signals_filename part of cmaes_t using assign_string()
-
-    o as writing time is measure for all files at once, the display
-    cannot be independently written to a file via signals.par, while
-    this would be desirable. 
-
-    o clean up sorting of eigenvalues and vectors which is done repeatedly.
-
-    o either use cmaes_Get() in cmaes_WriteToFilePtr(): revise the
-                                                        cmaes_write that all keywords available with get and getptr are
-                                                        recognized. Also revise the keywords, keeping backward
-                                                        compatibility. (not only) for this it would be useful to find a
-                                                        way how cmaes_Get() signals an unrecognized keyword. For GetPtr
-                                                        it can return NULL.
-
-                                                        o or break cmaes_Get() into single getter functions, being a nicer 
-                                                        interface, and compile instead of runtime error, and faster. For
-                                                        file signals.par it does not help. 
-
-                                                        o writing data depending on timing in a smarter way, e.g. using 10% 
-                                                        of all time. First find out whether clock() is useful for measuring
-                                                        disc writing time and then cmaes_timings_t class can be utilized. 
-                                                        For very large dimension the default of 1 seconds waiting might 
-                                                        be too small. 
-
-o allow modification of best solution depending on delivered f(xmean)
-
-    o re-write input and output procedures 
-    */
-
-/* Prevent Microsoft compiler from complaining that common library functions 
-   like strncpy(), ctime(), sprintf(), fopen(), fscanf(), etc. "may be unsafe".
-   This must come before the first #include.
-   */
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
 #include <math.h>   /* sqrt() */
 #include <stddef.h> /* size_t */
@@ -401,11 +274,6 @@ double * cmaes_init(cmaes_t *t, /* "this" */
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-#endif
-
 void cmaes_resume_distribution(cmaes_t *t, char *filename)
 {
     int i, j, res, n; 
@@ -526,9 +394,7 @@ void cmaes_resume_distribution(cmaes_t *t, char *filename)
     cmaes_UpdateEigensystem(t, 1);
 
 } /* cmaes_resume_distribution() */
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
+
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
 

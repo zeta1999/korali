@@ -13,14 +13,18 @@ void CmaesEngine::addBound(double lower, double upper)
 	_bounds.push_back( std::pair<double, double>(lower, upper) );
 }
 
-CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim), restart_(restart),  step_(0),  stt_(0.0)
+CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim)
 {
 		gt0_ = get_time();
 		CmaesEngine::fitfun_ = fun;
         arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0, 0,	"./cmaes_initials.par");
 		printf("%s\n", cmaes_SayHello(&evo_));
 		cmaes_ReadSignals(&evo_, "./cmaes_initials.par");
-		lambda_ = cmaes_Get(&evo_, "lambda");
+
+		_lambda = 128;
+		_restart = false;
+		_step = 0;
+	    _elapsedTime = 0.0;
 }
 
 CmaesEngine::~CmaesEngine(){
@@ -46,14 +50,14 @@ double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int st
     	
     tt0 = get_time();
 	
-    for( int i = 0; i < lambda_; ++i){
+    for( int i = 0; i < _lambda; ++i){
         info[0] = 0; info[1] = 0; info[2] = step; info[3] = i;     /* gen, chain, step, task */
         CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i]);
 
     }
 
     // subtract the log-prior from the log-likelohood
-    for( int i=0; i<lambda_; i++)
+    for( int i=0; i<_lambda; i++)
       for (int j = 0; j < _priors.size(); j++)
         arFunvals_[i] -= _priors[j]->getDensityLog(pop_[i]);
 
@@ -73,25 +77,25 @@ double CmaesEngine::run() {
 
         pop_ = cmaes_SamplePopulation(&evo_); 
 		cmaes_utils_make_all_points_feasible( &evo_, pop_);
-            dt = evaluate_population( &evo_, arFunvals_, step_);
-        stt_ += dt;
+            dt = evaluate_population( &evo_, arFunvals_, _step);
+        _elapsedTime += dt;
 	
         cmaes_UpdateDistribution(1, &evo_, arFunvals_);
 
         cmaes_ReadSignals(&evo_, "./cmaes_initials.par"); fflush(stdout);
 
-        if (VERBOSE) cmaes_utils_print_the_best(evo_, step_);
+        if (VERBOSE) cmaes_utils_print_the_best(evo_, _step);
 		
-       	if (_IODUMP_ && !restart_){
-            cmaes_utils_write_pop_to_file(evo_, arFunvals_, pop_, step_);
+       	if (_IODUMP_ && !_restart){
+            cmaes_utils_write_pop_to_file(evo_, arFunvals_, pop_, _step);
         }
 
         if( ! cmaes_utils_is_there_enough_time( JOBMAXTIME, gt0_, dt ) ){
-            evo_.sp.stopMaxIter=step_+1;
+            evo_.sp.stopMaxIter=_step+1;
             break;
         }
         
-        step_++;
+        _step++;
     }
 
     gt2_ = get_time();
@@ -104,7 +108,7 @@ double CmaesEngine::run() {
     printf("Total elapsed time      = %.3lf  seconds\n", gt3_-gt0_);
     printf("Initialization time     = %.3lf  seconds\n", gt1_-gt0_);
     printf("Processing time         = %.3lf  seconds\n", gt2_-gt1_);
-    printf("Funtion Evaluation time = %.3lf  seconds\n", stt_);
+    printf("Funtion Evaluation time = %.3lf  seconds\n", _elapsedTime);
     printf("Finalization time       = %.3lf  seconds\n", gt3_-gt2_);
 
 	return 0.0;

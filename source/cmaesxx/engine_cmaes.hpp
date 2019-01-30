@@ -50,14 +50,15 @@ public:
 
 private:
 
+    double _elapsedTime;
+    int _lambda;
+    int _step;
+    bool _restart;
 
 	cmaes_t evo_;
-	int restart_;
-	int lambda_;
-	int step_;
 	
 	double gt0_, gt1_, gt2_, gt3_;
-	double stt_;
+
 	
 	int dim_;
 	std::vector< std::pair<double, double> > _bounds;
