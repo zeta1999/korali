@@ -19,9 +19,9 @@ class Distribution
 
  public:
   Distribution(size_t seed);
-  virtual double getDensity(double x){};
-  virtual double getDensityLog(double x){};
-  virtual double getRandomNumber(){};
+  virtual double getDensity(double x) = 0;
+  virtual double getDensityLog(double x) = 0;
+  virtual double getRandomNumber() = 0;
 };
 
 class GaussianDistribution : public Distribution

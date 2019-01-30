@@ -3,6 +3,11 @@
 #include "engine_cmaes.hpp"
 #include "engine_cmaes_utils.hpp"
 
+void CmaesEngine::addPrior(Korali::Prior* p)
+{
+	_priors.push_back(p);
+}
+
 CmaesEngine::CmaesEngine(double (*fun) (double*, int, void*, int*), 
 	std::string workdir, std::string cmaes_par, 
 	std::string cmaes_bounds_par, std::string priors_par, 
@@ -50,20 +55,6 @@ CmaesEngine::CmaesEngine(double (*fun) (double*, int, void*, int*),
 		cmaes_utils_read_bounds(VERBOSE, cmaes_bounds_par_.c_str(), 
 			&lower_bound_, &upper_bound_, dim_);
 
-		int Nprior;
-		read_priors( priors_par_.c_str(), &priors_, &Nprior );
-	
-		if( Nprior != dim_ ){
-			throw std::runtime_error("The dimension of the prior is different from the dimension of the fitfun.");
-		}
-
-#if defined(_USE_TORC_)
-	    torc_register_task(CmaesEngine::taskfun_);
-        int argc = 0; //dummy (TODO)
-        char **argv;  //dummy (TODO)
-		torc_init(argc, argv, MODE_MS); 
-#endif
-
 		if (ChangeDir(exeDir_) != 0) {
 			std::runtime_error("Could not return to exe dir.");
 		}
@@ -72,12 +63,6 @@ CmaesEngine::CmaesEngine(double (*fun) (double*, int, void*, int*),
 
 CmaesEngine::~CmaesEngine(){
     cmaes_exit(&evo_); /* release memory */
-
-/* (TODO: do we still need this?)
-#if defined(_USE_TORC_)
-    torc_finalize();
-#endif
-*/
 }
 
 cmaes_t* CmaesEngine::getEvo() {
@@ -92,8 +77,7 @@ double CmaesEngine::getBestFunVal() {
 	return cmaes_Get(&evo_,"fbestever");
 }
 
-double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, 
-	double *const* pop, Density *d, int step ) {
+double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int step ) {
 
     int info[4];
     double tt0, tt1 ;
@@ -102,39 +86,14 @@ double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals,
 	
     for( int i = 0; i < lambda_; ++i){
         info[0] = 0; info[1] = 0; info[2] = step; info[3] = i;     /* gen, chain, step, task */
-		
-#if defined(_USE_TORC_)
-
-        torc_create( -1, CmaesEngine::taskfun_, 4,
-                     dim_, MPI_DOUBLE, CALL_BY_VAL,
-                     1, MPI_INT, CALL_BY_COP,
-                     1, MPI_DOUBLE, CALL_BY_RES,
-                     4, MPI_INT, CALL_BY_COP,
-                     pop_[i], &dim_, &arFunvals_[i], info);
-
-#else
         CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i], info);
-#endif
+
     }
-	
-#if defined(_USE_TORC_)
-
-#if defined(_STEALING_)
-    torc_enable_stealing();
-#endif
-
-    torc_waitall();
-
-#if defined(_STEALING_)
-    torc_disable_stealing();
-#endif
-
-#endif
 
     // subtract the log-prior from the log-likelohood
-    for( int i=0; i<lambda_; i++){
-        arFunvals_[i] -= prior_log_pdf(priors_, dim_, pop_[i]);
-    }
+    for( int i=0; i<lambda_; i++)
+      for (int j = 0; j < _priors.size(); j++)
+        arFunvals_[i] -= _priors[j]->getDensityLog(pop_[i]);
 
     tt1 = get_time();
   
@@ -164,7 +123,7 @@ double CmaesEngine::run() {
     	} else {
 			cmaes_utils_make_all_points_feasible( &evo_, pop_
 				, lower_bound_, upper_bound_);
-            dt = evaluate_population( &evo_, arFunvals_, pop_, priors_, step_);
+            dt = evaluate_population( &evo_, arFunvals_, step_);
         }
         stt_ += dt;
 	
@@ -178,9 +137,9 @@ double CmaesEngine::run() {
             cmaes_utils_write_pop_to_file(evo_, arFunvals_, pop_, step_);
         }
 
-#if defined(_RESTART_)
-        cmaes_WriteToFile(&evo_, "resume", "allresumes.dat");
-#endif
+		#if defined(_RESTART_)
+				cmaes_WriteToFile(&evo_, "resume", "allresumes.dat");
+		#endif
 
         if( ! cmaes_utils_is_there_enough_time( JOBMAXTIME, gt0_, dt ) ){
             evo_.sp.stopMaxIter=step_+1;

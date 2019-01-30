@@ -17,23 +17,16 @@
 
 #include <string>
 #include <stdio.h>
+#include <vector>
+#include "korali.h"
 
 extern "C" {
 
 #include <cmaes.h>
 #include <cmaes_utils.h>
-#include <priors.h>
 
 }
 
-
-#if defined(_USE_TORC_)
-
-extern "C" {
-    #include <torc.h>
-}
-
-#endif
 
 #define VERBOSE 0
 #define JOBMAXTIME 0
@@ -56,6 +49,7 @@ public:
 	cmaes_t* getEvo();
 	double   getBestFunVal();
 	double*  getBestEver();
+    void addPrior(Korali::Prior* p);
 
 private:
 
@@ -73,14 +67,16 @@ private:
 	int dim_;
 	double *lower_bound_, *upper_bound_;
 
-	Density *priors_;
+	std::vector<Korali::Prior*> _priors;
 
 	double *const*pop_;
     double *arFunvals_; 
 
 	static double (*fitfun_) (double*, int, void*, int*);
 	static void taskfun_(double *x, int *no, double* res, int *info);
-    double evaluate_population( cmaes_t *evo, double *arFunvals, double * const* pop, Density *d, int step );
+    double evaluate_population( cmaes_t *evo, double *arFunvals, int step );
+
+
 };
 
 #endif //ENGINE_CMAES_HPP

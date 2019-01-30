@@ -7,34 +7,50 @@ extern "C" {
 
 int main(int argc, char* argv[])
 {
-	Korali::Prior P;
+	Korali::Prior P0;
+	Korali::Prior P1;
+	Korali::Prior P2;
+	Korali::Prior P3;
 
-	Korali::GaussianDistribution g(2.0, 0.7, 15613);
-	Korali::UniformDistribution u(0.3, 5.7, 658395);
-	Korali::GammaDistribution m(0.3, 5.7, 1341);
-	Korali::ExponentialDistribution e(2.1, 16424);
+	Korali::UniformDistribution u0(-6, 6, 0);
+	Korali::UniformDistribution u1(-6, 6, 0);
+	Korali::UniformDistribution u2(-6, 6, 0);
+	Korali::UniformDistribution u3(-6, 6, 0);
 
-	P.addDimension(&g);
-	P.addDimension(&u);
-	P.addDimension(&m);
-	P.addDimension(&e);
+	P0.addDimension(&u0);
+	P1.addDimension(&u1);
+	P2.addDimension(&u2);
+	P3.addDimension(&u3);
 
-	P.initialize(4);
+	P0.initialize(1);
+	P1.initialize(1);
+	P2.initialize(1);
+	P3.initialize(1);
 
-    for(int i = 0; i < 30; i++)
-    {
-      double* n = P.getRandomNumber();
-      printf("Random Number: [%1.3f, %1.3f, %1.3f, %1.3f]\n", n[0], n[1], n[2], n[3]);
-    }
+//    for(int i = 0; i < 30; i++)
+//    {
+//      double* n = P.getRandomNumber();
+//      printf("Random Number: [%1.3f, %1.3f, %1.3f, %1.3f]\n", n[0], n[1], n[2], n[3]);
+//    }
 
-//	Korali::Engine eng;
-//
-//    fitfun_initialize_simple("Ackley");
-//    auto engine = CmaesEngine(&fitfun, "./");
-//    engine.run();
+	fitfun_initialize_simple("Ackley");
+	auto engine = CmaesEngine(&fitfun, "./");
+
+	engine.addPrior(&P0);
+	engine.addPrior(&P1);
+	engine.addPrior(&P2);
+	engine.addPrior(&P3);
+
+	engine.run();
 }
 
 double myFunction()
 {
 	return 0.0;
 }
+
+//	Korali::Engine eng;
+//
+//    fitfun_initialize_simple("Ackley");
+//    auto engine = CmaesEngine(&fitfun, "./");
+//    engine.run();
