@@ -35,7 +35,7 @@ extern "C" {
 class CmaesEngine {
 
 public:
-	CmaesEngine(double (*fun) (double*, int, void*, int*), 
+	CmaesEngine(double (*fun) (double*, int),
 		std::string workdir = ".", 
 		std::string cmaes_par = "cmaes_initials.par", 
 		std::string cmaes_bounds_par = "cmaes_bounds.par", 
@@ -72,8 +72,8 @@ private:
 	double *const*pop_;
     double *arFunvals_; 
 
-	static double (*fitfun_) (double*, int, void*, int*);
-	static void taskfun_(double *x, int *no, double* res, int *info);
+	static double (*fitfun_) (double*, int);
+	static void taskfun_(double *x, int *no, double* res);
     double evaluate_population( cmaes_t *evo, double *arFunvals, int step );
 
 

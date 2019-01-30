@@ -8,7 +8,7 @@ void CmaesEngine::addPrior(Korali::Prior* p)
 	_priors.push_back(p);
 }
 
-CmaesEngine::CmaesEngine(double (*fun) (double*, int, void*, int*), 
+CmaesEngine::CmaesEngine(double (*fun) (double*, int),
 	std::string workdir, std::string cmaes_par, 
 	std::string cmaes_bounds_par, std::string priors_par, 
 	int restart) 
@@ -86,7 +86,7 @@ double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int st
 	
     for( int i = 0; i < lambda_; ++i){
         info[0] = 0; info[1] = 0; info[2] = step; info[3] = i;     /* gen, chain, step, task */
-        CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i], info);
+        CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i]);
 
     }
 
@@ -170,12 +170,10 @@ double CmaesEngine::run() {
 	return 0.0;
 }
 
-double (*CmaesEngine::fitfun_) (double*, int, void*, int*);
+double (*CmaesEngine::fitfun_) (double*, int);
 
-void CmaesEngine::taskfun_(double *x, int *n, double *res, 
-	int /* deprecated */ *info) {
-	
-    (*res) = - CmaesEngine::fitfun_(x, *n, (void*)NULL, info);    // minus for minimization
-	
+void CmaesEngine::taskfun_(double *x, int *n, double *res)
+{
+    (*res) = - CmaesEngine::fitfun_(x, *n);    // minus for minimization
 	return;
 }
