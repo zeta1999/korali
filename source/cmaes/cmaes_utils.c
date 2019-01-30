@@ -31,60 +31,6 @@ int cmaes_utils_file_exists(const char *fname) {
 	return (stat (fname, &buffer) == 0);
 }
 
-void cmaes_utils_read_bounds(int verbose, const char *fname, double **p_lower_bound, double **p_upper_bound, int dim) {
-    double *lower_bound = malloc(dim*sizeof(double));
-    double *upper_bound = malloc(dim*sizeof(double));
-
-    FILE *f = fopen(fname, "r");
-    
-    if (f != NULL){
-      
-        printf("Reading the bounds from '%s'\n", fname);
-
-      	char line[256];
-      	int found;
-      	int line_no = 0;
-      	for (int i = 0; i < dim; i++) {
-        	
-            found = 0;
-            while (fgets(line, 256, f)!= NULL) {
-          	line_no++;
-
-          	if ((line[0] == '#')||(strlen(line)==0)) continue;
-
-                char bound[32];
-                sprintf(bound, "B%d", i);
-                if (strstr(line, bound) != NULL) {
-                    sscanf(line, "%*s %lf %lf", &lower_bound[i], &upper_bound[i]);
-                    found = 1;
-                    break;
-                }
-            }
-            if (!found) {
-                printf("Bounds for parameters %d not found in '%s'. Exit...'\n", i, fname);
-                exit(1);
-            }
-            rewind(f);
-            line_no = 0;
-        }
-      	fclose(f);
-    }
-    else {
-        printf("Parameters file '%s' could not be opened. Exit...\n", fname);
-        exit(1);
-    }
-
-
-    if( verbose ){
-    	printf("Parameter Bounds:\n");
-    	for (int i = 0; i < dim; i++) {
-            printf("B%d: %15.6f %15.6f\n", i, lower_bound[i], upper_bound[i]);
-    	}
-    }
-
-    (*p_lower_bound) = lower_bound;
-    (*p_upper_bound) = upper_bound;
-}
 
 double cmaes_utils_load_pop_from_file(int verbose, int step, double * const* pop, double *arFunvals, int dim, int lambda, int * checkp) {	
     char filename[256];
@@ -127,27 +73,6 @@ double cmaes_utils_load_pop_from_file(int verbose, int step, double * const* pop
     return tt1-tt0;
 }
 
-static int is_feasible(double *pop, double *lower_bound, double *upper_bound, int dim) {
-    int i, good;
-    for (i = 0; i < dim; i++) {
-        good = (lower_bound[i] <= pop[i]) && (pop[i] <= upper_bound[i]);
-        if (!good) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-void cmaes_utils_make_all_points_feasible( cmaes_t *evo, double* const *pop, double * lower_bound, double * upper_bound ){
-
-	int lambda = cmaes_Get( evo, "lambda");
-    int dim    = cmaes_Get( evo, "dim");
-
-	for( int i=0; i<lambda; ++i)
-    	while( !is_feasible( pop[i],lower_bound,upper_bound,dim ) )
-            cmaes_ReSampleSingle( evo, i );
-
-}
 
 void cmaes_utils_print_the_best( cmaes_t evo, int step ) {
     int dim    = cmaes_Get( &evo, "dim");

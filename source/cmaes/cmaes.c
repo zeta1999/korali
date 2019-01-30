@@ -1092,13 +1092,7 @@ void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
                 ++key;
             fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
         }
-        if (strncmp(key, "dim", 3) == 0)
-        {
-            fprintf(fp, "%d", N);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
+
         if (strncmp(key, "eval", 4) == 0)
         {
             fprintf(fp, "%.0f", t->countevals);
@@ -2391,7 +2385,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* All scalars:  */
     i = 0;
-    t->rgsformat[i] = " N %d";        t->rgpadr[i++] = (void *) &t->N; 
     t->rgsformat[i] = " seed %d";    t->rgpadr[i++] = (void *) &t->seed;
     t->rgsformat[i] = " stopMaxFunEvals %lg"; t->rgpadr[i++] = (void *) &t->stopMaxFunEvals;
     t->rgsformat[i] = " stopMaxIter %lg"; t->rgpadr[i++] = (void *) &t->stopMaxIter;
@@ -2464,13 +2457,7 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     if (!isNoneStr(filename) && (!filename || strcmp(filename, "writeonly") != 0))
         cmaes_readpara_ReadFromFile(t, filename);
 
-    if (t->N <= 0)
-        t->N = dim;
-
-    N = t->N; 
-    if (N == 0)
-        FATAL("cmaes_readpara_t(): problem dimension N undefined.\n",
-                "  (no default value available).",0,0); 
+    N = t->N;
     if (t->xstart == NULL && inxstart == NULL && t->typicalX == NULL) {
         ERRORMESSAGE("Error: initialX undefined. typicalX = 0.5...0.5 used.","","","");
         printf("\nError: initialX undefined. typicalX = 0.5...0.5 used.\n");
@@ -2564,7 +2551,7 @@ void cmaes_readpara_ReadFromFile(cmaes_readpara_t *t, const char * filename)
         }
     } /* for */
     if (t->N <= 0)
-        FATAL("cmaes_readpara_ReadFromFile(): No valid dimension N",0,0,0); 
+        FATAL("cmaes_readpara_ReadFromFile(): No valid dimension N",0,0,0);
     for (ipara=0; ipara < t->n2para; ++ipara)
     {
         rewind(fp);
@@ -2658,7 +2645,7 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
      */
 {
     double t1, t2;
-    int N = t->N; 
+    int N = t->N;
     clock_t cloc = clock();
 
     if (t->flgsupplemented)

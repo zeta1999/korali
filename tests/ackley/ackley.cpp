@@ -13,10 +13,9 @@ double f_Ackley(double *x, int N) {
 
 int main(int argc, char* argv[])
 {
+	auto engine = CmaesEngine(4, f_Ackley);
+
 	Korali::Prior P0;
-	Korali::Prior P1;
-	Korali::Prior P2;
-	Korali::Prior P3;
 
 	Korali::UniformDistribution u0(-6, 6, 45);
 	Korali::UniformDistribution u1(-6, 6, 13513);
@@ -24,14 +23,11 @@ int main(int argc, char* argv[])
 	Korali::UniformDistribution u3(-6, 6, 4614);
 
 	P0.addDimension(&u0);
-	P1.addDimension(&u1);
-	P2.addDimension(&u2);
-	P3.addDimension(&u3);
+	P0.addDimension(&u1);
+	P0.addDimension(&u2);
+	P0.addDimension(&u3);
 
 	P0.initialize(1);
-	P1.initialize(1);
-	P2.initialize(1);
-	P3.initialize(1);
 
 //    for(int i = 0; i < 30; i++)
 //    {
@@ -39,12 +35,12 @@ int main(int argc, char* argv[])
 //      printf("Random Number: [%1.3f, %1.3f, %1.3f, %1.3f]\n", n[0], n[1], n[2], n[3]);
 //    }
 
-	auto engine = CmaesEngine(f_Ackley, "./");
+	engine.addBound(-32.0, +32.0);
+	engine.addBound(-32.0, +32.0);
+	engine.addBound(-32.0, +32.0);
+	engine.addBound(-32.0, +32.0);
 
 	engine.addPrior(&P0);
-	engine.addPrior(&P1);
-	engine.addPrior(&P2);
-	engine.addPrior(&P3);
 
 	engine.run();
 }

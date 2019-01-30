@@ -35,12 +35,7 @@ extern "C" {
 class CmaesEngine {
 
 public:
-	CmaesEngine(double (*fun) (double*, int),
-		std::string workdir = ".", 
-		std::string cmaes_par = "cmaes_initials.par", 
-		std::string cmaes_bounds_par = "cmaes_bounds.par", 
-		std::string prios_par = "priors.par", 
-		int restart = 0); 
+	CmaesEngine(int dim, double (*fun) (double*, int), int restart = 0);
 
 	~CmaesEngine();
 
@@ -49,12 +44,12 @@ public:
 	cmaes_t* getEvo();
 	double   getBestFunVal();
 	double*  getBestEver();
+
     void addPrior(Korali::Prior* p);
+    void addBound(double lower, double upper);
 
 private:
 
-	char exeDir_[FILENAME_MAX];
-	std::string workdir_, cmaes_par_, cmaes_bounds_par_, priors_par_;
 
 	cmaes_t evo_;
 	int restart_;
@@ -65,8 +60,7 @@ private:
 	double stt_;
 	
 	int dim_;
-	double *lower_bound_, *upper_bound_;
-
+	std::vector< std::pair<double, double> > _bounds;
 	std::vector<Korali::Prior*> _priors;
 
 	double *const*pop_;
@@ -75,6 +69,8 @@ private:
 	static double (*fitfun_) (double*, int);
 	static void taskfun_(double *x, int *no, double* res);
     double evaluate_population( cmaes_t *evo, double *arFunvals, int step );
+    void   cmaes_utils_make_all_points_feasible( cmaes_t *evo, double * const *pop );
+    int is_feasible(double *pop, int dim);
 
 
 };
