@@ -79,8 +79,7 @@ typedef struct
   /* internal evolution strategy parameters */
   int lambda;          /* -> mu, <- N */
   int mu;              /* -> weights, (lambda) */
-  double mucov, mueff; /* <- weights */
-  double *weights;     /* <- mu, -> mueff, mucov, ccov */
+  double mucov; /* <- weights */
   double damps;        /* <- cs, maxeval, lambda */
   double cs;           /* -> damps, <- N */
   double ccumcov;      /* <- N */

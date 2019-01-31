@@ -2248,7 +2248,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->lambda = lambda;
     t->mu = -1;
     t->mucov = -1;
-    t->weights = NULL;
     strcpy(t->weigkey, "log");
 
     t->cs = -1;
@@ -2296,8 +2295,7 @@ void cmaes_readpara_exit(cmaes_readpara_t *t)
         free( t->rgInitialStds);
     if (t->rgDiffMinChange != NULL)
         free( t->rgDiffMinChange);
-    if (t->weights != NULL)
-        free( t->weights);
+
 
     free((void*)t->rgsformat);
     free(t->rgpadr);
@@ -2451,24 +2449,21 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
         t->lambda = 4+(int)(3*log((double)N));
     if (t->mu == -1) {
         t->mu = t->lambda/2;
-        cmaes_readpara_SetWeights(t, t->weigkey);
     }
-    if (t->weights == NULL)
-        cmaes_readpara_SetWeights(t, t->weigkey);
 
     if (t->cs > 0) /* factor was read */
-        t->cs *= (t->mueff + 2.) / (N + t->mueff + 3.);
+        t->cs *= (kb->_muEffective + 2.) / (N + kb->_muEffective + 3.);
     if (t->cs <= 0 || t->cs >= 1)
-        t->cs = (t->mueff + 2.) / (N + t->mueff + 3.);
+        t->cs = (kb->_muEffective + 2.) / (N + kb->_muEffective + 3.);
 
     if (t->ccumcov <= 0 || t->ccumcov > 1)
         t->ccumcov = 4. / (N + 4);
 
     if (t->mucov < 1) {
-        t->mucov = t->mueff;
+        t->mucov = kb->_muEffective;
     }
     t1 = 2. / ((N+1.4142)*(N+1.4142));
-    t2 = (2.*t->mueff-1.) / ((N+2.)*(N+2.)+t->mueff);
+    t2 = (2.*kb->_muEffective-1.) / ((N+2.)*(N+2.)+kb->_muEffective);
     t2 = (t2 > 1) ? 1 : t2;
     t2 = (1./t->mucov) * t1 + (1.-1./t->mucov) * t2;
     if (t->ccov >= 0) /* ccov holds the read factor */
@@ -2482,7 +2477,7 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     if (t->damps < 0) 
         t->damps = 1; /* otherwise a factor was read */
     t->damps = t->damps 
-        * (1 + 2*douMax(0., sqrt((t->mueff-1.)/(N+1.)) - 1))     /* basic factor */
+        * (1 + 2*douMax(0., sqrt((kb->_muEffective-1.)/(N+1.)) - 1))     /* basic factor */
         * douMax(0.3, 1. -                                       /* modify for short runs */
                 (double)N / (1e-6+douMin(kb->_maxGenerations, kb->_maxFitnessEvaluations/t->lambda)))
         + t->cs;                                                 /* minor increment */
@@ -2501,37 +2496,7 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
 /* --------------------------------------------------------- */
 void cmaes_readpara_SetWeights(cmaes_readpara_t *t, const char * mode)
 {
-    double s1, s2;
-    int i;
 
-    if(t->weights != NULL)
-        free( t->weights);
-    t->weights = new_double(t->mu);
-    if (strcmp(mode, "lin") == 0)
-        for (i=0; i<t->mu; ++i)
-            t->weights[i] = t->mu - i;
-    else if (strncmp(mode, "equal", 3) == 0)
-        for (i=0; i<t->mu; ++i)
-            t->weights[i] = 1;
-    else if (strcmp(mode, "log") == 0)
-        for (i=0; i<t->mu; ++i)
-            t->weights[i] = log(t->mu+1.)-log(i+1.);
-    else
-        for (i=0; i<t->mu; ++i)
-            t->weights[i] = log(t->mu+1.)-log(i+1.);
-
-    /* normalize weights vector and set mueff */
-    for (i=0, s1=0, s2=0; i<t->mu; ++i) {
-        s1 += t->weights[i];
-        s2 += t->weights[i]*t->weights[i];
-    }
-    t->mueff = s1*s1/s2;
-    for (i=0; i<t->mu; ++i)
-        t->weights[i] /= s1;
-
-    if(t->mu < 1 || t->mu > t->lambda ||
-            (t->mu==t->lambda && t->weights[0]==t->weights[t->mu-1]))
-        FATAL("cmaes_readpara_SetWeights(): invalid setting of mu or lambda",0,0,0);
 
 } /* cmaes_readpara_SetWeights() */
 
