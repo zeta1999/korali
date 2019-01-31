@@ -24,7 +24,6 @@ typedef struct
  */
 {
   /* Variables for Uniform() */
-  long int startseed;
   long int aktseed;
   long int aktrand;
   long int *rgrand;
@@ -67,8 +66,6 @@ typedef struct
   short flgsupplemented; 
   
   /* input parameters */
-  int N; /* problem dimension, must stay constant, should be unsigned or long? */
-  unsigned int seed; 
   double * rgInitialStds;
   double * rgDiffMinChange; 
 
