@@ -24,6 +24,7 @@ class KoraliBase
   double _sigmaCumulationFactor;
   double _dampFactor;
   double _cumulativeCovariance;
+  double _covarianceMatrixRate;
 
   // Defining stop conditions
   double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
@@ -46,6 +47,7 @@ class KoraliBase
   void setSigmaCumulationFactor(double sigmaCumulationFactor);
   void setDampingFactor(double dampFactor);
   void setCumulativeCovariance(double cumulativeCovariance);
+  void setCovarianceMatrixRate(double covarianceMatrixRate);
 
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);

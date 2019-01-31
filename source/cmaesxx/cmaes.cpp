@@ -758,11 +758,11 @@ static void Adapt_C2(cmaes_t *t, int hsig)
     int i, j, k, N=kb->_dimCount;
     int flgdiag = ((t->sp.diagonalCov == 1) || (t->sp.diagonalCov >= t->gen)); 
 
-    if (t->sp.ccov != 0. && t->flgIniphase == 0) {
+    if (kb->_covarianceMatrixRate != 0. && t->flgIniphase == 0) {
 
         /* definitions for speeding up inner-most loop */
-        double ccov1 = douMin(t->sp.ccov * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
-        double ccovmu = douMin(t->sp.ccov * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
+        double ccov1 = douMin(kb->_covarianceMatrixRate * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
+        double ccovmu = douMin(kb->_covarianceMatrixRate * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
         double sigmasquare = t->sigma * t->sigma; 
 
         t->flgEigensysIsUptodate = 0;
@@ -1399,7 +1399,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
         if (t->rgxmean[iKoo] == t->rgxmean[iKoo] + 
                 0.2*t->sigma*sqrt(t->C[iKoo][iKoo]))
         {
-            /* t->C[iKoo][iKoo] *= (1 + t->sp.ccov); */
+            /* t->C[iKoo][iKoo] *= (1 + kb->_covarianceMatrixRate); */
             /* flg = 1; */
             cp += sprintf(cp, 
                     "NoEffectCoordinate: standard deviation 0.2*%7.2e in coordinate %d without effect\n", 
@@ -2200,7 +2200,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     /* All scalars:  */
     i = 0;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
-    t->rgsformat[i] = " fac*ccov %lg";  t->rgpadr[i++]=(void *) &t->ccov;
     t->rgsformat[i] = " diagonalCovarianceMatrix %lg"; t->rgpadr[i++]=(void *) &t->diagonalCov;
     t->rgsformat[i] = " updatecov %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.modulo;
     t->rgsformat[i] = " maxTimeFractionForEigendecompostion %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.maxtime;
@@ -2219,7 +2218,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     strcpy(t->weigkey, "log");
 
-    t->ccov = -1;
 
     t->diagonalCov = 0; /* default is 0, but this might change in future, see below */
 
@@ -2384,7 +2382,6 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
      * might lead to unexpected results. 
      */
 {
-    double t1, t2;
     int N = kb->_dimCount;
     clock_t cloc = clock();
 
@@ -2392,20 +2389,13 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     if (t->stStopFitness.flg == -1)
         t->stStopFitness.flg = 0;
 
-    t1 = 2. / ((N+1.4142)*(N+1.4142));
-    t2 = (2.*kb->_muEffective-1.) / ((N+2.)*(N+2.)+kb->_muEffective);
-    t2 = (t2 > 1) ? 1 : t2;
-    t2 = (1./kb->_muCovariance) * t1 + (1.-1./kb->_muCovariance) * t2;
-    if (t->ccov >= 0) /* ccov holds the read factor */
-        t->ccov *= t2;
-    if (t->ccov < 0 || t->ccov > 1) /* set default in case */
-        t->ccov = t2;
+
 
     if (t->diagonalCov == -1)
         t->diagonalCov = 2 + 100. * N / sqrt((double)kb->_lambda);                                /* minor increment */
 
     if (t->updateCmode.modulo < 0)
-        t->updateCmode.modulo = 1./t->ccov/(double)(N)/10.;
+        t->updateCmode.modulo = 1./kb->_covarianceMatrixRate/(double)(N)/10.;
     t->updateCmode.modulo *= t->facupdateCmode;
     if (t->updateCmode.maxtime < 0)
         t->updateCmode.maxtime = 0.20; /* maximal 20% of CPU-time */

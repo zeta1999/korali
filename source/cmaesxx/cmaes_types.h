@@ -73,7 +73,6 @@ typedef struct
   double stopTolFunHist;
 
   /* internal evolution strategy parameters */
-  double ccov;         /* <- mucov, <- N */
   double diagonalCov;  /* number of initial iterations */
   struct { int flgalways; double modulo; double maxtime; } updateCmode;
   double facupdateCmode;

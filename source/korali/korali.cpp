@@ -29,6 +29,7 @@ Korali::KoraliBase::KoraliBase(size_t dim, double (*fun) (double*, int), size_t 
 	setSigmaCumulationFactor(-1);
 	setDampingFactor(-1);
 	setCumulativeCovariance(-1);
+	setCovarianceMatrixRate(-1);
 
 	kb = this;
 }
@@ -95,6 +96,17 @@ void Korali::KoraliBase::setCumulativeCovariance(double cumulativeCovariance)
   if (cumulativeCovariance <= 0 || cumulativeCovariance> 1)  _cumulativeCovariance = 4. / (_dimCount + 4);
 }
 
+void Korali::KoraliBase::setCovarianceMatrixRate(double covarianceMatrixRate)
+{
+  double t1 = 2. / ((_dimCount+1.4142)*(_dimCount+1.4142));
+  double t2 = (2.*_muEffective-1.) / ((_dimCount+2.)*(_dimCount+2.)+_muEffective);
+  t2 = (t2 > 1) ? 1 : t2;
+  t2 = (1./_muCovariance) * t1 + (1.-1./_muCovariance) * t2;
+  if (covarianceMatrixRate >= 0) /* ccov holds the read factor */
+      _covarianceMatrixRate *= t2;
+  if (covarianceMatrixRate < 0 || covarianceMatrixRate > 1) /* set default in case */
+      _covarianceMatrixRate = t2;
+}
 
 void Korali::KoraliBase::Run()
 {
