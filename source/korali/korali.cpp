@@ -26,6 +26,8 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 	_stopMaxTimePerEigendecomposition = 1.0;
 
 	setCSFactor(-1);
+	setDampingFactor(-1);
+
 	kb = this;
 }
 
@@ -72,12 +74,19 @@ void Korali::KoraliBase::setMu(size_t mu, std::string type)
 }
 
 void Korali::KoraliBase::setMuCovariance(double muCovariance) { if (muCovariance < 1) _muCovariance = _muEffective; else _muCovariance = muCovariance; }
-void Korali::KoraliBase::setCSFactor(double factorCS)
+void Korali::KoraliBase::setCSFactor(double CSFactor)
 {
-  if (_factorCS > 0) _factorCS *= (_muEffective + 2.0) / (_dimCount + _muEffective + 3.0);
-  if (_factorCS <= 0 || _factorCS >= 1)  _factorCS = (_muEffective + 2.) / (_dimCount + _muEffective + 3.0);
+  if (CSFactor > 0) _CSfactor *= (_muEffective + 2.0) / (_dimCount + _muEffective + 3.0);
+  if (CSFactor <= 0 || _CSfactor >= 1)  _CSfactor = (_muEffective + 2.) / (_dimCount + _muEffective + 3.0);
 }
 
+void Korali::KoraliBase::setDampingFactor(double dampFactor)
+{
+  if (dampFactor < 0) _dampFactor = 1;
+  _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_dimCount+1.0)) - 1))     /* basic factor */
+      * std::max(0.3, 1. - (double)_dimCount / (1e-6+std::min(_maxGenerations, _maxFitnessEvaluations/_lambda)))
+      + _CSfactor;                                                 /* minor increment */
+}
 
 void Korali::KoraliBase::Run()
 {

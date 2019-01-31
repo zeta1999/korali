@@ -77,7 +77,6 @@ typedef struct
   double stopTolFunHist;
 
   /* internal evolution strategy parameters */
-  double damps;        /* <- cs, maxeval, lambda */
   double ccumcov;      /* <- N */
   double ccov;         /* <- mucov, <- N */
   double diagonalCov;  /* number of initial iterations */
