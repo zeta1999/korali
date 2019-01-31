@@ -17,7 +17,7 @@ CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : d
 {
 		gt0_ = get_time();
 		CmaesEngine::fitfun_ = fun;
-        arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0, 0,	"./cmaes_initials.par");
+        arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0,	"./cmaes_initials.par");
 		printf("%s\n", cmaes_SayHello(&evo_));
 		cmaes_ReadSignals(&evo_, "./cmaes_initials.par");
 

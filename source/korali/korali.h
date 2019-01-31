@@ -29,9 +29,9 @@ class KoraliBase
 
   Dimension* getDimension(int dim);
   Dimension* operator[] (int x);
-
   void setMaxFitnessEvaluations(size_t maxFitnessEvaluations);
   void setMaxGenerations(size_t maxGenerations);
+
   void setLambda(size_t lambda);
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);
@@ -39,6 +39,7 @@ class KoraliBase
   void setStopMinDeltaX(double stopMinDeltaX);
   void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor);
   void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition);
+
 };
 
 

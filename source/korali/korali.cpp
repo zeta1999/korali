@@ -28,9 +28,11 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 
 Korali::Dimension* Korali::KoraliBase::getDimension(int dim) { return &_dims[dim]; }
 Korali::Dimension* Korali::KoraliBase::operator[](int dim) { return getDimension(dim); }
+
 void Korali::KoraliBase::setMaxFitnessEvaluations(size_t maxFitnessEvaluations) { _maxFitnessEvaluations = maxFitnessEvaluations; }
 void Korali::KoraliBase::setMaxGenerations(size_t maxGenerations) { _maxGenerations = maxGenerations; }
 void Korali::KoraliBase::setLambda(size_t lambda) { _lambda = lambda; }
+
 void Korali::KoraliBase::setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
 void Korali::KoraliBase::setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
 void Korali::KoraliBase::setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }

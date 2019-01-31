@@ -6,7 +6,6 @@ Korali::Dimension::Dimension()
  _lowerBound = std::numeric_limits<double>::min();
  _upperBound = std::numeric_limits<double>::max();
  _initialX = 0.0;
- _typicalX = 0.0;
  _initialStdDev = 0.0;
  _seed = 0;
 }
@@ -22,6 +21,5 @@ void Korali::Dimension::setPriorDistribution(std::string type, double a, double 
 Korali::Distribution* Korali::Dimension::getPriorDistribution() { return _prior; }
 void Korali::Dimension::setBounds(double lowerBound, double upperBound) { _lowerBound = lowerBound; _upperBound = upperBound;}
 void Korali::Dimension::setInitialX(double initialX) { _initialX = initialX; }
-void Korali::Dimension::setTypicalX(double typicalX) { _typicalX = typicalX; }
 void Korali::Dimension::setInitialStdDev(double initialStdDev) { _initialStdDev = initialStdDev; }
 void Korali::Dimension::setSeed(int seed) { _seed = seed; }

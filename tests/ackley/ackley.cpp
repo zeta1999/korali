@@ -30,18 +30,12 @@ int main(int argc, char* argv[])
 	korali[2]->setInitialX(0.0);
 	korali[3]->setInitialX(0.0);
 
-	korali[0]->setTypicalX(0.0);
-	korali[1]->setTypicalX(0.0);
-	korali[2]->setTypicalX(0.0);
-	korali[3]->setTypicalX(0.0);
-
 	korali[0]->setInitialStdDev(3.0);
 	korali[1]->setInitialStdDev(3.0);
 	korali[2]->setInitialStdDev(3.0);
 	korali[3]->setInitialStdDev(3.0);
 
 	korali.setStopMinDeltaX(1e-11);
-
 
 	Korali::UniformDistribution u0(-6, 6, 45);
 	Korali::UniformDistribution u1(-6, 6, 13513);

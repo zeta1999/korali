@@ -69,9 +69,6 @@ typedef struct
   /* input parameters */
   int N; /* problem dimension, must stay constant, should be unsigned or long? */
   unsigned int seed; 
-  double * xstart; 
-  double * typicalX; 
-  int typicalXcase;
   double * rgInitialStds;
   double * rgDiffMinChange; 
 

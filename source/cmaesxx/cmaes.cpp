@@ -42,8 +42,7 @@ double cmaes_timings_update(cmaes_timings_t *timing);
 void   cmaes_timings_tic(cmaes_timings_t *timing);
 double cmaes_timings_toc(cmaes_timings_t *timing);
 
-void cmaes_readpara_init (cmaes_readpara_t *, int dim, const double * xstart, 
-    const double * sigma, int seed, int lambda, const char * filename);
+void cmaes_readpara_init (cmaes_readpara_t *, int dim,   const double * sigma, int seed, int lambda, const char * filename);
 void cmaes_readpara_exit(cmaes_readpara_t *);
 void cmaes_readpara_ReadFromFile(cmaes_readpara_t *, const char *szFileName);
 void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *);
@@ -126,14 +125,13 @@ char * cmaes_SayHello(cmaes_t *t)
 /* --------------------------------------------------------- */
 void cmaes_init_para(cmaes_t *t, /* "this" */
     int dimension, 
-    double *inxstart,
     double *inrgstddev, /* initial stds */
     long int inseed,
     int lambda, 
     const char *input_parameter_filename) 
 {
     t->version = c_cmaes_version;
-    cmaes_readpara_init(&t->sp, dimension, inxstart, inrgstddev, inseed, 
+    cmaes_readpara_init(&t->sp, dimension, inrgstddev, inseed,
             lambda, input_parameter_filename);
 }
 
@@ -243,11 +241,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
 
     /* set xmean */
     for (i = 0; i < N; ++i)
-        t->rgxmean[i] = t->rgxold[i] = t->sp.xstart[i]; 
-    /* use in case xstart as typicalX */
-    if (t->sp.typicalXcase) 
-        for (i = 0; i < N; ++i)
-            t->rgxmean[i] += t->sigma * t->rgD[i] * cmaes_random_Gauss(&t->rand);
+        t->rgxmean[i] = t->rgxold[i] = (*k)[i]->_initialX;
 
     if (strcmp(t->sp.resumefile, "_no_")  != 0)
         cmaes_resume_distribution(t, t->sp.resumefile);
@@ -260,14 +254,12 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
 /* --------------------------------------------------------- */
 double * cmaes_init(cmaes_t *t, /* "this" */
     int dimension, 
-    double *inxstart,
     double *inrgstddev, /* initial stds */
     long int inseed,
     int lambda, 
     const char *input_parameter_filename) 
 {
-    cmaes_init_para(t, dimension, inxstart, inrgstddev, inseed, 
-            lambda, input_parameter_filename);
+    cmaes_init_para(t, dimension,inrgstddev, inseed,             lambda, input_parameter_filename);
     return cmaes_init_final(t);
 }
 
@@ -2208,7 +2200,6 @@ double cmaes_random_Uniform( cmaes_random_t *t)
 /* --------------------------------------------------------- */
 void cmaes_readpara_init (cmaes_readpara_t *t,
         int dim, 
-        const double * inxstart, 
         const double * inrgsigma,
         int inseed, 
         int lambda, 
@@ -2244,17 +2235,12 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* arrays */
     i = 0;
-    t->rgskeyar[i]  = " typicalX %d";   t->rgp2adr[i++] = &t->typicalX;
-    t->rgskeyar[i]  = " initialX %d";   t->rgp2adr[i++] = &t->xstart;
     t->rgskeyar[i]  = " initialStandardDeviations %d"; t->rgp2adr[i++] = &t->rgInitialStds;
     t->rgskeyar[i]  = " diffMinChange %d"; t->rgp2adr[i++] = &t->rgDiffMinChange;
     t->n2para = i;  
 
     t->N = dim;
     t->seed = (unsigned) inseed; 
-    t->xstart = NULL; 
-    t->typicalX = NULL;
-    t->typicalXcase = 0;
     t->rgInitialStds = NULL; 
     t->rgDiffMinChange = NULL; 
     t->stStopFitness.flg = -1;
@@ -2283,31 +2269,12 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
         cmaes_readpara_ReadFromFile(t, filename);
 
     N = t->N;
-    if (t->xstart == NULL && inxstart == NULL && t->typicalX == NULL) {
-        ERRORMESSAGE("Error: initialX undefined. typicalX = 0.5...0.5 used.","","","");
-        printf("\nError: initialX undefined. typicalX = 0.5...0.5 used.\n");
-    }
     if (t->rgInitialStds == NULL && inrgsigma == NULL) {
         /* FATAL("initialStandardDeviations undefined","","",""); */
         ERRORMESSAGE("Error: initialStandardDeviations undefined. 0.3...0.3 used.","","","");
         printf("\nError: initialStandardDeviations undefined. 0.3...0.3 used.\n");
     }
 
-    if (t->xstart == NULL) {
-        t->xstart = new_double(N);
-
-        /* put inxstart into xstart */
-        if (inxstart != NULL) { 
-            for (i=0; i<N; ++i)
-                t->xstart[i] = inxstart[i];
-        }
-        /* otherwise use typicalX or default */
-        else {
-            t->typicalXcase = 1;
-            for (i=0; i<N; ++i)
-                t->xstart[i] = (t->typicalX == NULL) ? 0.5 : t->typicalX[i]; 
-        }
-    } /* xstart == NULL */
 
     if (t->rgInitialStds == NULL) {
         t->rgInitialStds = new_double(N);
@@ -2325,10 +2292,6 @@ void cmaes_readpara_exit(cmaes_readpara_t *t)
 {
     if (t->filename != NULL)
         free( t->filename);
-    if (t->xstart != NULL) /* not really necessary */
-        free( t->xstart);
-    if (t->typicalX != NULL)
-        free( t->typicalX);
     if (t->rgInitialStds != NULL)
         free( t->rgInitialStds);
     if (t->rgDiffMinChange != NULL)
