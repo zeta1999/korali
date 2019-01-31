@@ -10,7 +10,6 @@ restarts 0                    # read by example_restarts.c, remark that restarts
 ## --- OBLIGATORY SETTINGS
 # these settings, if read, overwrite the input values to cmaes_init 
 
- N 4        # Problem dimension, overwrites parameter in cmaes_init
  initialX 4:   # Initial search point. Syntax: 1==read one number, see also end of file. 
    0.0 0.0 0.0 0.0      #    these are the read value(s)!
  typicalX 4:   # Typical search point (useful for restarts, cave: boundaries), overwritten by initialX 
@@ -39,10 +38,6 @@ stopTolFunHist 1e-13 # stop if function value differences of best values are
 stopTolX 1e-11   # stop if step sizes/steps in x-space are 
                  # smaller than TolX, default=0
 stopTolUpXFactor 1e3 # stop if std dev increases more than by TolUpXFactor, default 1e3
-
-seed 3            # 0 == by time, also regard maxTimeFractionForEigendecomposition
-                  #   below, as for values smaller than one the outcome might not be  
-                  #   exactly reproducible even with the same seed
 
 # diffMinChange 1 # Minimal coordinate wise standard deviation. Syntax see below.
 #        1e-299   # Interferes with stopTolX termination criterion! default=0

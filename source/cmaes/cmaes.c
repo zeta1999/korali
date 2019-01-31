@@ -2251,7 +2251,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* All scalars:  */
     i = 0;
-    t->rgsformat[i] = " seed %d";    t->rgpadr[i++] = (void *) &t->seed;
     t->rgsformat[i] = " stopMaxFunEvals %lg"; t->rgpadr[i++] = (void *) &t->stopMaxFunEvals;
     t->rgsformat[i] = " stopMaxIter %lg"; t->rgpadr[i++] = (void *) &t->stopMaxIter;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;

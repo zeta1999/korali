@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <vector>
 #include "korali.h"
+#include "prior.h"
 
 extern "C" {
 

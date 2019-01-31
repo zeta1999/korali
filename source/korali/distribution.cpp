@@ -2,12 +2,7 @@
 
 Korali::Distribution::Distribution(size_t seed) : _seed(seed)
 {
-  // Initialize Random Generator _range
-  const gsl_rng_type * T;
-  gsl_rng * r;
-  gsl_rng_env_setup();
-  T = gsl_rng_default;
-  _range = gsl_rng_alloc (T);
+  _range = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(_range, _seed);
 }
 
