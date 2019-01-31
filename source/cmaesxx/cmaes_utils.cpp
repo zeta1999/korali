@@ -76,8 +76,8 @@ void cmaes_utils_print_the_best( cmaes_t evo, int step ) {
 }
 
 void cmaes_utils_write_pop_to_file( cmaes_t evo, double *arFunvals, double * const* pop, int step ){
-    int dim    = cmaes_Get( &evo, "dim");
-    int lambda = cmaes_Get( &evo, "lambda");
+    int dim    = kb->_dimCount;
+    int lambda = kb->_lambda;
     	
     char filename[256];
     sprintf(filename, "curgen_db_%03d.txt", step);

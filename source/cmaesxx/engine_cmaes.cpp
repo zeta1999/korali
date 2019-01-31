@@ -91,7 +91,7 @@ double CmaesEngine::run() {
         }
 
         if( ! cmaes_utils_is_there_enough_time( JOBMAXTIME, gt0_, dt ) ){
-            k->_maxGenerations=_step+1;
+            kb->_maxGenerations=_step+1;
             break;
         }
         
@@ -129,8 +129,8 @@ int CmaesEngine::is_feasible(double *pop, int dim) {
 void CmaesEngine::cmaes_utils_make_all_points_feasible( cmaes_t *evo, double* const *pop )
 {
 
-	int lambda = cmaes_Get( evo, "lambda");
-    int dim    = cmaes_Get( evo, "dim");
+	int lambda = kb->_lambda;
+    int dim    = kb->_dimCount;
 
 	for( int i=0; i<lambda; ++i)
     	while( !is_feasible( pop[i], dim ) )  cmaes_ReSampleSingle( evo, i );

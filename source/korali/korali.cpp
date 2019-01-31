@@ -1,11 +1,13 @@
 #include "korali.h"
 
-Korali::KoraliBase* k;
+Korali::KoraliBase* kb;
 
 //  if (_dimArray.size() != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimArray.size(), dimCount); exit(-1); }
 
 Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed = 0)
 {
+	_dimCount = dim;
+
 	gsl_rng_env_setup();
 	_dims = new Dimension[dim];
 	for (int i = 0; i < dim; i++) _dims[i].setSeed(seed + i);
@@ -23,7 +25,7 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 	_stopMaxStdDevXFactor = 1e+03;
 	_stopMaxTimePerEigendecomposition = 1.0;
 
-	k = this;
+	kb = this;
 }
 
 Korali::Dimension* Korali::KoraliBase::getDimension(int dim) { return &_dims[dim]; }

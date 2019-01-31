@@ -9,6 +9,7 @@ namespace Korali
 class KoraliBase
 {
   public:
+	int _dimCount;
   Dimension* _dims;
   double (*_fitfunction) (double*, int);
 
@@ -23,7 +24,6 @@ class KoraliBase
   double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
   double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
   double _stopMaxTimePerEigendecomposition; // Defines maximum time to be spent on eigensystem decomposition
-
 
   KoraliBase(int dim, double (*fun) (double*, int), int seed);
 
@@ -45,6 +45,6 @@ class KoraliBase
 
 } // namespace Korali
 
-extern Korali::KoraliBase* k;
+extern Korali::KoraliBase* kb;
 
 #endif // _KORALI_H_
