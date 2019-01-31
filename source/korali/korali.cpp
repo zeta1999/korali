@@ -2,8 +2,6 @@
 
 Korali::KoraliBase* kb;
 
-//  if (_dimArray.size() != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimArray.size(), dimCount); exit(-1); }
-
 Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed = 0)
 {
 	_dimCount = dim;
@@ -17,6 +15,7 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 	_maxFitnessEvaluations = 900*(dim+3)*(dim+3);
 	_maxGenerations = std::numeric_limits<size_t>::max();
 	_lambda = 128;
+	setMu(64);
 
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
@@ -41,3 +40,37 @@ void Korali::KoraliBase::setStopFitnessDiffHistoryThreshold(double stopFitnessDi
 void Korali::KoraliBase::setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
 void Korali::KoraliBase::setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
 void Korali::KoraliBase::setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
+
+void Korali::KoraliBase::setMu(size_t mu, std::string type)
+{
+	_mu = mu;
+	_muWeights = new double[_mu];
+
+  if (type == "LinearDecreasing") for (int i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;
+  if (type == "Equal")  for (int i = 0; i < _mu; i++)   _muWeights[i] = 1;
+  if (type == "Logarithmic") for (int i = 0; i < _mu; i++)  _muWeights[i] = log(_mu+1.)-log(i+1.);
+
+  /* normalize weights vector and set mueff */
+  double s1 = 0.0;
+  double s2 = 0.0;
+
+  for (int i=0; i < _mu; i++)
+  {
+   s1 += _muWeights[i];
+   s2 += _muWeights[i]*_muWeights[i];
+  }
+
+  _muEffective = s1*s1/s2;
+
+  for (int i = 0; i < _mu; i++) _muWeights[i] /= s1;
+
+  if(_mu < 1 || _mu > _lambda || (_mu == _lambda && _muWeights[0] == _muWeights[_mu-1]))
+  { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%d) and/or Lambda (%d)\n", _mu, _lambda); exit(-1); }
+
+}
+
+void Korali::KoraliBase::Run()
+{
+	//  if (_dimArray.size() != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimArray.size(), dimCount); exit(-1); }
+
+}

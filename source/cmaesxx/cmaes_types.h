@@ -67,6 +67,7 @@ typedef struct
   short flgsupplemented; 
   
   /* input parameters */
+  int N; /* problem dimension, must stay constant, should be unsigned or long? */
   unsigned int seed; 
   double * rgInitialStds;
   double * rgDiffMinChange; 
@@ -76,6 +77,7 @@ typedef struct
   double stopTolFunHist;
 
   /* internal evolution strategy parameters */
+  int lambda;          /* -> mu, <- N */
   int mu;              /* -> weights, (lambda) */
   double mucov, mueff; /* <- weights */
   double *weights;     /* <- mu, -> mueff, mucov, ccov */
@@ -174,7 +176,7 @@ typedef struct
  */
 
 typedef struct {
-    int flgdiag;
+    int dim, flgdiag;
     double **Q;
     double *D;
     double *mu;

@@ -16,6 +16,9 @@ class KoraliBase
   size_t _maxFitnessEvaluations;   // Defines maximum number of fitness evaluations
   size_t _maxGenerations; // Defines maximum number of generations
   size_t _lambda; // Number of offspring per sample cycle
+  size_t _mu;
+  double* _muWeights;
+  double _muEffective;
 
   // Defining stop conditions
   double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
@@ -33,6 +36,8 @@ class KoraliBase
   void setMaxGenerations(size_t maxGenerations);
 
   void setLambda(size_t lambda);
+  void setMu(size_t mu, std::string type = "Logarithmic");
+
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);
   void setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold);
@@ -40,6 +45,7 @@ class KoraliBase
   void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor);
   void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition);
 
+  void Run();
 };
 
 
