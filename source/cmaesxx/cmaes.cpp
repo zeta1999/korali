@@ -164,7 +164,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
 
     /* initialization  */
     for (i = 0, trace = 0.; i < N; ++i)
-        trace += t->sp.rgInitialStds[i]*t->sp.rgInitialStds[i];
+        trace += kb->_dims[i]._initialStdDev*kb->_dims[i]._initialStdDev;
     t->sigma = sqrt(trace/N); /* kb->_muEffective/(0.2*kb->_muEffective+sqrt(N)) * sqrt(trace/N); */
 
     t->chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
@@ -228,7 +228,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     for (i = 0; i < N; ++i)
     {
         t->B[i][i] = 1.;
-        t->C[i][i] = t->rgD[i] = t->sp.rgInitialStds[i] * sqrt(N / trace);
+        t->C[i][i] = t->rgD[i] = kb->_dims[i]._initialStdDev * sqrt(N / trace);
         t->C[i][i] *= t->C[i][i];
         t->rgpc[i] = t->rgps[i] = 0.;
     }
@@ -1357,7 +1357,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 
     /* TolUpX */
     for(i=0; i<N; ++i) {
-        if (t->sigma * sqrt(t->C[i][i]) > kb->_stopMaxStdDevXFactor * t->sp.rgInitialStds[i])
+        if (t->sigma * sqrt(t->C[i][i]) > kb->_stopMaxStdDevXFactor * kb->_dims[i]._initialStdDev)
             break;
     }
     if (i < N) {
@@ -2211,11 +2211,9 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* arrays */
     i = 0;
-    t->rgskeyar[i]  = " initialStandardDeviations %d"; t->rgp2adr[i++] = &t->rgInitialStds;
     t->rgskeyar[i]  = " diffMinChange %d"; t->rgp2adr[i++] = &t->rgDiffMinChange;
     t->n2para = i;  
 
-    t->rgInitialStds = NULL; 
     t->rgDiffMinChange = NULL; 
     t->stStopFitness.flg = -1;
 
@@ -2235,19 +2233,9 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     if (!isNoneStr(filename) && (!filename || strcmp(filename, "writeonly") != 0))
         cmaes_readpara_ReadFromFile(t, filename);
 
-    N = kb->_dimCount;
-    if (t->rgInitialStds == NULL && inrgsigma == NULL) {
-        /* FATAL("initialStandardDeviations undefined","","",""); */
-        ERRORMESSAGE("Error: initialStandardDeviations undefined. 0.3...0.3 used.","","","");
-        printf("\nError: initialStandardDeviations undefined. 0.3...0.3 used.\n");
-    }
 
 
-    if (t->rgInitialStds == NULL) {
-        t->rgInitialStds = new_double(N);
-        for (i=0; i<N; ++i)
-            t->rgInitialStds[i] = (inrgsigma == NULL) ? 0.3 : inrgsigma[i];
-    }
+
 
     t->flgsupplemented = 0;
 
@@ -2259,8 +2247,6 @@ void cmaes_readpara_exit(cmaes_readpara_t *t)
 {
     if (t->filename != NULL)
         free( t->filename);
-    if (t->rgInitialStds != NULL)
-        free( t->rgInitialStds);
     if (t->rgDiffMinChange != NULL)
         free( t->rgDiffMinChange);
 

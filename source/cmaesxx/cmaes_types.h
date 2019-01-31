@@ -66,7 +66,6 @@ typedef struct
   short flgsupplemented; 
   
   /* input parameters */
-  double * rgInitialStds;
   double * rgDiffMinChange; 
 
   /* termination parameters */
