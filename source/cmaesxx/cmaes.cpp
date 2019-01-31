@@ -115,7 +115,7 @@ char * cmaes_SayHello(cmaes_t *t)
     /* write initial message */
     sprintf(t->sOutString, 
             "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d (%s)", 
-            t->sp.mu, t->sp.lambda, kb->_muEffective, t->version, t->sp.N, (long)t->sp.diagonalCov,
+            kb->_mu, t->sp.lambda, kb->_muEffective, t->version, t->sp.N, (long)t->sp.diagonalCov,
             t->sp.seed, getTimeStr());
 
     return t->sOutString; 
@@ -678,7 +678,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     for (i = 0; i < N; ++i) {
         t->rgxold[i] = t->rgxmean[i]; 
         t->rgxmean[i] = 0.;
-        for (iNk = 0; iNk < t->sp.mu; ++iNk)
+        for (iNk = 0; iNk < kb->_mu; ++iNk)
             t->rgxmean[i] += kb->_muWeights[iNk] * t->rgrgx[t->index[iNk]][i];
         t->rgBDz[i] = sqrt(kb->_muEffective)*(t->rgxmean[i] - t->rgxold[i])/t->sigma;
     }
@@ -774,7 +774,7 @@ static void Adapt_C2(cmaes_t *t, int hsig)
                     + ccov1
                     * (t->rgpc[i] * t->rgpc[j] 
                             + (1-hsig)*t->sp.ccumcov*(2.-t->sp.ccumcov) * t->C[i][j]);
-                for (k = 0; k < t->sp.mu; ++k) { /* additional rank mu update */
+                for (k = 0; k < kb->_mu; ++k) { /* additional rank mu update */
                     t->C[i][j] += ccovmu * kb->_muWeights[k]
                         * (t->rgrgx[t->index[k]][i] - t->rgxold[i]) 
                         * (t->rgrgx[t->index[k]][j] - t->rgxold[j])
@@ -1972,24 +1972,11 @@ static void Householder2(int n, double **V, double *d, double *e)
 
 
 void cmaes_distr_ini(int dim, cmaes_distr_t *t) {
-    int i;
-    t->Q  = (double**) new_void(dim, sizeof(double*));
-    t->D  = new_double(dim);
-    t->mu = new_double(dim);
-    t->w  = new_double(dim);
-    for (i = 0; i < dim; ++i)
-        t->Q[i] = new_double(dim);
-    t->dim = dim;
+
 }
 
 void cmaes_distr_fin(cmaes_distr_t *t) {
-    int i;
-    for (i = 0; i < t->dim; ++i)
-        free(t->Q[i]);
-    free(t->Q);
-    free(t->D);
-    free(t->mu);
-    free(t->w);
+
 }
 
 void cmaes_get_distr(cmaes_t *t, cmaes_distr_t *d) {
@@ -2218,7 +2205,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     i = 0;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
     t->rgsformat[i] = " lambda %d";      t->rgpadr[i++] = (void *) &t->lambda;
-    t->rgsformat[i] = " mu %d";          t->rgpadr[i++] = (void *) &t->mu;
     t->rgsformat[i] = " weights %5s";    t->rgpadr[i++] = (void *) t->weigkey;
     t->rgsformat[i] = " fac*cs %lg";t->rgpadr[i++] = (void *) &t->cs;
     t->rgsformat[i] = " fac*damps %lg";   t->rgpadr[i++] = (void *) &t->damps;
@@ -2245,7 +2231,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->stStopFitness.flg = -1;
 
     t->lambda = lambda;
-    t->mu = -1;
     strcpy(t->weigkey, "log");
 
     t->cs = -1;
@@ -2442,12 +2427,6 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
 
     if (t->stStopFitness.flg == -1)
         t->stStopFitness.flg = 0;
-
-    if (t->lambda < 2)
-        t->lambda = 4+(int)(3*log((double)N));
-    if (t->mu == -1) {
-        t->mu = t->lambda/2;
-    }
 
     if (t->cs > 0) /* factor was read */
         t->cs *= (kb->_muEffective + 2.) / (N + kb->_muEffective + 3.);
