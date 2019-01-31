@@ -115,7 +115,7 @@ char * cmaes_SayHello(cmaes_t *t)
     /* write initial message */
     sprintf(t->sOutString, 
             "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d (%s)", 
-            kb->_mu, t->sp.lambda, kb->_muEffective, t->version, t->sp.N, (long)t->sp.diagonalCov,
+            kb->_mu, kb->_lambda, kb->_muEffective, t->version, t->sp.N, (long)t->sp.diagonalCov,
             t->sp.seed, getTimeStr());
 
     return t->sOutString; 
@@ -198,22 +198,22 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     t->rgD = new_double(N);
     t->C = (double**)new_void(N, sizeof(double*));
     t->B = (double**)new_void(N, sizeof(double*));
-    t->publicFitness = new_double(t->sp.lambda);
-    t->rgFuncValue = new_double(t->sp.lambda+1);
-    t->rgFuncValue[0]=t->sp.lambda; ++t->rgFuncValue;
-    t->arFuncValueHist = new_double(10+(int)ceil(3.*10.*N/t->sp.lambda)+1);
-    t->arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/t->sp.lambda));
+    t->publicFitness = new_double(kb->_lambda);
+    t->rgFuncValue = new_double(kb->_lambda+1);
+    t->rgFuncValue[0]=kb->_lambda; ++t->rgFuncValue;
+    t->arFuncValueHist = new_double(10+(int)ceil(3.*10.*N/kb->_lambda)+1);
+    t->arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/kb->_lambda));
     t->arFuncValueHist++; 
 
     for (i = 0; i < N; ++i) {
         t->C[i] = new_double(i+1);
         t->B[i] = new_double(N);
     }
-    t->index = (int *) new_void(t->sp.lambda, sizeof(int));
-    for (i = 0; i < t->sp.lambda; ++i)
+    t->index = (int *) new_void(kb->_lambda, sizeof(int));
+    for (i = 0; i < kb->_lambda; ++i)
         t->index[i] = i; /* should not be necessary */
-    t->rgrgx = (double **)new_void(t->sp.lambda, sizeof(double*));
-    for (i = 0; i < t->sp.lambda; ++i) {
+    t->rgrgx = (double **)new_void(kb->_lambda, sizeof(double*));
+    for (i = 0; i < kb->_lambda; ++i) {
         t->rgrgx[i] = new_double(N+2);
         t->rgrgx[i][0] = N; 
         t->rgrgx[i]++;
@@ -409,7 +409,7 @@ void cmaes_exit(cmaes_t *t)
         free( t->C[i]);
         free( t->B[i]);
     }
-    for (i = 0; i < t->sp.lambda; ++i)
+    for (i = 0; i < kb->_lambda; ++i)
         free( --t->rgrgx[i]);
     free( t->rgrgx); 
     free( t->C);
@@ -473,7 +473,7 @@ double * const * cmaes_SamplePopulation(cmaes_t *t)
     /* treat minimal standard deviations and numeric problems */
     TestMinStdDevs(t); 
 
-    for (iNk = 0; iNk < t->sp.lambda; ++iNk)
+    for (iNk = 0; iNk < kb->_lambda; ++iNk)
     { /* generate scaled cmaes_random vector (D * z)    */
         for (i = 0; i < N; ++i)
             if (flgdiag)
@@ -525,8 +525,8 @@ double * const * cmaes_ReSampleSingle(cmaes_t *t, int iindex)
     double sum; 
     static char s[99];
 
-    if (iindex < 0 || iindex >= t->sp.lambda) {
-        sprintf(s, "index==%d must be between 0 and %d", iindex, t->sp.lambda);
+    if (iindex < 0 || iindex >= kb->_lambda) {
+        sprintf(s, "index==%d must be between 0 and %d", iindex, kb->_lambda);
         FATAL("cmaes_ReSampleSingle(): Population member ",s,0,0);
     }
     rgx = t->rgrgx[iindex];
@@ -640,21 +640,21 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
                 "Fitness function value array input is missing.",0,0);
 
     if(save_hist && t->state == 1)  /* function values are delivered here */
-        t->countevals += t->sp.lambda;
+        t->countevals += kb->_lambda;
     else
         ERRORMESSAGE("cmaes_UpdateDistribution(): unexpected state",0,0,0);
 
     /* assign function values */
-    for (i=0; i < t->sp.lambda; ++i)
+    for (i=0; i < kb->_lambda; ++i)
         t->rgrgx[i][N] = t->rgFuncValue[i] = rgFunVal[i];
 
 
     /* Generate index */
-    Sorted_index(rgFunVal, t->index, t->sp.lambda);
+    Sorted_index(rgFunVal, t->index, kb->_lambda);
 
     /* Test if function values are identical, escape flat fitness */
     if (t->rgFuncValue[t->index[0]] == 
-            t->rgFuncValue[t->index[(int)t->sp.lambda/2]]) {
+            t->rgFuncValue[t->index[(int)kb->_lambda/2]]) {
         t->sigma *= exp(0.2+t->sp.cs/t->sp.damps);
         ERRORMESSAGE("Warning: sigma increased due to equal function values\n",
                 "   Reconsider the formulation of the objective function",0,0);
@@ -1002,14 +1002,14 @@ void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
         }
         if (strncmp(key, "fmedian", 7) == 0)
         {
-            fprintf(fp, "%.15e", t->rgFuncValue[t->index[(int)(t->sp.lambda/2)]]);
+            fprintf(fp, "%.15e", t->rgFuncValue[t->index[(int)(kb->_lambda/2)]]);
             while (*key != '+' && *key != '\0' && key < keyend)
                 ++key;
             fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
         }
         if (strncmp(key, "fworst", 6) == 0)
         {
-            fprintf(fp, "%.15e", t->rgFuncValue[t->index[t->sp.lambda-1]]);
+            fprintf(fp, "%.15e", t->rgFuncValue[t->index[kb->_lambda-1]]);
             while (*key != '+' && *key != '\0' && key < keyend)
                 ++key;
             fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
@@ -1073,7 +1073,7 @@ void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
         }
         if (strncmp(key, "lambda", 6) == 0 || strncmp(key, "popsi", 5) == 0 || strncmp(key, "populationsi", 12) == 0)
         {
-            fprintf(fp, "%d", t->sp.lambda);
+            fprintf(fp, "%d", kb->_lambda);
             while (*key != '+' && *key != '\0' && key < keyend)
                 ++key;
             fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
@@ -1184,9 +1184,9 @@ void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
 
 static double function_value_difference(cmaes_t *t) {
     return douMax(rgdouMax(t->arFuncValueHist, (int)douMin(t->gen,*(t->arFuncValueHist-1))), 
-                  rgdouMax(t->rgFuncValue, t->sp.lambda)) -
+                  rgdouMax(t->rgFuncValue, kb->_lambda)) -
         douMin(rgdouMin(t->arFuncValueHist, (int)douMin(t->gen, *(t->arFuncValueHist-1))), 
-               rgdouMin(t->rgFuncValue, t->sp.lambda));
+               rgdouMin(t->rgFuncValue, kb->_lambda));
 }
 
 /* --------------------------------------------------------- */
@@ -1232,7 +1232,7 @@ double cmaes_Get( cmaes_t *t, char const *s)
     else if (strncmp(s, "lambda", 3) == 0
             || strncmp(s, "samplesize", 8) == 0
             || strncmp(s, "popsize", 7) == 0) { /* sample size, offspring population size */
-        return(t->sp.lambda);
+        return(kb->_lambda);
     }
     else if (strncmp(s, "sigma", 3) == 0) {
         return(t->sigma);
@@ -1518,7 +1518,7 @@ void cmaes_ReadFromFilePtr( cmaes_t *t, FILE *fp)
                         break; 
                     case 2 : /* "write" */
                         /* write header, before first generation */
-                        if (t->countevals < t->sp.lambda && t->flgresumedone == 0)
+                        if (t->countevals < kb->_lambda && t->flgresumedone == 0)
                             cmaes_WriteToFileAW(t, sin1, sin2, "w"); /* overwrite */
                         d = 0.9; /* default is one with smooth increment of gaps */
                         if (sscanf(sin3, "%lg", &d) < 1 && deltawritetimefirst < 2)
@@ -2204,7 +2204,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     /* All scalars:  */
     i = 0;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
-    t->rgsformat[i] = " lambda %d";      t->rgpadr[i++] = (void *) &t->lambda;
     t->rgsformat[i] = " weights %5s";    t->rgpadr[i++] = (void *) t->weigkey;
     t->rgsformat[i] = " fac*cs %lg";t->rgpadr[i++] = (void *) &t->cs;
     t->rgsformat[i] = " fac*damps %lg";   t->rgpadr[i++] = (void *) &t->damps;
@@ -2230,7 +2229,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->rgDiffMinChange = NULL; 
     t->stStopFitness.flg = -1;
 
-    t->lambda = lambda;
     strcpy(t->weigkey, "log");
 
     t->cs = -1;
@@ -2446,14 +2444,14 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
         t->ccov = t2;
 
     if (t->diagonalCov == -1)
-        t->diagonalCov = 2 + 100. * N / sqrt((double)t->lambda);
+        t->diagonalCov = 2 + 100. * N / sqrt((double)kb->_lambda);
 
     if (t->damps < 0) 
         t->damps = 1; /* otherwise a factor was read */
     t->damps = t->damps 
         * (1 + 2*douMax(0., sqrt((kb->_muEffective-1.)/(N+1.)) - 1))     /* basic factor */
         * douMax(0.3, 1. -                                       /* modify for short runs */
-                (double)N / (1e-6+douMin(kb->_maxGenerations, kb->_maxFitnessEvaluations/t->lambda)))
+                (double)N / (1e-6+douMin(kb->_maxGenerations, kb->_maxFitnessEvaluations/kb->_lambda)))
         + t->cs;                                                 /* minor increment */
 
     if (t->updateCmode.modulo < 0)
