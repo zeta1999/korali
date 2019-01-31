@@ -2,6 +2,7 @@
 #define CMAES_UTILS_H
 
 #include "cmaes.h"
+#include "korali.h"
 
 double get_time();
 

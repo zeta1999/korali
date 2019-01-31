@@ -10,10 +10,9 @@ L=..
 
 DIR_CMAES  = $L/cmaes
 
-CXXFLAGS += -I$(DIR_CMAES) -I../korali
+CXXFLAGS += -I. -I../korali
 
-libcmaesxx.a: engine_cmaes.o 
-engine_cmaes.o: engine_cmaes.cpp engine_cmaes.hpp engine_cmaes_utils.hpp
+libcmaesxx.a: engine_cmaes.o cmaes.o cmaes_utils.o
 
 clean:; rm -rf $(TARGET) *.o *.a
 

@@ -20,13 +20,8 @@
 #include <vector>
 #include "korali.h"
 #include "prior.h"
-
-extern "C" {
-
 #include <cmaes.h>
 #include <cmaes_utils.h>
-
-}
 
 
 #define VERBOSE 0

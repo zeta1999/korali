@@ -1,5 +1,7 @@
 #include "korali.h"
 
+Korali::KoraliBase* k;
+
 //  if (_dimArray.size() != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimArray.size(), dimCount); exit(-1); }
 
 Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed = 0)
@@ -10,7 +12,7 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 
 	_fitfunction = fun;
 
-	_maxFitnessEvaluations = std::numeric_limits<size_t>::max();
+	_maxFitnessEvaluations = 900*(dim+3)*(dim+3);
 	_maxGenerations = std::numeric_limits<size_t>::max();
 	_lambda = 128;
 
@@ -20,6 +22,8 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 	_stopMinDeltaX = 0.0;
 	_stopMaxStdDevX = 1e+03;
 	_stopMaxTimePerEigendecomposition = 1.0;
+
+	k = this;
 }
 
 Korali::Dimension* Korali::KoraliBase::getDimension(int dim) { return &_dims[dim]; }

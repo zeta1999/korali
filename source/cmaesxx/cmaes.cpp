@@ -1221,11 +1221,6 @@ double cmaes_Get( cmaes_t *t, char const *s)
             || strncmp(s, "iteration", 4) == 0) { 
         return(t->gen);
     }
-    else if (strncmp(s, "maxeval", 4) == 0
-            || strncmp(s, "MaxFunEvals", 8) == 0
-            || strncmp(s, "stopMaxFunEvals", 12) == 0) { /* maximal number of function evaluations */
-        return(t->sp.stopMaxFunEvals);
-    }
     else if (strncmp(s, "maxgen", 4) == 0
             || strncmp(s, "MaxIter", 7) == 0
             || strncmp(s, "stopMaxIter", 11) == 0) { /* maximal number of generations */
@@ -1321,6 +1316,14 @@ const double * cmaes_GetPtr( cmaes_t *t, char const *s)
  */
 const char * cmaes_TestForTermination( cmaes_t *t)
 {
+
+//  double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
+//  double _stopFitnessDiffThreshold; // Defines minimum function value differences before stopping
+//  double _stopFitnessDiffHistoryThreshold; // Defines minimum function value differences among best values before stopping
+//  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
+//  double _stopMaxStdDevX; // Defines maximum standard deviation before it stops.
+//  double _stopMaxTimePerEigendecomposition;
+
     double range, fac;
     int iAchse, iKoo;
     int flgdiag = ((t->sp.diagonalCov == 1) || (t->sp.diagonalCov >= t->gen)); 
@@ -1356,13 +1359,13 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 
     /* TolX */
     for(i=0, cTemp=0; i<N; ++i) {
-        cTemp += (t->sigma * sqrt(t->C[i][i]) < t->sp.stopTolX) ? 1 : 0;
-        cTemp += (t->sigma * t->rgpc[i] < t->sp.stopTolX) ? 1 : 0;
+        cTemp += (t->sigma * sqrt(t->C[i][i]) < k->_stopFitnessDiffThreshold) ? 1 : 0;
+        cTemp += (t->sigma * t->rgpc[i] < k->_stopFitnessDiffThreshold) ? 1 : 0;
     }
     if (cTemp == 2*N) {
         cp += sprintf(cp, 
                 "TolX: object variable changes below %7.2e \n", 
-                t->sp.stopTolX);
+                k->_stopFitnessDiffThreshold);
     }
 
     /* TolUpX */
@@ -1420,9 +1423,9 @@ const char * cmaes_TestForTermination( cmaes_t *t)
     } /* for iKoo */
     /* if (flg) t->sigma *= exp(0.05+t->sp.cs/t->sp.damps); */
 
-    if(t->countevals >= t->sp.stopMaxFunEvals) 
-        cp += sprintf(cp, "MaxFunEvals: conducted function evaluations %.0f >= %g\n", 
-                t->countevals, t->sp.stopMaxFunEvals);
+    if(t->countevals >= k->_maxFitnessEvaluations)
+        cp += sprintf(cp, "MaxFunEvals: conducted function evaluations %.0f >= %lu\n",
+                t->countevals, k->_maxFitnessEvaluations);
     if(t->gen >= t->sp.stopMaxIter) 
         cp += sprintf(cp, "MaxIter: number of iterations %.0f >= %g\n", 
                 t->gen, t->sp.stopMaxIter); 
@@ -1507,10 +1510,6 @@ void cmaes_ReadFromFilePtr( cmaes_t *t, FILE *fp)
                     case 0 : /* "stop", reads "stop now" or eg. stopMaxIter */
                         if (strncmp(sin1, "now", 3) == 0) 
                             t->flgStop = 1; 
-                        else if (strncmp(sin1, "MaxFunEvals", 11) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) 
-                                t->sp.stopMaxFunEvals = d; 
-                        }
                         else if (strncmp(sin1, "MaxIter", 4) == 0) {
                             if (sscanf(sin2, " %lg", &d) == 1) 
                                 t->sp.stopMaxIter = d; 
@@ -1529,10 +1528,6 @@ void cmaes_ReadFromFilePtr( cmaes_t *t, FILE *fp)
                         else if (strncmp(sin1, "TolFun", 6) == 0) {
                             if (sscanf(sin2, " %lg", &d) == 1) 
                                 t->sp.stopTolFun = d; 
-                        }
-                        else if (strncmp(sin1, "TolX", 4) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) 
-                                t->sp.stopTolX = d; 
                         }
                         else if (strncmp(sin1, "TolUpXFactor", 4) == 0) {
                             if (sscanf(sin2, " %lg", &d) == 1) 
@@ -2251,12 +2246,10 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* All scalars:  */
     i = 0;
-    t->rgsformat[i] = " stopMaxFunEvals %lg"; t->rgpadr[i++] = (void *) &t->stopMaxFunEvals;
     t->rgsformat[i] = " stopMaxIter %lg"; t->rgpadr[i++] = (void *) &t->stopMaxIter;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
     t->rgsformat[i] = " stopTolFun %lg"; t->rgpadr[i++]=(void *) &t->stopTolFun;
     t->rgsformat[i] = " stopTolFunHist %lg"; t->rgpadr[i++]=(void *) &t->stopTolFunHist;
-    t->rgsformat[i] = " stopTolX %lg"; t->rgpadr[i++]=(void *) &t->stopTolX;
     t->rgsformat[i] = " stopTolUpXFactor %lg"; t->rgpadr[i++]=(void *) &t->stopTolUpXFactor;
     t->rgsformat[i] = " lambda %d";      t->rgpadr[i++] = (void *) &t->lambda;
     t->rgsformat[i] = " mu %d";          t->rgpadr[i++] = (void *) &t->mu;
@@ -2290,13 +2283,11 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->typicalXcase = 0;
     t->rgInitialStds = NULL; 
     t->rgDiffMinChange = NULL; 
-    t->stopMaxFunEvals = -1;
     t->stopMaxIter = -1;
     t->facmaxeval = 1; 
     t->stStopFitness.flg = -1;
     t->stopTolFun = 1e-12; 
     t->stopTolFunHist = 1e-13; 
-    t->stopTolX = 0; /* 1e-11*insigma would also be reasonable */ 
     t->stopTolUpXFactor = 1e3; 
 
     t->lambda = lambda;
@@ -2556,20 +2547,12 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     if (t->diagonalCov == -1)
         t->diagonalCov = 2 + 100. * N / sqrt((double)t->lambda); 
 
-    if (t->stopMaxFunEvals == -1)  /* may depend on ccov in near future */
-        t->stopMaxFunEvals = t->facmaxeval*900*(N+3)*(N+3); 
-    else
-        t->stopMaxFunEvals *= t->facmaxeval;
-
-    if (t->stopMaxIter == -1)
-        t->stopMaxIter = ceil((double)(t->stopMaxFunEvals / t->lambda)); 
-
     if (t->damps < 0) 
         t->damps = 1; /* otherwise a factor was read */
     t->damps = t->damps 
         * (1 + 2*douMax(0., sqrt((t->mueff-1.)/(N+1.)) - 1))     /* basic factor */
         * douMax(0.3, 1. -                                       /* modify for short runs */
-                (double)N / (1e-6+douMin(t->stopMaxIter, t->stopMaxFunEvals/t->lambda))) 
+                (double)N / (1e-6+douMin(t->stopMaxIter, k->_maxFitnessEvaluations/t->lambda)))
         + t->cs;                                                 /* minor increment */
 
     if (t->updateCmode.modulo < 0)

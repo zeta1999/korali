@@ -16,6 +16,7 @@
 #define CMAES_TYPES_H
 
 #include <time.h>
+#include "korali.h"
 
 typedef struct 
 /* cmaes_random_t 
@@ -75,13 +76,11 @@ typedef struct
   double * rgDiffMinChange; 
 
   /* termination parameters */
-  double stopMaxFunEvals; 
   double facmaxeval;
   double stopMaxIter; 
   struct { int flg; double val; } stStopFitness; 
   double stopTolFun;
   double stopTolFunHist;
-  double stopTolX;
   double stopTolUpXFactor;
 
   /* internal evolution strategy parameters */

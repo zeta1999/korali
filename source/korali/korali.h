@@ -8,7 +8,7 @@ namespace Korali
 
 class KoraliBase
 {
- private:
+  public:
   Dimension* _dims;
   double (*_fitfunction) (double*, int);
 
@@ -24,7 +24,7 @@ class KoraliBase
   double _stopMaxStdDevX; // Defines maximum standard deviation before it stops.
   double _stopMaxTimePerEigendecomposition; // Defines maximum time to be spent on eigensystem decomposition
 
- public:
+
   KoraliBase(int dim, double (*fun) (double*, int), int seed);
 
   Dimension* getDimension(int dim);
@@ -39,10 +39,11 @@ class KoraliBase
   void setStopMinDeltaX(double stopMinDeltaX);
   void setStopMaxStdDevX(double stopMaxStdDevX);
   void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition);
-
 };
 
 
 } // namespace Korali
+
+extern Korali::KoraliBase* k;
 
 #endif // _KORALI_H_
