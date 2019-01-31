@@ -115,7 +115,7 @@ char * cmaes_SayHello(cmaes_t *t)
     /* write initial message */
     sprintf(t->sOutString, 
             "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d (%s)", 
-            t->sp.mu, t->sp.lambda, t->sp.mueff, t->version, t->sp.N, (long)t->sp.diagonalCov,
+            t->sp.mu, t->sp.lambda, kb->_muEffective, t->version, t->sp.N, (long)t->sp.diagonalCov,
             t->sp.seed, getTimeStr());
 
     return t->sOutString; 
@@ -165,7 +165,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     /* initialization  */
     for (i = 0, trace = 0.; i < N; ++i)
         trace += t->sp.rgInitialStds[i]*t->sp.rgInitialStds[i];
-    t->sigma = sqrt(trace/N); /* t->sp.mueff/(0.2*t->sp.mueff+sqrt(N)) * sqrt(trace/N); */
+    t->sigma = sqrt(trace/N); /* kb->_muEffective/(0.2*kb->_muEffective+sqrt(N)) * sqrt(trace/N); */
 
     t->chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
     t->flgEigensysIsUptodate = 1;
@@ -680,7 +680,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
         t->rgxmean[i] = 0.;
         for (iNk = 0; iNk < t->sp.mu; ++iNk)
             t->rgxmean[i] += kb->_muWeights[iNk] * t->rgrgx[t->index[iNk]][i];
-        t->rgBDz[i] = sqrt(t->sp.mueff)*(t->rgxmean[i] - t->rgxold[i])/t->sigma;
+        t->rgBDz[i] = sqrt(kb->_muEffective)*(t->rgxmean[i] - t->rgxold[i])/t->sigma;
     }
 
     /* calculate z := D^(-1) * B^(-1) * rgBDz into rgdTmp */
