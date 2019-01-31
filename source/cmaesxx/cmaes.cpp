@@ -655,7 +655,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     /* Test if function values are identical, escape flat fitness */
     if (t->rgFuncValue[t->index[0]] == 
             t->rgFuncValue[t->index[(int)kb->_lambda/2]]) {
-        t->sigma *= exp(0.2+t->sp.cs/t->sp.damps);
+        t->sigma *= exp(0.2+kb->_factorCS/t->sp.damps);
         ERRORMESSAGE("Warning: sigma increased due to equal function values\n",
                 "   Reconsider the formulation of the objective function",0,0);
     }
@@ -713,8 +713,8 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
                 sum += t->B[i][j] * t->rgdTmp[j];
         else
             sum = t->rgdTmp[i];
-        t->rgps[i] = (1. - t->sp.cs) * t->rgps[i] + 
-            sqrt(t->sp.cs * (2. - t->sp.cs)) * sum;
+        t->rgps[i] = (1. - kb->_factorCS) * t->rgps[i] +
+            sqrt(kb->_factorCS * (2. - kb->_factorCS)) * sum;
     }
 
     /* calculate norm(ps)^2 */
@@ -722,7 +722,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
         psxps += t->rgps[i] * t->rgps[i];
 
     /* cumulation for covariance matrix (pc) using B*D*z~N(0,C) */
-    hsig = sqrt(psxps) / sqrt(1. - pow(1.-t->sp.cs, 2*t->gen)) / t->chiN
+    hsig = sqrt(psxps) / sqrt(1. - pow(1.-kb->_factorCS, 2*t->gen)) / t->chiN
         < 1.4 + 2./(N+1);
     for (i = 0; i < N; ++i) {
         t->rgpc[i] = (1. - t->sp.ccumcov) * t->rgpc[i] + 
@@ -731,9 +731,9 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
 
     /* stop initial phase */
     if (t->flgIniphase && 
-            t->gen > douMin(1/t->sp.cs, 1+N/kb->_muCovariance))
+            t->gen > douMin(1/kb->_factorCS, 1+N/kb->_muCovariance))
     {
-        if (psxps / t->sp.damps / (1.-pow((1. - t->sp.cs), t->gen)) 
+        if (psxps / t->sp.damps / (1.-pow((1. - kb->_factorCS), t->gen))
                 < N * 1.05) 
             t->flgIniphase = 0;
     }
@@ -743,7 +743,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     Adapt_C2(t, hsig);
 
     /* update of sigma */
-    t->sigma *= exp(((sqrt(psxps)/t->chiN)-1.)*t->sp.cs/t->sp.damps);
+    t->sigma *= exp(((sqrt(psxps)/t->chiN)-1.)*kb->_factorCS/t->sp.damps);
 
     t->state = 3;
 
@@ -803,7 +803,7 @@ static void TestMinStdDevs(cmaes_t *t)
 
     for (i = 0; i < N; ++i)
         while (t->sigma * sqrt(t->C[i][i]) < t->sp.rgDiffMinChange[i]) 
-            t->sigma *= exp(0.05+t->sp.cs/t->sp.damps);
+            t->sigma *= exp(0.05+kb->_factorCS/t->sp.damps);
 
 } /* cmaes_TestMinStdDevs() */
 
@@ -1385,7 +1385,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
             }
             if (iKoo == N)        
             {
-                /* t->sigma *= exp(0.2+t->sp.cs/t->sp.damps); */
+                /* t->sigma *= exp(0.2+kb->_factorCS/t->sp.damps); */
                 cp += sprintf(cp, 
                         "NoEffectAxis: standard deviation 0.1*%7.2e in principal axis %d without effect\n", 
                         fac/0.1, iAchse);
@@ -1408,7 +1408,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
         }
 
     } /* for iKoo */
-    /* if (flg) t->sigma *= exp(0.05+t->sp.cs/t->sp.damps); */
+    /* if (flg) t->sigma *= exp(0.05+kb->_factorCS/t->sp.damps); */
 
     if(t->countevals >= kb->_maxFitnessEvaluations)
         cp += sprintf(cp, "MaxFunEvals: conducted function evaluations %.0f >= %lu\n",
@@ -2205,7 +2205,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     i = 0;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
     t->rgsformat[i] = " weights %5s";    t->rgpadr[i++] = (void *) t->weigkey;
-    t->rgsformat[i] = " fac*cs %lg";t->rgpadr[i++] = (void *) &t->cs;
     t->rgsformat[i] = " fac*damps %lg";   t->rgpadr[i++] = (void *) &t->damps;
     t->rgsformat[i] = " ccumcov %lg";    t->rgpadr[i++] = (void *) &t->ccumcov;
     t->rgsformat[i] = " fac*ccov %lg";  t->rgpadr[i++]=(void *) &t->ccov;
@@ -2231,7 +2230,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     strcpy(t->weigkey, "log");
 
-    t->cs = -1;
     t->ccumcov = -1;
     t->damps = -1;
     t->ccov = -1;
@@ -2426,11 +2424,6 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     if (t->stStopFitness.flg == -1)
         t->stStopFitness.flg = 0;
 
-    if (t->cs > 0) /* factor was read */
-        t->cs *= (kb->_muEffective + 2.) / (N + kb->_muEffective + 3.);
-    if (t->cs <= 0 || t->cs >= 1)
-        t->cs = (kb->_muEffective + 2.) / (N + kb->_muEffective + 3.);
-
     if (t->ccumcov <= 0 || t->ccumcov > 1)
         t->ccumcov = 4. / (N + 4);
 
@@ -2452,7 +2445,7 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
         * (1 + 2*douMax(0., sqrt((kb->_muEffective-1.)/(N+1.)) - 1))     /* basic factor */
         * douMax(0.3, 1. -                                       /* modify for short runs */
                 (double)N / (1e-6+douMin(kb->_maxGenerations, kb->_maxFitnessEvaluations/kb->_lambda)))
-        + t->cs;                                                 /* minor increment */
+        + kb->_factorCS;                                                 /* minor increment */
 
     if (t->updateCmode.modulo < 0)
         t->updateCmode.modulo = 1./t->ccov/(double)(N)/10.;

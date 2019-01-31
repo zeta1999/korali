@@ -25,6 +25,7 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 	_stopMaxStdDevXFactor = 1e+03;
 	_stopMaxTimePerEigendecomposition = 1.0;
 
+	setCSFactor(-1);
 	kb = this;
 }
 
@@ -71,6 +72,12 @@ void Korali::KoraliBase::setMu(size_t mu, std::string type)
 }
 
 void Korali::KoraliBase::setMuCovariance(double muCovariance) { if (muCovariance < 1) _muCovariance = _muEffective; else _muCovariance = muCovariance; }
+void Korali::KoraliBase::setCSFactor(double factorCS)
+{
+  if (_factorCS > 0) _factorCS *= (_muEffective + 2.0) / (_dimCount + _muEffective + 3.0);
+  if (_factorCS <= 0 || _factorCS >= 1)  _factorCS = (_muEffective + 2.) / (_dimCount + _muEffective + 3.0);
+}
+
 
 void Korali::KoraliBase::Run()
 {
