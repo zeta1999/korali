@@ -28,6 +28,7 @@ Korali::KoraliBase::KoraliBase(size_t dim, double (*fun) (double*, int), size_t 
 
 	setSigmaCumulationFactor(-1);
 	setDampingFactor(-1);
+	setCumulativeCovariance(-1);
 
 	kb = this;
 }
@@ -88,6 +89,12 @@ void Korali::KoraliBase::setDampingFactor(double dampFactor)
       * std::max(0.3, 1. - (double)_dimCount / (1e-6+std::min(_maxGenerations, _maxFitnessEvaluations/_lambda)))
       + _sigmaCumulationFactor;                                                 /* minor increment */
 }
+
+void Korali::KoraliBase::setCumulativeCovariance(double cumulativeCovariance)
+{
+  if (cumulativeCovariance <= 0 || cumulativeCovariance> 1)  _cumulativeCovariance = 4. / (_dimCount + 4);
+}
+
 
 void Korali::KoraliBase::Run()
 {

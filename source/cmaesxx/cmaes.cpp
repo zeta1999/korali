@@ -725,8 +725,8 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     hsig = sqrt(psxps) / sqrt(1. - pow(1.-kb->_sigmaCumulationFactor, 2*t->gen)) / t->chiN
         < 1.4 + 2./(N+1);
     for (i = 0; i < N; ++i) {
-        t->rgpc[i] = (1. - t->sp.ccumcov) * t->rgpc[i] + 
-            hsig * sqrt(t->sp.ccumcov * (2. - t->sp.ccumcov)) * t->rgBDz[i];
+        t->rgpc[i] = (1. - kb->_cumulativeCovariance) * t->rgpc[i] +
+            hsig * sqrt(kb->_cumulativeCovariance * (2. - kb->_cumulativeCovariance)) * t->rgBDz[i];
     }
 
     /* stop initial phase */
@@ -773,7 +773,7 @@ static void Adapt_C2(cmaes_t *t, int hsig)
                 t->C[i][j] = (1 - ccov1 - ccovmu) * t->C[i][j] 
                     + ccov1
                     * (t->rgpc[i] * t->rgpc[j] 
-                            + (1-hsig)*t->sp.ccumcov*(2.-t->sp.ccumcov) * t->C[i][j]);
+                            + (1-hsig)*kb->_cumulativeCovariance*(2.-kb->_cumulativeCovariance) * t->C[i][j]);
                 for (k = 0; k < kb->_mu; ++k) { /* additional rank mu update */
                     t->C[i][j] += ccovmu * kb->_muWeights[k]
                         * (t->rgrgx[t->index[k]][i] - t->rgxold[i]) 
@@ -2200,7 +2200,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     /* All scalars:  */
     i = 0;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
-    t->rgsformat[i] = " ccumcov %lg";    t->rgpadr[i++] = (void *) &t->ccumcov;
     t->rgsformat[i] = " fac*ccov %lg";  t->rgpadr[i++]=(void *) &t->ccov;
     t->rgsformat[i] = " diagonalCovarianceMatrix %lg"; t->rgpadr[i++]=(void *) &t->diagonalCov;
     t->rgsformat[i] = " updatecov %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.modulo;
@@ -2223,7 +2222,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     strcpy(t->weigkey, "log");
 
-    t->ccumcov = -1;
     t->ccov = -1;
 
     t->diagonalCov = 0; /* default is 0, but this might change in future, see below */
@@ -2408,9 +2406,6 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
 
     if (t->stStopFitness.flg == -1)
         t->stStopFitness.flg = 0;
-
-    if (t->ccumcov <= 0 || t->ccumcov > 1)
-        t->ccumcov = 4. / (N + 4);
 
     t1 = 2. / ((N+1.4142)*(N+1.4142));
     t2 = (2.*kb->_muEffective-1.) / ((N+2.)*(N+2.)+kb->_muEffective);
