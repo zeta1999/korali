@@ -13,7 +13,7 @@ double f_Ackley(double *x, int N) {
 
 int main(int argc, char* argv[])
 {
-	auto korali = Korali::KoraliBase(4, f_Ackley, 1000);
+	auto korali = Korali::KoraliBase(4, f_Ackley, 13531);
 
 	korali[0]->setPriorDistribution("Uniform", -6.0, 6.0);
 	korali[1]->setPriorDistribution("Uniform", -6.0, 6.0);

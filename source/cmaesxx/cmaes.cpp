@@ -116,7 +116,7 @@ char * cmaes_SayHello(cmaes_t *t)
     sprintf(t->sOutString, 
             "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d (%s)", 
             kb->_mu, kb->_lambda, kb->_muEffective, t->version, t->sp.N, (long)t->sp.diagonalCov,
-            t->sp.seed, getTimeStr());
+            kb->_seed, getTimeStr());
 
     return t->sOutString; 
 }
@@ -158,7 +158,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
             cmaes_readpara_WriteToFile(&t->sp, "actparcmaes.par");
     }
 
-    t->sp.seed = cmaes_random_init( &t->rand, (long unsigned int) t->sp.seed);
+    kb->_seed = cmaes_random_init( &t->rand, (long unsigned int) kb->_seed);
 
     N = t->sp.N; /* for convenience */
 
@@ -655,7 +655,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     /* Test if function values are identical, escape flat fitness */
     if (t->rgFuncValue[t->index[0]] == 
             t->rgFuncValue[t->index[(int)kb->_lambda/2]]) {
-        t->sigma *= exp(0.2+kb->_CSfactor/kb->_dampFactor);
+        t->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor);
         ERRORMESSAGE("Warning: sigma increased due to equal function values\n",
                 "   Reconsider the formulation of the objective function",0,0);
     }
@@ -713,8 +713,8 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
                 sum += t->B[i][j] * t->rgdTmp[j];
         else
             sum = t->rgdTmp[i];
-        t->rgps[i] = (1. - kb->_CSfactor) * t->rgps[i] +
-            sqrt(kb->_CSfactor * (2. - kb->_CSfactor)) * sum;
+        t->rgps[i] = (1. - kb->_sigmaCumulationFactor) * t->rgps[i] +
+            sqrt(kb->_sigmaCumulationFactor * (2. - kb->_sigmaCumulationFactor)) * sum;
     }
 
     /* calculate norm(ps)^2 */
@@ -722,7 +722,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
         psxps += t->rgps[i] * t->rgps[i];
 
     /* cumulation for covariance matrix (pc) using B*D*z~N(0,C) */
-    hsig = sqrt(psxps) / sqrt(1. - pow(1.-kb->_CSfactor, 2*t->gen)) / t->chiN
+    hsig = sqrt(psxps) / sqrt(1. - pow(1.-kb->_sigmaCumulationFactor, 2*t->gen)) / t->chiN
         < 1.4 + 2./(N+1);
     for (i = 0; i < N; ++i) {
         t->rgpc[i] = (1. - t->sp.ccumcov) * t->rgpc[i] + 
@@ -731,9 +731,9 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
 
     /* stop initial phase */
     if (t->flgIniphase && 
-            t->gen > douMin(1/kb->_CSfactor, 1+N/kb->_muCovariance))
+            t->gen > douMin(1/kb->_sigmaCumulationFactor, 1+N/kb->_muCovariance))
     {
-        if (psxps / kb->_dampFactor / (1.-pow((1. - kb->_CSfactor), t->gen))
+        if (psxps / kb->_dampFactor / (1.-pow((1. - kb->_sigmaCumulationFactor), t->gen))
                 < N * 1.05) 
             t->flgIniphase = 0;
     }
@@ -743,7 +743,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     Adapt_C2(t, hsig);
 
     /* update of sigma */
-    t->sigma *= exp(((sqrt(psxps)/t->chiN)-1.)*kb->_CSfactor/kb->_dampFactor);
+    t->sigma *= exp(((sqrt(psxps)/t->chiN)-1.)*kb->_sigmaCumulationFactor/kb->_dampFactor);
 
     t->state = 3;
 
@@ -803,7 +803,7 @@ static void TestMinStdDevs(cmaes_t *t)
 
     for (i = 0; i < N; ++i)
         while (t->sigma * sqrt(t->C[i][i]) < t->sp.rgDiffMinChange[i]) 
-            t->sigma *= exp(0.05+kb->_CSfactor/kb->_dampFactor);
+            t->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor);
 
 } /* cmaes_TestMinStdDevs() */
 
@@ -835,7 +835,7 @@ void cmaes_WriteToFileAW(cmaes_t *t, const char *key, const char *name,
 
     if (appendwrite[0] == 'w') {
         /* write a header line, very rudimentary */
-        printf("%% # %s (randomSeed=%d, %s)\n", key, t->sp.seed, getTimeStr());
+        printf("%% # %s (randomSeed=%d, %s)\n", key, kb->_seed, getTimeStr());
     } else 
         if (t->gen > 0 || strncmp(name, "outcmaesfit", 11) != 0)
             cmaes_WriteToFilePtr(t, key, fp); /* do not write fitness for gen==0 */
@@ -1121,7 +1121,7 @@ void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
             time_t ti = time(NULL);
             fprintf(fp, "\n# --------- %s\n", asctime(localtime(&ti)));
             fprintf(fp, " N %d\n", N);
-            fprintf(fp, " seed %d\n", t->sp.seed);
+            fprintf(fp, " seed %d\n", kb->_seed);
             fprintf(fp, "function evaluations %.0f\n", t->countevals);
             fprintf(fp, "elapsed (CPU) time [s] %.2f\n", t->eigenTimings.totaltotaltime);
             fprintf(fp, "function value f(x)=%g\n", t->rgrgx[t->index[0]][N]);
@@ -1385,7 +1385,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
             }
             if (iKoo == N)        
             {
-                /* t->sigma *= exp(0.2+kb->_CSfactor/kb->_dampFactor); */
+                /* t->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor); */
                 cp += sprintf(cp, 
                         "NoEffectAxis: standard deviation 0.1*%7.2e in principal axis %d without effect\n", 
                         fac/0.1, iAchse);
@@ -1408,7 +1408,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
         }
 
     } /* for iKoo */
-    /* if (flg) t->sigma *= exp(0.05+kb->_CSfactor/kb->_dampFactor); */
+    /* if (flg) t->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor); */
 
     if(t->countevals >= kb->_maxFitnessEvaluations)
         cp += sprintf(cp, "MaxFunEvals: conducted function evaluations %.0f >= %lu\n",
@@ -2105,11 +2105,7 @@ long cmaes_random_init( cmaes_random_t *t, long unsigned inseed)
 
     t->flgstored = 0;
     t->rgrand = (long *) new_void(32, sizeof(long));
-    if (inseed < 1) {
-        while ((long) (cloc - clock()) == 0)
-            ; /* TODO: remove this for time critical applications? */
-        inseed = (long unsigned)labs((long)(100*time(NULL)+clock()));
-    }
+
     return cmaes_random_Start(t, inseed);
 }
 
@@ -2221,7 +2217,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->n2para = i;  
 
     t->N = dim;
-    t->seed = (unsigned) inseed; 
     t->rgInitialStds = NULL; 
     t->rgDiffMinChange = NULL; 
     t->stStopFitness.flg = -1;
@@ -2410,13 +2405,6 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     int N = t->N;
     clock_t cloc = clock();
 
-    if (t->flgsupplemented)
-        FATAL("cmaes_readpara_SupplementDefaults() cannot be called twice.",0,0,0);
-    if (t->seed < 1) {
-        while ((int) (cloc - clock()) == 0)
-            ; /* TODO: remove this for time critical applications!? */
-        t->seed = (unsigned int)labs((long)(100*time(NULL)+clock()));
-    }
 
     if (t->stStopFitness.flg == -1)
         t->stStopFitness.flg = 0;
@@ -2434,8 +2422,7 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
         t->ccov = t2;
 
     if (t->diagonalCov == -1)
-        t->diagonalCov = 2 + 100. * N / sqrt((double)kb->_lambda);
-
+        t->diagonalCov = 2 + 100. * N / sqrt((double)kb->_lambda);                                /* minor increment */
 
     if (t->updateCmode.modulo < 0)
         t->updateCmode.modulo = 1./t->ccov/(double)(N)/10.;

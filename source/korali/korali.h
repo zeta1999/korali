@@ -9,7 +9,8 @@ namespace Korali
 class KoraliBase
 {
   public:
-	int _dimCount;
+	size_t _seed;
+	size_t _dimCount;
   Dimension* _dims;
   double (*_fitfunction) (double*, int);
 
@@ -20,7 +21,7 @@ class KoraliBase
   double* _muWeights;
   double _muEffective;
   double _muCovariance;
-  double _CSfactor;
+  double _sigmaCumulationFactor;
   double _dampFactor;
 
   // Defining stop conditions
@@ -31,7 +32,7 @@ class KoraliBase
   double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
   double _stopMaxTimePerEigendecomposition; // Defines maximum time to be spent on eigensystem decomposition
 
-  KoraliBase(int dim, double (*fun) (double*, int), int seed);
+  KoraliBase(size_t dim, double (*fun) (double*, int), size_t seed);
 
   Dimension* getDimension(int dim);
   Dimension* operator[] (int x);
@@ -41,7 +42,7 @@ class KoraliBase
   void setLambda(size_t lambda);
   void setMu(size_t mu, std::string type = "Logarithmic");
   void setMuCovariance(double muCovariance);
-  void setCSFactor(double CSFactor);
+  void setSigmaCumulationFactor(double sigmaCumulationFactor);
   void setDampingFactor(double dampFactor);
 
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
