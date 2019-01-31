@@ -731,7 +731,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
 
     /* stop initial phase */
     if (t->flgIniphase && 
-            t->gen > douMin(1/t->sp.cs, 1+N/t->sp.mucov))
+            t->gen > douMin(1/t->sp.cs, 1+N/kb->_muCovariance))
     {
         if (psxps / t->sp.damps / (1.-pow((1. - t->sp.cs), t->gen)) 
                 < N * 1.05) 
@@ -761,8 +761,8 @@ static void Adapt_C2(cmaes_t *t, int hsig)
     if (t->sp.ccov != 0. && t->flgIniphase == 0) {
 
         /* definitions for speeding up inner-most loop */
-        double ccov1 = douMin(t->sp.ccov * (1./t->sp.mucov) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
-        double ccovmu = douMin(t->sp.ccov * (1-1./t->sp.mucov)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
+        double ccov1 = douMin(t->sp.ccov * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
+        double ccovmu = douMin(t->sp.ccov * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
         double sigmasquare = t->sigma * t->sigma; 
 
         t->flgEigensysIsUptodate = 0;
@@ -2223,7 +2223,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->rgsformat[i] = " fac*cs %lg";t->rgpadr[i++] = (void *) &t->cs;
     t->rgsformat[i] = " fac*damps %lg";   t->rgpadr[i++] = (void *) &t->damps;
     t->rgsformat[i] = " ccumcov %lg";    t->rgpadr[i++] = (void *) &t->ccumcov;
-    t->rgsformat[i] = " mucov %lg";     t->rgpadr[i++] = (void *) &t->mucov;
     t->rgsformat[i] = " fac*ccov %lg";  t->rgpadr[i++]=(void *) &t->ccov;
     t->rgsformat[i] = " diagonalCovarianceMatrix %lg"; t->rgpadr[i++]=(void *) &t->diagonalCov;
     t->rgsformat[i] = " updatecov %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.modulo;
@@ -2247,7 +2246,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     t->lambda = lambda;
     t->mu = -1;
-    t->mucov = -1;
     strcpy(t->weigkey, "log");
 
     t->cs = -1;
@@ -2459,13 +2457,10 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     if (t->ccumcov <= 0 || t->ccumcov > 1)
         t->ccumcov = 4. / (N + 4);
 
-    if (t->mucov < 1) {
-        t->mucov = kb->_muEffective;
-    }
     t1 = 2. / ((N+1.4142)*(N+1.4142));
     t2 = (2.*kb->_muEffective-1.) / ((N+2.)*(N+2.)+kb->_muEffective);
     t2 = (t2 > 1) ? 1 : t2;
-    t2 = (1./t->mucov) * t1 + (1.-1./t->mucov) * t2;
+    t2 = (1./kb->_muCovariance) * t1 + (1.-1./kb->_muCovariance) * t2;
     if (t->ccov >= 0) /* ccov holds the read factor */
         t->ccov *= t2;
     if (t->ccov < 0 || t->ccov > 1) /* set default in case */

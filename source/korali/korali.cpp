@@ -16,6 +16,7 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 	_maxGenerations = std::numeric_limits<size_t>::max();
 	_lambda = 128;
 	setMu(64);
+	_muCovariance = _muEffective;
 
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
@@ -68,6 +69,8 @@ void Korali::KoraliBase::setMu(size_t mu, std::string type)
   { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%d) and/or Lambda (%d)\n", _mu, _lambda); exit(-1); }
 
 }
+
+void Korali::KoraliBase::setMuCovariance(double muCovariance) { if (muCovariance < 1) _muCovariance = _muEffective; else _muCovariance = muCovariance; }
 
 void Korali::KoraliBase::Run()
 {

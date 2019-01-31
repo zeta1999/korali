@@ -19,6 +19,7 @@ class KoraliBase
   size_t _mu;
   double* _muWeights;
   double _muEffective;
+  double _muCovariance;
 
   // Defining stop conditions
   double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
@@ -37,6 +38,7 @@ class KoraliBase
 
   void setLambda(size_t lambda);
   void setMu(size_t mu, std::string type = "Logarithmic");
+  void setMuCovariance(double muCovariance);
 
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);
