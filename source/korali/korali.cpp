@@ -18,9 +18,9 @@ Korali::KoraliBase::KoraliBase(int dim, double (*fun) (double*, int), int seed =
 
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
-	_stopFitnessDiffHistoryThreshold = 0.0;
+	_stopFitnessDiffHistoryThreshold = 1e-13;
 	_stopMinDeltaX = 0.0;
-	_stopMaxStdDevX = 1e+03;
+	_stopMaxStdDevXFactor = 1e+03;
 	_stopMaxTimePerEigendecomposition = 1.0;
 
 	k = this;
@@ -35,5 +35,5 @@ void Korali::KoraliBase::setStopFitnessEvalThreshold(double stopFitnessEvalThres
 void Korali::KoraliBase::setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
 void Korali::KoraliBase::setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
 void Korali::KoraliBase::setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
-void Korali::KoraliBase::setStopMaxStdDevX(double stopMaxStdDevX) { _stopMaxStdDevX = stopMaxStdDevX; }
+void Korali::KoraliBase::setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
 void Korali::KoraliBase::setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }

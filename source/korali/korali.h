@@ -21,7 +21,7 @@ class KoraliBase
   double _stopFitnessDiffThreshold; // Defines minimum function value differences before stopping
   double _stopFitnessDiffHistoryThreshold; // Defines minimum function value differences among best values before stopping
   double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
-  double _stopMaxStdDevX; // Defines maximum standard deviation before it stops.
+  double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
   double _stopMaxTimePerEigendecomposition; // Defines maximum time to be spent on eigensystem decomposition
 
 
@@ -37,7 +37,7 @@ class KoraliBase
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);
   void setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold);
   void setStopMinDeltaX(double stopMinDeltaX);
-  void setStopMaxStdDevX(double stopMaxStdDevX);
+  void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor);
   void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition);
 };
 

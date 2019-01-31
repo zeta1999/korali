@@ -1221,11 +1221,6 @@ double cmaes_Get( cmaes_t *t, char const *s)
             || strncmp(s, "iteration", 4) == 0) { 
         return(t->gen);
     }
-    else if (strncmp(s, "maxgen", 4) == 0
-            || strncmp(s, "MaxIter", 7) == 0
-            || strncmp(s, "stopMaxIter", 11) == 0) { /* maximal number of generations */
-        return(ceil(t->sp.stopMaxIter));
-    }
     else if (strncmp(s, "maxaxislength", 5) == 0) { /* sigma * max(diag(D)) */
         return(t->sigma * sqrt(t->maxEW));
     }
@@ -1318,7 +1313,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 {
 
 //  double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
-//  double _stopFitnessDiffThreshold; // Defines minimum function value differences before stopping
+//  double _stopMinDeltaX; // Defines minimum function value differences before stopping
 //  double _stopFitnessDiffHistoryThreshold; // Defines minimum function value differences among best values before stopping
 //  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
 //  double _stopMaxStdDevX; // Defines maximum standard deviation before it stops.
@@ -1341,42 +1336,42 @@ const char * cmaes_TestForTermination( cmaes_t *t)
     /* TolFun */
     range = function_value_difference(t);
 
-    if (t->gen > 0 && range <= t->sp.stopTolFun) {
+    if (t->gen > 0 && range <= k->_stopFitnessDiffThreshold) {
         cp += sprintf(cp, 
-                "TolFun: function value differences %7.2e < stopTolFun=%7.2e\n", 
-                range, t->sp.stopTolFun);
+                "TolFun: function value differences %7.2e < k->_stopFitnessDiffThreshold=%7.2e\n",
+                range, k->_stopFitnessDiffThreshold);
     }
 
     /* TolFunHist */
     if (t->gen > *(t->arFuncValueHist-1)) {
         range = rgdouMax(t->arFuncValueHist, (int)*(t->arFuncValueHist-1)) 
             - rgdouMin(t->arFuncValueHist, (int)*(t->arFuncValueHist-1));
-        if (range <= t->sp.stopTolFunHist)
+        if (range <= k->_stopFitnessDiffHistoryThreshold)
             cp += sprintf(cp, 
-                    "TolFunHist: history of function value changes %7.2e stopTolFunHist=%7.2e", 
-                    range, t->sp.stopTolFunHist);
+                    "TolFunHist: history of function value changes %7.2e k->_stopFitnessDiffHistoryThreshold=%7.2e",
+                    range, k->_stopFitnessDiffHistoryThreshold);
     }
 
     /* TolX */
     for(i=0, cTemp=0; i<N; ++i) {
-        cTemp += (t->sigma * sqrt(t->C[i][i]) < k->_stopFitnessDiffThreshold) ? 1 : 0;
-        cTemp += (t->sigma * t->rgpc[i] < k->_stopFitnessDiffThreshold) ? 1 : 0;
+        cTemp += (t->sigma * sqrt(t->C[i][i]) < k->_stopMinDeltaX) ? 1 : 0;
+        cTemp += (t->sigma * t->rgpc[i] < k->_stopMinDeltaX) ? 1 : 0;
     }
     if (cTemp == 2*N) {
         cp += sprintf(cp, 
                 "TolX: object variable changes below %7.2e \n", 
-                k->_stopFitnessDiffThreshold);
+                k->_stopMinDeltaX);
     }
 
     /* TolUpX */
     for(i=0; i<N; ++i) {
-        if (t->sigma * sqrt(t->C[i][i]) > t->sp.stopTolUpXFactor * t->sp.rgInitialStds[i])
+        if (t->sigma * sqrt(t->C[i][i]) > k->_stopMaxStdDevXFactor * t->sp.rgInitialStds[i])
             break;
     }
     if (i < N) {
         cp += sprintf(cp, 
                 "TolUpX: standard deviation increased by more than %7.2e, larger initial standard deviation recommended \n", 
-                t->sp.stopTolUpXFactor);
+								k->_stopMaxStdDevXFactor);
     }
 
     /* Condition of C greater than dMaxSignifKond */
@@ -1426,9 +1421,9 @@ const char * cmaes_TestForTermination( cmaes_t *t)
     if(t->countevals >= k->_maxFitnessEvaluations)
         cp += sprintf(cp, "MaxFunEvals: conducted function evaluations %.0f >= %lu\n",
                 t->countevals, k->_maxFitnessEvaluations);
-    if(t->gen >= t->sp.stopMaxIter) 
-        cp += sprintf(cp, "MaxIter: number of iterations %.0f >= %g\n", 
-                t->gen, t->sp.stopMaxIter); 
+    if(t->gen >= k->_maxGenerations)
+        cp += sprintf(cp, "MaxIter: number of iterations %.0f >= %lu\n",
+                t->gen, k->_maxGenerations);
     if(t->flgStop)
         cp += sprintf(cp, "Manual: stop signal read\n");
 
@@ -1507,31 +1502,15 @@ void cmaes_ReadFromFilePtr( cmaes_t *t, FILE *fp)
             if((nb=sscanf(s, keys[ikey], sin1, sin2, sin3, sin4)) >= 1) 
             {
                 switch(ikey) {
-                    case 0 : /* "stop", reads "stop now" or eg. stopMaxIter */
+                    case 0 : /* "stop", reads "stop now" */
                         if (strncmp(sin1, "now", 3) == 0) 
                             t->flgStop = 1; 
-                        else if (strncmp(sin1, "MaxIter", 4) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) 
-                                t->sp.stopMaxIter = d; 
-                        }
                         else if (strncmp(sin1, "Fitness", 7) == 0) {
                             if (sscanf(sin2, " %lg", &d) == 1) 
                             {
                                 t->sp.stStopFitness.flg = 1; 
                                 t->sp.stStopFitness.val = d; 
                             }
-                        }
-                        else if (strncmp(sin1, "TolFunHist", 10) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) 
-                                t->sp.stopTolFunHist = d; 
-                        }
-                        else if (strncmp(sin1, "TolFun", 6) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) 
-                                t->sp.stopTolFun = d; 
-                        }
-                        else if (strncmp(sin1, "TolUpXFactor", 4) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) 
-                                t->sp.stopTolUpXFactor = d; 
                         }
                         break;
                     case 1 : /* "print" */
@@ -2246,11 +2225,7 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* All scalars:  */
     i = 0;
-    t->rgsformat[i] = " stopMaxIter %lg"; t->rgpadr[i++] = (void *) &t->stopMaxIter;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
-    t->rgsformat[i] = " stopTolFun %lg"; t->rgpadr[i++]=(void *) &t->stopTolFun;
-    t->rgsformat[i] = " stopTolFunHist %lg"; t->rgpadr[i++]=(void *) &t->stopTolFunHist;
-    t->rgsformat[i] = " stopTolUpXFactor %lg"; t->rgpadr[i++]=(void *) &t->stopTolUpXFactor;
     t->rgsformat[i] = " lambda %d";      t->rgpadr[i++] = (void *) &t->lambda;
     t->rgsformat[i] = " mu %d";          t->rgpadr[i++] = (void *) &t->mu;
     t->rgsformat[i] = " weights %5s";    t->rgpadr[i++] = (void *) t->weigkey;
@@ -2263,7 +2238,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->rgsformat[i] = " updatecov %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.modulo;
     t->rgsformat[i] = " maxTimeFractionForEigendecompostion %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.maxtime;
     t->rgsformat[i] = " resume %59s";    t->rgpadr[i++] = (void *) t->resumefile;
-    t->rgsformat[i] = " fac*maxFunEvals %lg";   t->rgpadr[i++] = (void *) &t->facmaxeval;
     t->rgsformat[i] = " fac*updatecov %lg"; t->rgpadr[i++]=(void *) &t->facupdateCmode;
     t->n1para = i; 
     t->n1outpara = i-2; /* disregard last parameters in WriteToFile() */
@@ -2283,12 +2257,7 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->typicalXcase = 0;
     t->rgInitialStds = NULL; 
     t->rgDiffMinChange = NULL; 
-    t->stopMaxIter = -1;
-    t->facmaxeval = 1; 
     t->stStopFitness.flg = -1;
-    t->stopTolFun = 1e-12; 
-    t->stopTolFunHist = 1e-13; 
-    t->stopTolUpXFactor = 1e3; 
 
     t->lambda = lambda;
     t->mu = -1;
@@ -2552,7 +2521,7 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     t->damps = t->damps 
         * (1 + 2*douMax(0., sqrt((t->mueff-1.)/(N+1.)) - 1))     /* basic factor */
         * douMax(0.3, 1. -                                       /* modify for short runs */
-                (double)N / (1e-6+douMin(t->stopMaxIter, k->_maxFitnessEvaluations/t->lambda)))
+                (double)N / (1e-6+douMin(k->_maxGenerations, k->_maxFitnessEvaluations/t->lambda)))
         + t->cs;                                                 /* minor increment */
 
     if (t->updateCmode.modulo < 0)

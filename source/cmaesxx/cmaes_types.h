@@ -76,12 +76,8 @@ typedef struct
   double * rgDiffMinChange; 
 
   /* termination parameters */
-  double facmaxeval;
-  double stopMaxIter; 
   struct { int flg; double val; } stStopFitness; 
-  double stopTolFun;
   double stopTolFunHist;
-  double stopTolUpXFactor;
 
   /* internal evolution strategy parameters */
   int lambda;          /* -> mu, <- N */

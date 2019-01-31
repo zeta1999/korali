@@ -91,7 +91,7 @@ double CmaesEngine::run() {
         }
 
         if( ! cmaes_utils_is_there_enough_time( JOBMAXTIME, gt0_, dt ) ){
-            evo_.sp.stopMaxIter=_step+1;
+            k->_maxGenerations=_step+1;
             break;
         }
         
