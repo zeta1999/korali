@@ -12,7 +12,7 @@ DIR_CMAES  = $L/cmaes
 
 CXXFLAGS += -I. -I../korali
 
-libcmaesxx.a: engine_cmaes.o cmaes.o cmaes_utils.o
+libcmaesxx.a: engine_cmaes.o cmaes.o 
 
 clean:; rm -rf $(TARGET) *.o *.a
 

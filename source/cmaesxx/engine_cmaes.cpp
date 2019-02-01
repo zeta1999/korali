@@ -1,5 +1,4 @@
 #include <stdexcept>
-
 #include "engine_cmaes.hpp"
 #include "engine_cmaes_utils.hpp"
 
@@ -15,7 +14,7 @@ void CmaesEngine::addBound(double lower, double upper)
 
 CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim)
 {
-		gt0_ = get_time();
+		gt0_ = std::chrono::system_clock::now();
 		CmaesEngine::fitfun_ = fun;
         arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0,	"./cmaes_initials.par");
 		printf("%s\n", cmaes_SayHello(&evo_));
@@ -43,10 +42,8 @@ double* CmaesEngine::getBestEver() {
 double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int step ) {
 
     int info[4];
-    double tt0, tt1 ;
+    auto tt0 = std::chrono::system_clock::now();
     	
-    tt0 = get_time();
-	
     for( int i = 0; i < _lambda; ++i){
         info[0] = 0; info[1] = 0; info[2] = step; info[3] = i;     /* gen, chain, step, task */
         CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i]);
@@ -58,15 +55,15 @@ double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int st
       for (int j = 0; j < _priors.size(); j++)
         arFunvals_[i] -= _priors[j]->getDensityLog(pop_[i]);
 
-    tt1 = get_time();
+    auto tt1 = std::chrono::system_clock::now();
   
-    return tt1-tt0;
+    return std::chrono::duration<double>(tt1-tt0).count();
 };
 
 
 double CmaesEngine::run() {
 
-	gt1_ = get_time();
+	gt1_ = std::chrono::system_clock::now();
 
 	double dt;
 
@@ -79,32 +76,22 @@ double CmaesEngine::run() {
 	
         cmaes_UpdateDistribution(1, &evo_, arFunvals_);
 
-        if (VERBOSE) cmaes_utils_print_the_best(evo_, _step);
-		
-       	if (_IODUMP_ && !_restart){
-            cmaes_utils_write_pop_to_file(evo_, arFunvals_, pop_, _step);
-        }
-
-        if( ! cmaes_utils_is_there_enough_time( JOBMAXTIME, gt0_, dt ) ){
-            kb->_maxGenerations=_step+1;
-            break;
-        }
         
         _step++;
     }
 
-    gt2_ = get_time();
+    gt2_ = std::chrono::system_clock::now();
 
     printf("Stop:\n %s \n",  cmaes_TestForTermination(&evo_)); /* print termination reason */
 		cmaes_PrintResults(&evo_);
 
-    gt3_ = get_time();
+    gt3_ = std::chrono::system_clock::now();
     
-    printf("Total elapsed time      = %.3lf  seconds\n", gt3_-gt0_);
-    printf("Initialization time     = %.3lf  seconds\n", gt1_-gt0_);
-    printf("Processing time         = %.3lf  seconds\n", gt2_-gt1_);
+    printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(gt3_-gt0_).count());
+    printf("Initialization time     = %.3lf  seconds\n", std::chrono::duration<double>(gt1_-gt0_).count());
+    printf("Processing time         = %.3lf  seconds\n", std::chrono::duration<double>(gt2_-gt1_).count());
     printf("Funtion Evaluation time = %.3lf  seconds\n", _elapsedTime);
-    printf("Finalization time       = %.3lf  seconds\n", gt3_-gt2_);
+    printf("Finalization time       = %.3lf  seconds\n", std::chrono::duration<double>(gt3_-gt2_).count());
 
 	return 0.0;
 }

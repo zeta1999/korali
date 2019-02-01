@@ -932,7 +932,7 @@ static void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp)
     int i, j;
 
     if (rgtmp == NULL) /* was OK in former versions */
-        fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): input parameter double *rgtmp must be non-NULL", 0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): input parameter double *rgtmp must be non-NULL");
 
     /* copy C to Q */
     if (C != Q) {

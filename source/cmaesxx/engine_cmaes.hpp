@@ -20,8 +20,9 @@
 #include <vector>
 #include "korali.h"
 #include "prior.h"
+#include <chrono>
 #include <cmaes.h>
-#include <cmaes_utils.h>
+
 
 
 #define VERBOSE 0
@@ -53,7 +54,7 @@ private:
 
 	cmaes_t evo_;
 	
-	double gt0_, gt1_, gt2_, gt3_;
+	std::chrono::time_point<std::chrono::system_clock> gt0_, gt1_, gt2_, gt3_;
 
 	
 	int dim_;
