@@ -12,8 +12,7 @@ CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : d
         arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0,	"./cmaes_initials.par");
 		printf("%s\n", cmaes_SayHello(&evo_));
 
-
-		_lambda = 128;
+		kb->_lambda = 128;
 		_restart = false;
 		_step = 0;
 	    _elapsedTime = 0.0;
@@ -34,18 +33,13 @@ double* CmaesEngine::getBestEver() {
 
 double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int step ) {
 
-    int info[4];
     auto tt0 = std::chrono::system_clock::now();
     	
-    for( int i = 0; i < _lambda; ++i){
-        info[0] = 0; info[1] = 0; info[2] = step; info[3] = i;     /* gen, chain, step, task */
-        CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i]);
+    for( int i = 0; i < kb->_lambda; ++i) CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i]);
 
-    }
 
     // subtract the log-prior from the log-likelohood
-    for( int i=0; i<_lambda; i++)
-        arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
+    for( int i=0; i< kb->_lambda; i++)  arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
 
     auto tt1 = std::chrono::system_clock::now();
   
@@ -61,14 +55,14 @@ double CmaesEngine::run() {
 
 	while( !cmaes_TestForTermination(&evo_) ){
 
-        pop_ = cmaes_SamplePopulation(&evo_); 
-		cmaes_utils_make_all_points_feasible( &evo_, pop_);
+        pop_ = cmaes_SamplePopulation(&evo_);
+        for( int i=0; i<kb->_lambda; ++i)	while( !is_feasible( pop_[i], kb->_dimCount )) cmaes_ReSampleSingle( &evo_, i );
             dt = evaluate_population( &evo_, arFunvals_, _step);
         _elapsedTime += dt;
 	
         cmaes_UpdateDistribution(1, &evo_, arFunvals_);
 
-        
+
         _step++;
     }
 
@@ -100,16 +94,7 @@ int CmaesEngine::is_feasible(double *pop, int dim) {
     return 1;
 }
 
-void CmaesEngine::cmaes_utils_make_all_points_feasible( cmaes_t *evo, double* const *pop )
-{
 
-	int lambda = kb->_lambda;
-    int dim    = kb->_dimCount;
-
-	for( int i=0; i<lambda; ++i)
-    	while( !is_feasible( pop[i], dim ) )  cmaes_ReSampleSingle( evo, i );
-
-}
 
 double (*CmaesEngine::fitfun_) (double*, int);
 

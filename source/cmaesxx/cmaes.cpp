@@ -269,26 +269,6 @@ double * const * cmaes_SamplePopulation(cmaes_t *t)
     return(t->rgrgx);
 } /* SamplePopulation() */
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-double const * cmaes_ReSampleSingle_old(cmaes_t *t, double *rgx)
-{
-    int i, j, N=kb->_dimCount;
-    double sum; 
-
-    if (rgx == NULL)
-        fprintf(stderr, "[CMAES] Error: cmaes_ReSampleSingle(): Missing input double *x");
-
-    for (i = 0; i < N; ++i)
-        t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
-    /* add mutation (sigma * B * (D*z)) */
-    for (i = 0; i < N; ++i) {
-        for (j = 0, sum = 0.; j < N; ++j)
-            sum += t->B[i][j] * t->rgdTmp[j];
-        rgx[i] = t->rgxmean[i] + t->sigma * sum;
-    }
-    return rgx;
-}
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */

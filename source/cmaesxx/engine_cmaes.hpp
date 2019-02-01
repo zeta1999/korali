@@ -45,7 +45,6 @@ public:
 private:
 
     double _elapsedTime;
-    int _lambda;
     int _step;
     bool _restart;
 
@@ -62,7 +61,6 @@ private:
 	static double (*fitfun_) (double*, int);
 	static void taskfun_(double *x, int *no, double* res);
     double evaluate_population( cmaes_t *evo, double *arFunvals, int step );
-    void   cmaes_utils_make_all_points_feasible( cmaes_t *evo, double * const *pop );
     int is_feasible(double *pop, int dim);
 
 

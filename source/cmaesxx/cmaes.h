@@ -45,7 +45,6 @@ const char *     cmaes_TestForTermination(cmaes_t *);
 
 /* --- additional functions --- */
 double * const * cmaes_ReSampleSingle( cmaes_t *t, int index);
-double const *   cmaes_ReSampleSingle_old(cmaes_t *, double *rgx); 
 double *         cmaes_SampleSingleInto( cmaes_t *t, double *rgx);
 void             cmaes_UpdateEigensystem(cmaes_t *, int flgforce);
 
