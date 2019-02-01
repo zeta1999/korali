@@ -21,8 +21,6 @@
 
 typedef struct 
 {
-
-
   double sigma;  /* step size */
 
   double *rgxmean;  /* mean x vector, "parent" */
@@ -70,23 +68,5 @@ typedef struct
 
 } cmaes_t; 
 
-
-
-/*
-  storage for distribution parameters:
-  mean mu
-  Covariant matrix C decomposed as:
-  - C = Q D Q^{-1} if !flgdiag
-  - C = D          if  flgdiag
-  only diagonal elements are stored in D 
- */
-
-typedef struct {
-    int dim, flgdiag;
-    double **Q;
-    double *D;
-    double *mu;
-    double *w; // workspace
-} cmaes_distr_t;
 
 #endif // CMAES_TYPES_H

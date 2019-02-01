@@ -24,19 +24,16 @@ https://github.com/cma-es/c-cma-es/blob/master/LICENSE
 
 /* ------------------- Locally visibly ----------------------- */
 
-static void TestMinStdDevs( cmaes_t *);
-/* static void WriteMaxErrorInfo( cmaes_t *); */
-static void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp);
-
-static void QLalgo2 (int n, double *d, double *e, double **V); 
-static void Householder2(int n, double **V, double *d, double *e); 
-static void Adapt_C2(cmaes_t *t, int hsig);
-static void   Sorted_index( const double *rgFunVal, int *index, int n);
-static double rgdouMax( const double *rgd, int len);
-static double rgdouMin( const double *rgd, int len);
-static int    MaxIdx( const double *rgd, int len);
-static int    MinIdx( const double *rgd, int len);
-static const char * c_cmaes_version = "3.20.00.beta";
+void TestMinStdDevs( cmaes_t *);
+/* void WriteMaxErrorInfo( cmaes_t *); */
+void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp);
+void Adapt_C2(cmaes_t *t, int hsig);
+void   Sorted_index( const double *rgFunVal, int *index, int n);
+double rgdouMax( const double *rgd, int len);
+double rgdouMin( const double *rgd, int len);
+int    MaxIdx( const double *rgd, int len);
+int    MinIdx( const double *rgd, int len);
+const char * c_cmaes_version = "3.20.00.beta";
 
 /* --------------------------------------------------------- */
 /* ---------------- Functions: cmaes_t --------------------- */
@@ -59,7 +56,6 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
 
     N = kb->_dimCount; /* for convenience */
 
-    /* initialization  */
     for (i = 0, trace = 0.; i < N; ++i)
         trace += kb->_dims[i]._initialStdDev*kb->_dims[i]._initialStdDev;
     t->sigma = sqrt(trace/N); /* kb->_muEffective/(0.2*kb->_muEffective+sqrt(N)) * sqrt(trace/N); */
@@ -205,14 +201,12 @@ double * const * cmaes_SamplePopulation(cmaes_t *t)
 } /* SamplePopulation() */
 
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
 double * const * cmaes_ReSampleSingle(cmaes_t *t, int iindex)
 {
     int i, j, N=kb->_dimCount;
     double *rgx; 
     double sum; 
-    static char s[99];
+    char s[99];
 
     if (iindex < 0 || iindex >= kb->_lambda) {
         sprintf(s, "index==%d must be between 0 and %d", iindex, kb->_lambda);
@@ -231,8 +225,6 @@ double * const * cmaes_ReSampleSingle(cmaes_t *t, int iindex)
     return(t->rgrgx);
 }
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
 double * cmaes_SampleSingleInto(cmaes_t *t, double *rgx)
 {
     int i, j, N=kb->_dimCount;
@@ -252,11 +244,6 @@ double * cmaes_SampleSingleInto(cmaes_t *t, double *rgx)
     return rgx;
 }
 
-
-
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
 double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFunVal)
 {
     int i, j, iNk, hsig, N=kb->_dimCount;
@@ -384,7 +371,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
-static void Adapt_C2(cmaes_t *t, int hsig)
+void Adapt_C2(cmaes_t *t, int hsig)
 {
     int i, j, k, N=kb->_dimCount;
     int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
@@ -424,7 +411,7 @@ static void Adapt_C2(cmaes_t *t, int hsig)
 }
 
 
-static void TestMinStdDevs(cmaes_t *t)
+void TestMinStdDevs(cmaes_t *t)
     /* increases sigma */
 {
     int i, N = kb->_dimCount;
@@ -448,75 +435,58 @@ void cmaes_PrintResults(cmaes_t *t)
      * must be zero terminated.
      */
 { 
-    int i, k, N=(t ? kb->_dimCount : 0);
-    char const *keyend; /* *keystart; */
-    const char *s = "few";
+    int i, k, N=kb->_dimCount;
 
-			printf(" N %d\n", N);
-			printf(" seed %d\n", kb->_seed);
-			printf("function evaluations %.0f\n", t->countevals);
-			printf("function value f(x)=%g\n", t->rgrgx[t->index[0]][N]);
-			printf("maximal standard deviation %g\n", t->sigma*sqrt(t->maxdiagC));
-			printf("minimal standard deviation %g\n", t->sigma*sqrt(t->mindiagC));
-			printf("sigma %g\n", t->sigma);
-			printf("axisratio %g\n", rgdouMax(t->rgD, N)/rgdouMin(t->rgD, N));
-			printf("xbestever found after %.0f evaluations, function value %g\n",
-							t->rgxbestever[N+1], t->rgxbestever[N]);
-			for(i=0; i<N; ++i)
-					printf(" %12g%c", t->rgxbestever[i],
-									(i%5==4||i==N-1)?'\n':' ');
-			printf("xbest (of last generation, function value %g)\n",
-							t->rgrgx[t->index[0]][N]);
-			for(i=0; i<N; ++i)
-					printf(" %12g%c", t->rgrgx[t->index[0]][i],
-									(i%5==4||i==N-1)?'\n':' ');
-			printf("xmean \n");
-			for(i=0; i<N; ++i)
-					printf(" %12g%c", t->rgxmean[i],
-									(i%5==4||i==N-1)?'\n':' ');
-			printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
-			for(i=0; i<N; ++i)
-					printf(" %12g%c", t->sigma*sqrt(t->C[i][i]),
-									(i%5==4||i==N-1)?'\n':' ');
-			printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
-			for (i = 0; i < N; ++i)
-					t->rgdTmp[i] = t->rgD[i];
-			//qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff);
-			for(i=0; i<N; ++i)
-					printf(" %12g%c", t->sigma*t->rgdTmp[N-1-i],
-									(i%5==4||i==N-1)?'\n':' ');
-			printf("Longest axis (b_i where d_ii=max(diag(D))\n");
-			k = MaxIdx(t->rgD, N);
-			for(i=0; i<N; ++i)
-					printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
-			printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
-			k = MinIdx(t->rgD, N);
-			for(i=0; i<N; ++i) printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+		printf(" N %d\n", N);
+		printf(" seed %d\n", kb->_seed);
+		printf("function evaluations %.0f\n", t->countevals);
+		printf("function value f(x)=%g\n", t->rgrgx[t->index[0]][N]);
+		printf("maximal standard deviation %g\n", t->sigma*sqrt(t->maxdiagC));
+		printf("minimal standard deviation %g\n", t->sigma*sqrt(t->mindiagC));
+		printf("sigma %g\n", t->sigma);
+		printf("axisratio %g\n", rgdouMax(t->rgD, N)/rgdouMin(t->rgD, N));
+		printf("xbestever found after %.0f evaluations, function value %g\n",	t->rgxbestever[N+1], t->rgxbestever[N]);
+
+		for(i=0; i<N; ++i) printf(" %12g%c", t->rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
+
+		printf("xbest (of last generation, function value %g)\n",	t->rgrgx[t->index[0]][N]);
+
+		for(i=0; i<N; ++i) printf(" %12g%c", t->rgrgx[t->index[0]][i],(i%5==4||i==N-1)?'\n':' ');
+
+		printf("xmean \n");
+		for(i=0; i<N; ++i) printf(" %12g%c", t->rgxmean[i],	(i%5==4||i==N-1)?'\n':' ');
+
+		printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
+		for(i=0; i<N; ++i) printf(" %12g%c", t->sigma*sqrt(t->C[i][i]),	(i%5==4||i==N-1)?'\n':' ');
+
+		printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
+		for (i = 0; i < N; ++i)	t->rgdTmp[i] = t->rgD[i];
+		for(i=0; i<N; ++i)	printf(" %12g%c", t->sigma*t->rgdTmp[N-1-i],(i%5==4||i==N-1)?'\n':' ');
+
+		printf("Longest axis (b_i where d_ii=max(diag(D))\n");
+		k = MaxIdx(t->rgD, N);
+
+		for(i=0; i<N; ++i) printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+		printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
+		k = MinIdx(t->rgD, N);
+
+		for(i=0; i<N; ++i) printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
 }
 
-static double function_value_difference(cmaes_t *t) {
+double function_value_difference(cmaes_t *t) {
     return std::max(rgdouMax(t->arFuncValueHist, (int)std::min(t->gen,*(t->arFuncValueHist-1))),
-                  rgdouMax(t->rgFuncValue, kb->_lambda)) -
+    		rgdouMax(t->rgFuncValue, kb->_lambda)) -
         std::min(rgdouMin(t->arFuncValueHist, (int)std::min(t->gen, *(t->arFuncValueHist-1))),
                rgdouMin(t->rgFuncValue, kb->_lambda));
 }
 
-
-
-
-
-/* --------------------------------------------------------- */
-/* tests stopping criteria 
- *   returns a string of satisfied stopping criterion for each line
- *   otherwise NULL 
- */
 const char * cmaes_TestForTermination( cmaes_t *t)
 {
 
     double range, fac;
     int iAchse, iKoo;
     int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
-    static char sTestOutString[3024];
+    char sTestOutString[3024];
     char * cp = sTestOutString;
     int i, cTemp, N=kb->_dimCount;
     cp[0] = '\0';
@@ -632,42 +602,25 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 } /* cmaes_Test() */
 
 
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
 void cmaes_UpdateEigensystem(cmaes_t *t, int flgforce)
 {
-    int i, N = kb->_dimCount;
+    int N = kb->_dimCount;
 
-
-    if(flgforce == 0) {
-        if (t->flgEigensysIsUptodate == 1)
-            return; 
-
-    }
-
+    if(flgforce == 0) if (t->flgEigensysIsUptodate == 1) return;
 
     Eigen( N, t->C, t->rgD, t->B, t->rgdTmp);
-
-
 
     /* find largest and smallest eigenvalue, they are supposed to be sorted anyway */
     t->minEW = rgdouMin(t->rgD, N);
     t->maxEW = rgdouMax(t->rgD, N);
 
-
-    for (i = 0; i < N; ++i)
-        t->rgD[i] = sqrt(t->rgD[i]);
+    for (int i = 0; i < N; ++i) 	t->rgD[i] = sqrt(t->rgD[i]);
 
     t->flgEigensysIsUptodate = 1;
     t->genOfEigensysUpdate = t->gen; 
+}
 
-    return;
-
-} /* cmaes_UpdateEigensystem() */
-
-/* ========================================================= */
-static void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp)
+void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp)
     /* 
        Calculating eigenvalues and vectors. 
        Input: 
@@ -680,302 +633,39 @@ static void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp)
        Q: Columns are normalized eigenvectors.
        */
 {
-    int i, j;
+    double* data = (double*) malloc (sizeof(double) * N * N);
 
-    if (rgtmp == NULL) /* was OK in former versions */
-        fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): input parameter double *rgtmp must be non-NULL");
-
-    /* copy C to Q */
-    if (C != Q) {
-        for (i=0; i < N; ++i)
-            for (j = 0; j <= i; ++j)
-                Q[i][j] = Q[j][i] = C[i][j];
+    for (int i = 0; i <  N; i++)
+    for (int j = 0; j <= i; j++)
+    {
+    	data[i*N + j] = C[i][j];
+    	data[j*N + i] = C[i][j];
     }
 
-    Householder2( N, Q, diag, rgtmp);
-    QLalgo2( N, diag, rgtmp, Q);
+    gsl_matrix_view m  = gsl_matrix_view_array (data, N, N);
+
+    gsl_vector *eval = gsl_vector_alloc (N);
+    gsl_matrix *evec = gsl_matrix_alloc (N, N);
+    gsl_eigen_symmv_workspace * w =  gsl_eigen_symmv_alloc (N);
+    gsl_eigen_symmv (&m.matrix, eval, evec, w);
+    gsl_eigen_symmv_free (w);
+    gsl_eigen_symmv_sort (eval, evec, GSL_EIGEN_SORT_ABS_ASC);
+		for (int i = 0; i < N; i++)
+		{
+			double eval_i = gsl_vector_get (eval, i);
+			gsl_vector_view evec_i = gsl_matrix_column (evec, i);
+			for (int j = 0; j < N; j++)	Q[j][i] =  -gsl_vector_get (&evec_i.vector, j);
+		}
+
+		for (int i = 0; i < N; i++)	diag[i] = gsl_vector_get (eval, i);
+
+    gsl_vector_free (eval);
+    gsl_matrix_free (evec);
+    free(data);
+
 }  
 
-/* ========================================================= */
-static void QLalgo2 (int n, double *d, double *e, double **V)
-{
-    /*
-       -> n     : Dimension. 
-       -> d     : Diagonale of tridiagonal matrix. 
-       -> e[1..n-1] : off-diagonal, output from Householder
-       -> V     : matrix output von Householder
-       <- d     : eigenvalues
-       <- e     : garbage?
-       <- V     : basis of eigenvectors, according to d
-
-       Symmetric tridiagonal QL algorithm, iterative 
-       Computes the eigensystem from a tridiagonal matrix in roughtly 3N^3 operations
-
-       code adapted from Java JAMA package, function tql2. 
-       */
-
-    int i, k, l, m;
-    double f = 0.0;
-    double tst1 = 0.0;
-    double eps = 2.22e-16; /* Math.pow(2.0,-52.0);  == 2.22e-16 */
-
-    /* shift input e */
-    for (i = 1; i < n; i++) {
-        e[i-1] = e[i];
-    }
-    e[n-1] = 0.0; /* never changed again */
-
-    for (l = 0; l < n; l++) { 
-
-        /* Find small subdiagonal element */
-
-        if (tst1 < fabs(d[l]) + fabs(e[l]))
-            tst1 = fabs(d[l]) + fabs(e[l]);
-        m = l;
-        while (m < n) {
-            if (fabs(e[m]) <= eps*tst1) {
-                /* if (fabs(e[m]) + fabs(d[m]+d[m+1]) == fabs(d[m]+d[m+1])) { */
-                break;
-            }
-            m++;
-            }
-
-            /* If m == l, d[l] is an eigenvalue, */
-            /* otherwise, iterate. */
-
-            if (m > l) {  /* TODO: check the case m == n, should be rejected here!? */
-                int iter = 0;
-                do { /* while (fabs(e[l]) > eps*tst1); */
-                    double dl1, h;
-                    double g = d[l];
-                    double p = (d[l+1] - g) / (2.0 * e[l]); 
-                    double r = hypot(p, 1.);
-
-                    iter = iter + 1;  /* Could check iteration count here */
-
-                    /* Compute implicit shift */
-
-                    if (p < 0) {
-                        r = -r;
-                    }
-                    d[l] = e[l] / (p + r);
-                    d[l+1] = e[l] * (p + r);
-                    dl1 = d[l+1];
-                    h = g - d[l];
-                    for (i = l+2; i < n; i++) {
-                        d[i] -= h;
-                    }
-                    f = f + h;
-
-                    /* Implicit QL transformation. */
-
-                    p = d[m];
-                    {
-                        double c = 1.0;
-                        double c2 = c;
-                        double c3 = c;
-                        double el1 = e[l+1];
-                        double s = 0.0;
-                        double s2 = 0.0;
-                        for (i = m-1; i >= l; i--) {
-                            c3 = c2;
-                            c2 = c;
-                            s2 = s;
-                            g = c * e[i];
-                            h = c * p;
-                            r = hypot(p, e[i]);
-                            e[i+1] = s * r;
-                            s = e[i] / r;
-                            c = p / r;
-                            p = c * d[i] - s * g;
-                            d[i+1] = h + s * (c * g + s * d[i]);
-
-                            /* Accumulate transformation. */
-
-                            for (k = 0; k < n; k++) {
-                                h = V[k][i+1];
-                                V[k][i+1] = s * V[k][i] + c * h;
-                                V[k][i] = c * V[k][i] - s * h;
-                            }
-                        }
-                        p = -s * s2 * c3 * el1 * e[l] / dl1;
-                        e[l] = s * p;
-                        d[l] = c * p;
-                    }
-
-                    /* Check for convergence. */
-
-                } while (fabs(e[l]) > eps*tst1);
-            }
-            d[l] = d[l] + f;
-            e[l] = 0.0;
-        }
-
-        /* Sort eigenvalues and corresponding vectors. */
-#if 1
-        /* TODO: really needed here? So far not, but practical and only O(n^2) */
-        {
-            int j; 
-            double p;
-            for (i = 0; i < n-1; i++) {
-                k = i;
-                p = d[i];
-                for (j = i+1; j < n; j++) {
-                    if (d[j] < p) {
-                        k = j;
-                        p = d[j];
-                    }
-                }
-                if (k != i) {
-                    d[k] = d[i];
-                    d[i] = p;
-                    for (j = 0; j < n; j++) {
-                        p = V[j][i];
-                        V[j][i] = V[j][k];
-                        V[j][k] = p;
-                    }
-                }
-            }
-        }
-#endif 
-    } /* QLalgo2 */ 
-
-/* ========================================================= */
-static void Householder2(int n, double **V, double *d, double *e)
-{
-    /* 
-       Householder transformation of a symmetric matrix V into tridiagonal form. 
-       -> n             : dimension
-       -> V             : symmetric nxn-matrix
-       <- V             : orthogonal transformation matrix:
-       tridiag matrix == V * V_in * V^t
-       <- d             : diagonal
-       <- e[0..n-1]     : off diagonal (elements 1..n-1) 
-
-       code slightly adapted from the Java JAMA package, function private tred2()  
-
-*/
-
-    int i,j,k; 
-
-    for (j = 0; j < n; j++) {
-        d[j] = V[n-1][j];
-    }
-
-    /* Householder reduction to tridiagonal form */
-
-    for (i = n-1; i > 0; i--) {
-
-        /* Scale to avoid under/overflow */
-
-        double scale = 0.0;
-        double h = 0.0;
-        for (k = 0; k < i; k++) {
-            scale = scale + fabs(d[k]);
-        }
-        if (scale == 0.0) {
-            e[i] = d[i-1];
-            for (j = 0; j < i; j++) {
-                d[j] = V[i-1][j];
-                V[i][j] = 0.0;
-                V[j][i] = 0.0;
-            }
-        } else {
-
-            /* Generate Householder vector */
-
-            double f, g, hh;
-
-            for (k = 0; k < i; k++) {
-                d[k] /= scale;
-                h += d[k] * d[k];
-            }
-            f = d[i-1];
-            g = sqrt(h);
-            if (f > 0) {
-                g = -g;
-            }
-            e[i] = scale * g;
-            h = h - f * g;
-            d[i-1] = f - g;
-            for (j = 0; j < i; j++) {
-                e[j] = 0.0;
-            }
-
-            /* Apply similarity transformation to remaining columns */
-
-            for (j = 0; j < i; j++) {
-                f = d[j];
-                V[j][i] = f;
-                g = e[j] + V[j][j] * f;
-                for (k = j+1; k <= i-1; k++) {
-                    g += V[k][j] * d[k];
-                    e[k] += V[k][j] * f;
-                }
-                e[j] = g;
-            }
-            f = 0.0;
-            for (j = 0; j < i; j++) {
-                e[j] /= h;
-                f += e[j] * d[j];
-            }
-            hh = f / (h + h);
-            for (j = 0; j < i; j++) {
-                e[j] -= hh * d[j];
-            }
-            for (j = 0; j < i; j++) {
-                f = d[j];
-                g = e[j];
-                for (k = j; k <= i-1; k++) {
-                    V[k][j] -= (f * e[k] + g * d[k]);
-                }
-                d[j] = V[i-1][j];
-                V[i][j] = 0.0;
-            }
-        }
-        d[i] = h;
-    }
-
-    /* Accumulate transformations */
-
-    for (i = 0; i < n-1; i++) {
-        double h; 
-        V[n-1][i] = V[i][i];
-        V[i][i] = 1.0;
-        h = d[i+1];
-        if (h != 0.0) {
-            for (k = 0; k <= i; k++) {
-                d[k] = V[k][i+1] / h;
-            }
-            for (j = 0; j <= i; j++) {
-                double g = 0.0;
-                for (k = 0; k <= i; k++) {
-                    g += V[k][i+1] * V[k][j];
-                }
-                for (k = 0; k <= i; k++) {
-                    V[k][j] -= g * d[k];
-                }
-            }
-        }
-        for (k = 0; k <= i; k++) {
-            V[k][i+1] = 0.0;
-        }
-    }
-    for (j = 0; j < n; j++) {
-        d[j] = V[n-1][j];
-        V[n-1][j] = 0.0;
-    }
-    V[n-1][n-1] = 1.0;
-    e[0] = 0.0;
-
-} /* Housholder() */
-
-
-
-
-
-
-static double rgdouMax(const double *rgd, int len)
+double rgdouMax(const double *rgd, int len)
 {
     int i;
     double max = rgd[0];
@@ -984,7 +674,7 @@ static double rgdouMax(const double *rgd, int len)
     return max;
 }
 
-static double rgdouMin(const double *rgd, int len)
+double rgdouMin(const double *rgd, int len)
 {
     int i;
     double min = rgd[0];
@@ -993,7 +683,7 @@ static double rgdouMin(const double *rgd, int len)
     return min;
 }
 
-static int MaxIdx(const double *rgd, int len)
+int MaxIdx(const double *rgd, int len)
 {
     int i, res;
     for(i=1, res=0; i<len; ++i)
@@ -1002,7 +692,7 @@ static int MaxIdx(const double *rgd, int len)
     return res;
 }
 
-static int MinIdx(const double *rgd, int len)
+int MinIdx(const double *rgd, int len)
 {
     int i, res;
     for(i=1, res=0; i<len; ++i)
@@ -1011,11 +701,8 @@ static int MinIdx(const double *rgd, int len)
     return res;
 }
 
-
-
-#if 1
 /* dirty index sort */
-static void Sorted_index(const double *rgFunVal, int *iindex, int n)
+void Sorted_index(const double *rgFunVal, int *iindex, int n)
 {
     int i, j;
     for (i=1, iindex[0]=0; i<n; ++i) {
@@ -1027,7 +714,6 @@ static void Sorted_index(const double *rgFunVal, int *iindex, int n)
         iindex[j] = i; /* insert i */
     }
 }
-#endif 
 
 
 
