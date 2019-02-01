@@ -33,37 +33,6 @@ typedef struct
   double hold;
 } cmaes_random_t;
 
-typedef struct 
-/* cmaes_timings_t 
- * time measurement, used to time eigendecomposition 
- */
-{
-  /* for outside use */
-  double totaltime; /* zeroed by calling re-calling cmaes_timings_start */
-  double totaltotaltime;
-  double tictoctime; 
-  double lasttictoctime;
-  
-  /* local fields */
-  clock_t lastclock;
-  time_t lasttime;
-  clock_t ticclock;
-  time_t tictime;
-  short istic;
-  short isstarted; 
-
-  double lastdiff;
-  double tictoczwischensumme;
-} cmaes_timings_t;
-
-typedef struct 
-/* cmaes_readpara_t
- * collects all parameters, in particular those that are read from
- * a file before to start. This should split in future?
- */
-{
-
-} cmaes_readpara_t;
 
 typedef struct 
 /* cmaes_t 
@@ -71,7 +40,6 @@ typedef struct
  */
 {
   /* char *signalsFilename; */
-  cmaes_readpara_t sp;
   cmaes_random_t rand; /* random number generator */
 
   double sigma;  /* step size */
@@ -113,17 +81,13 @@ typedef struct
   short flgEigensysIsUptodate;
   short flgCheckEigen; /* control via cmaes_signals.par */
   double genOfEigensysUpdate; 
-  cmaes_timings_t eigenTimings;
+
  
   double dMaxSignifKond; 				     
   double dLastMinEWgroesserNull;
 
   short flgresumedone; 
 
-  time_t printtime; 
-  time_t writetime; /* ideally should keep track for each output file */
-  time_t firstwritetime;
-  time_t firstprinttime; 
 
 } cmaes_t; 
 

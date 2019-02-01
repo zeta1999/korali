@@ -29,7 +29,6 @@ class KoraliBase
   double _dampFactor;
   double _cumulativeCovariance;
   double _covarianceMatrixLearningRate;
-  double _covarianceMatrixUpdateMaxCPUTimePercentage;
 
   // Defining stop conditions
   double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
@@ -60,7 +59,6 @@ class KoraliBase
   void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate);
   void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency);
   void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency);
-  void setCovarianceMatrixUpdateMaxCPUTimePercentage(double covarianceMatrixUpdateMaxCPUTimePercentage);
 
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);

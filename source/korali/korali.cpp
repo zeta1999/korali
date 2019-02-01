@@ -34,7 +34,6 @@ Korali::KoraliBase::KoraliBase(size_t dim, double (*fun) (double*, int), size_t 
 	setCovarianceMatrixLearningRate(-1);
 
 	_covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_dimCount)/10.0);
-	_covarianceMatrixUpdateMaxCPUTimePercentage = 0.2;
 
 	kb = this;
 }
@@ -69,7 +68,6 @@ void Korali::KoraliBase::setMaxGenerations(size_t maxGenerations) { _maxGenerati
 void Korali::KoraliBase::setLambda(size_t lambda) { _lambda = lambda; }
 void Korali::KoraliBase::setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; } // Should be 1 or more.
 void Korali::KoraliBase::setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
-void Korali::KoraliBase::setCovarianceMatrixUpdateMaxCPUTimePercentage(double covarianceMatrixUpdateMaxCPUTimePercentage) { _covarianceMatrixUpdateMaxCPUTimePercentage = covarianceMatrixUpdateMaxCPUTimePercentage; } // 0 to 1
 
 void Korali::KoraliBase::setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
 void Korali::KoraliBase::setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }

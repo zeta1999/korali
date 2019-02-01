@@ -36,12 +36,6 @@ double cmaes_random_Gauss(cmaes_random_t *); /* (0,1)-normally distributed */
 double cmaes_random_Uniform(cmaes_random_t *);
 long   cmaes_random_Start(cmaes_random_t *, long unsigned seed /* 0==1 */);
 
-void   cmaes_timings_init(cmaes_timings_t *timing);
-void   cmaes_timings_start(cmaes_timings_t *timing); /* fields totaltime and tictoctime */
-double cmaes_timings_update(cmaes_timings_t *timing);
-void   cmaes_timings_tic(cmaes_timings_t *timing);
-double cmaes_timings_toc(cmaes_timings_t *timing);
-
 const double * cmaes_Optimize( cmaes_t *, double(*pFun)(double const *, int dim), 
         long iterations);
 double const * cmaes_SetMean(cmaes_t *, const double *xmean);
@@ -98,7 +92,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     t->flgEigensysIsUptodate = 1;
     t->flgCheckEigen = 0; 
     t->genOfEigensysUpdate = 0;
-    cmaes_timings_init(&t->eigenTimings);
+
     t->flgIniphase = 0; /* do not use iniphase, hsig does the job now */
     t->flgresumedone = 0;
     t->flgStop = 0;
@@ -112,7 +106,6 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     t->countevals = 0;
     t->state = 0;
     t->dLastMinEWgroesserNull = 1.0;
-    t->printtime = t->writetime = t->firstwritetime = t->firstprinttime = 0; 
 
     t->rgpc = (double*) calloc (sizeof(double), N);
     t->rgps = (double*) calloc (sizeof(double), N);
@@ -233,7 +226,6 @@ double * const * cmaes_SamplePopulation(cmaes_t *t)
             t->minEW = rgdouMin(t->rgD, N) * rgdouMin(t->rgD, N);
             t->maxEW = rgdouMax(t->rgD, N) * rgdouMin(t->rgD, N);
             t->flgEigensysIsUptodate = 1;
-            cmaes_timings_start(&t->eigenTimings);
         }
     }
 
@@ -564,11 +556,9 @@ void cmaes_PrintResults(cmaes_t *t)
     char const *keyend; /* *keystart; */
     const char *s = "few";
 
-			time_t ti = time(NULL);
 			printf(" N %d\n", N);
 			printf(" seed %d\n", kb->_seed);
 			printf("function evaluations %.0f\n", t->countevals);
-			printf("elapsed (CPU) time [s] %.2f\n", t->eigenTimings.totaltotaltime);
 			printf("function value f(x)=%g\n", t->rgrgx[t->index[0]][N]);
 			printf("maximal standard deviation %g\n", t->sigma*sqrt(t->maxdiagC));
 			printf("minimal standard deviation %g\n", t->sigma*sqrt(t->mindiagC));
@@ -852,23 +842,17 @@ void cmaes_UpdateEigensystem(cmaes_t *t, int flgforce)
 {
     int i, N = kb->_dimCount;
 
-    cmaes_timings_update(&t->eigenTimings);
 
     if(flgforce == 0) {
         if (t->flgEigensysIsUptodate == 1)
             return; 
 
-        /* return on time percentage */
-        if (kb->_covarianceMatrixUpdateMaxCPUTimePercentage < 1.00
-                && t->eigenTimings.tictoctime > kb->_covarianceMatrixUpdateMaxCPUTimePercentage * t->eigenTimings.totaltime
-                && t->eigenTimings.tictoctime > 0.0002)
-            return; 
     }
-    cmaes_timings_tic(&t->eigenTimings);
+
 
     Eigen( N, t->C, t->rgD, t->B, t->rgdTmp);
 
-    cmaes_timings_toc(&t->eigenTimings);
+
 
     /* find largest and smallest eigenvalue, they are supposed to be sorted anyway */
     t->minEW = rgdouMin(t->rgD, N);
@@ -1217,94 +1201,6 @@ void cmaes_get_distr(cmaes_t *t, cmaes_distr_t *d) {
     memcpy(d->mu, t->rgxmean, sz);
 }
 
-/* --------------------------------------------------------- */
-/* --------------- Functions: cmaes_timings_t -------------- */
-/* --------------------------------------------------------- */
-/* cmaes_timings_t measures overall time and times between calls
- * of tic and toc. For small time spans (up to 1000 seconds)
- * CPU time via clock() is used. For large time spans the
- * fall-back to elapsed time from time() is used.
- * cmaes_timings_update() must be called often enough to prevent
- * the fallback. */
-/* --------------------------------------------------------- */
-void cmaes_timings_init(cmaes_timings_t *t)
-{
-    t->totaltotaltime = 0; 
-    cmaes_timings_start(t);
-}
-
-void cmaes_timings_start(cmaes_timings_t *t)
-{
-    t->totaltime = 0;
-    t->tictoctime = 0;
-    t->lasttictoctime = 0;
-    t->istic = 0;
-    t->lastclock = clock();
-    t->lasttime = time(NULL);
-    t->lastdiff = 0;
-    t->tictoczwischensumme = 0;
-    t->isstarted = 1;
-}
-
-double cmaes_timings_update(cmaes_timings_t *t)
-{
-    /* returns time between last call of cmaes_timings_*() and now, 
-     *    should better return totaltime or tictoctime? 
-     */
-    double diffc, difft;
-    clock_t lc = t->lastclock; /* measure CPU in 1e-6s */
-    time_t lt = t->lasttime;   /* measure time in s */
-
-    if (t->isstarted != 1)
-        fprintf(stderr, "[CMAES] Error: cmaes_timings_started() must be called before using timings... functions");
-
-    t->lastclock = clock(); /* measures at most 2147 seconds, where 1s = 1e6 CLOCKS_PER_SEC */
-    t->lasttime = time(NULL);
-
-    diffc = (double)(t->lastclock - lc) / CLOCKS_PER_SEC; /* is presumably in [-21??, 21??] */
-    difft = difftime(t->lasttime, lt);                    /* is presumably an integer */
-
-    t->lastdiff = difft; /* on the "save" side */
-
-    /* use diffc clock measurement if appropriate */
-    if (diffc > 0 && difft < 1000)
-        t->lastdiff = diffc;
-
-    if (t->lastdiff < 0)
-        fprintf(stderr, "[CMAES] Error: BUG in time measurement");
-
-    t->totaltime += t->lastdiff;
-    t->totaltotaltime += t->lastdiff;
-    if (t->istic) {
-        t->tictoczwischensumme += t->lastdiff;
-        t->tictoctime += t->lastdiff;
-    }
-
-    return t->lastdiff; 
-}
-
-void cmaes_timings_tic(cmaes_timings_t *t)
-{
-    if (t->istic) { /* message not necessary ? */
-        fprintf(stderr, "[CMAES] Error: cmaes_timings_tic called twice without toc");
-        return; 
-    }
-    cmaes_timings_update(t); 
-    t->istic = 1; 
-}
-
-double cmaes_timings_toc(cmaes_timings_t *t)
-{
-    if (!t->istic) {
-        fprintf(stderr, "[CMAES] Error: cmaes_timings_toc called without tic");
-        return -1; 
-    }
-    cmaes_timings_update(t);
-    t->lasttictoctime = t->tictoczwischensumme;
-    t->tictoczwischensumme = 0;
-    t->istic = 0;
-    return t->lasttictoctime;
-}
 
 /* --------------------------------------------------------- */
 /* ---------------- Functions: cmaes_random_t -------------- */
