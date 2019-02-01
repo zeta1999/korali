@@ -8,14 +8,14 @@
 CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim)
 {
 		fitfun_ = fun;
-    arFunvals_ = cmaes_init(&evo_);
+    arFunvals_ = cmaes_init();
 
     printf("(%d,%d)-CMA-ES(mu_eff=%.1f), dimension=%d, diagonalIterations=%ld, randomSeed=%d",
             kb->_mu, kb->_lambda, kb->_muEffective,  kb->_dimCount, kb->_diagonalCovarianceMatrixEvalFrequency,
             kb->_seed);
 }
 
-double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals) {
+double CmaesEngine::evaluate_population( double *arFunvals) {
 
     auto tt0 = std::chrono::system_clock::now();
     for( int i = 0; i < kb->_lambda; ++i) arFunvals_[i] = - fitfun_(pop_[i], dim_);
@@ -30,18 +30,18 @@ double CmaesEngine::run() {
 	auto startTime = std::chrono::system_clock::now();
 
 
-	while( !cmaes_TestForTermination(&evo_) )
+	while( !cmaes_TestForTermination() )
 	{
-        pop_ = cmaes_SamplePopulation(&evo_);
-        for(int i = 0; i < kb->_lambda; ++i)	while( !is_feasible( pop_[i], kb->_dimCount )) cmaes_ReSampleSingle( &evo_, i );
+        pop_ = cmaes_SamplePopulation();
+        for(int i = 0; i < kb->_lambda; ++i)	while( !is_feasible( pop_[i], kb->_dimCount )) cmaes_ReSampleSingle(i );
         for(int i = 0; i < kb->_lambda; ++i) arFunvals_[i] = - fitfun_(pop_[i], dim_);
         for(int i = 0; i < kb->_lambda; i++) arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
-        cmaes_UpdateDistribution(1, &evo_, arFunvals_);
+        cmaes_UpdateDistribution(1, arFunvals_);
   }
 
 	auto endTime = std::chrono::system_clock::now();
 
-		cmaes_PrintResults(&evo_);
+		cmaes_PrintResults();
 
     
     printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(endTime-startTime).count());

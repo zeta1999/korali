@@ -17,7 +17,6 @@
 #ifndef CMAES_H
 #define CMAES_H
 
-#include "cmaes_types.h"
 #include "korali.h"
 
 /* --------------------------------------------------------- */
@@ -29,32 +28,32 @@ extern "C" {
 #endif
 
 /* --- initialization, constructors, destructors --- */
-double * cmaes_init(cmaes_t *);
-void cmaes_resume_distribution(cmaes_t *evo_ptr, char *filename);
-void cmaes_exit(cmaes_t *);
-void cmaes_PrintResults(cmaes_t *t);
+double * cmaes_init();
+
+void cmaes_exit();
+void cmaes_PrintResults();
 /* --- core functions --- */
-double * const * cmaes_SamplePopulation(cmaes_t *);
-double *         cmaes_UpdateDistribution(int save_hsit, cmaes_t *, 
+double * const * cmaes_SamplePopulation();
+double *         cmaes_UpdateDistribution(int save_hsit,
                  const double *rgFitnessValues);
-bool     cmaes_TestForTermination(cmaes_t *);
+bool     cmaes_TestForTermination();
 
 /* --- additional functions --- */
-double * const * cmaes_ReSampleSingle( cmaes_t *t, int index);
-double *         cmaes_SampleSingleInto( cmaes_t *t, double *rgx);
-void             cmaes_UpdateEigensystem(cmaes_t *, int flgforce);
+double * const * cmaes_ReSampleSingle( int index);
+double *         cmaes_SampleSingleInto( double *rgx);
+void             cmaes_UpdateEigensystem( int flgforce);
 
 /* --- getter functions --- */
-double         cmaes_Get(cmaes_t *, char const *keyword);
-const double * cmaes_GetPtr(cmaes_t *, char const *keyword); /* e.g. "xbestever" */
-double *       cmaes_GetNew( cmaes_t *t, char const *keyword); /* user is responsible to free */
-double *       cmaes_GetInto( cmaes_t *t, char const *keyword, double *mem); /* allocs if mem==NULL, user is responsible to free */
+double         cmaes_Get( char const *keyword);
+const double * cmaes_GetPtr( char const *keyword); /* e.g. "xbestever" */
+double *       cmaes_GetNew( char const *keyword); /* user is responsible to free */
+double *       cmaes_GetInto( char const *keyword, double *mem); /* allocs if mem==NULL, user is responsible to free */
 
 /* --- online control and output --- */
-void           cmaes_ReadSignals(cmaes_t *, char const *filename);
-void           cmaes_WriteToFile(cmaes_t *, const char *szKeyWord,
+void           cmaes_ReadSignals( char const *filename);
+void           cmaes_WriteToFile( const char *szKeyWord,
                                  const char *output_filename); 
-char *         cmaes_SayHello(cmaes_t *);
+char *         cmaes_SayHello();
 /* --- misc --- */
 double *       cmaes_NewDouble(int n); /* user is responsible to free */
 void           cmaes_FATAL(char const *s1, char const *s2, char const *s3, 

@@ -22,12 +22,6 @@
 #include <chrono>
 #include <cmaes.h>
 
-
-
-#define VERBOSE 0
-#define JOBMAXTIME 0
-#define _IODUMP_ 1
-
 class CmaesEngine {
 
 public:
@@ -38,14 +32,13 @@ public:
 
 private:
 
-	cmaes_t evo_;
 	int dim_;
 
 	double *const*pop_;
   double *arFunvals_;
 
 	double (*fitfun_) (double*, int);
-  double evaluate_population( cmaes_t *evo, double *arFunvals );
+  double evaluate_population(double *arFunvals );
   int is_feasible(double *pop, int dim);
 
 };

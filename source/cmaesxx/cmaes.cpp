@@ -20,14 +20,14 @@ https://github.com/cma-es/c-cma-es/blob/master/LICENSE
 #include <stdlib.h> /* NULL, free */
 #include <string.h> /* strlen() */
 #include <stdio.h>  /* sprintf(), NULL? */
-#include "cmaes.h" /* <time.h> via cmaes_types.h */
+#include "cmaes.h"
 
 /* ------------------- Locally visibly ----------------------- */
 
-void TestMinStdDevs( cmaes_t *);
-/* void WriteMaxErrorInfo( cmaes_t *); */
+void TestMinStdDevs();
+
 void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp);
-void Adapt_C2(cmaes_t *t, int hsig);
+void Adapt_C2(int hsig);
 void   Sorted_index( const double *rgFunVal, int *index, int n);
 double rgdouMax( const double *rgd, int len);
 double rgdouMin( const double *rgd, int len);
@@ -35,7 +35,7 @@ int    MaxIdx( const double *rgd, int len);
 int    MinIdx( const double *rgd, int len);
 
 
-double * cmaes_init(cmaes_t *t /* "this" */)
+double * cmaes_init()
 {
     int i, j, N;
     double dtest, trace;
@@ -44,80 +44,78 @@ double * cmaes_init(cmaes_t *t /* "this" */)
 
     for (i = 0, trace = 0.; i < N; ++i)
         trace += kb->_dims[i]._initialStdDev*kb->_dims[i]._initialStdDev;
-    t->sigma = sqrt(trace/N); /* kb->_muEffective/(0.2*kb->_muEffective+sqrt(N)) * sqrt(trace/N); */
+    kb->sigma = sqrt(trace/N); /* kb->_muEffective/(0.2*kb->_muEffective+sqrt(N)) * sqrt(trace/N); */
 
-    t->chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
-    t->flgEigensysIsUptodate = 1;
-    t->genOfEigensysUpdate = 0;
+    kb->chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
+    kb->flgEigensysIsUptodate = 1;
 
     for (dtest = 1.; dtest && dtest < 1.1 * dtest; dtest *= 2.)
         if (dtest == dtest + 1.)
             break;
-    t->dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
+    kb->dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
 
-    t->gen = 0;
-    t->countevals = 0;
-    t->state = 0;
-    t->dLastMinEWgroesserNull = 1.0;
+    kb->gen = 0;
+    kb->countevals = 0;
+    kb->state = 0;
 
-    t->rgpc = (double*) calloc (sizeof(double), N);
-    t->rgps = (double*) calloc (sizeof(double), N);
-    t->rgdTmp = (double*) calloc (sizeof(double), N+1);
-    t->rgBDz = (double*) calloc (sizeof(double), N);
-    t->rgxmean = (double*) calloc (sizeof(double), N+2); t->rgxmean[0] = N; ++t->rgxmean;
-    t->rgxold = (double*) calloc (sizeof(double), N+2); t->rgxold[0] = N; ++t->rgxold;
-    t->rgxbestever = (double*) calloc (sizeof(double), N+3); t->rgxbestever[0] = N; ++t->rgxbestever;
-    t->rgout = (double*) calloc (sizeof(double), N+2); t->rgout[0] = N; ++t->rgout;
-    t->rgD = (double*) calloc (sizeof(double), N);
-    t->C = (double**) calloc (sizeof(double*), N);
-    t->B = (double**)calloc (sizeof(double*), N);
-    t->publicFitness = (double*) calloc (sizeof(double), kb->_lambda);
-    t->rgFuncValue = (double*) calloc (sizeof(double), kb->_lambda+1);
-    t->rgFuncValue[0]=kb->_lambda; ++t->rgFuncValue;
-    t->arFuncValueHist = (double*) calloc (sizeof(double), 10+(int)ceil(3.*10.*N/kb->_lambda)+1);
-    t->arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/kb->_lambda));
-    t->arFuncValueHist++; 
+    kb->rgpc = (double*) calloc (sizeof(double), N);
+    kb->rgps = (double*) calloc (sizeof(double), N);
+    kb->rgdTmp = (double*) calloc (sizeof(double), N+1);
+    kb->rgBDz = (double*) calloc (sizeof(double), N);
+    kb->rgxmean = (double*) calloc (sizeof(double), N+2); kb->rgxmean[0] = N; ++kb->rgxmean;
+    kb->rgxold = (double*) calloc (sizeof(double), N+2); kb->rgxold[0] = N; ++kb->rgxold;
+    kb->rgxbestever = (double*) calloc (sizeof(double), N+3); kb->rgxbestever[0] = N; ++kb->rgxbestever;
+    kb->rgout = (double*) calloc (sizeof(double), N+2); kb->rgout[0] = N; ++kb->rgout;
+    kb->rgD = (double*) calloc (sizeof(double), N);
+    kb->C = (double**) calloc (sizeof(double*), N);
+    kb->B = (double**)calloc (sizeof(double*), N);
+    kb->publicFitness = (double*) calloc (sizeof(double), kb->_lambda);
+    kb->rgFuncValue = (double*) calloc (sizeof(double), kb->_lambda+1);
+    kb->rgFuncValue[0]=kb->_lambda; ++kb->rgFuncValue;
+    kb->arFuncValueHist = (double*) calloc (sizeof(double), 10+(int)ceil(3.*10.*N/kb->_lambda)+1);
+    kb->arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/kb->_lambda));
+    kb->arFuncValueHist++;
 
     for (i = 0; i < N; ++i) {
-        t->C[i] = (double*) calloc (sizeof(double), i+1);
-        t->B[i] = (double*) calloc (sizeof(double), N);
+        kb->C[i] = (double*) calloc (sizeof(double), i+1);
+        kb->B[i] = (double*) calloc (sizeof(double), N);
     }
-    t->index = (int *) calloc (sizeof(int*), kb->_lambda);
+    kb->index = (int *) calloc (sizeof(int*), kb->_lambda);
     for (i = 0; i < kb->_lambda; ++i)
-        t->index[i] = i; /* should not be necessary */
-    t->rgrgx = (double **) calloc (sizeof(double*), kb->_lambda);
+        kb->index[i] = i; /* should not be necessary */
+    kb->rgrgx = (double **) calloc (sizeof(double*), kb->_lambda);
     for (i = 0; i < kb->_lambda; ++i) {
-        t->rgrgx[i] = (double*) calloc (sizeof(double), N+2);
-        t->rgrgx[i][0] = N; 
-        t->rgrgx[i]++;
+        kb->rgrgx[i] = (double*) calloc (sizeof(double), N+2);
+        kb->rgrgx[i][0] = N;
+        kb->rgrgx[i]++;
     }
 
     /* Initialize newed space  */
 
     for (i = 0; i < N; ++i)
         for (j = 0; j < i; ++j)
-            t->C[i][j] = t->B[i][j] = t->B[j][i] = 0.;
+            kb->C[i][j] = kb->B[i][j] = kb->B[j][i] = 0.;
 
     for (i = 0; i < N; ++i)
     {
-        t->B[i][i] = 1.;
-        t->C[i][i] = t->rgD[i] = kb->_dims[i]._initialStdDev * sqrt(N / trace);
-        t->C[i][i] *= t->C[i][i];
-        t->rgpc[i] = t->rgps[i] = 0.;
+        kb->B[i][i] = 1.;
+        kb->C[i][i] = kb->rgD[i] = kb->_dims[i]._initialStdDev * sqrt(N / trace);
+        kb->C[i][i] *= kb->C[i][i];
+        kb->rgpc[i] = kb->rgps[i] = 0.;
     }
 
-    t->minEW = rgdouMin(t->rgD, N); t->minEW = t->minEW * t->minEW;
-    t->maxEW = rgdouMax(t->rgD, N); t->maxEW = t->maxEW * t->maxEW;
+    kb->minEW = rgdouMin(kb->rgD, N); kb->minEW = kb->minEW * kb->minEW;
+    kb->maxEW = rgdouMax(kb->rgD, N); kb->maxEW = kb->maxEW * kb->maxEW;
 
-    t->maxdiagC=t->C[0][0]; for(i=1;i<N;++i) if(t->maxdiagC<t->C[i][i]) t->maxdiagC=t->C[i][i];
-    t->mindiagC=t->C[0][0]; for(i=1;i<N;++i) if(t->mindiagC>t->C[i][i]) t->mindiagC=t->C[i][i];
+    kb->maxdiagC=kb->C[0][0]; for(i=1;i<N;++i) if(kb->maxdiagC<kb->C[i][i]) kb->maxdiagC=kb->C[i][i];
+    kb->mindiagC=kb->C[0][0]; for(i=1;i<N;++i) if(kb->mindiagC>kb->C[i][i]) kb->mindiagC=kb->C[i][i];
 
     /* set xmean */
     for (i = 0; i < N; ++i)
-        t->rgxmean[i] = t->rgxold[i] = (*kb)[i]->_initialX;
+        kb->rgxmean[i] = kb->rgxold[i] = (*kb)[i]->_initialX;
 
 
-    return (t->publicFitness); 
+    return (kb->publicFitness);
 
 } /* cmaes_init_final() */
 
@@ -126,53 +124,53 @@ double * cmaes_init(cmaes_t *t /* "this" */)
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
-double * const * cmaes_SamplePopulation(cmaes_t *t)
+double * const * cmaes_SamplePopulation()
 {
     int iNk, i, j, N=kb->_dimCount;
-    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= kb->gen));
     double sum;
-    double const *xmean = t->rgxmean; 
+    double const *xmean = kb->rgxmean;
 
     /* calculate eigensystem  */
-    if (!t->flgEigensysIsUptodate) {
+    if (!kb->flgEigensysIsUptodate) {
         if (!flgdiag)
-            cmaes_UpdateEigensystem(t, 0);
+            cmaes_UpdateEigensystem(0);
         else {
             for (i = 0; i < N; ++i)
-                t->rgD[i] = sqrt(t->C[i][i]);
-            t->minEW = rgdouMin(t->rgD, N) * rgdouMin(t->rgD, N);
-            t->maxEW = rgdouMax(t->rgD, N) * rgdouMin(t->rgD, N);
-            t->flgEigensysIsUptodate = 1;
+                kb->rgD[i] = sqrt(kb->C[i][i]);
+            kb->minEW = rgdouMin(kb->rgD, N) * rgdouMin(kb->rgD, N);
+            kb->maxEW = rgdouMax(kb->rgD, N) * rgdouMin(kb->rgD, N);
+            kb->flgEigensysIsUptodate = 1;
         }
     }
 
     /* treat minimal standard deviations and numeric problems */
-    TestMinStdDevs(t); 
+    TestMinStdDevs();
 
     for (iNk = 0; iNk < kb->_lambda; ++iNk)
     { /* generate scaled cmaes_random vector (D * z)    */
         for (i = 0; i < N; ++i)
             if (flgdiag)
-                t->rgrgx[iNk][i] = xmean[i] + t->sigma * t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
+                kb->rgrgx[iNk][i] = xmean[i] + kb->sigma * kb->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
             else
-                t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
+                kb->rgdTmp[i] = kb->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
         if (!flgdiag)
             /* add mutation (sigma * B * (D*z)) */
             for (i = 0; i < N; ++i) {
                 for (j = 0, sum = 0.; j < N; ++j)
-                    sum += t->B[i][j] * t->rgdTmp[j];
-                t->rgrgx[iNk][i] = xmean[i] + t->sigma * sum;
+                    sum += kb->B[i][j] * kb->rgdTmp[j];
+                kb->rgrgx[iNk][i] = xmean[i] + kb->sigma * sum;
             }
     }
-    if(t->state == 3 || t->gen == 0)
-        ++t->gen;
-    t->state = 1; 
+    if(kb->state == 3 || kb->gen == 0)
+        ++kb->gen;
+    kb->state = 1;
 
-    return(t->rgrgx);
+    return(kb->rgrgx);
 } /* SamplePopulation() */
 
 
-double * const * cmaes_ReSampleSingle(cmaes_t *t, int iindex)
+double * const * cmaes_ReSampleSingle(int iindex)
 {
     int i, j, N=kb->_dimCount;
     double *rgx; 
@@ -183,20 +181,20 @@ double * const * cmaes_ReSampleSingle(cmaes_t *t, int iindex)
         sprintf(s, "index==%d must be between 0 and %d", iindex, kb->_lambda);
         fprintf(stderr, "[CMAES] Error: cmaes_ReSampleSingle(): Population member ",s,0,0);
     }
-    rgx = t->rgrgx[iindex];
+    rgx = kb->rgrgx[iindex];
 
     for (i = 0; i < N; ++i)
-        t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
+        kb->rgdTmp[i] = kb->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
     /* add mutation (sigma * B * (D*z)) */
     for (i = 0; i < N; ++i) {
         for (j = 0, sum = 0.; j < N; ++j)
-            sum += t->B[i][j] * t->rgdTmp[j];
-        rgx[i] = t->rgxmean[i] + t->sigma * sum;
+            sum += kb->B[i][j] * kb->rgdTmp[j];
+        rgx[i] = kb->rgxmean[i] + kb->sigma * sum;
     }
-    return(t->rgrgx);
+    return(kb->rgrgx);
 }
 
-double * cmaes_SampleSingleInto(cmaes_t *t, double *rgx)
+double * cmaes_SampleSingleInto(double *rgx)
 {
     int i, j, N=kb->_dimCount;
     double sum; 
@@ -205,91 +203,91 @@ double * cmaes_SampleSingleInto(cmaes_t *t, double *rgx)
         rgx = (double*) calloc (sizeof(double), N);
 
     for (i = 0; i < N; ++i)
-        t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
+        kb->rgdTmp[i] = kb->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
     /* add mutation (sigma * B * (D*z)) */
     for (i = 0; i < N; ++i) {
         for (j = 0, sum = 0.; j < N; ++j)
-            sum += t->B[i][j] * t->rgdTmp[j];
-        rgx[i] = t->rgxmean[i] + t->sigma * sum;
+            sum += kb->B[i][j] * kb->rgdTmp[j];
+        rgx[i] = kb->rgxmean[i] + kb->sigma * sum;
     }
     return rgx;
 }
 
-double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFunVal)
+double * cmaes_UpdateDistribution(int save_hist, const double *rgFunVal)
 {
     int i, j, iNk, hsig, N=kb->_dimCount;
-    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= kb->gen));
     double sum; 
     double psxps; 
 
-    if(t->state == 3)
+    if(kb->state == 3)
         fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): You need to call \n",
                 "SamplePopulation() before update can take place.");
     if(rgFunVal == NULL) 
         fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): ",
                 "Fitness function value array input is missing.");
 
-    if(save_hist && t->state == 1)  /* function values are delivered here */
-        t->countevals += kb->_lambda;
+    if(save_hist && kb->state == 1)  /* function values are delivered here */
+        kb->countevals += kb->_lambda;
     else
         fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): unexpected state");
 
     /* assign function values */
     for (i=0; i < kb->_lambda; ++i)
-        t->rgrgx[i][N] = t->rgFuncValue[i] = rgFunVal[i];
+        kb->rgrgx[i][N] = kb->rgFuncValue[i] = rgFunVal[i];
 
 
     /* Generate index */
-    Sorted_index(rgFunVal, t->index, kb->_lambda);
+    Sorted_index(rgFunVal, kb->index, kb->_lambda);
 
     /* Test if function values are identical, escape flat fitness */
-    if (t->rgFuncValue[t->index[0]] == 
-            t->rgFuncValue[t->index[(int)kb->_lambda/2]]) {
-        t->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor);
+    if (kb->rgFuncValue[kb->index[0]] ==
+            kb->rgFuncValue[kb->index[(int)kb->_lambda/2]]) {
+        kb->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor);
         fprintf(stderr, "[CMAES] Error: Warning: sigma increased due to equal function values. Reconsider the formulation of the objective function\n");
     }
 
     /* update function value history */
     if (save_hist) {
-        for(i = (int)*(t->arFuncValueHist-1)-1; i > 0; --i)
-            t->arFuncValueHist[i] = t->arFuncValueHist[i-1];
-        t->arFuncValueHist[0] = rgFunVal[t->index[0]];
+        for(i = (int)*(kb->arFuncValueHist-1)-1; i > 0; --i)
+            kb->arFuncValueHist[i] = kb->arFuncValueHist[i-1];
+        kb->arFuncValueHist[0] = rgFunVal[kb->index[0]];
     }
     
     /* update xbestever */
-    if (save_hist && (t->rgxbestever[N] > t->rgrgx[t->index[0]][N] || t->gen == 1))
+    if (save_hist && (kb->rgxbestever[N] > kb->rgrgx[kb->index[0]][N] || kb->gen == 1))
         for (i = 0; i <= N; ++i) {
-            t->rgxbestever[i] = t->rgrgx[t->index[0]][i];
-            t->rgxbestever[N+1] = t->countevals;
+            kb->rgxbestever[i] = kb->rgrgx[kb->index[0]][i];
+            kb->rgxbestever[N+1] = kb->countevals;
         }
 
     /* calculate xmean and rgBDz~N(0,C) */
     for (i = 0; i < N; ++i) {
-        t->rgxold[i] = t->rgxmean[i]; 
-        t->rgxmean[i] = 0.;
+        kb->rgxold[i] = kb->rgxmean[i];
+        kb->rgxmean[i] = 0.;
         for (iNk = 0; iNk < kb->_mu; ++iNk)
-            t->rgxmean[i] += kb->_muWeights[iNk] * t->rgrgx[t->index[iNk]][i];
-        t->rgBDz[i] = sqrt(kb->_muEffective)*(t->rgxmean[i] - t->rgxold[i])/t->sigma;
+            kb->rgxmean[i] += kb->_muWeights[iNk] * kb->rgrgx[kb->index[iNk]][i];
+        kb->rgBDz[i] = sqrt(kb->_muEffective)*(kb->rgxmean[i] - kb->rgxold[i])/kb->sigma;
     }
 
     /* calculate z := D^(-1) * B^(-1) * rgBDz into rgdTmp */
     for (i = 0; i < N; ++i) {
         if (!flgdiag)
             for (j = 0, sum = 0.; j < N; ++j)
-                sum += t->B[j][i] * t->rgBDz[j];
+                sum += kb->B[j][i] * kb->rgBDz[j];
         else
-            sum = t->rgBDz[i];
-        t->rgdTmp[i] = sum / t->rgD[i];
+            sum = kb->rgBDz[i];
+        kb->rgdTmp[i] = sum / kb->rgD[i];
     }
 
-    /* TODO?: check length of t->rgdTmp and set an upper limit, e.g. 6 stds */
+    /* TODO?: check length of kb->rgdTmp and set an upper limit, e.g. 6 stds */
     /* in case of manipulation of arx, 
        this can prevent an increase of sigma by several orders of magnitude
        within one step; a five-fold increase in one step can still happen. 
        */ 
     /*
        for (j = 0, sum = 0.; j < N; ++j)
-       sum += t->rgdTmp[j] * t->rgdTmp[j];
+       sum += kb->rgdTmp[j] * kb->rgdTmp[j];
        if (sqrt(sum) > chiN + 6. * sqrt(0.5)) {
        rgdTmp length should be set to upper bound and hsig should become zero 
        }
@@ -299,101 +297,100 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     for (i = 0; i < N; ++i) {
         if (!flgdiag)
             for (j = 0, sum = 0.; j < N; ++j)
-                sum += t->B[i][j] * t->rgdTmp[j];
+                sum += kb->B[i][j] * kb->rgdTmp[j];
         else
-            sum = t->rgdTmp[i];
-        t->rgps[i] = (1. - kb->_sigmaCumulationFactor) * t->rgps[i] +
+            sum = kb->rgdTmp[i];
+        kb->rgps[i] = (1. - kb->_sigmaCumulationFactor) * kb->rgps[i] +
             sqrt(kb->_sigmaCumulationFactor * (2. - kb->_sigmaCumulationFactor)) * sum;
     }
 
     /* calculate norm(ps)^2 */
     for (i = 0, psxps = 0.; i < N; ++i)
-        psxps += t->rgps[i] * t->rgps[i];
+        psxps += kb->rgps[i] * kb->rgps[i];
 
     /* cumulation for covariance matrix (pc) using B*D*z~N(0,C) */
-    hsig = sqrt(psxps) / sqrt(1. - pow(1.-kb->_sigmaCumulationFactor, 2*t->gen)) / t->chiN
+    hsig = sqrt(psxps) / sqrt(1. - pow(1.-kb->_sigmaCumulationFactor, 2*kb->gen)) / kb->chiN
         < 1.4 + 2./(N+1);
     for (i = 0; i < N; ++i) {
-        t->rgpc[i] = (1. - kb->_cumulativeCovariance) * t->rgpc[i] +
-            hsig * sqrt(kb->_cumulativeCovariance * (2. - kb->_cumulativeCovariance)) * t->rgBDz[i];
+        kb->rgpc[i] = (1. - kb->_cumulativeCovariance) * kb->rgpc[i] +
+            hsig * sqrt(kb->_cumulativeCovariance * (2. - kb->_cumulativeCovariance)) * kb->rgBDz[i];
     }
 
     /* update of C  */
 
-    Adapt_C2(t, hsig);
+    Adapt_C2(hsig);
 
     /* update of sigma */
-    t->sigma *= exp(((sqrt(psxps)/t->chiN)-1.)*kb->_sigmaCumulationFactor/kb->_dampFactor);
+    kb->sigma *= exp(((sqrt(psxps)/kb->chiN)-1.)*kb->_sigmaCumulationFactor/kb->_dampFactor);
 
-    t->state = 3;
+    kb->state = 3;
 
-    return (t->rgxmean);
+    return (kb->rgxmean);
 
 } /* cmaes_UpdateDistribution() */
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
-void Adapt_C2(cmaes_t *t, int hsig)
+void Adapt_C2(int hsig)
 {
     int i, j, k, N=kb->_dimCount;
-    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= kb->gen));
 
     if (kb->_covarianceMatrixLearningRate != 0.0) {
 
         /* definitions for speeding up inner-most loop */
         double ccov1 = std::min(kb->_covarianceMatrixLearningRate * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
         double ccovmu = std::min(kb->_covarianceMatrixLearningRate * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
-        double sigmasquare = t->sigma * t->sigma; 
+        double sigmasquare = kb->sigma * kb->sigma;
 
-        t->flgEigensysIsUptodate = 0;
+        kb->flgEigensysIsUptodate = 0;
 
         /* update covariance matrix */
         for (i = 0; i < N; ++i)
             for (j = flgdiag ? i : 0; j <= i; ++j) {
-                t->C[i][j] = (1 - ccov1 - ccovmu) * t->C[i][j] 
+                kb->C[i][j] = (1 - ccov1 - ccovmu) * kb->C[i][j]
                     + ccov1
-                    * (t->rgpc[i] * t->rgpc[j] 
-                            + (1-hsig)*kb->_cumulativeCovariance*(2.-kb->_cumulativeCovariance) * t->C[i][j]);
+                    * (kb->rgpc[i] * kb->rgpc[j]
+                            + (1-hsig)*kb->_cumulativeCovariance*(2.-kb->_cumulativeCovariance) * kb->C[i][j]);
                 for (k = 0; k < kb->_mu; ++k) { /* additional rank mu update */
-                    t->C[i][j] += ccovmu * kb->_muWeights[k]
-                        * (t->rgrgx[t->index[k]][i] - t->rgxold[i]) 
-                        * (t->rgrgx[t->index[k]][j] - t->rgxold[j])
+                    kb->C[i][j] += ccovmu * kb->_muWeights[k]
+                        * (kb->rgrgx[kb->index[k]][i] - kb->rgxold[i])
+                        * (kb->rgrgx[kb->index[k]][j] - kb->rgxold[j])
                         / sigmasquare;
                 }
             }
         /* update maximal and minimal diagonal value */
-        t->maxdiagC = t->mindiagC = t->C[0][0];
+        kb->maxdiagC = kb->mindiagC = kb->C[0][0];
         for (i = 1; i < N; ++i) {
-            if (t->maxdiagC < t->C[i][i])
-                t->maxdiagC = t->C[i][i];
-            else if (t->mindiagC > t->C[i][i])
-                t->mindiagC = t->C[i][i];
+            if (kb->maxdiagC < kb->C[i][i])
+                kb->maxdiagC = kb->C[i][i];
+            else if (kb->mindiagC > kb->C[i][i])
+                kb->mindiagC = kb->C[i][i];
         }
     } /* if ccov... */
 }
 
 
-void TestMinStdDevs(cmaes_t *t)
+void TestMinStdDevs()
     /* increases sigma */
 {
     int i, N = kb->_dimCount;
 
     for (i = 0; i < N; ++i)
-        while (t->sigma * sqrt(t->C[i][i]) < kb->_dims[i]._minStdDevChange)
-            t->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor);
+        while (kb->sigma * sqrt(kb->C[i][i]) < kb->_dims[i]._minStdDevChange)
+            kb->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor);
 
 } /* cmaes_TestMinStdDevs() */
 
 
 
 /* --------------------------------------------------------- */
-void cmaes_PrintResults(cmaes_t *t)
+void cmaes_PrintResults()
 
     /* this hack reads key words from input key for data to be written to
      * a file, see file signals.par as input file. The length of the keys
      * is mostly fixed, see key += number in the code! If the key phrase
      * does not match the expectation the output might be strange.  for
-     * cmaes_t *t == NULL it solely prints key as a header line. Input key
      * must be zero terminated.
      */
 { 
@@ -401,76 +398,76 @@ void cmaes_PrintResults(cmaes_t *t)
 
 		printf(" N %d\n", N);
 		printf(" seed %d\n", kb->_seed);
-		printf("function evaluations %.0f\n", t->countevals);
-		printf("function value f(x)=%g\n", t->rgrgx[t->index[0]][N]);
-		printf("maximal standard deviation %g\n", t->sigma*sqrt(t->maxdiagC));
-		printf("minimal standard deviation %g\n", t->sigma*sqrt(t->mindiagC));
-		printf("sigma %g\n", t->sigma);
-		printf("axisratio %g\n", rgdouMax(t->rgD, N)/rgdouMin(t->rgD, N));
-		printf("xbestever found after %.0f evaluations, function value %g\n",	t->rgxbestever[N+1], t->rgxbestever[N]);
+		printf("function evaluations %.0f\n", kb->countevals);
+		printf("function value f(x)=%g\n", kb->rgrgx[kb->index[0]][N]);
+		printf("maximal standard deviation %g\n", kb->sigma*sqrt(kb->maxdiagC));
+		printf("minimal standard deviation %g\n", kb->sigma*sqrt(kb->mindiagC));
+		printf("sigma %g\n", kb->sigma);
+		printf("axisratio %g\n", rgdouMax(kb->rgD, N)/rgdouMin(kb->rgD, N));
+		printf("xbestever found after %.0f evaluations, function value %g\n",	kb->rgxbestever[N+1], kb->rgxbestever[N]);
 
-		for(i=0; i<N; ++i) printf(" %12g%c", t->rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %12g%c", kb->rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
 
-		printf("xbest (of last generation, function value %g)\n",	t->rgrgx[t->index[0]][N]);
+		printf("xbest (of last generation, function value %g)\n",	kb->rgrgx[kb->index[0]][N]);
 
-		for(i=0; i<N; ++i) printf(" %12g%c", t->rgrgx[t->index[0]][i],(i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %12g%c", kb->rgrgx[kb->index[0]][i],(i%5==4||i==N-1)?'\n':' ');
 
 		printf("xmean \n");
-		for(i=0; i<N; ++i) printf(" %12g%c", t->rgxmean[i],	(i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %12g%c", kb->rgxmean[i],	(i%5==4||i==N-1)?'\n':' ');
 
 		printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
-		for(i=0; i<N; ++i) printf(" %12g%c", t->sigma*sqrt(t->C[i][i]),	(i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %12g%c", kb->sigma*sqrt(kb->C[i][i]),	(i%5==4||i==N-1)?'\n':' ');
 
 		printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
-		for (i = 0; i < N; ++i)	t->rgdTmp[i] = t->rgD[i];
-		for(i=0; i<N; ++i)	printf(" %12g%c", t->sigma*t->rgdTmp[N-1-i],(i%5==4||i==N-1)?'\n':' ');
+		for (i = 0; i < N; ++i)	kb->rgdTmp[i] = kb->rgD[i];
+		for(i=0; i<N; ++i)	printf(" %12g%c", kb->sigma*kb->rgdTmp[N-1-i],(i%5==4||i==N-1)?'\n':' ');
 
 		printf("Longest axis (b_i where d_ii=max(diag(D))\n");
-		k = MaxIdx(t->rgD, N);
+		k = MaxIdx(kb->rgD, N);
 
-		for(i=0; i<N; ++i) printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %12g%c", kb->B[i][k], (i%5==4||i==N-1)?'\n':' ');
 		printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
-		k = MinIdx(t->rgD, N);
+		k = MinIdx(kb->rgD, N);
 
-		for(i=0; i<N; ++i) printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %12g%c", kb->B[i][k], (i%5==4||i==N-1)?'\n':' ');
 }
 
-double function_value_difference(cmaes_t *t) {
-    return std::max(rgdouMax(t->arFuncValueHist, (int)std::min(t->gen,*(t->arFuncValueHist-1))),
-    		rgdouMax(t->rgFuncValue, kb->_lambda)) -
-        std::min(rgdouMin(t->arFuncValueHist, (int)std::min(t->gen, *(t->arFuncValueHist-1))),
-               rgdouMin(t->rgFuncValue, kb->_lambda));
+double function_value_difference() {
+    return std::max(rgdouMax(kb->arFuncValueHist, (int)std::min(kb->gen,*(kb->arFuncValueHist-1))),
+    		rgdouMax(kb->rgFuncValue, kb->_lambda)) -
+        std::min(rgdouMin(kb->arFuncValueHist, (int)std::min(kb->gen, *(kb->arFuncValueHist-1))),
+               rgdouMin(kb->rgFuncValue, kb->_lambda));
 }
 
-bool cmaes_TestForTermination( cmaes_t *t)
+bool cmaes_TestForTermination()
 {
 
     double range, fac;
     int iAchse, iKoo;
-    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= kb->gen));
     int i, cTemp, N=kb->_dimCount;
     bool terminate = false;
 
     /* function value reached */
-    if ((t->gen > 1 || t->state > 1) &&   t->rgFuncValue[t->index[0]] <= kb->_stopMinFitness)
+    if ((kb->gen > 1 || kb->state > 1) &&   kb->rgFuncValue[kb->index[0]] <= kb->_stopMinFitness)
     {
         terminate = true; printf( "Fitness: function value %7.2e <= stopFitness (%7.2e)\n",
-                t->rgFuncValue[t->index[0]], kb->_stopMinFitness);
+                kb->rgFuncValue[kb->index[0]], kb->_stopMinFitness);
     }
 
     /* TolFun */
-    range = function_value_difference(t);
+    range = function_value_difference();
 
-    if (t->gen > 0 && range <= kb->_stopFitnessDiffThreshold) {
+    if (kb->gen > 0 && range <= kb->_stopFitnessDiffThreshold) {
         terminate = true; printf(
                 "TolFun: function value differences %7.2e < kb->_stopFitnessDiffThreshold=%7.2e\n",
                 range, kb->_stopFitnessDiffThreshold);
     }
 
     /* TolFunHist */
-    if (t->gen > *(t->arFuncValueHist-1)) {
-        range = rgdouMax(t->arFuncValueHist, (int)*(t->arFuncValueHist-1)) 
-            - rgdouMin(t->arFuncValueHist, (int)*(t->arFuncValueHist-1));
+    if (kb->gen > *(kb->arFuncValueHist-1)) {
+        range = rgdouMax(kb->arFuncValueHist, (int)*(kb->arFuncValueHist-1))
+            - rgdouMin(kb->arFuncValueHist, (int)*(kb->arFuncValueHist-1));
         if (range <= kb->_stopFitnessDiffHistoryThreshold)
         {
             terminate = true; printf(
@@ -481,8 +478,8 @@ bool cmaes_TestForTermination( cmaes_t *t)
 
     /* TolX */
     for(i=0, cTemp=0; i<N; ++i) {
-        cTemp += (t->sigma * sqrt(t->C[i][i]) < kb->_stopMinDeltaX) ? 1 : 0;
-        cTemp += (t->sigma * t->rgpc[i] < kb->_stopMinDeltaX) ? 1 : 0;
+        cTemp += (kb->sigma * sqrt(kb->C[i][i]) < kb->_stopMinDeltaX) ? 1 : 0;
+        cTemp += (kb->sigma * kb->rgpc[i] < kb->_stopMinDeltaX) ? 1 : 0;
     }
     if (cTemp == 2*N) {
         terminate = true; printf(
@@ -492,7 +489,7 @@ bool cmaes_TestForTermination( cmaes_t *t)
 
     /* TolUpX */
     for(i=0; i<N; ++i) {
-        if (t->sigma * sqrt(t->C[i][i]) > kb->_stopMaxStdDevXFactor * kb->_dims[i]._initialStdDev)
+        if (kb->sigma * sqrt(kb->C[i][i]) > kb->_stopMaxStdDevXFactor * kb->_dims[i]._initialStdDev)
             break;
     }
 
@@ -503,10 +500,10 @@ bool cmaes_TestForTermination( cmaes_t *t)
     }
 
     /* Condition of C greater than dMaxSignifKond */
-    if (t->maxEW >= t->minEW * t->dMaxSignifKond) {
+    if (kb->maxEW >= kb->minEW * kb->dMaxSignifKond) {
         terminate = true; printf(
                 "ConditionNumber: maximal condition number %7.2e reached. maxEW=%7.2e,minEW=%7.2e,maxdiagC=%7.2e,mindiagC=%7.2e\n",
-                t->dMaxSignifKond, t->maxEW, t->minEW, t->maxdiagC, t->mindiagC);
+                kb->dMaxSignifKond, kb->maxEW, kb->minEW, kb->maxdiagC, kb->mindiagC);
     } /* if */
 
     /* Principal axis i has no effect on xmean, ie. 
@@ -514,14 +511,14 @@ bool cmaes_TestForTermination( cmaes_t *t)
     if (!flgdiag) {
         for (iAchse = 0; iAchse < N; ++iAchse)
         {
-            fac = 0.1 * t->sigma * t->rgD[iAchse];
+            fac = 0.1 * kb->sigma * kb->rgD[iAchse];
             for (iKoo = 0; iKoo < N; ++iKoo){ 
-                if (t->rgxmean[iKoo] != t->rgxmean[iKoo] + fac * t->B[iKoo][iAchse])
+                if (kb->rgxmean[iKoo] != kb->rgxmean[iKoo] + fac * kb->B[iKoo][iAchse])
                     break;
             }
             if (iKoo == N)        
             {
-                /* t->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor); */
+                /* kb->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor); */
                 terminate = true; printf(
                         "NoEffectAxis: standard deviation 0.1*%7.2e in principal axis %d without effect\n", 
                         fac/0.1, iAchse);
@@ -533,29 +530,29 @@ bool cmaes_TestForTermination( cmaes_t *t)
     /* Component of xmean is not changed anymore */
     for (iKoo = 0; iKoo < N; ++iKoo)
     {
-        if (t->rgxmean[iKoo] == t->rgxmean[iKoo] + 
-                0.2*t->sigma*sqrt(t->C[iKoo][iKoo]))
+        if (kb->rgxmean[iKoo] == kb->rgxmean[iKoo] +
+                0.2*kb->sigma*sqrt(kb->C[iKoo][iKoo]))
         {
-            /* t->C[iKoo][iKoo] *= (1 + kb->_covarianceMatrixLearningRate); */
+            /* kb->C[iKoo][iKoo] *= (1 + kb->_covarianceMatrixLearningRate); */
             /* flg = 1; */
             terminate = true; printf(
                     "NoEffectCoordinate: standard deviation 0.2*%7.2e in coordinate %d without effect\n", 
-                    t->sigma*sqrt(t->C[iKoo][iKoo]), iKoo); 
+                    kb->sigma*sqrt(kb->C[iKoo][iKoo]), iKoo);
             break;
         }
 
     } /* for iKoo */
-    /* if (flg) t->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor); */
+    /* if (flg) kb->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor); */
 
-    if(t->countevals >= kb->_maxFitnessEvaluations)
+    if(kb->countevals >= kb->_maxFitnessEvaluations)
     {
         terminate = true; printf( "MaxFunEvals: conducted function evaluations %.0f >= %lu\n",
-                t->countevals, kb->_maxFitnessEvaluations); }
+                kb->countevals, kb->_maxFitnessEvaluations); }
 
-    if(t->gen >= kb->_maxGenerations)
+    if(kb->gen >= kb->_maxGenerations)
     {
         terminate = true; printf( "MaxIter: number of iterations %.0f >= %lu\n",
-                t->gen, kb->_maxGenerations);
+                kb->gen, kb->_maxGenerations);
     }
 
     return terminate;
@@ -563,22 +560,21 @@ bool cmaes_TestForTermination( cmaes_t *t)
 } /* cmaes_Test() */
 
 
-void cmaes_UpdateEigensystem(cmaes_t *t, int flgforce)
+void cmaes_UpdateEigensystem(int flgforce)
 {
     int N = kb->_dimCount;
 
-    if(flgforce == 0) if (t->flgEigensysIsUptodate == 1) return;
+    if(flgforce == 0) if (kb->flgEigensysIsUptodate == 1) return;
 
-    Eigen( N, t->C, t->rgD, t->B, t->rgdTmp);
+    Eigen( N, kb->C, kb->rgD, kb->B, kb->rgdTmp);
 
     /* find largest and smallest eigenvalue, they are supposed to be sorted anyway */
-    t->minEW = rgdouMin(t->rgD, N);
-    t->maxEW = rgdouMax(t->rgD, N);
+    kb->minEW = rgdouMin(kb->rgD, N);
+    kb->maxEW = rgdouMax(kb->rgD, N);
 
-    for (int i = 0; i < N; ++i) 	t->rgD[i] = sqrt(t->rgD[i]);
+    for (int i = 0; i < N; ++i) 	kb->rgD[i] = sqrt(kb->rgD[i]);
 
-    t->flgEigensysIsUptodate = 1;
-    t->genOfEigensysUpdate = t->gen; 
+    kb->flgEigensysIsUptodate = 1;
 }
 
 void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp)

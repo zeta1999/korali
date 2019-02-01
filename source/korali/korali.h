@@ -41,6 +41,45 @@ class KoraliBase
   double _stopMaxTimePerEigendecomposition; // Defines maximum time to be spent on eigensystem decomposition
   double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
 
+  // CMAES-Specific Variables
+
+  double sigma;  /* step size */
+
+  double *rgxmean;  /* mean x vector, "parent" */
+  double *rgxbestever;
+  double **rgrgx;   /* range of x-vectors, lambda offspring */
+  int *index;       /* sorting index of sample pop. */
+  double *arFuncValueHist;
+
+  double chiN;
+  double **C;  /* lower triangular matrix: i>=j for C[i][j] */
+  double **B;  /* matrix with normalize eigenvectors in columns */
+  double *rgD; /* axis lengths */
+
+  double *rgpc;
+  double *rgps;
+  double *rgxold;
+  double *rgout;
+  double *rgBDz;   /* for B*D*z */
+  double *rgdTmp;  /* temporary (random) vector used in different places */
+  double *rgFuncValue;
+  double *publicFitness; /* returned by cmaes_init() */
+
+  double gen; /* Generation number */
+  double countevals;
+  double state; /* 1 == sampled, 2 == not in use anymore, 3 == updated */
+
+  double maxdiagC; /* repeatedly used for output */
+  double mindiagC;
+  double maxEW;
+  double minEW;
+
+  short flgEigensysIsUptodate;
+  double genOfEigensysUpdate;
+  double dMaxSignifKond;
+
+  // Public Methods
+
   KoraliBase(size_t dim, double (*fun) (double*, int), size_t seed);
 
   double getTotalDensityLog(double* x);
