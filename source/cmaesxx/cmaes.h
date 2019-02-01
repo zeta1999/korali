@@ -36,7 +36,7 @@ void cmaes_init_para(cmaes_t *, int dimension ,    double *stddev, long seed, in
 double * cmaes_init_final(cmaes_t *);
 void cmaes_resume_distribution(cmaes_t *evo_ptr, char *filename);
 void cmaes_exit(cmaes_t *);
-
+void cmaes_PrintResults(cmaes_t *t);
 /* --- core functions --- */
 double * const * cmaes_SamplePopulation(cmaes_t *);
 double *         cmaes_UpdateDistribution(int save_hsit, cmaes_t *, 

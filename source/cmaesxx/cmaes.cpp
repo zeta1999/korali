@@ -50,16 +50,9 @@ const double * cmaes_Optimize( cmaes_t *, double(*pFun)(double const *, int dim)
 double const * cmaes_SetMean(cmaes_t *, const double *xmean);
 double * cmaes_PerturbSolutionInto(cmaes_t *t, double *xout, 
         double const *xin, double eps);
-void cmaes_WriteToFile(cmaes_t *, const char *key, const char *name);
-void cmaes_WriteToFileAW(cmaes_t *t, const char *key, const char *name, 
-        const char * append);
-void cmaes_WriteToFilePtr(cmaes_t *, const char *key, FILE *fp);
-void cmaes_ReadFromFilePtr(cmaes_t *, FILE *fp); 
-void cmaes_FATAL(char const *s1, char const *s2, 
-        char const *s3, char const *s4);
 
 /* ------------------- Locally visibly ----------------------- */
-static char * getTimeStr(void); 
+
 static void TestMinStdDevs( cmaes_t *);
 /* static void WriteMaxErrorInfo( cmaes_t *); */
 static void Eigen( int N,  double **C, double *diag, double **Q, 
@@ -78,8 +71,6 @@ static int    SignOfDiff( const void *d1, const void * d2);
 static double douSquare(double);
 static double rgdouMax( const double *rgd, int len);
 static double rgdouMin( const double *rgd, int len);
-static double douMax( double d1, double d2);
-static double douMin( double d1, double d2);
 static int    intMin( int i, int j);
 static int    MaxIdx( const double *rgd, int len);
 static int    MinIdx( const double *rgd, int len);
@@ -95,57 +86,21 @@ static char * szCat(const char *sz1, const char*sz2,
 /* --------------------------------------------------------- */
 /* ---------------- Functions: cmaes_t --------------------- */
 /* --------------------------------------------------------- */
-static char * getTimeStr(void)
-{
-    time_t tm = time(NULL);
-    static char s[33];
-
-    /* get time */
-    strncpy(s, ctime(&tm), 24); /* TODO: hopefully we read something useful */
-    s[24] = '\0'; /* cut the \n */
-    return s;
-}
 
 char * cmaes_SayHello(cmaes_t *t)
 {
-    /* write initial message */
     sprintf(t->sOutString, 
-            "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d (%s)", 
-            kb->_mu, kb->_lambda, kb->_muEffective, t->version, kb->_dimCount, kb->_diagonalCovarianceMatrixEvalFrequency,
-            kb->_seed, getTimeStr());
+            "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d",
+            kb->_mu, kb->_lambda, kb->_muEffective, c_cmaes_version, kb->_dimCount, kb->_diagonalCovarianceMatrixEvalFrequency,
+            kb->_seed);
 
     return t->sOutString; 
-}
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_init_para(cmaes_t *t, /* "this" */
-    int dimension, 
-    double *inrgstddev, /* initial stds */
-    long int inseed,
-    int lambda, 
-    const char *input_parameter_filename) 
-{
-    t->version = c_cmaes_version;
 }
 
 double * cmaes_init_final(cmaes_t *t /* "this" */)
 {
     int i, j, N;
     double dtest, trace;
-
-    if (t->version == NULL) {
-        ERRORMESSAGE("cmaes_init_final called (probably) without calling cmaes_init_para first",
-                ", which will likely lead to unexpected results",0,0);
-        printf("Error: cmaes_init_final called (probably) without calling cmaes_init_para first\n");
-    }
-    if (strcmp(c_cmaes_version, t->version) != 0) {
-        ERRORMESSAGE("cmaes_init_final called twice, which will lead to a memory leak",
-                "; use cmaes_exit() first",0,0);
-        printf("Error: cmaes_init_final called twice, which will lead to a memory leak; use cmaes_exit first\n");
-    }
-    /* assign_string(&t->signalsFilename, "cmaes_signals.par"); */
-
 
     kb->_seed = cmaes_random_init( &t->rand, (long unsigned int) kb->_seed);
 
@@ -246,16 +201,9 @@ double * cmaes_init(cmaes_t *t, /* "this" */
     int lambda, 
     const char *input_parameter_filename) 
 {
-    cmaes_init_para(t, dimension,inrgstddev, inseed,             lambda, input_parameter_filename);
+
     return cmaes_init_final(t);
 }
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
 
 
 /* --------------------------------------------------------- */
@@ -447,14 +395,10 @@ const double * cmaes_Optimize(cmaes_t *evo, double(*pFun)(double const *, int di
         /* update search distribution */
         cmaes_UpdateDistribution(0, evo, evo->publicFitness); 
 
-        /* read control signals for output and termination */
-        if (signalsFilename)
-            cmaes_ReadSignals(evo, signalsFilename); 
+
         fflush(stdout);
     } /* while !cmaes_TestForTermination(evo) */
 
-    /* write some data */
-    cmaes_WriteToFile(evo, "all", "allcmaes.dat");
 
     return cmaes_GetPtr(evo, "xbestever");
 }
@@ -567,7 +511,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
 
     /* stop initial phase */
     if (t->flgIniphase && 
-            t->gen > douMin(1/kb->_sigmaCumulationFactor, 1+N/kb->_muCovariance))
+            t->gen > std::min(1/kb->_sigmaCumulationFactor, 1+N/kb->_muCovariance))
     {
         if (psxps / kb->_dampFactor / (1.-pow((1. - kb->_sigmaCumulationFactor), t->gen))
                 < N * 1.05) 
@@ -597,8 +541,8 @@ static void Adapt_C2(cmaes_t *t, int hsig)
     if (kb->_covarianceMatrixLearningRate != 0. && t->flgIniphase == 0) {
 
         /* definitions for speeding up inner-most loop */
-        double ccov1 = douMin(kb->_covarianceMatrixLearningRate * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
-        double ccovmu = douMin(kb->_covarianceMatrixLearningRate * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
+        double ccov1 = std::min(kb->_covarianceMatrixLearningRate * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
+        double ccovmu = std::min(kb->_covarianceMatrixLearningRate * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
         double sigmasquare = t->sigma * t->sigma; 
 
         t->flgEigensysIsUptodate = 0;
@@ -641,45 +585,10 @@ static void TestMinStdDevs(cmaes_t *t)
 
 } /* cmaes_TestMinStdDevs() */
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_WriteToFile(cmaes_t *t, const char *key, const char *name)
-{ 
-    cmaes_WriteToFileAW(t, key, name, "a"); /* default is append */
-}
+
 
 /* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_WriteToFileAW(cmaes_t *t, const char *key, const char *name, 
-        const char *appendwrite)
-{ 
-    const char *s = "tmpcmaes.dat"; 
-    FILE *fp;
-
-    if (name == NULL)
-        name = s; 
-
-    fp = fopen( name, appendwrite); 
-
-    if(fp == NULL) {
-        ERRORMESSAGE("cmaes_WriteToFile(): could not open '", name, 
-                "' with flag ", appendwrite);
-        return;
-    }
-
-    if (appendwrite[0] == 'w') {
-        /* write a header line, very rudimentary */
-        printf("%% # %s (randomSeed=%d, %s)\n", key, kb->_seed, getTimeStr());
-    } else 
-        if (t->gen > 0 || strncmp(name, "outcmaesfit", 11) != 0)
-            cmaes_WriteToFilePtr(t, key, fp); /* do not write fitness for gen==0 */
-
-    fclose(fp);
-
-} /* WriteToFile */
-
-/* --------------------------------------------------------- */
-void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
+void cmaes_PrintResults(cmaes_t *t)
 
     /* this hack reads key words from input key for data to be written to
      * a file, see file signals.par as input file. The length of the keys
@@ -692,334 +601,59 @@ void cmaes_WriteToFilePtr(cmaes_t *t, const char *key, FILE *fp)
     int i, k, N=(t ? kb->_dimCount : 0);
     char const *keyend; /* *keystart; */
     const char *s = "few";
-    if (key == NULL)
-        key = s; 
-    /* keystart = key; for debugging purpose */ 
-    keyend = key + strlen(key);
 
-    while (key < keyend)
-    {
-        if (strncmp(key, "axisratio", 9) == 0)
-        {
-            fprintf(fp, "%.2e", sqrt(t->maxEW/t->minEW));
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "idxminSD", 8) == 0)
-        {
-            int mini=0; for(i=N-1;i>0;--i) if(t->mindiagC==t->C[i][i]) mini=i; 
-            fprintf(fp, "%d", mini+1);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "idxmaxSD", 8) == 0)
-        {
-            int maxi=0; for(i=N-1;i>0;--i) if(t->maxdiagC==t->C[i][i]) maxi=i; 
-            fprintf(fp, "%d", maxi+1);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        /* new coordinate system == all eigenvectors */
-        if (strncmp(key, "B", 1) == 0) 
-        {
-            /* int j, index[N]; */
-            int j, *iindex=(int*)(new_void(N,sizeof(int))); /* MT */
-            Sorted_index(t->rgD, iindex, N); /* should not be necessary, see end of QLalgo2 */
-            /* One eigenvector per row, sorted: largest eigenvalue first */
-            for (i = 0; i < N; ++i)
-                for (j = 0; j < N; ++j)
-                    fprintf(fp, "%g%c", t->B[j][iindex[N-1-i]], (j==N-1)?'\n':'\t');
-            ++key; 
-            free(iindex); /* MT */
-        }
-        /* covariance matrix */
-        if (strncmp(key, "C", 1) == 0) 
-        {
-            int j;
-            for (i = 0; i < N; ++i)
-                for (j = 0; j <= i; ++j)
-                    fprintf(fp, "%g%c", t->C[i][j], (j==i)?'\n':'\t');
-            ++key; 
-        }
-        /* (processor) time (used) since begin of execution */ 
-        if (strncmp(key, "clock", 4) == 0)
-        {
-            cmaes_timings_update(&t->eigenTimings);
-            fprintf(fp, "%.1f %.1f",  t->eigenTimings.totaltotaltime, 
-                    t->eigenTimings.tictoctime);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        /* ratio between largest and smallest standard deviation */
-        if (strncmp(key, "stddevratio", 11) == 0) /* std dev in coordinate axes */
-        {
-            fprintf(fp, "%g", sqrt(t->maxdiagC/t->mindiagC));
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        /* standard deviations in coordinate directions (sigma*sqrt(C[i,i])) */
-        if (strncmp(key, "coorstddev", 10) == 0 
-                || strncmp(key, "stddev", 6) == 0) /* std dev in coordinate axes */
-        {
-            for (i = 0; i < N; ++i)
-                fprintf(fp, "%s%g", (i==0) ? "":"\t", t->sigma*sqrt(t->C[i][i]));
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        /* diagonal of D == roots of eigenvalues, sorted */
-        if (strncmp(key, "diag(D)", 7) == 0)
-        {
-            for (i = 0; i < N; ++i)
-                t->rgdTmp[i] = t->rgD[i];
-            qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff); /* superfluous */
-            for (i = 0; i < N; ++i)
-                fprintf(fp, "%s%g", (i==0) ? "":"\t", t->rgdTmp[i]);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
+			time_t ti = time(NULL);
+			printf(" N %d\n", N);
+			printf(" seed %d\n", kb->_seed);
+			printf("function evaluations %.0f\n", t->countevals);
+			printf("elapsed (CPU) time [s] %.2f\n", t->eigenTimings.totaltotaltime);
+			printf("function value f(x)=%g\n", t->rgrgx[t->index[0]][N]);
+			printf("maximal standard deviation %g\n", t->sigma*sqrt(t->maxdiagC));
+			printf("minimal standard deviation %g\n", t->sigma*sqrt(t->mindiagC));
+			printf("sigma %g\n", t->sigma);
+			printf("axisratio %g\n", rgdouMax(t->rgD, N)/rgdouMin(t->rgD, N));
+			printf("xbestever found after %.0f evaluations, function value %g\n",
+							t->rgxbestever[N+1], t->rgxbestever[N]);
+			for(i=0; i<N; ++i)
+					printf(" %12g%c", t->rgxbestever[i],
+									(i%5==4||i==N-1)?'\n':' ');
+			printf("xbest (of last generation, function value %g)\n",
+							t->rgrgx[t->index[0]][N]);
+			for(i=0; i<N; ++i)
+					printf(" %12g%c", t->rgrgx[t->index[0]][i],
+									(i%5==4||i==N-1)?'\n':' ');
+			printf("xmean \n");
+			for(i=0; i<N; ++i)
+					printf(" %12g%c", t->rgxmean[i],
+									(i%5==4||i==N-1)?'\n':' ');
+			printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
+			for(i=0; i<N; ++i)
+					printf(" %12g%c", t->sigma*sqrt(t->C[i][i]),
+									(i%5==4||i==N-1)?'\n':' ');
+			printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
+			for (i = 0; i < N; ++i)
+					t->rgdTmp[i] = t->rgD[i];
+			qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff);
+			for(i=0; i<N; ++i)
+					printf(" %12g%c", t->sigma*t->rgdTmp[N-1-i],
+									(i%5==4||i==N-1)?'\n':' ');
+			printf("Longest axis (b_i where d_ii=max(diag(D))\n");
+			k = MaxIdx(t->rgD, N);
+			for(i=0; i<N; ++i)
+					printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+			printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
+			k = MinIdx(t->rgD, N);
+			for(i=0; i<N; ++i)
+					printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
 
-        if (strncmp(key, "eval", 4) == 0)
-        {
-            fprintf(fp, "%.0f", t->countevals);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "few(diag(D))", 12) == 0)/* between four and six axes */
-        { 
-            int add = (int)(0.5 + (N + 1.) / 5.); 
-            for (i = 0; i < N; ++i)
-                t->rgdTmp[i] = t->rgD[i];
-            qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff);
-            for (i = 0; i < N-1; i+=add)        /* print always largest */
-                fprintf(fp, "%s%g", (i==0) ? "":"\t", t->rgdTmp[N-1-i]);
-            fprintf(fp, "\t%g\n", t->rgdTmp[0]);        /* and smallest */
-            break; /* number of printed values is not determined */
-        }
-        if (strncmp(key, "fewinfo", 7) == 0) { 
-            fprintf(fp," Iter Fevals  Function Value         Sigma   ");
-            fprintf(fp, "MaxCoorDev MinCoorDev AxisRatio   MinDii   Time in eig\n");
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-        }
-        if (strncmp(key, "few", 3) == 0) { 
-            fprintf(fp, " %4.0f ", t->gen); 
-            fprintf(fp, " %5.0f ", t->countevals); 
-            fprintf(fp, "%.15e", t->rgFuncValue[t->index[0]]);
-            fprintf(fp, "  %.2e  %.2e %.2e", t->sigma, t->sigma*sqrt(t->maxdiagC), 
-                    t->sigma*sqrt(t->mindiagC));
-            fprintf(fp, "  %.2e  %.2e", sqrt(t->maxEW/t->minEW), sqrt(t->minEW));
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "funval", 6) == 0 || strncmp(key, "fitness", 6) == 0)
-        {
-            fprintf(fp, "%.15e", t->rgFuncValue[t->index[0]]);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "fbestever", 9) == 0)
-        {
-            fprintf(fp, "%.15e", t->rgxbestever[N]); /* f-value */
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "fmedian", 7) == 0)
-        {
-            fprintf(fp, "%.15e", t->rgFuncValue[t->index[(int)(kb->_lambda/2)]]);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "fworst", 6) == 0)
-        {
-            fprintf(fp, "%.15e", t->rgFuncValue[t->index[kb->_lambda-1]]);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "arfunval", 8) == 0 || strncmp(key, "arfitness", 8) == 0)
-        {
-            for (i = 0; i < N; ++i)
-                fprintf(fp, "%s%.10e", (i==0) ? "" : "\t", 
-                        t->rgFuncValue[t->index[i]]);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "gen", 3) == 0)
-        {
-            fprintf(fp, "%.0f", t->gen);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "iter", 4) == 0)
-        {
-            fprintf(fp, "%.0f", t->gen);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "sigma", 5) == 0)
-        {
-            fprintf(fp, "%.4e", t->sigma);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "minSD", 5) == 0) /* minimal standard deviation */
-        {
-            fprintf(fp, "%.4e", sqrt(t->mindiagC));
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "maxSD", 5) == 0)
-        {
-            fprintf(fp, "%.4e", sqrt(t->maxdiagC));
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "mindii", 6) == 0)
-        {
-            fprintf(fp, "%.4e", sqrt(t->minEW));
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "0", 1) == 0)
-        {
-            fprintf(fp, "0");
-            ++key; 
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "lambda", 6) == 0 || strncmp(key, "popsi", 5) == 0 || strncmp(key, "populationsi", 12) == 0)
-        {
-            fprintf(fp, "%d", kb->_lambda);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "N", 1) == 0)
-        {
-            fprintf(fp, "%d", N);
-            ++key; 
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "resume", 6) == 0)
-        {
-            fprintf(fp, "\n# resume %d\n", N);
-            fprintf(fp, "xmean\n");
-            cmaes_WriteToFilePtr(t, "xmean", fp);
-            fprintf(fp, "path for sigma\n");
-            for(i=0; i<N; ++i)
-                fprintf(fp, "%g%s", t->rgps[i], (i==N-1) ? "\n":"\t");
-            fprintf(fp, "path for C\n");
-            for(i=0; i<N; ++i)
-                fprintf(fp, "%g%s", t->rgpc[i], (i==N-1) ? "\n":"\t");
-            fprintf(fp, "sigma %g\n", t->sigma);
-            /* note than B and D might not be up-to-date */
-            fprintf(fp, "covariance matrix\n"); 
-            cmaes_WriteToFilePtr(t, "C", fp);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-        }
-        if (strncmp(key, "xbest", 5) == 0) { /* best x in recent generation */
-            for(i=0; i<N; ++i)
-                fprintf(fp, "%s%g", (i==0) ? "":"\t", t->rgrgx[t->index[0]][i]);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "xmean", 5) == 0) {
-            for(i=0; i<N; ++i)
-                fprintf(fp, "%s%g", (i==0) ? "":"\t", t->rgxmean[i]);
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-            fprintf(fp, "%c", (*key=='+') ? '\t':'\n');
-        }
-        if (strncmp(key, "all", 3) == 0)
-        {
-            time_t ti = time(NULL);
-            fprintf(fp, "\n# --------- %s\n", asctime(localtime(&ti)));
-            fprintf(fp, " N %d\n", N);
-            fprintf(fp, " seed %d\n", kb->_seed);
-            fprintf(fp, "function evaluations %.0f\n", t->countevals);
-            fprintf(fp, "elapsed (CPU) time [s] %.2f\n", t->eigenTimings.totaltotaltime);
-            fprintf(fp, "function value f(x)=%g\n", t->rgrgx[t->index[0]][N]);
-            fprintf(fp, "maximal standard deviation %g\n", t->sigma*sqrt(t->maxdiagC));
-            fprintf(fp, "minimal standard deviation %g\n", t->sigma*sqrt(t->mindiagC));
-            fprintf(fp, "sigma %g\n", t->sigma);
-            fprintf(fp, "axisratio %g\n", rgdouMax(t->rgD, N)/rgdouMin(t->rgD, N));
-            fprintf(fp, "xbestever found after %.0f evaluations, function value %g\n", 
-                    t->rgxbestever[N+1], t->rgxbestever[N]);
-            for(i=0; i<N; ++i)
-                fprintf(fp, " %12g%c", t->rgxbestever[i], 
-                        (i%5==4||i==N-1)?'\n':' ');
-            fprintf(fp, "xbest (of last generation, function value %g)\n", 
-                    t->rgrgx[t->index[0]][N]); 
-            for(i=0; i<N; ++i)
-                fprintf(fp, " %12g%c", t->rgrgx[t->index[0]][i], 
-                        (i%5==4||i==N-1)?'\n':' ');
-            fprintf(fp, "xmean \n");
-            for(i=0; i<N; ++i)
-                fprintf(fp, " %12g%c", t->rgxmean[i], 
-                        (i%5==4||i==N-1)?'\n':' ');
-            printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
-            for(i=0; i<N; ++i)
-                printf(" %12g%c", t->sigma*sqrt(t->C[i][i]),
-                        (i%5==4||i==N-1)?'\n':' ');
-            printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
-            for (i = 0; i < N; ++i)
-                t->rgdTmp[i] = t->rgD[i];
-            qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff);
-            for(i=0; i<N; ++i)
-                fprintf(fp, " %12g%c", t->sigma*t->rgdTmp[N-1-i], 
-                        (i%5==4||i==N-1)?'\n':' ');
-            printf("Longest axis (b_i where d_ii=max(diag(D))\n");
-            k = MaxIdx(t->rgD, N);
-            for(i=0; i<N; ++i)
-                printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
-            printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
-            k = MinIdx(t->rgD, N);
-            for(i=0; i<N; ++i)
-                printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-        } /* "all" */
 
-        if (*key == '\0') 
-            break; 
-        else if (*key != '+') { /* last key was not recognized */
-            ERRORMESSAGE("cmaes_t:WriteToFilePtr(): unrecognized key '", key, "'", 0); 
-            while (*key != '+' && *key != '\0' && key < keyend)
-                ++key;
-        }
-        while (*key == '+') 
-            ++key; 
-    } /* while key < keyend */ 
-
-    if (key > keyend)
-        FATAL("cmaes_t:WriteToFilePtr(): BUG regarding key sequence",0,0,0);
 
 } /* WriteToFilePtr */
 
 static double function_value_difference(cmaes_t *t) {
-    return douMax(rgdouMax(t->arFuncValueHist, (int)douMin(t->gen,*(t->arFuncValueHist-1))), 
+    return std::max(rgdouMax(t->arFuncValueHist, (int)std::min(t->gen,*(t->arFuncValueHist-1))),
                   rgdouMax(t->rgFuncValue, kb->_lambda)) -
-        douMin(rgdouMin(t->arFuncValueHist, (int)douMin(t->gen, *(t->arFuncValueHist-1))), 
+        std::min(rgdouMin(t->arFuncValueHist, (int)std::min(t->gen, *(t->arFuncValueHist-1))),
                rgdouMin(t->rgFuncValue, kb->_lambda));
 }
 
@@ -1263,146 +897,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 
 } /* cmaes_Test() */
 
-/* --------------------------------------------------------- */
-void cmaes_ReadSignals(cmaes_t *t, char const *filename)
-{
-    const char *s = "cmaes_signals.par";
-    FILE *fp;
-    if (filename == NULL)
-        filename = s; 
-    /* if (filename) assign_string(&(t->signalsFilename), filename)*/
-    fp = fopen( filename, "r"); 
-    if(fp == NULL) {
-        return;
-    }
-    cmaes_ReadFromFilePtr( t, fp);
-    fclose(fp);
-}
 
-/* --------------------------------------------------------- */
-void cmaes_ReadFromFilePtr( cmaes_t *t, FILE *fp)
-    /* reading commands e.g. from signals.par file 
-    */
-{
-    const char *keys[15]; /* key strings for scanf */
-    char s[199], sin1[99], sin2[129], sin3[99], sin4[99];
-    int ikey, ckeys, nb; 
-    double d; 
-    static int flglockprint = 0;
-    static int flglockwrite = 0;
-    static long countiterlastwritten; 
-    static long maxdiffitertowrite; /* to prevent long gaps at the beginning */
-    int flgprinted = 0;
-    int flgwritten = 0; 
-    double deltaprinttime = (double)(time(NULL)-t->printtime); /* using clock instead might not be a good */
-    double deltawritetime = (double)(time(NULL)-t->writetime); /* idea as disc time is not CPU time? */
-    double deltaprinttimefirst = (double)(t->firstprinttime ? time(NULL)-t->firstprinttime : 0); /* time is in seconds!? */
-    double deltawritetimefirst = (double)(t->firstwritetime ? time(NULL)-t->firstwritetime : 0); 
-    if (countiterlastwritten > t->gen) { /* probably restarted */
-        maxdiffitertowrite = 0;
-        countiterlastwritten = 0;
-    }
-
-    keys[0] = " stop%98s %98s";        /* s=="now" or eg "MaxIter+" %lg"-number */
-    /* works with and without space */
-    keys[1] = " print %98s %98s";       /* s==keyword for WriteFile */
-    keys[2] = " write %98s %128s %98s"; /* s1==keyword, s2==filename */
-    keys[3] = " check%98s %98s";
-    keys[4] = " maxTimeFractionForEigendecompostion %98s";
-    ckeys = 5; 
-    strcpy(sin2, "tmpcmaes.dat");
-
-    if (cmaes_TestForTermination(t)) 
-    {
-        deltaprinttime = (double)time(NULL); /* forces printing */
-        deltawritetime = (double)time(NULL);
-    }
-    while(fgets(s, sizeof(s), fp) != NULL)
-    { 
-        if (s[0] == '#' || s[0] == '%') /* skip comments  */
-            continue; 
-        sin1[0] = sin2[0] = sin3[0] = sin4[0] = '\0';
-        for (ikey=0; ikey < ckeys; ++ikey)
-        {
-            if((nb=sscanf(s, keys[ikey], sin1, sin2, sin3, sin4)) >= 1) 
-            {
-                switch(ikey) {
-                    case 0 : /* "stop", reads "stop now" */
-                        if (strncmp(sin1, "now", 3) == 0) 
-                            t->flgStop = 1; 
-                        break;
-                    case 1 : /* "print" */
-                        d = 1; /* default */
-                        if (sscanf(sin2, "%lg", &d) < 1 && deltaprinttimefirst < 1)
-                            d = 0; /* default at first time */
-                        if (deltaprinttime >= d && !flglockprint) {
-                            cmaes_WriteToFilePtr(t, sin1, stdout);
-                            flgprinted = 1;
-                        }
-                        if(d < 0) 
-                            flglockprint += 2;
-                        break; 
-                    case 2 : /* "write" */
-                        /* write header, before first generation */
-                        if (t->countevals < kb->_lambda && t->flgresumedone == 0)
-                            cmaes_WriteToFileAW(t, sin1, sin2, "w"); /* overwrite */
-                        d = 0.9; /* default is one with smooth increment of gaps */
-                        if (sscanf(sin3, "%lg", &d) < 1 && deltawritetimefirst < 2)
-                            d = 0; /* default is zero for the first second */
-                        if(d < 0) 
-                            flglockwrite += 2;
-                        if (!flglockwrite) {
-                            if (deltawritetime >= d) {
-                                cmaes_WriteToFile(t, sin1, sin2);
-                                flgwritten = 1; 
-                            } else if (d < 1 
-                                    && t->gen-countiterlastwritten > maxdiffitertowrite) {
-                                cmaes_WriteToFile(t, sin1, sin2);
-                                flgwritten = 1; 
-                            }
-                        }
-                        break; 
-                    case 3 : /* check, checkeigen 1 or check eigen 1 */
-                        if (strncmp(sin1, "eigen", 5) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) {
-                                if (d > 0)
-                                    t->flgCheckEigen = 1;
-                                else
-                                    t->flgCheckEigen = 0;
-                            }
-                            else
-                                t->flgCheckEigen = 0;
-                        }
-                        break;
-                    case 4 : /* maxTimeFractionForEigendecompostion */
-                        if (sscanf(sin1, " %lg", &d) == 1) 
-                            kb->_covarianceMatrixUpdateMaxCPUTimePercentage = d;
-                        break; 
-                    default :
-                        break; 
-                }
-                break; /* for ikey */
-            } /* if line contains keyword */
-        } /* for each keyword */
-    } /* while not EOF of signals.par */
-    if (t->writetime == 0) 
-        t->firstwritetime = time(NULL); 
-    if (t->printtime == 0)
-        t->firstprinttime = time(NULL); 
-
-    if (flgprinted)
-        t->printtime = time(NULL);
-    if (flgwritten) {
-        t->writetime = time(NULL);
-        if (t->gen-countiterlastwritten > maxdiffitertowrite)
-            ++maxdiffitertowrite; /* smooth prolongation of writing gaps/intervals */
-        countiterlastwritten = (long int) t->gen;
-    }
-    --flglockprint;
-    --flglockwrite;
-    flglockprint = (flglockprint > 0) ? 1 : 0;
-    flglockwrite = (flglockwrite > 0) ? 1 : 0;
-} /*  cmaes_ReadFromFilePtr */ 
 
 /* ========================================================= */
 static int Check_Eigen( int N,  double **C, double *diag, double **Q) 
@@ -2025,16 +1520,6 @@ static double douSquare(double d)
 }
 
 static int intMin(int i, int j)
-{
-    return i < j ? i : j;
-}
-
-static double douMax(double i, double j)
-{
-    return i > j ? i : j;
-}
-
-static double douMin(double i, double j)
 {
     return i < j ? i : j;
 }

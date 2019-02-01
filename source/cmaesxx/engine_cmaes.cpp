@@ -19,7 +19,7 @@ CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : d
 		CmaesEngine::fitfun_ = fun;
         arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0,	"./cmaes_initials.par");
 		printf("%s\n", cmaes_SayHello(&evo_));
-		cmaes_ReadSignals(&evo_, "./cmaes_initials.par");
+
 
 		_lambda = 128;
 		_restart = false;
@@ -82,8 +82,6 @@ double CmaesEngine::run() {
 	
         cmaes_UpdateDistribution(1, &evo_, arFunvals_);
 
-        cmaes_ReadSignals(&evo_, "./cmaes_initials.par"); fflush(stdout);
-
         if (VERBOSE) cmaes_utils_print_the_best(evo_, _step);
 		
        	if (_IODUMP_ && !_restart){
@@ -101,7 +99,7 @@ double CmaesEngine::run() {
     gt2_ = get_time();
 
     printf("Stop:\n %s \n",  cmaes_TestForTermination(&evo_)); /* print termination reason */
-    cmaes_WriteToFile( &evo_, "all", "allcmaes.dat" );         /* write final results */
+		cmaes_PrintResults(&evo_);
 
     gt3_ = get_time();
     

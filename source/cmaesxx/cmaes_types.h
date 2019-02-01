@@ -70,7 +70,6 @@ typedef struct
  * CMA-ES "object" 
  */
 {
-  const char *version;
   /* char *signalsFilename; */
   cmaes_readpara_t sp;
   cmaes_random_t rand; /* random number generator */
