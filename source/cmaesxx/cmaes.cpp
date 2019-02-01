@@ -42,9 +42,6 @@ double cmaes_timings_update(cmaes_timings_t *timing);
 void   cmaes_timings_tic(cmaes_timings_t *timing);
 double cmaes_timings_toc(cmaes_timings_t *timing);
 
-
-void cmaes_readpara_SetWeights(cmaes_readpara_t *, const char * mode);
-
 const double * cmaes_Optimize( cmaes_t *, double(*pFun)(double const *, int dim), 
         long iterations);
 double const * cmaes_SetMean(cmaes_t *, const double *xmean);
@@ -61,16 +58,12 @@ static int  Check_Eigen( int N,  double **C, double *diag, double **Q);
 static void QLalgo2 (int n, double *d, double *e, double **V); 
 static void Householder2(int n, double **V, double *d, double *e); 
 static void Adapt_C2(cmaes_t *t, int hsig);
-static int isNoneStr(const char * filename);
 static void   Sorted_index( const double *rgFunVal, int *index, int n);
 static int    SignOfDiff( const void *d1, const void * d2);
-static double douSquare(double);
 static double rgdouMax( const double *rgd, int len);
 static double rgdouMin( const double *rgd, int len);
-static int    intMin( int i, int j);
 static int    MaxIdx( const double *rgd, int len);
 static int    MinIdx( const double *rgd, int len);
-static double myhypot(double a, double b);
 static const char * c_cmaes_version = "3.20.00.beta";
 
 /* --------------------------------------------------------- */
@@ -237,8 +230,8 @@ double * const * cmaes_SamplePopulation(cmaes_t *t)
         else {
             for (i = 0; i < N; ++i)
                 t->rgD[i] = sqrt(t->C[i][i]);
-            t->minEW = douSquare(rgdouMin(t->rgD, N)); 
-            t->maxEW = douSquare(rgdouMax(t->rgD, N));
+            t->minEW = rgdouMin(t->rgD, N) * rgdouMin(t->rgD, N);
+            t->maxEW = rgdouMax(t->rgD, N) * rgdouMin(t->rgD, N);
             t->flgEigensysIsUptodate = 1;
             cmaes_timings_start(&t->eigenTimings);
         }
@@ -978,7 +971,7 @@ static void QLalgo2 (int n, double *d, double *e, double **V)
                     double dl1, h;
                     double g = d[l];
                     double p = (d[l+1] - g) / (2.0 * e[l]); 
-                    double r = myhypot(p, 1.); 
+                    double r = hypot(p, 1.);
 
                     iter = iter + 1;  /* Could check iteration count here */
 
@@ -1012,7 +1005,7 @@ static void QLalgo2 (int n, double *d, double *e, double **V)
                             s2 = s;
                             g = c * e[i];
                             h = c * p;
-                            r = myhypot(p, e[i]);
+                            r = hypot(p, e[i]);
                             e[i+1] = s * r;
                             s = e[i] / r;
                             c = p / r;
@@ -1405,39 +1398,6 @@ double cmaes_random_Uniform( cmaes_random_t *t)
 }
 
 
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_readpara_SetWeights(cmaes_readpara_t *t, const char * mode)
-{
-
-
-} /* cmaes_readpara_SetWeights() */
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-static int isNoneStr(const char * filename)
-{
-    if (filename && (strcmp(filename, "no") == 0 
-                || strcmp(filename, "non") == 0
-                || strcmp(filename, "none") == 0))
-        return 1;
-
-    return 0;
-}
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-static double douSquare(double d)
-{
-    return d*d;
-}
-
-static int intMin(int i, int j)
-{
-    return i < j ? i : j;
-}
-
 static double rgdouMax(const double *rgd, int len)
 {
     int i;
@@ -1474,19 +1434,6 @@ static int MinIdx(const double *rgd, int len)
     return res;
 }
 
-static double myhypot(double a, double b) 
-    /* sqrt(a^2 + b^2) numerically stable. */
-{
-    double r = 0;
-    if (fabs(a) > fabs(b)) {
-        r = b/a;
-        r = fabs(a)*sqrt(1+r*r);
-    } else if (b != 0) {
-        r = a/b;
-        r = fabs(b)*sqrt(1+r*r);
-    }
-    return r;
-}
 
 static int SignOfDiff(const void *d1, const void * d2) 
 { 

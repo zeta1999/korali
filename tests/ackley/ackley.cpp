@@ -13,7 +13,7 @@ double f_Ackley(double *x, int N) {
 
 int main(int argc, char* argv[])
 {
-	auto korali = Korali::KoraliBase(4, f_Ackley, 13531);
+	auto korali = Korali::KoraliBase(4, f_Ackley, 53753);
 
 	korali[0]->setPriorDistribution("Uniform", -6.0, 6.0);
 	korali[1]->setPriorDistribution("Uniform", -6.0, 6.0);
@@ -45,18 +45,5 @@ int main(int argc, char* argv[])
 
 	auto engine = CmaesEngine(4, f_Ackley);
 
-
-
 	engine.run();
 }
-
-double myFunction()
-{
-	return 0.0;
-}
-
-//	Korali::Engine eng;
-//
-//    fitfun_initialize_simple("Ackley");
-//    auto engine = CmaesEngine(&fitfun, "./");
-//    engine.run();
