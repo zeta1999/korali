@@ -49,7 +49,7 @@ char * cmaes_SayHello(cmaes_t *t)
     return t->sOutString; 
 }
 
-double * cmaes_init_final(cmaes_t *t /* "this" */)
+double * cmaes_init(cmaes_t *t /* "this" */)
 {
     int i, j, N;
     double dtest, trace;
@@ -138,18 +138,6 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
 
 } /* cmaes_init_final() */
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-double * cmaes_init(cmaes_t *t, /* "this" */
-    int dimension, 
-    double *inrgstddev, /* initial stds */
-    long int inseed,
-    int lambda, 
-    const char *input_parameter_filename) 
-{
-
-    return cmaes_init_final(t);
-}
 
 
 

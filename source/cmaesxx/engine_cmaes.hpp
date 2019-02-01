@@ -51,10 +51,10 @@ private:
 	double *const*pop_;
     double *arFunvals_; 
 
-	static double (*fitfun_) (double*, int);
-	static void taskfun_(double *x, int *no, double* res);
-    double evaluate_population( cmaes_t *evo, double *arFunvals );
-    int is_feasible(double *pop, int dim);
+	double (*fitfun_) (double*, int);
+	void taskfun_(double *x, int *no, double* res);
+  double evaluate_population( cmaes_t *evo, double *arFunvals );
+  int is_feasible(double *pop, int dim);
 
 
 };

@@ -8,11 +8,10 @@
 CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim)
 {
 		gt0_ = std::chrono::system_clock::now();
-		CmaesEngine::fitfun_ = fun;
-        arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0,	"./cmaes_initials.par");
+		fitfun_ = fun;
+    arFunvals_ = cmaes_init(&evo_);
 		printf("%s\n", cmaes_SayHello(&evo_));
-
-	    _elapsedTime = 0.0;
+   _elapsedTime = 0.0;
 }
 
 
@@ -21,15 +20,9 @@ CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : d
 double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals) {
 
     auto tt0 = std::chrono::system_clock::now();
-    	
-    for( int i = 0; i < kb->_lambda; ++i) CmaesEngine::taskfun_(pop_[i], &dim_, &arFunvals_[i]);
-
-
-    // subtract the log-prior from the log-likelohood
+    for( int i = 0; i < kb->_lambda; ++i) arFunvals_[i] = - fitfun_(pop_[i], dim_);
     for( int i=0; i< kb->_lambda; i++)  arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
-
     auto tt1 = std::chrono::system_clock::now();
-  
     return std::chrono::duration<double>(tt1-tt0).count();
 };
 
@@ -79,12 +72,3 @@ int CmaesEngine::is_feasible(double *pop, int dim) {
     return 1;
 }
 
-
-
-double (*CmaesEngine::fitfun_) (double*, int);
-
-void CmaesEngine::taskfun_(double *x, int *n, double *res)
-{
-    (*res) = - CmaesEngine::fitfun_(x, *n);    // minus for minimization
-	return;
-}
