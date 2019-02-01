@@ -9,7 +9,9 @@ Korali::KoraliBase::KoraliBase(size_t dim, double (*fun) (double*, int), size_t 
 
 	gsl_rng_env_setup();
 	_dims = new Dimension[dim];
-	for (int i = 0; i < dim; i++) _dims[i].setSeed(seed + i);
+	for (int i = 0; i < dim; i++) _dims[i].setSeed(seed++);
+	_gaussianGenerator = new GaussianDistribution(0, 1, _seed++);
+
 	_randomNumber = (double*) calloc (sizeof(double), _dimCount);
 	_fitfunction = fun;
 

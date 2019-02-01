@@ -30,12 +30,6 @@ https://github.com/cma-es/c-cma-es/blob/master/LICENSE
 
 /* see cmaes_interface.h for those, not listed here */
 
-long   cmaes_random_init(cmaes_random_t *, long unsigned seed /* 0==clock */);
-
-double cmaes_random_Gauss(cmaes_random_t *); /* (0,1)-normally distributed */
-double cmaes_random_Uniform(cmaes_random_t *);
-long   cmaes_random_Start(cmaes_random_t *, long unsigned seed /* 0==1 */);
-
 const double * cmaes_Optimize( cmaes_t *, double(*pFun)(double const *, int dim), 
         long iterations);
 double const * cmaes_SetMean(cmaes_t *, const double *xmean);
@@ -77,8 +71,6 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
 {
     int i, j, N;
     double dtest, trace;
-
-    kb->_seed = cmaes_random_init( &t->rand, (long unsigned int) kb->_seed);
 
     N = kb->_dimCount; /* for convenience */
 
@@ -235,9 +227,9 @@ double * const * cmaes_SamplePopulation(cmaes_t *t)
     { /* generate scaled cmaes_random vector (D * z)    */
         for (i = 0; i < N; ++i)
             if (flgdiag)
-                t->rgrgx[iNk][i] = xmean[i] + t->sigma * t->rgD[i] * cmaes_random_Gauss(&t->rand);
+                t->rgrgx[iNk][i] = xmean[i] + t->sigma * t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
             else
-                t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
+                t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
         if (!flgdiag)
             /* add mutation (sigma * B * (D*z)) */
             for (i = 0; i < N; ++i) {
@@ -270,7 +262,7 @@ double * const * cmaes_ReSampleSingle(cmaes_t *t, int iindex)
     rgx = t->rgrgx[iindex];
 
     for (i = 0; i < N; ++i)
-        t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
+        t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
     /* add mutation (sigma * B * (D*z)) */
     for (i = 0; i < N; ++i) {
         for (j = 0, sum = 0.; j < N; ++j)
@@ -291,7 +283,7 @@ double * cmaes_SampleSingleInto(cmaes_t *t, double *rgx)
         rgx = (double*) calloc (sizeof(double), N);
 
     for (i = 0; i < N; ++i)
-        t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
+        t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
     /* add mutation (sigma * B * (D*z)) */
     for (i = 0; i < N; ++i) {
         for (j = 0, sum = 0.; j < N; ++j)
@@ -314,7 +306,7 @@ double * cmaes_PerturbSolutionInto(cmaes_t *t, double *rgx, double const *xmean,
         fprintf(stderr, "[CMAES] Error: cmaes_PerturbSolutionInto(): xmean was not given");
 
     for (i = 0; i < N; ++i)
-        t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
+        t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
     /* add mutation (sigma * B * (D*z)) */
     for (i = 0; i < N; ++i) {
         for (j = 0, sum = 0.; j < N; ++j)
@@ -1193,97 +1185,6 @@ void cmaes_get_distr(cmaes_t *t, cmaes_distr_t *d) {
     memcpy(d->mu, t->rgxmean, sz);
 }
 
-
-/* --------------------------------------------------------- */
-/* ---------------- Functions: cmaes_random_t -------------- */
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-/* X_1 exakt :          0.79788456)  */
-/* chi_eins simuliert : 0.798xx   (seed -3) */
-/*                    +-0.001 */
-/* --------------------------------------------------------- */
-/* 
-   Gauss() liefert normalverteilte Zufallszahlen
-   bei vorgegebenem seed.
-   */
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-
-long cmaes_random_init( cmaes_random_t *t, long unsigned inseed)
-{
-    clock_t cloc = clock();
-
-    t->flgstored = 0;
-    t->rgrand = (long *) calloc (sizeof(long), 32);
-
-    return cmaes_random_Start(t, inseed);
-}
-
-
-
-/* --------------------------------------------------------- */
-long cmaes_random_Start( cmaes_random_t *t, long unsigned inseed)
-{
-    long tmp;
-    int i;
-
-    t->flgstored = 0;
-
-    while (inseed > 2e9)   
-        inseed /= 2; /* prevent infinite loop on 32 bit system */
-    if (inseed < 1)
-        inseed = 1; 
-    t->aktseed = inseed;
-    for (i = 39; i >= 0; --i)
-    {
-        tmp = t->aktseed/127773;
-        t->aktseed = 16807 * (t->aktseed - tmp * 127773)
-            - 2836 * tmp;
-        if (t->aktseed < 0) t->aktseed += 2147483647;
-        if (i < 32)
-            t->rgrand[i] = t->aktseed;
-    }
-    t->aktrand = t->rgrand[0];
-    return inseed;
-}
-
-/* --------------------------------------------------------- */
-double cmaes_random_Gauss(cmaes_random_t *t)
-{
-    double x1, x2, rquad, fac;
-
-    if (t->flgstored)
-    {    
-        t->flgstored = 0;
-        return t->hold;
-    }
-    do 
-    {
-        x1 = 2.0 * cmaes_random_Uniform(t) - 1.0;
-        x2 = 2.0 * cmaes_random_Uniform(t) - 1.0;
-        rquad = x1*x1 + x2*x2;
-    } while(rquad >= 1 || rquad <= 0);
-    fac = sqrt(-2.0*log(rquad)/rquad);
-    t->flgstored = 1;
-    t->hold = fac * x1;
-    return fac * x2;
-}
-
-/* --------------------------------------------------------- */
-double cmaes_random_Uniform( cmaes_random_t *t)
-{
-    long tmp;
-
-    tmp = t->aktseed/127773;
-    t->aktseed = 16807 * (t->aktseed - tmp * 127773)
-        - 2836 * tmp;
-    if (t->aktseed < 0) 
-        t->aktseed += 2147483647;
-    tmp = t->aktrand / 67108865;
-    t->aktrand = t->rgrand[tmp];
-    t->rgrand[tmp] = t->aktseed;
-    return (double)(t->aktrand)/(2.147483647e9);
-}
 
 
 static double rgdouMax(const double *rgd, int len)
