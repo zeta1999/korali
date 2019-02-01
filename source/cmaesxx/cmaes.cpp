@@ -1318,10 +1318,9 @@ const char * cmaes_TestForTermination( cmaes_t *t)
     cp[0] = '\0';
 
     /* function value reached */
-    if ((t->gen > 1 || t->state > 1) && t->sp.stStopFitness.flg && 
-            t->rgFuncValue[t->index[0]] <= t->sp.stStopFitness.val) 
+    if ((t->gen > 1 || t->state > 1) &&   t->rgFuncValue[t->index[0]] <= kb->_stopMinFitness)
         cp += sprintf(cp, "Fitness: function value %7.2e <= stopFitness (%7.2e)\n", 
-                t->rgFuncValue[t->index[0]], t->sp.stStopFitness.val);
+                t->rgFuncValue[t->index[0]], kb->_stopMinFitness);
 
     /* TolFun */
     range = function_value_difference(t);
@@ -1495,13 +1494,6 @@ void cmaes_ReadFromFilePtr( cmaes_t *t, FILE *fp)
                     case 0 : /* "stop", reads "stop now" */
                         if (strncmp(sin1, "now", 3) == 0) 
                             t->flgStop = 1; 
-                        else if (strncmp(sin1, "Fitness", 7) == 0) {
-                            if (sscanf(sin2, " %lg", &d) == 1) 
-                            {
-                                t->sp.stStopFitness.flg = 1; 
-                                t->sp.stStopFitness.val = d; 
-                            }
-                        }
                         break;
                     case 1 : /* "print" */
                         d = 1; /* default */
@@ -1548,7 +1540,7 @@ void cmaes_ReadFromFilePtr( cmaes_t *t, FILE *fp)
                         break;
                     case 4 : /* maxTimeFractionForEigendecompostion */
                         if (sscanf(sin1, " %lg", &d) == 1) 
-                            t->sp.updateCmode.maxtime = d;
+                            kb->_covarianceMatrixUpdateMaxCPUTimePercentage = d;
                         break; 
                     default :
                         break; 
@@ -1628,15 +1620,9 @@ void cmaes_UpdateEigensystem(cmaes_t *t, int flgforce)
         if (t->flgEigensysIsUptodate == 1)
             return; 
 
-        /* return on modulo generation number */ 
-        if (t->sp.updateCmode.flgalways == 0 /* not implemented, always ==0 */
-                && t->gen < t->genOfEigensysUpdate + t->sp.updateCmode.modulo
-           )
-            return;
-
         /* return on time percentage */
-        if (t->sp.updateCmode.maxtime < 1.00 
-                && t->eigenTimings.tictoctime > t->sp.updateCmode.maxtime * t->eigenTimings.totaltime
+        if (kb->_covarianceMatrixUpdateMaxCPUTimePercentage < 1.00
+                && t->eigenTimings.tictoctime > kb->_covarianceMatrixUpdateMaxCPUTimePercentage * t->eigenTimings.totaltime
                 && t->eigenTimings.tictoctime > 0.0002)
             return; 
     }
@@ -2197,11 +2183,8 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* All scalars:  */
     i = 0;
-    t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
-    t->rgsformat[i] = " updatecov %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.modulo;
-    t->rgsformat[i] = " maxTimeFractionForEigendecompostion %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.maxtime;
+    t->rgsformat[i] = " maxTimeFractionForEigendecompostion %lg"; t->rgpadr[i++]=(void *) &kb->_covarianceMatrixUpdateMaxCPUTimePercentage;
     t->rgsformat[i] = " resume %59s";    t->rgpadr[i++] = (void *) t->resumefile;
-    t->rgsformat[i] = " fac*updatecov %lg"; t->rgpadr[i++]=(void *) &t->facupdateCmode;
     t->n1para = i; 
     t->n1outpara = i-2; /* disregard last parameters in WriteToFile() */
 
@@ -2209,14 +2192,9 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     i = 0;
     t->n2para = i;  
 
-    t->stStopFitness.flg = -1;
-
     strcpy(t->weigkey, "log");
 
-    t->updateCmode.modulo = -1;  
-    t->updateCmode.maxtime = -1;
-    t->updateCmode.flgalways = 0;
-    t->facupdateCmode = 1;
+    kb->_covarianceMatrixUpdateMaxCPUTimePercentage = -1;
     strcpy(t->resumefile, "_no_");
 
     /* filename == NULL invokes default in cmaes_readpara_Read... */
@@ -2271,8 +2249,6 @@ void cmaes_readpara_ReadFromFile(cmaes_readpara_t *t, const char * filename)
             if (s[0] == '#' || s[0] == '%')
                 continue;
             if(sscanf(s, t->rgsformat[ipara], t->rgpadr[ipara]) == 1) {
-                if (strncmp(t->rgsformat[ipara], " stopFitness ", 13) == 0)
-                    t->stStopFitness.flg = 1;
                 break;
             }
         }
@@ -2339,10 +2315,6 @@ void cmaes_readpara_WriteToFile(cmaes_readpara_t *t, const char *filenamedest)
     }
     for (ipara=1; ipara < t->n1outpara; ++ipara) {
         if (strncmp(t->rgsformat[ipara], " stopFitness ", 13) == 0)
-            if(t->stStopFitness.flg == 0) {
-                fprintf(fp, " stopFitness\n");
-                continue;
-            }
         len = strlen(t->rgsformat[ipara]);
         if (t->rgsformat[ipara][len-1] == 'd') /* read integer */
             fprintf(fp, t->rgsformat[ipara], *(int *)t->rgpadr[ipara]);
@@ -2373,16 +2345,6 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
 {
     int N = kb->_dimCount;
     clock_t cloc = clock();
-
-
-    if (t->stStopFitness.flg == -1)
-        t->stStopFitness.flg = 0;
-
-    if (t->updateCmode.modulo < 0)
-        t->updateCmode.modulo = 1./kb->_covarianceMatrixLearningRate/(double)(N)/10.;
-    t->updateCmode.modulo *= t->facupdateCmode;
-    if (t->updateCmode.maxtime < 0)
-        t->updateCmode.maxtime = 0.20; /* maximal 20% of CPU-time */
 
     t->flgsupplemented = 1;
 

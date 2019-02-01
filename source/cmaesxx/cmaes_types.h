@@ -66,11 +66,9 @@ typedef struct
   short flgsupplemented; 
   
   /* termination parameters */
-  struct { int flg; double val; } stStopFitness; 
   double stopTolFunHist;
 
   /* internal evolution strategy parameters */
-  double diagonalCov;  /* number of initial iterations */
   struct { int flgalways; double modulo; double maxtime; } updateCmode;
   double facupdateCmode;
 

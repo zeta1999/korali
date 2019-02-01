@@ -19,6 +19,7 @@ class KoraliBase
   size_t _lambda; // Number of offspring per sample cycle
   size_t _mu;
   size_t _diagonalCovarianceMatrixEvalFrequency;
+  size_t _covarianceEigensystemEvaluationFrequency;
 
   double* _muWeights;
   double _muEffective;
@@ -27,6 +28,7 @@ class KoraliBase
   double _dampFactor;
   double _cumulativeCovariance;
   double _covarianceMatrixLearningRate;
+  double _covarianceMatrixUpdateMaxCPUTimePercentage;
 
   // Defining stop conditions
   double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
@@ -35,6 +37,7 @@ class KoraliBase
   double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
   double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
   double _stopMaxTimePerEigendecomposition; // Defines maximum time to be spent on eigensystem decomposition
+  double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
 
   KoraliBase(size_t dim, double (*fun) (double*, int), size_t seed);
 
@@ -50,7 +53,9 @@ class KoraliBase
   void setDampingFactor(double dampFactor);
   void setCumulativeCovariance(double cumulativeCovariance);
   void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate);
-  void setDiagonalCovarianceMatrixEvalFrequency(double diagonalCovarianceMatrixEvalFrequency);
+  void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency);
+  void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency);
+  void setCovarianceMatrixUpdateMaxCPUTimePercentage(double covarianceMatrixUpdateMaxCPUTimePercentage);
 
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);
@@ -58,6 +63,7 @@ class KoraliBase
   void setStopMinDeltaX(double stopMinDeltaX);
   void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor);
   void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition);
+  void setStopMinFitness(double _stopMinFitness);
 
   void Run();
 };
