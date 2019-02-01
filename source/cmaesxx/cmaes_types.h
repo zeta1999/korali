@@ -18,29 +18,10 @@
 #include <time.h>
 #include "korali.h"
 
-typedef struct 
-/* cmaes_random_t 
- * sets up a pseudo random number generator instance 
- */
-{
-  /* Variables for Uniform() */
-  long int aktseed;
-  long int aktrand;
-  long int *rgrand;
-  
-  /* Variables for Gauss() */
-  short flgstored;
-  double hold;
-} cmaes_random_t;
-
 
 typedef struct 
-/* cmaes_t 
- * CMA-ES "object" 
- */
 {
-  /* char *signalsFilename; */
-  cmaes_random_t rand; /* random number generator */
+
 
   double sigma;  /* step size */
 
@@ -85,8 +66,6 @@ typedef struct
 
   double dMaxSignifKond;
   double dLastMinEWgroesserNull;
-
-  short flgresumedone; 
 
 
 } cmaes_t; 

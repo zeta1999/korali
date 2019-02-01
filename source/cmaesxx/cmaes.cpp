@@ -40,9 +40,8 @@ double * cmaes_PerturbSolutionInto(cmaes_t *t, double *xout,
 
 static void TestMinStdDevs( cmaes_t *);
 /* static void WriteMaxErrorInfo( cmaes_t *); */
-static void Eigen( int N,  double **C, double *diag, double **Q, 
-        double *rgtmp);
-static int  Check_Eigen( int N,  double **C, double *diag, double **Q);
+static void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp);
+
 static void QLalgo2 (int n, double *d, double *e, double **V); 
 static void Householder2(int n, double **V, double *d, double *e); 
 static void Adapt_C2(cmaes_t *t, int hsig);
@@ -81,11 +80,9 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
 
     t->chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
     t->flgEigensysIsUptodate = 1;
-    t->flgCheckEigen = 0; 
     t->genOfEigensysUpdate = 0;
 
     t->flgIniphase = 0; /* do not use iniphase, hsig does the job now */
-    t->flgresumedone = 0;
     t->flgStop = 0;
 
     for (dtest = 1.; dtest && dtest < 1.1 * dtest; dtest *= 2.)
@@ -178,7 +175,7 @@ double * cmaes_init(cmaes_t *t, /* "this" */
 double const * cmaes_SetMean(cmaes_t *t, const double *xmean)
     /*
      * Distribution mean could be changed before SamplePopulation().
-     * This might lead to unexpected behaviour if done repeatedly. 
+     * This might lead to unexpected behaviour if done repeatedly.
      */
 {
     int i, N=kb->_dimCount;
@@ -190,10 +187,10 @@ double const * cmaes_SetMean(cmaes_t *t, const double *xmean)
     if (xmean != NULL && xmean != t->rgxmean)
         for(i = 0; i < N; ++i)
             t->rgxmean[i] = xmean[i];
-    else 
-        xmean = t->rgxmean; 
+    else
+        xmean = t->rgxmean;
 
-    return xmean; 
+    return xmean;
 }
 
 /* --------------------------------------------------------- */
@@ -346,7 +343,7 @@ const double * cmaes_Optimize(cmaes_t *evo, double(*pFun)(double const *, int di
     } /* while !cmaes_TestForTermination(evo) */
 
 
-    return cmaes_GetPtr(evo, "xbestever");
+    return evo->rgxbestever;
 }
 
 /* --------------------------------------------------------- */
@@ -517,8 +514,7 @@ static void Adapt_C2(cmaes_t *t, int hsig)
     } /* if ccov... */
 }
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
+
 static void TestMinStdDevs(cmaes_t *t)
     /* increases sigma */
 {
@@ -586,12 +582,8 @@ void cmaes_PrintResults(cmaes_t *t)
 					printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
 			printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
 			k = MinIdx(t->rgD, N);
-			for(i=0; i<N; ++i)
-					printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
-
-
-
-} /* WriteToFilePtr */
+			for(i=0; i<N; ++i) printf(" %12g%c", t->B[i][k], (i%5==4||i==N-1)?'\n':' ');
+}
 
 static double function_value_difference(cmaes_t *t) {
     return std::max(rgdouMax(t->arFuncValueHist, (int)std::min(t->gen,*(t->arFuncValueHist-1))),
@@ -602,57 +594,7 @@ static double function_value_difference(cmaes_t *t) {
 
 
 
-/* --------------------------------------------------------- */
-double * cmaes_GetInto( cmaes_t *t, char const *s, double *res)
-{
-    int i, N = kb->_dimCount;
-    double const * res0 = cmaes_GetPtr(t, s);
-    if (res == NULL)
-        res = (double*) calloc (sizeof(double), N);
-    for (i = 0; i < N; ++i)
-        res[i] = res0[i];
-    return res; 
-}
 
-/* --------------------------------------------------------- */
-double * cmaes_GetNew( cmaes_t *t, char const *s)
-{
-    return (cmaes_GetInto(t, s, NULL));
-}
-
-/* --------------------------------------------------------- */
-const double * cmaes_GetPtr( cmaes_t *t, char const *s)
-{
-    int i, N=kb->_dimCount;
-
-    /* diagonal of covariance matrix */
-    if (strncmp(s, "diag(C)", 7) == 0) { 
-        for (i = 0; i < N; ++i)
-            t->rgout[i] = t->C[i][i]; 
-        return(t->rgout);
-    }
-    /* diagonal of axis lengths matrix */
-    else if (strncmp(s, "diag(D)", 7) == 0) { 
-        return(t->rgD);
-    }
-    /* vector of standard deviations sigma*sqrt(diag(C)) */
-    else if (strncmp(s, "stddev", 3) == 0) { 
-        for (i = 0; i < N; ++i)
-            t->rgout[i] = t->sigma * sqrt(t->C[i][i]); 
-        return(t->rgout);
-    }
-    /* bestever solution seen so far */
-    else if (strncmp(s, "xbestever", 7) == 0)
-        return(t->rgxbestever);
-    /* recent best solution of the recent population */
-    else if (strncmp(s, "xbest", 5) == 0)
-        return(t->rgrgx[t->index[0]]);
-    /* mean of the recent distribution */
-    else if (strncmp(s, "xmean", 1) == 0)
-        return(t->rgxmean);
-
-    return(NULL);
-}
 
 /* --------------------------------------------------------- */
 /* tests stopping criteria 
@@ -782,44 +724,6 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 
 
 
-/* ========================================================= */
-static int Check_Eigen( int N,  double **C, double *diag, double **Q) 
-    /* 
-       exhaustive test of the output of the eigendecomposition
-       needs O(n^3) operations 
-
-       writes to error file 
-       returns number of detected inaccuracies 
-       */
-{
-    /* compute Q diag Q^T and Q Q^T to check */
-    int i, j, k, res = 0;
-    double cc, dd; 
-    static char s[324];
-
-    for (i=0; i < N; ++i)
-        for (j=0; j < N; ++j) {
-            for (cc=0.,dd=0., k=0; k < N; ++k) {
-                cc += diag[k] * Q[i][k] * Q[j][k];
-                dd += Q[i][k] * Q[j][k];
-            }
-            /* check here, is the normalization the right one? */
-            if (fabs(cc - C[i>j?i:j][i>j?j:i])/sqrt(C[i][i]*C[j][j]) > 1e-10 
-                    && fabs(cc - C[i>j?i:j][i>j?j:i]) > 3e-14) {
-                sprintf(s, "%d %d: %.17e %.17e, %e", 
-                        i, j, cc, C[i>j?i:j][i>j?j:i], cc-C[i>j?i:j][i>j?j:i]);
-                fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): imprecise result detected ");
-                ++res; 
-            }
-            if (fabs(dd - (i==j)) > 1e-10) {
-                sprintf(s, "%d %d %.17e ", i, j, dd);
-                fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): imprecise result detected (Q not orthog.)");
-                ++res;
-            }
-        }
-    return res; 
-}
-
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
 void cmaes_UpdateEigensystem(cmaes_t *t, int flgforce)
@@ -842,9 +746,6 @@ void cmaes_UpdateEigensystem(cmaes_t *t, int flgforce)
     t->minEW = rgdouMin(t->rgD, N);
     t->maxEW = rgdouMax(t->rgD, N);
 
-    if (t->flgCheckEigen)
-        /* needs O(n^3)! writes, in case, error message in error file */ 
-        i = Check_Eigen( N, t->C, t->rgD, t->B);
 
     for (i = 0; i < N; ++i)
         t->rgD[i] = sqrt(t->rgD[i]);
@@ -1161,29 +1062,7 @@ static void Householder2(int n, double **V, double *d, double *e)
 } /* Housholder() */
 
 
-void cmaes_distr_ini(int dim, cmaes_distr_t *t) {
 
-}
-
-void cmaes_distr_fin(cmaes_distr_t *t) {
-
-}
-
-void cmaes_get_distr(cmaes_t *t, cmaes_distr_t *d) {
-    int i, flgdiag, n;
-    size_t sz;
-    n = d->dim;
-    flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
-    d->flgdiag = flgdiag;
-
-    for (i = 0; i < n; ++i)
-        d->D[i] = t->rgD[i] * t->sigma;
-
-    sz = n * sizeof(double);
-    for (i = 0; i < n; ++i)
-        memcpy(d->Q[i], t->B[i], sz);
-    memcpy(d->mu, t->rgxmean, sz);
-}
 
 
 
