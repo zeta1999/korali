@@ -38,12 +38,5 @@ int main(int argc, char* argv[])
 	korali.setStopMinDeltaX(1e-11);
 	korali.setLambda(128);
 
-	Korali::UniformDistribution u0(-6, 6, 45);
-	Korali::UniformDistribution u1(-6, 6, 13513);
-	Korali::UniformDistribution u2(-6, 6, 141);
-	Korali::UniformDistribution u3(-6, 6, 4614);
-
-	auto engine = CmaesEngine(4, f_Ackley);
-
-	engine.run();
+	korali.run();
 }

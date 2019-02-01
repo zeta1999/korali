@@ -3,13 +3,13 @@
 /* ---------------------- last modified: Jan 2019        -------------------- */
 /* --------------------------------- by: Daniel Waelchli -------------------- */
 /* -------------------------------------------------------------------------- */
-/*   
-     Cpp Wrapper for parallel CMA-ES for gradient free non-linear 
-     	function minimization. 
-	
-	 Implementation based on work of Panagiotis Hadjidoukas (see engine_cmaes.c) 
+/*
+     Cpp Wrapper for parallel CMA-ES for gradient free non-linear
+     	function minimization.
+
+	 Implementation based on work of Panagiotis Hadjidoukas (see engine_cmaes.c)
 		and Nikolaus Hansen (see cmaes.c)
-      
+
 */
 
 #ifndef ENGINE_CMAES_HPP
