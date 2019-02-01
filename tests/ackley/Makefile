@@ -1,18 +1,16 @@
 # source/CMAES/test/Makefile
 
-include ../../source/common.mk
+include ../../common.mk
 
 TARGET ?= ackley
 
 all: $(TARGET)
 
-L=../../source
-
-DIR_KORALI = $L/korali
+DIR_KORALI = $L../../source
 
 LDXLIBS := -L$(DIR_KORALI) -lkorali $(LDXLIBS)  
 
-CXXFLAGS += -I$(DIR_KORALI)
+CXXFLAGS += -I../../include
 
 $(TARGET): $(TARGET).o
 	$(LINK.o.xx) $^ $(LDXLIBS) $(CXXFLAGS)

@@ -14,25 +14,10 @@ int main(int argc, char* argv[])
 {
 	auto korali = Korali::KoraliBase(4, f_Ackley, 53753);
 
-	korali[0]->setPriorDistribution("Uniform", -6.0, 6.0);
-	korali[1]->setPriorDistribution("Uniform", -6.0, 6.0);
-	korali[2]->setPriorDistribution("Uniform", -6.0, 6.0);
-	korali[3]->setPriorDistribution("Uniform", -6.0, 6.0);
-
-	korali[0]->setBounds(-32.0, +32.0);
-	korali[1]->setBounds(-32.0, +32.0);
-	korali[2]->setBounds(-32.0, +32.0);
-	korali[3]->setBounds(-32.0, +32.0);
-
-	korali[0]->setInitialX(0.0);
-	korali[1]->setInitialX(0.0);
-	korali[2]->setInitialX(0.0);
-	korali[3]->setInitialX(0.0);
-
-	korali[0]->setInitialStdDev(3.0);
-	korali[1]->setInitialStdDev(3.0);
-	korali[2]->setInitialStdDev(3.0);
-	korali[3]->setInitialStdDev(3.0);
+	for (int i = 0; i < 4; i++)	korali[i]->setPriorDistribution("Uniform", -6.0, 6.0);
+	for (int i = 0; i < 4; i++)	korali[i]->setBounds(-32.0, +32.0);
+	for (int i = 0; i < 4; i++)	korali[i]->setInitialX(0.0);
+	for (int i = 0; i < 4; i++)	korali[i]->setInitialStdDev(3.0);
 
 	korali.setStopMinDeltaX(1e-11);
 	korali.setLambda(128);

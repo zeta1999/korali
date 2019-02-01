@@ -91,7 +91,7 @@ void Korali::KoraliBase::setMu(size_t mu, std::string type)
   for (int i = 0; i < _mu; i++) _muWeights[i] /= s1;
 
   if(_mu < 1 || _mu > _lambda || (_mu == _lambda && _muWeights[0] == _muWeights[_mu-1]))
-  { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%d) and/or Lambda (%d)\n", _mu, _lambda); exit(-1); }
+  { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%lu) and/or Lambda (%lu)\n", _mu, _lambda); exit(-1); }
 
 }
 
@@ -278,8 +278,8 @@ double** Korali::KoraliBase::cmaes_ReSampleSingle(int iindex)
     char s[99];
 
     if (iindex < 0 || iindex >= _lambda) {
-        sprintf(s, "index==%d must be between 0 and %d", iindex, _lambda);
-        fprintf(stderr, "[CMAES] Error: cmaes_ReSampleSingle(): Population member ",s,0,0);
+        sprintf(s, "index==%d must be between 0 and %lu", iindex, _lambda);
+        fprintf(stderr, "[CMAES] Error: cmaes_ReSampleSingle(): Population member \n");
     }
     rgx = rgrgx[iindex];
 
@@ -321,11 +321,9 @@ double* Korali::KoraliBase::cmaes_UpdateDistribution(int save_hist, const double
     double psxps;
 
     if(state == 3)
-        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): You need to call \n",
-                "SamplePopulation() before update can take place.");
+        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): You need to call SamplePopulation() before update can take place.");
     if(rgFunVal == NULL)
-        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): ",
-                "Fitness function value array input is missing.");
+        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): Fitness function value array input is missing.");
 
     if(save_hist && state == 1)  /* function values are delivered here */
         countevals += _lambda;
@@ -481,7 +479,7 @@ void Korali::KoraliBase::cmaes_PrintResults()
     int i, k, N=_dimCount;
 
 		printf(" N %d\n", N);
-		printf(" seed %d\n", _seed);
+		printf(" seed %lu\n", _seed);
 		printf("function evaluations %.0f\n", countevals);
 		printf("function value f(x)=%g\n", rgrgx[index[0]][N]);
 		printf("maximal standard deviation %g\n", sigma*sqrt(maxdiagC));
@@ -743,7 +741,7 @@ void Korali::KoraliBase::run()
 {
 	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
 	initializeInternalVariables();
-  printf("(%d,%d)-CMA-ES(mu_eff=%.1f), dimension=%d, diagonalIterations=%ld, randomSeed=%d", _mu, _lambda, _muEffective,  _dimCount, _diagonalCovarianceMatrixEvalFrequency,  _seed);
+  printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu", _mu, _lambda, _muEffective,  _dimCount, _diagonalCovarianceMatrixEvalFrequency,  _seed);
 
 	//  if (_dimCount != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimCount, dimCount); exit(-1); }
 

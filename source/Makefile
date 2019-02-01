@@ -1,5 +1,13 @@
-all:
-	@$(MAKE) -j -C korali
+# source/lib/cames/Makefile
 
-clean:
-	@$(MAKE) -j -C korali clean 
+include ../common.mk
+
+CXXFLAGS += -I../include
+
+all: libkorali.a
+
+libkorali.a: korali.o distribution.o dimension.o 
+
+clean:; rm -rf *.o *.a
+
+.PHONY: clean all

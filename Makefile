@@ -5,3 +5,6 @@ all:
 clean:
 	@$(MAKE) -j -C source clean
 	@$(MAKE) -j -C tests clean
+
+test:
+	./tests/ackley/ackley
