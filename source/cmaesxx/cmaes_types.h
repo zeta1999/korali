@@ -65,9 +65,6 @@ typedef struct
   char * filename;  /* keep record of the file that was taken to read parameters */
   short flgsupplemented; 
   
-  /* input parameters */
-  double * rgDiffMinChange; 
-
   /* termination parameters */
   struct { int flg; double val; } stStopFitness; 
   double stopTolFunHist;

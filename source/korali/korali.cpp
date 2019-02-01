@@ -13,7 +13,7 @@ Korali::KoraliBase::KoraliBase(size_t dim, double (*fun) (double*, int), size_t 
 
 	_fitfunction = fun;
 
-	_maxFitnessEvaluations = 900*(dim+3)*(dim+3);
+	_maxFitnessEvaluations = 900*(_dimCount+3)*(_dimCount+3);
 	_maxGenerations = std::numeric_limits<size_t>::max();
 	_lambda = 128;
 	setMu(64);

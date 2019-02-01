@@ -798,11 +798,9 @@ static void TestMinStdDevs(cmaes_t *t)
     /* increases sigma */
 {
     int i, N = kb->_dimCount;
-    if (t->sp.rgDiffMinChange == NULL)
-        return;
 
     for (i = 0; i < N; ++i)
-        while (t->sigma * sqrt(t->C[i][i]) < t->sp.rgDiffMinChange[i]) 
+        while (t->sigma * sqrt(t->C[i][i]) < kb->_dims[i]._minStdDevChange)
             t->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor);
 
 } /* cmaes_TestMinStdDevs() */
@@ -2210,10 +2208,8 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
 
     /* arrays */
     i = 0;
-    t->rgskeyar[i]  = " diffMinChange %d"; t->rgp2adr[i++] = &t->rgDiffMinChange;
     t->n2para = i;  
 
-    t->rgDiffMinChange = NULL; 
     t->stStopFitness.flg = -1;
 
     strcpy(t->weigkey, "log");
@@ -2245,9 +2241,6 @@ void cmaes_readpara_exit(cmaes_readpara_t *t)
 {
     if (t->filename != NULL)
         free( t->filename);
-    if (t->rgDiffMinChange != NULL)
-        free( t->rgDiffMinChange);
-
 
     free((void*)t->rgsformat);
     free(t->rgpadr);

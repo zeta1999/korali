@@ -19,9 +19,8 @@ class Dimension
  double _upperBound;
  double _initialX;
  double _initialStdDev;
+ double _minStdDevChange;
  int _seed;
-
-
 
  Dimension();
  void setPriorDistribution(std::string type, double a, double b = 0.0);
@@ -29,6 +28,7 @@ class Dimension
  void setBounds(double lowerBound, double upperBound);
  void setInitialX(double initialX);
  void setInitialStdDev(double initialStdDev);
+ void setMinStdDevChange(double minStdDevChange);
  void setSeed(int seed);
 
 };
