@@ -82,8 +82,8 @@ typedef struct
   short flgCheckEigen; /* control via cmaes_signals.par */
   double genOfEigensysUpdate; 
 
- 
-  double dMaxSignifKond; 				     
+
+  double dMaxSignifKond;
   double dLastMinEWgroesserNull;
 
   short flgresumedone; 

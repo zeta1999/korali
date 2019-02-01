@@ -12,6 +12,8 @@ class KoraliBase
 	size_t _seed;
 	size_t _dimCount;
   Dimension* _dims;
+  Distribution* _gaussianGenerator;
+
   double* _randomNumber;
   double (*_fitfunction) (double*, int);
 

@@ -53,7 +53,6 @@ static void QLalgo2 (int n, double *d, double *e, double **V);
 static void Householder2(int n, double **V, double *d, double *e); 
 static void Adapt_C2(cmaes_t *t, int hsig);
 static void   Sorted_index( const double *rgFunVal, int *index, int n);
-static int    SignOfDiff( const void *d1, const void * d2);
 static double rgdouMax( const double *rgd, int len);
 static double rgdouMin( const double *rgd, int len);
 static int    MaxIdx( const double *rgd, int len);
@@ -97,7 +96,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     t->flgresumedone = 0;
     t->flgStop = 0;
 
-    for (dtest = 1.; dtest && dtest < 1.1 * dtest; dtest *= 2.) 
+    for (dtest = 1.; dtest && dtest < 1.1 * dtest; dtest *= 2.)
         if (dtest == dtest + 1.)
             break;
     t->dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
@@ -154,7 +153,7 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     }
 
     t->minEW = rgdouMin(t->rgD, N); t->minEW = t->minEW * t->minEW;
-    t->maxEW = rgdouMax(t->rgD, N); t->maxEW = t->maxEW * t->maxEW; 
+    t->maxEW = rgdouMax(t->rgD, N); t->maxEW = t->maxEW * t->maxEW;
 
     t->maxdiagC=t->C[0][0]; for(i=1;i<N;++i) if(t->maxdiagC<t->C[i][i]) t->maxdiagC=t->C[i][i];
     t->mindiagC=t->C[0][0]; for(i=1;i<N;++i) if(t->mindiagC>t->C[i][i]) t->mindiagC=t->C[i][i];
@@ -585,7 +584,7 @@ void cmaes_PrintResults(cmaes_t *t)
 			printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
 			for (i = 0; i < N; ++i)
 					t->rgdTmp[i] = t->rgD[i];
-			qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff);
+			//qsort(t->rgdTmp, (unsigned) N, sizeof(double), &SignOfDiff);
 			for(i=0; i<N; ++i)
 					printf(" %12g%c", t->sigma*t->rgdTmp[N-1-i],
 									(i%5==4||i==N-1)?'\n':' ');
@@ -671,13 +670,6 @@ const double * cmaes_GetPtr( cmaes_t *t, char const *s)
 const char * cmaes_TestForTermination( cmaes_t *t)
 {
 
-//  double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
-//  double _stopMinDeltaX; // Defines minimum function value differences before stopping
-//  double _stopFitnessDiffHistoryThreshold; // Defines minimum function value differences among best values before stopping
-//  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
-//  double _stopMaxStdDevX; // Defines maximum standard deviation before it stops.
-//  double _stopMaxTimePerEigendecomposition;
-
     double range, fac;
     int iAchse, iKoo;
     int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
@@ -734,8 +726,8 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 
     /* Condition of C greater than dMaxSignifKond */
     if (t->maxEW >= t->minEW * t->dMaxSignifKond) {
-        cp += sprintf(cp, 
-                "ConditionNumber: maximal condition number %7.2e reached. maxEW=%7.2e,minEW=%7.2e,maxdiagC=%7.2e,mindiagC=%7.2e\n", 
+        cp += sprintf(cp,
+                "ConditionNumber: maximal condition number %7.2e reached. maxEW=%7.2e,minEW=%7.2e,maxdiagC=%7.2e,mindiagC=%7.2e\n",
                 t->dMaxSignifKond, t->maxEW, t->minEW, t->maxdiagC, t->mindiagC);
     } /* if */
 
@@ -1331,10 +1323,6 @@ static int MinIdx(const double *rgd, int len)
 }
 
 
-static int SignOfDiff(const void *d1, const void * d2) 
-{ 
-    return *((double *) d1) > *((double *) d2) ? 1 : -1; 
-} 
 
 #if 1
 /* dirty index sort */
