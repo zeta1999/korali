@@ -18,13 +18,15 @@ class KoraliBase
   size_t _maxGenerations; // Defines maximum number of generations
   size_t _lambda; // Number of offspring per sample cycle
   size_t _mu;
+  size_t _diagonalCovarianceMatrixEvalFrequency;
+
   double* _muWeights;
   double _muEffective;
   double _muCovariance;
   double _sigmaCumulationFactor;
   double _dampFactor;
   double _cumulativeCovariance;
-  double _covarianceMatrixRate;
+  double _covarianceMatrixLearningRate;
 
   // Defining stop conditions
   double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
@@ -47,7 +49,8 @@ class KoraliBase
   void setSigmaCumulationFactor(double sigmaCumulationFactor);
   void setDampingFactor(double dampFactor);
   void setCumulativeCovariance(double cumulativeCovariance);
-  void setCovarianceMatrixRate(double covarianceMatrixRate);
+  void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate);
+  void setDiagonalCovarianceMatrixEvalFrequency(double diagonalCovarianceMatrixEvalFrequency);
 
   void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
   void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);

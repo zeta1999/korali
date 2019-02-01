@@ -115,7 +115,7 @@ char * cmaes_SayHello(cmaes_t *t)
     /* write initial message */
     sprintf(t->sOutString, 
             "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d (%s)", 
-            kb->_mu, kb->_lambda, kb->_muEffective, t->version, kb->_dimCount, (long)t->sp.diagonalCov,
+            kb->_mu, kb->_lambda, kb->_muEffective, t->version, kb->_dimCount, kb->_diagonalCovarianceMatrixEvalFrequency,
             kb->_seed, getTimeStr());
 
     return t->sOutString; 
@@ -450,7 +450,7 @@ double const * cmaes_SetMean(cmaes_t *t, const double *xmean)
 double * const * cmaes_SamplePopulation(cmaes_t *t)
 {
     int iNk, i, j, N=kb->_dimCount;
-    int flgdiag = ((t->sp.diagonalCov == 1) || (t->sp.diagonalCov >= t->gen)); 
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
     double sum;
     double const *xmean = t->rgxmean; 
 
@@ -628,7 +628,7 @@ const double * cmaes_Optimize(cmaes_t *evo, double(*pFun)(double const *, int di
 double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFunVal)
 {
     int i, j, iNk, hsig, N=kb->_dimCount;
-    int flgdiag = ((t->sp.diagonalCov == 1) || (t->sp.diagonalCov >= t->gen)); 
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
     double sum; 
     double psxps; 
 
@@ -756,13 +756,13 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
 static void Adapt_C2(cmaes_t *t, int hsig)
 {
     int i, j, k, N=kb->_dimCount;
-    int flgdiag = ((t->sp.diagonalCov == 1) || (t->sp.diagonalCov >= t->gen)); 
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
 
-    if (kb->_covarianceMatrixRate != 0. && t->flgIniphase == 0) {
+    if (kb->_covarianceMatrixLearningRate != 0. && t->flgIniphase == 0) {
 
         /* definitions for speeding up inner-most loop */
-        double ccov1 = douMin(kb->_covarianceMatrixRate * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
-        double ccovmu = douMin(kb->_covarianceMatrixRate * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
+        double ccov1 = douMin(kb->_covarianceMatrixLearningRate * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
+        double ccovmu = douMin(kb->_covarianceMatrixLearningRate * (1-1./kb->_muCovariance)* (flgdiag ? (N+1.5) / 3. : 1.), 1.-ccov1);
         double sigmasquare = t->sigma * t->sigma; 
 
         t->flgEigensysIsUptodate = 0;
@@ -1311,7 +1311,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
 
     double range, fac;
     int iAchse, iKoo;
-    int flgdiag = ((t->sp.diagonalCov == 1) || (t->sp.diagonalCov >= t->gen)); 
+    int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
     static char sTestOutString[3024];
     char * cp = sTestOutString;
     int i, cTemp, N=kb->_dimCount;
@@ -1397,7 +1397,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
         if (t->rgxmean[iKoo] == t->rgxmean[iKoo] + 
                 0.2*t->sigma*sqrt(t->C[iKoo][iKoo]))
         {
-            /* t->C[iKoo][iKoo] *= (1 + kb->_covarianceMatrixRate); */
+            /* t->C[iKoo][iKoo] *= (1 + kb->_covarianceMatrixLearningRate); */
             /* flg = 1; */
             cp += sprintf(cp, 
                     "NoEffectCoordinate: standard deviation 0.2*%7.2e in coordinate %d without effect\n", 
@@ -1981,7 +1981,7 @@ void cmaes_get_distr(cmaes_t *t, cmaes_distr_t *d) {
     int i, flgdiag, n;
     size_t sz;
     n = d->dim;
-    flgdiag = ((t->sp.diagonalCov == 1) || (t->sp.diagonalCov >= t->gen));
+    flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
     d->flgdiag = flgdiag;
 
     for (i = 0; i < n; ++i)
@@ -2198,7 +2198,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     /* All scalars:  */
     i = 0;
     t->rgsformat[i] = " stopFitness %lg"; t->rgpadr[i++]=(void *) &t->stStopFitness.val;
-    t->rgsformat[i] = " diagonalCovarianceMatrix %lg"; t->rgpadr[i++]=(void *) &t->diagonalCov;
     t->rgsformat[i] = " updatecov %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.modulo;
     t->rgsformat[i] = " maxTimeFractionForEigendecompostion %lg"; t->rgpadr[i++]=(void *) &t->updateCmode.maxtime;
     t->rgsformat[i] = " resume %59s";    t->rgpadr[i++] = (void *) t->resumefile;
@@ -2213,9 +2212,6 @@ void cmaes_readpara_init (cmaes_readpara_t *t,
     t->stStopFitness.flg = -1;
 
     strcpy(t->weigkey, "log");
-
-
-    t->diagonalCov = 0; /* default is 0, but this might change in future, see below */
 
     t->updateCmode.modulo = -1;  
     t->updateCmode.maxtime = -1;
@@ -2382,13 +2378,8 @@ void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
     if (t->stStopFitness.flg == -1)
         t->stStopFitness.flg = 0;
 
-
-
-    if (t->diagonalCov == -1)
-        t->diagonalCov = 2 + 100. * N / sqrt((double)kb->_lambda);                                /* minor increment */
-
     if (t->updateCmode.modulo < 0)
-        t->updateCmode.modulo = 1./kb->_covarianceMatrixRate/(double)(N)/10.;
+        t->updateCmode.modulo = 1./kb->_covarianceMatrixLearningRate/(double)(N)/10.;
     t->updateCmode.modulo *= t->facupdateCmode;
     if (t->updateCmode.maxtime < 0)
         t->updateCmode.maxtime = 0.20; /* maximal 20% of CPU-time */
