@@ -58,30 +58,11 @@ typedef struct
 
 typedef struct 
 /* cmaes_readpara_t
- * collects all parameters, in particular those that are read from 
- * a file before to start. This should split in future? 
+ * collects all parameters, in particular those that are read from
+ * a file before to start. This should split in future?
  */
 {
-  char * filename;  /* keep record of the file that was taken to read parameters */
-  short flgsupplemented; 
-  
-  /* termination parameters */
-  double stopTolFunHist;
 
-  /* internal evolution strategy parameters */
-  struct { int flgalways; double modulo; double maxtime; } updateCmode;
-  double facupdateCmode;
-
-  /* supplementary variables */
-
-  char *weigkey; 
-  char resumefile[99];
-  const char **rgsformat;
-  void **rgpadr;
-  const char **rgskeyar;
-  double ***rgp2adr;
-  int n1para, n1outpara;
-  int n2para;
 } cmaes_readpara_t;
 
 typedef struct 

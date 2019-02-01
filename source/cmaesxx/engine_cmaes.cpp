@@ -28,7 +28,7 @@ CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : d
 }
 
 CmaesEngine::~CmaesEngine(){
-    cmaes_exit(&evo_); /* release memory */
+
 }
 
 cmaes_t* CmaesEngine::getEvo() {

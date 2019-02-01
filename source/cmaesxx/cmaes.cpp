@@ -31,7 +31,7 @@ https://github.com/cma-es/c-cma-es/blob/master/LICENSE
 /* see cmaes_interface.h for those, not listed here */
 
 long   cmaes_random_init(cmaes_random_t *, long unsigned seed /* 0==clock */);
-void   cmaes_random_exit(cmaes_random_t *);
+
 double cmaes_random_Gauss(cmaes_random_t *); /* (0,1)-normally distributed */
 double cmaes_random_Uniform(cmaes_random_t *);
 long   cmaes_random_Start(cmaes_random_t *, long unsigned seed /* 0==1 */);
@@ -42,12 +42,8 @@ double cmaes_timings_update(cmaes_timings_t *timing);
 void   cmaes_timings_tic(cmaes_timings_t *timing);
 double cmaes_timings_toc(cmaes_timings_t *timing);
 
-void cmaes_readpara_init (cmaes_readpara_t *, int dim,   const double * sigma, int seed, int lambda, const char * filename);
-void cmaes_readpara_exit(cmaes_readpara_t *);
-void cmaes_readpara_ReadFromFile(cmaes_readpara_t *, const char *szFileName);
-void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *);
+
 void cmaes_readpara_SetWeights(cmaes_readpara_t *, const char * mode);
-void cmaes_readpara_WriteToFile(cmaes_readpara_t *, const char *filenamedest);
 
 const double * cmaes_Optimize( cmaes_t *, double(*pFun)(double const *, int dim), 
         long iterations);
@@ -131,8 +127,6 @@ void cmaes_init_para(cmaes_t *t, /* "this" */
     const char *input_parameter_filename) 
 {
     t->version = c_cmaes_version;
-    cmaes_readpara_init(&t->sp, dimension, inrgstddev, inseed,
-            lambda, input_parameter_filename);
 }
 
 double * cmaes_init_final(cmaes_t *t /* "this" */)
@@ -152,11 +146,6 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     }
     /* assign_string(&t->signalsFilename, "cmaes_signals.par"); */
 
-    if (!t->sp.flgsupplemented) {
-        cmaes_readpara_SupplementDefaults(&t->sp);
-        if (!isNoneStr(t->sp.filename)) /* TODO: should this be done in readpara_SupplementDefaults? */
-            cmaes_readpara_WriteToFile(&t->sp, "actparcmaes.par");
-    }
 
     kb->_seed = cmaes_random_init( &t->rand, (long unsigned int) kb->_seed);
 
@@ -243,8 +232,6 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     for (i = 0; i < N; ++i)
         t->rgxmean[i] = t->rgxold[i] = (*kb)[i]->_initialX;
 
-    if (strcmp(t->sp.resumefile, "_no_")  != 0)
-        cmaes_resume_distribution(t, t->sp.resumefile);
 
     return (t->publicFitness); 
 
@@ -266,161 +253,10 @@ double * cmaes_init(cmaes_t *t, /* "this" */
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
 
-void cmaes_resume_distribution(cmaes_t *t, char *filename)
-{
-    int i, j, res, n; 
-    double d; 
-    FILE *fp = fopen( filename, "r"); 
-    if(fp == NULL) {
-        ERRORMESSAGE("cmaes_resume_distribution(): could not open '", 
-                filename, "'",0);
-        return;
-    }
-    /* count number of "resume" entries */
-    i = 0; res = 0;
-    while (1) {
-        if ((res = fscanf(fp, " resume %lg", &d)) == EOF)
-            break;
-        else if (res==0) 
-            fscanf(fp, " %*s");
-        else if(res > 0)
-            i += 1;
-    }
-
-    /* go to last "resume" entry */
-    n = i; i = 0; res = 0; rewind(fp);
-    while (i<n) {
-        if ((res = fscanf(fp, " resume %lg", &d)) == EOF)
-            FATAL("cmaes_resume_distribution(): Unexpected error, bug",0,0,0); 
-        else if (res==0) 
-            fscanf(fp, " %*s");
-        else if(res > 0)
-            ++i;
-    }
-    if (d != kb->_dimCount)
-        FATAL("cmaes_resume_distribution(): Dimension numbers do not match",0,0,0); 
-
-    /* find next "xmean" entry */  
-    while (1) {
-        if ((res = fscanf(fp, " xmean %lg", &d)) == EOF)
-            FATAL("cmaes_resume_distribution(): 'xmean' not found",0,0,0); 
-        else if (res==0) 
-            fscanf(fp, " %*s");
-        else if(res > 0)
-            break;
-    }
-
-    /* read xmean */
-    t->rgxmean[0] = d; res = 1; 
-    for(i = 1; i < kb->_dimCount; ++i)
-        res += fscanf(fp, " %lg", &t->rgxmean[i]);
-    if (res != kb->_dimCount)
-        FATAL("cmaes_resume_distribution(): xmean: dimensions differ",0,0,0); 
-
-    /* find next "path for sigma" entry */  
-    while (1) {
-        if ((res = fscanf(fp, " path for sigma %lg", &d)) == EOF)
-            FATAL("cmaes_resume_distribution(): 'path for sigma' not found",0,0,0); 
-        else if (res==0) 
-            fscanf(fp, " %*s");
-        else if(res > 0)
-            break;
-    }
-
-    /* read ps */
-    t->rgps[0] = d; res = 1;
-    for(i = 1; i < kb->_dimCount; ++i)
-        res += fscanf(fp, " %lg", &t->rgps[i]);
-    if (res != kb->_dimCount)
-        FATAL("cmaes_resume_distribution(): ps: dimensions differ",0,0,0); 
-
-    /* find next "path for C" entry */  
-    while (1) {
-        if ((res = fscanf(fp, " path for C %lg", &d)) == EOF)
-            FATAL("cmaes_resume_distribution(): 'path for C' not found",0,0,0); 
-        else if (res==0) 
-            fscanf(fp, " %*s");
-        else if(res > 0)
-            break;
-    }
-    /* read pc */
-    t->rgpc[0] = d; res = 1;
-    for(i = 1; i < kb->_dimCount; ++i)
-        res += fscanf(fp, " %lg", &t->rgpc[i]);
-    if (res != kb->_dimCount)
-        FATAL("cmaes_resume_distribution(): pc: dimensions differ",0,0,0); 
-
-    /* find next "sigma" entry */  
-    while (1) {
-        if ((res = fscanf(fp, " sigma %lg", &d)) == EOF)
-            FATAL("cmaes_resume_distribution(): 'sigma' not found",0,0,0); 
-        else if (res==0) 
-            fscanf(fp, " %*s");
-        else if(res > 0)
-            break;
-    }
-    t->sigma = d;
-
-    /* find next entry "covariance matrix" */
-    while (1) {
-        if ((res = fscanf(fp, " covariance matrix %lg", &d)) == EOF)
-            FATAL("cmaes_resume_distribution(): 'covariance matrix' not found",0,0,0); 
-        else if (res==0) 
-            fscanf(fp, " %*s");
-        else if(res > 0)
-            break;
-    }
-    /* read C */
-    t->C[0][0] = d; res = 1;
-    for (i = 1; i < kb->_dimCount; ++i)
-        for (j = 0; j <= i; ++j)
-            res += fscanf(fp, " %lg", &t->C[i][j]);
-    if (res != (kb->_dimCount*kb->_dimCount+kb->_dimCount)/2)
-        FATAL("cmaes_resume_distribution(): C: dimensions differ",0,0,0); 
-
-    fclose(fp);
-
-    t->flgIniphase = 0;
-    t->flgEigensysIsUptodate = 0;
-    t->flgresumedone = 1;
-    cmaes_UpdateEigensystem(t, 1);
-
-} /* cmaes_resume_distribution() */
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
 
-void cmaes_exit(cmaes_t *t)
-{
-    int i, N = kb->_dimCount;
-    t->version = NULL; 
-    /* free(t->signals_filename) */
-    t->state = -1; /* not really useful at the moment */
-    free( t->rgpc);
-    free( t->rgps);
-    free( t->rgdTmp);
-    free( t->rgBDz);
-    free( --t->rgxmean);
-    free( --t->rgxold); 
-    free( --t->rgxbestever); 
-    free( --t->rgout); 
-    free( t->rgD);
-    for (i = 0; i < N; ++i) {
-        free( t->C[i]);
-        free( t->B[i]);
-    }
-    for (i = 0; i < kb->_lambda; ++i)
-        free( --t->rgrgx[i]);
-    free( t->rgrgx); 
-    free( t->C);
-    free( t->B);
-    free( t->index);
-    free( t->publicFitness);
-    free( --t->rgFuncValue);
-    free( --t->arFuncValueHist);
-    cmaes_random_exit (&t->rand);
-    cmaes_readpara_exit (&t->sp); 
-} /* cmaes_exit() */
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
@@ -2093,10 +1929,7 @@ long cmaes_random_init( cmaes_random_t *t, long unsigned inseed)
     return cmaes_random_Start(t, inseed);
 }
 
-void cmaes_random_exit(cmaes_random_t *t)
-{
-    free( t->rgrand);
-}
+
 
 /* --------------------------------------------------------- */
 long cmaes_random_Start( cmaes_random_t *t, long unsigned inseed)
@@ -2162,193 +1995,7 @@ double cmaes_random_Uniform( cmaes_random_t *t)
     return (double)(t->aktrand)/(2.147483647e9);
 }
 
-/* --------------------------------------------------------- */
-/* -------------- Functions: cmaes_readpara_t -------------- */
-/* --------------------------------------------------------- */
-void cmaes_readpara_init (cmaes_readpara_t *t,
-        int dim, 
-        const double * inrgsigma,
-        int inseed, 
-        int lambda, 
-        const char * filename)
-{
-    int i, N;
-    /* TODO: make sure cmaes_readpara_init has not been called already */
-    t->filename = NULL; /* set after successful Read */
-    t->rgsformat = (const char **) new_void(55, sizeof(char *));
-    t->rgpadr = (void **) new_void(55, sizeof(void *)); 
-    t->rgskeyar = (const char **) new_void(11, sizeof(char *));
-    t->rgp2adr = (double ***) new_void(11, sizeof(double **));
-    t->weigkey = (char *)new_void(7, sizeof(char)); 
 
-    /* All scalars:  */
-    i = 0;
-    t->rgsformat[i] = " maxTimeFractionForEigendecompostion %lg"; t->rgpadr[i++]=(void *) &kb->_covarianceMatrixUpdateMaxCPUTimePercentage;
-    t->rgsformat[i] = " resume %59s";    t->rgpadr[i++] = (void *) t->resumefile;
-    t->n1para = i; 
-    t->n1outpara = i-2; /* disregard last parameters in WriteToFile() */
-
-    /* arrays */
-    i = 0;
-    t->n2para = i;  
-
-    strcpy(t->weigkey, "log");
-
-    kb->_covarianceMatrixUpdateMaxCPUTimePercentage = -1;
-    strcpy(t->resumefile, "_no_");
-
-    /* filename == NULL invokes default in cmaes_readpara_Read... */
-    if (!isNoneStr(filename) && (!filename || strcmp(filename, "writeonly") != 0))
-        cmaes_readpara_ReadFromFile(t, filename);
-
-
-
-
-
-    t->flgsupplemented = 0;
-
-} /* cmaes_readpara_init */
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_readpara_exit(cmaes_readpara_t *t)
-{
-    if (t->filename != NULL)
-        free( t->filename);
-
-    free((void*)t->rgsformat);
-    free(t->rgpadr);
-    free((void*)t->rgskeyar);
-    free(t->rgp2adr);
-    free(t->weigkey);
-}
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_readpara_ReadFromFile(cmaes_readpara_t *t, const char * filename)
-{
-    char s[1000];
-    const char *ss = "cmaes_initials.par";
-    int ipara, i;
-    int size;
-    FILE *fp;
-    if (filename == NULL) {
-        filename = ss;
-    }
-    t->filename = NULL; /* nothing read so far */
-    fp = fopen( filename, "r"); 
-    if (fp == NULL) {
-        ERRORMESSAGE("cmaes_ReadFromFile(): could not open '", filename, "'",0);
-        return;
-    }
-    for (ipara=0; ipara < t->n1para; ++ipara)
-    {
-        rewind(fp);
-        while(fgets(s, sizeof(s), fp) != NULL)
-        { /* skip comments  */
-            if (s[0] == '#' || s[0] == '%')
-                continue;
-            if(sscanf(s, t->rgsformat[ipara], t->rgpadr[ipara]) == 1) {
-                break;
-            }
-        }
-    } /* for */
-    if (kb->_dimCount <= 0)
-        FATAL("cmaes_readpara_ReadFromFile(): No valid dimension N",0,0,0);
-    for (ipara=0; ipara < t->n2para; ++ipara)
-    {
-        rewind(fp);
-        while(fgets(s, sizeof(s), fp) != NULL) /* read one line */
-        { /* skip comments  */
-            if (s[0] == '#' || s[0] == '%')
-                continue;
-            if(sscanf(s, t->rgskeyar[ipara], &size) == 1) { /* size==number of values to be read */
-                if (size > 0) {
-                    *t->rgp2adr[ipara] = new_double(kb->_dimCount);
-                    for (i=0;i<size&&i<kb->_dimCount;++i) /* start reading next line */
-                        if (fscanf(fp, " %lf", &(*t->rgp2adr[ipara])[i]) != 1)
-                            break;
-                    if (i<size && i < kb->_dimCount) {
-                        ERRORMESSAGE("cmaes_readpara_ReadFromFile ", filename, ": ",0); 
-                        FATAL( "'", t->rgskeyar[ipara], 
-                                "' not enough values found.\n", 
-                                "   Remove all comments between numbers.");
-                    }
-                    for (; i < kb->_dimCount; ++i) /* recycle */
-                        (*t->rgp2adr[ipara])[i] = (*t->rgp2adr[ipara])[i%size];
-                }
-            }
-        }  
-    } /* for */
-    fclose(fp);
-    assign_string(&(t->filename), filename); /* t->filename must be freed */
-    return;
-} /* cmaes_readpara_ReadFromFile() */
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_readpara_WriteToFile(cmaes_readpara_t *t, const char *filenamedest)
-{
-    int ipara, i; 
-    size_t len;
-    time_t ti = time(NULL);
-    FILE *fp = fopen( filenamedest, "a"); 
-    if(fp == NULL) {
-        ERRORMESSAGE("cmaes_WriteToFile(): could not open '", 
-                filenamedest, "'",0);
-        return;
-    }
-    fprintf(fp, "\n# Read from %s at %s\n", t->filename ? t->filename : "", 
-            asctime(localtime(&ti))); /* == ctime() */
-    for (ipara=0; ipara < 1; ++ipara) {
-        fprintf(fp, t->rgsformat[ipara], *(int *)t->rgpadr[ipara]);
-        fprintf(fp, "\n");
-    }
-    for (ipara=0; ipara < t->n2para; ++ipara) {
-        if(*t->rgp2adr[ipara] == NULL)
-            continue;
-        fprintf(fp, t->rgskeyar[ipara], kb->_dimCount);
-        fprintf(fp, "\n");
-        for (i=0; i<kb->_dimCount; ++i)
-            fprintf(fp, "%7.3g%c", (*t->rgp2adr[ipara])[i], (i%5==4)?'\n':' ');
-        fprintf(fp, "\n");
-    }
-    for (ipara=1; ipara < t->n1outpara; ++ipara) {
-        if (strncmp(t->rgsformat[ipara], " stopFitness ", 13) == 0)
-        len = strlen(t->rgsformat[ipara]);
-        if (t->rgsformat[ipara][len-1] == 'd') /* read integer */
-            fprintf(fp, t->rgsformat[ipara], *(int *)t->rgpadr[ipara]);
-        else if (t->rgsformat[ipara][len-1] == 's') /* read string */
-            fprintf(fp, t->rgsformat[ipara], (char *)t->rgpadr[ipara]);
-        else { 
-            if (strncmp(" fac*", t->rgsformat[ipara], 5) == 0) {
-                fprintf(fp, " ");
-                fprintf(fp, t->rgsformat[ipara]+5, *(double *)t->rgpadr[ipara]);
-            } else
-                fprintf(fp, t->rgsformat[ipara], *(double *)t->rgpadr[ipara]);
-        }
-        fprintf(fp, "\n");
-    } /* for */
-    fprintf(fp, "\n");
-    fclose(fp); 
-} /* cmaes_readpara_WriteToFile() */
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-void cmaes_readpara_SupplementDefaults(cmaes_readpara_t *t)
-    /* Called (only) once to finally set parameters. The settings
-     * typically depend on the current parameter values itself,
-     * where 0 or -1 may indicate to set them to a certain default
-     * value. For this reason calling `SupplementDefaults` twice
-     * might lead to unexpected results. 
-     */
-{
-    int N = kb->_dimCount;
-    clock_t cloc = clock();
-
-    t->flgsupplemented = 1;
-
-} /* cmaes_readpara_SupplementDefaults() */
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
