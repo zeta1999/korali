@@ -3,10 +3,6 @@
 #include "engine_cmaes.hpp"
 #include "engine_cmaes_utils.hpp"
 
-void CmaesEngine::addPrior(Korali::Prior* p)
-{
-	_priors.push_back(p);
-}
 
 
 CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim)
@@ -49,8 +45,7 @@ double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int st
 
     // subtract the log-prior from the log-likelohood
     for( int i=0; i<_lambda; i++)
-      for (int j = 0; j < _priors.size(); j++)
-        arFunvals_[i] -= _priors[j]->getDensityLog(pop_[i]);
+        arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
 
     auto tt1 = std::chrono::system_clock::now();
   

@@ -45,23 +45,7 @@ int main(int argc, char* argv[])
 
 	auto engine = CmaesEngine(4, f_Ackley);
 
-	Korali::Prior P0;
 
-
-	P0.addDimension(&u0);
-	P0.addDimension(&u1);
-	P0.addDimension(&u2);
-	P0.addDimension(&u3);
-
-	P0.initialize(1);
-
-//    for(int i = 0; i < 30; i++)
-//    {
-//      double* n = P.getRandomNumber();
-//      printf("Random Number: [%1.3f, %1.3f, %1.3f, %1.3f]\n", n[0], n[1], n[2], n[3]);
-//    }
-
-	engine.addPrior(&P0);
 
 	engine.run();
 }

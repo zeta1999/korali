@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <vector>
 #include "korali.h"
-#include "prior.h"
 #include <chrono>
 #include <cmaes.h>
 
@@ -42,7 +41,6 @@ public:
 	double   getBestFunVal();
 	double*  getBestEver();
 
-    void addPrior(Korali::Prior* p);
 
 private:
 
@@ -57,7 +55,6 @@ private:
 
 	
 	int dim_;
-	std::vector<Korali::Prior*> _priors;
 
 	double *const*pop_;
     double *arFunvals_; 
