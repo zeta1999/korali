@@ -12,6 +12,7 @@ class KoraliBase
 	size_t _seed;
 	size_t _dimCount;
   Dimension* _dims;
+  double* _randomNumber;
   double (*_fitfunction) (double*, int);
 
   size_t _maxFitnessEvaluations;   // Defines maximum number of fitness evaluations
@@ -40,6 +41,10 @@ class KoraliBase
   double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
 
   KoraliBase(size_t dim, double (*fun) (double*, int), size_t seed);
+
+  double getTotalDensityLog(double* x);
+  double getTotalDensity(double* x);
+  double* getRandomNumber();
 
   Dimension* getDimension(int dim);
   Dimension* operator[] (int x);

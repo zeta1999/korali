@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <chrono>
 #include "engine_cmaes.hpp"
 #include "engine_cmaes_utils.hpp"
 
@@ -7,10 +8,6 @@ void CmaesEngine::addPrior(Korali::Prior* p)
 	_priors.push_back(p);
 }
 
-void CmaesEngine::addBound(double lower, double upper)
-{
-	_bounds.push_back( std::pair<double, double>(lower, upper) );
-}
 
 CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim)
 {
@@ -100,7 +97,7 @@ double CmaesEngine::run() {
 int CmaesEngine::is_feasible(double *pop, int dim) {
     int i, good;
     for (i = 0; i < dim; i++) {
-        good = (_bounds[i].first <= pop[i]) && (pop[i] <= _bounds[i].second);
+        good = (kb->_dims[i]._lowerBound <= pop[i]) && (pop[i] <= kb->_dims[i]._upperBound);
         if (!good) {
             return 0;
         }

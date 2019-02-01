@@ -61,11 +61,6 @@ int main(int argc, char* argv[])
 //      printf("Random Number: [%1.3f, %1.3f, %1.3f, %1.3f]\n", n[0], n[1], n[2], n[3]);
 //    }
 
-	engine.addBound(-32.0, +32.0);
-	engine.addBound(-32.0, +32.0);
-	engine.addBound(-32.0, +32.0);
-	engine.addBound(-32.0, +32.0);
-
 	engine.addPrior(&P0);
 
 	engine.run();

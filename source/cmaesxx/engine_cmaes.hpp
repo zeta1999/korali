@@ -43,7 +43,6 @@ public:
 	double*  getBestEver();
 
     void addPrior(Korali::Prior* p);
-    void addBound(double lower, double upper);
 
 private:
 
@@ -58,7 +57,6 @@ private:
 
 	
 	int dim_;
-	std::vector< std::pair<double, double> > _bounds;
 	std::vector<Korali::Prior*> _priors;
 
 	double *const*pop_;

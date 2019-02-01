@@ -4,7 +4,7 @@ include ../common.mk
 
 all: libkorali.a
 
-libkorali.a: korali.o distribution.o prior.o dimension.o
+libkorali.a: korali.o distribution.o dimension.o prior.o
 
 clean:; rm -rf *.o *.a
 
