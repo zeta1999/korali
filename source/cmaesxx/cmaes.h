@@ -37,7 +37,7 @@ void cmaes_PrintResults(cmaes_t *t);
 double * const * cmaes_SamplePopulation(cmaes_t *);
 double *         cmaes_UpdateDistribution(int save_hsit, cmaes_t *, 
                  const double *rgFitnessValues);
-const char *     cmaes_TestForTermination(cmaes_t *);
+bool    cmaes_TestForTermination(cmaes_t *);
 
 /* --- additional functions --- */
 double * const * cmaes_ReSampleSingle( cmaes_t *t, int index);

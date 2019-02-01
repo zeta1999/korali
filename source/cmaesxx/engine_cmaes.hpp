@@ -38,24 +38,15 @@ public:
 
 private:
 
-    double _elapsedTime;
-    bool _restart;
-
 	cmaes_t evo_;
-	
-	std::chrono::time_point<std::chrono::system_clock> gt0_, gt1_, gt2_, gt3_;
-
-	
 	int dim_;
 
 	double *const*pop_;
-    double *arFunvals_; 
+  double *arFunvals_;
 
 	double (*fitfun_) (double*, int);
-	void taskfun_(double *x, int *no, double* res);
   double evaluate_population( cmaes_t *evo, double *arFunvals );
   int is_feasible(double *pop, int dim);
-
 
 };
 

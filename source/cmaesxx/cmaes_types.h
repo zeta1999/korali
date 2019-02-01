@@ -29,9 +29,6 @@ typedef struct
   int *index;       /* sorting index of sample pop. */
   double *arFuncValueHist;
 
-  short flgIniphase; /* not really in use anymore */
-  short flgStop; 
-
   double chiN; 
   double **C;  /* lower triangular matrix: i>=j for C[i][j] */
   double **B;  /* matrix with normalize eigenvectors in columns */

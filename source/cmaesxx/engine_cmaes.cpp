@@ -7,21 +7,16 @@
 
 CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : dim_(dim)
 {
-		gt0_ = std::chrono::system_clock::now();
 		fitfun_ = fun;
     arFunvals_ = cmaes_init(&evo_);
 		printf("%s\n", cmaes_SayHello(&evo_));
-   _elapsedTime = 0.0;
 }
-
-
-
 
 double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals) {
 
     auto tt0 = std::chrono::system_clock::now();
     for( int i = 0; i < kb->_lambda; ++i) arFunvals_[i] = - fitfun_(pop_[i], dim_);
-    for( int i=0; i< kb->_lambda; i++)  arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
+    for( int i = 0; i < kb->_lambda; i++) arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
     auto tt1 = std::chrono::system_clock::now();
     return std::chrono::duration<double>(tt1-tt0).count();
 };
@@ -29,33 +24,24 @@ double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals) {
 
 double CmaesEngine::run() {
 
-	gt1_ = std::chrono::system_clock::now();
+	auto startTime = std::chrono::system_clock::now();
 
-	double dt;
 
-	while( !cmaes_TestForTermination(&evo_) ){
-
+	while( !cmaes_TestForTermination(&evo_) )
+	{
         pop_ = cmaes_SamplePopulation(&evo_);
-        for( int i=0; i<kb->_lambda; ++i)	while( !is_feasible( pop_[i], kb->_dimCount )) cmaes_ReSampleSingle( &evo_, i );
-            dt = evaluate_population( &evo_, arFunvals_);
-        _elapsedTime += dt;
-	
+        for(int i = 0; i < kb->_lambda; ++i)	while( !is_feasible( pop_[i], kb->_dimCount )) cmaes_ReSampleSingle( &evo_, i );
+        for(int i = 0; i < kb->_lambda; ++i) arFunvals_[i] = - fitfun_(pop_[i], dim_);
+        for(int i = 0; i < kb->_lambda; i++) arFunvals_[i] -= kb->getTotalDensityLog(pop_[i]);
         cmaes_UpdateDistribution(1, &evo_, arFunvals_);
+  }
 
-    }
+	auto endTime = std::chrono::system_clock::now();
 
-    gt2_ = std::chrono::system_clock::now();
-
-    printf("Stop:\n %s \n",  cmaes_TestForTermination(&evo_)); /* print termination reason */
 		cmaes_PrintResults(&evo_);
 
-    gt3_ = std::chrono::system_clock::now();
     
-    printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(gt3_-gt0_).count());
-    printf("Initialization time     = %.3lf  seconds\n", std::chrono::duration<double>(gt1_-gt0_).count());
-    printf("Processing time         = %.3lf  seconds\n", std::chrono::duration<double>(gt2_-gt1_).count());
-    printf("Funtion Evaluation time = %.3lf  seconds\n", _elapsedTime);
-    printf("Finalization time       = %.3lf  seconds\n", std::chrono::duration<double>(gt3_-gt2_).count());
+    printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(endTime-startTime).count());
 
 	return 0.0;
 }

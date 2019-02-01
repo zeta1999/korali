@@ -64,9 +64,6 @@ double * cmaes_init(cmaes_t *t /* "this" */)
     t->flgEigensysIsUptodate = 1;
     t->genOfEigensysUpdate = 0;
 
-    t->flgIniphase = 0; /* do not use iniphase, hsig does the job now */
-    t->flgStop = 0;
-
     for (dtest = 1.; dtest && dtest < 1.1 * dtest; dtest *= 2.)
         if (dtest == dtest + 1.)
             break;
@@ -335,15 +332,6 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
             hsig * sqrt(kb->_cumulativeCovariance * (2. - kb->_cumulativeCovariance)) * t->rgBDz[i];
     }
 
-    /* stop initial phase */
-    if (t->flgIniphase && 
-            t->gen > std::min(1/kb->_sigmaCumulationFactor, 1+N/kb->_muCovariance))
-    {
-        if (psxps / kb->_dampFactor / (1.-pow((1. - kb->_sigmaCumulationFactor), t->gen))
-                < N * 1.05) 
-            t->flgIniphase = 0;
-    }
-
     /* update of C  */
 
     Adapt_C2(t, hsig);
@@ -364,7 +352,7 @@ void Adapt_C2(cmaes_t *t, int hsig)
     int i, j, k, N=kb->_dimCount;
     int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
 
-    if (kb->_covarianceMatrixLearningRate != 0. && t->flgIniphase == 0) {
+    if (kb->_covarianceMatrixLearningRate != 0.0) {
 
         /* definitions for speeding up inner-most loop */
         double ccov1 = std::min(kb->_covarianceMatrixLearningRate * (1./kb->_muCovariance) * (flgdiag ? (N+1.5) / 3. : 1.), 1.);
@@ -468,29 +456,29 @@ double function_value_difference(cmaes_t *t) {
                rgdouMin(t->rgFuncValue, kb->_lambda));
 }
 
-const char * cmaes_TestForTermination( cmaes_t *t)
+bool cmaes_TestForTermination(cmaes_t *t)
 {
 
     double range, fac;
     int iAchse, iKoo;
     int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
-    char sTestOutString[3024];
-    char * cp = sTestOutString;
     int i, cTemp, N=kb->_dimCount;
-    cp[0] = '\0';
 
     /* function value reached */
     if ((t->gen > 1 || t->state > 1) &&   t->rgFuncValue[t->index[0]] <= kb->_stopMinFitness)
-        cp += sprintf(cp, "Fitness: function value %7.2e <= stopFitness (%7.2e)\n", 
-                t->rgFuncValue[t->index[0]], kb->_stopMinFitness);
+    {
+        printf( "Fitness: function value %7.2e <= stopFitness (%7.2e)\n", t->rgFuncValue[t->index[0]], kb->_stopMinFitness);
+        return true;
+    }
 
     /* TolFun */
     range = function_value_difference(t);
 
     if (t->gen > 0 && range <= kb->_stopFitnessDiffThreshold) {
-        cp += sprintf(cp, 
+        printf(
                 "TolFun: function value differences %7.2e < kb->_stopFitnessDiffThreshold=%7.2e\n",
                 range, kb->_stopFitnessDiffThreshold);
+        return true;
     }
 
     /* TolFunHist */
@@ -498,20 +486,23 @@ const char * cmaes_TestForTermination( cmaes_t *t)
         range = rgdouMax(t->arFuncValueHist, (int)*(t->arFuncValueHist-1)) 
             - rgdouMin(t->arFuncValueHist, (int)*(t->arFuncValueHist-1));
         if (range <= kb->_stopFitnessDiffHistoryThreshold)
-            cp += sprintf(cp, 
+            printf(
                     "TolFunHist: history of function value changes %7.2e kb->_stopFitnessDiffHistoryThreshold=%7.2e",
                     range, kb->_stopFitnessDiffHistoryThreshold);
+        return true;
     }
 
     /* TolX */
     for(i=0, cTemp=0; i<N; ++i) {
         cTemp += (t->sigma * sqrt(t->C[i][i]) < kb->_stopMinDeltaX) ? 1 : 0;
         cTemp += (t->sigma * t->rgpc[i] < kb->_stopMinDeltaX) ? 1 : 0;
+        return true;
     }
     if (cTemp == 2*N) {
-        cp += sprintf(cp, 
+        printf(
                 "TolX: object variable changes below %7.2e \n", 
                 kb->_stopMinDeltaX);
+        return true;
     }
 
     /* TolUpX */
@@ -520,16 +511,18 @@ const char * cmaes_TestForTermination( cmaes_t *t)
             break;
     }
     if (i < N) {
-        cp += sprintf(cp, 
+        printf(
                 "TolUpX: standard deviation increased by more than %7.2e, larger initial standard deviation recommended \n", 
 								kb->_stopMaxStdDevXFactor);
+        return true;
     }
 
     /* Condition of C greater than dMaxSignifKond */
     if (t->maxEW >= t->minEW * t->dMaxSignifKond) {
-        cp += sprintf(cp,
+        printf(
                 "ConditionNumber: maximal condition number %7.2e reached. maxEW=%7.2e,minEW=%7.2e,maxdiagC=%7.2e,mindiagC=%7.2e\n",
                 t->dMaxSignifKond, t->maxEW, t->minEW, t->maxdiagC, t->mindiagC);
+        return true;
     } /* if */
 
     /* Principal axis i has no effect on xmean, ie. 
@@ -545,10 +538,10 @@ const char * cmaes_TestForTermination( cmaes_t *t)
             if (iKoo == N)        
             {
                 /* t->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor); */
-                cp += sprintf(cp, 
+                printf(
                         "NoEffectAxis: standard deviation 0.1*%7.2e in principal axis %d without effect\n", 
                         fac/0.1, iAchse);
-                break;
+                return true;
             } /* if (iKoo == N) */
         } /* for iAchse             */
     } /* if flgdiag */
@@ -560,32 +553,30 @@ const char * cmaes_TestForTermination( cmaes_t *t)
         {
             /* t->C[iKoo][iKoo] *= (1 + kb->_covarianceMatrixLearningRate); */
             /* flg = 1; */
-            cp += sprintf(cp, 
+            printf(
                     "NoEffectCoordinate: standard deviation 0.2*%7.2e in coordinate %d without effect\n", 
                     t->sigma*sqrt(t->C[iKoo][iKoo]), iKoo); 
-            break;
+            return true;
         }
 
     } /* for iKoo */
     /* if (flg) t->sigma *= exp(0.05+kb->_sigmaCumulationFactor/kb->_dampFactor); */
 
     if(t->countevals >= kb->_maxFitnessEvaluations)
-        cp += sprintf(cp, "MaxFunEvals: conducted function evaluations %.0f >= %lu\n",
+    {
+        printf( "MaxFunEvals: conducted function evaluations %.0f >= %lu\n",
                 t->countevals, kb->_maxFitnessEvaluations);
+        return true;
+    }
     if(t->gen >= kb->_maxGenerations)
-        cp += sprintf(cp, "MaxIter: number of iterations %.0f >= %lu\n",
+    {
+        printf( "MaxIter: number of iterations %.0f >= %lu\n",
                 t->gen, kb->_maxGenerations);
-    if(t->flgStop)
-        cp += sprintf(cp, "Manual: stop signal read\n");
-
-    if (cp - sTestOutString>320)
-        fprintf(stderr, "[CMAES] Error: Bug in cmaes_t:Test(): sTestOutString too short");
-
-    if (cp != sTestOutString) {
-        return sTestOutString;
+        return true;
     }
 
-    return(NULL);
+
+    return false;
 
 } /* cmaes_Test() */
 
