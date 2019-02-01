@@ -22,20 +22,6 @@ https://github.com/cma-es/c-cma-es/blob/master/LICENSE
 #include <stdio.h>  /* sprintf(), NULL? */
 #include "cmaes.h" /* <time.h> via cmaes_types.h */
 
-/* --------------------------------------------------------- */
-/* ------------------- Declarations ------------------------ */
-/* --------------------------------------------------------- */
-
-/* ------------------- External Visibly -------------------- */
-
-/* see cmaes_interface.h for those, not listed here */
-
-const double * cmaes_Optimize( cmaes_t *, double(*pFun)(double const *, int dim), 
-        long iterations);
-double const * cmaes_SetMean(cmaes_t *, const double *xmean);
-double * cmaes_PerturbSolutionInto(cmaes_t *t, double *xout, 
-        double const *xin, double eps);
-
 /* ------------------- Locally visibly ----------------------- */
 
 static void TestMinStdDevs( cmaes_t *);
@@ -170,28 +156,6 @@ double * cmaes_init(cmaes_t *t, /* "this" */
 }
 
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-double const * cmaes_SetMean(cmaes_t *t, const double *xmean)
-    /*
-     * Distribution mean could be changed before SamplePopulation().
-     * This might lead to unexpected behaviour if done repeatedly.
-     */
-{
-    int i, N=kb->_dimCount;
-
-    if (t->state >= 1 && t->state < 3)
-        fprintf(stderr, "[CMAES] Error: cmaes_SetMean: mean cannot be set inbetween the calls of ",
-                "SamplePopulation and UpdateDistribution");
-
-    if (xmean != NULL && xmean != t->rgxmean)
-        for(i = 0; i < N; ++i)
-            t->rgxmean[i] = xmean[i];
-    else
-        xmean = t->rgxmean;
-
-    return xmean;
-}
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
@@ -201,8 +165,6 @@ double * const * cmaes_SamplePopulation(cmaes_t *t)
     int flgdiag = ((kb->_diagonalCovarianceMatrixEvalFrequency== 1) || (kb->_diagonalCovarianceMatrixEvalFrequency>= t->gen));
     double sum;
     double const *xmean = t->rgxmean; 
-
-    /* cmaes_SetMean(t, xmean); * xmean could be changed at this point */
 
     /* calculate eigensystem  */
     if (!t->flgEigensysIsUptodate) {
@@ -290,61 +252,8 @@ double * cmaes_SampleSingleInto(cmaes_t *t, double *rgx)
     return rgx;
 }
 
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-double * cmaes_PerturbSolutionInto(cmaes_t *t, double *rgx, double const *xmean, double eps)
-{
-    int i, j, N=kb->_dimCount;
-    double sum; 
-
-    if (rgx == NULL)
-        rgx = (double*) calloc (sizeof(double), N);
-    if (xmean == NULL)
-        fprintf(stderr, "[CMAES] Error: cmaes_PerturbSolutionInto(): xmean was not given");
-
-    for (i = 0; i < N; ++i)
-        t->rgdTmp[i] = t->rgD[i] * kb->_gaussianGenerator->getRandomNumber();
-    /* add mutation (sigma * B * (D*z)) */
-    for (i = 0; i < N; ++i) {
-        for (j = 0, sum = 0.; j < N; ++j)
-            sum += t->B[i][j] * t->rgdTmp[j];
-        rgx[i] = xmean[i] + eps * t->sigma * sum;
-    }
-    return rgx;
-}
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-const double * cmaes_Optimize(cmaes_t *evo, double(*pFun)(double const *, int dim), long iterations)
-    /* TODO: make signals.par another argument or, even better, part of cmaes_t */
-{
-    const char * signalsFilename = "cmaes_signals.par";
-    double *const*pop; /* sampled population */
-    const char *stop;
-    int i;
-    double startiter = evo->gen; 
-
-    while(!(stop=cmaes_TestForTermination(evo)) && 
-            (evo->gen < startiter + iterations || !iterations))
-    { 
-        /* Generate population of new candidate solutions */
-        pop = cmaes_SamplePopulation(evo); /* do not change content of pop */
-
-        /* Compute fitness value for each candidate solution */
-        for (i = 0; i < kb->_lambda; ++i) {
-            evo->publicFitness[i] = (*pFun)(pop[i], kb->_dimCount);
-        }
-
-        /* update search distribution */
-        cmaes_UpdateDistribution(0, evo, evo->publicFitness); 
 
 
-        fflush(stdout);
-    } /* while !cmaes_TestForTermination(evo) */
-
-
-    return evo->rgxbestever;
-}
 
 /* --------------------------------------------------------- */
 /* --------------------------------------------------------- */
