@@ -12,26 +12,13 @@ CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : d
         arFunvals_ = cmaes_init(&evo_, dim, NULL, NULL, 0,	"./cmaes_initials.par");
 		printf("%s\n", cmaes_SayHello(&evo_));
 
-		kb->_lambda = 128;
-		_restart = false;
-		_step = 0;
 	    _elapsedTime = 0.0;
 }
 
-CmaesEngine::~CmaesEngine(){
-
-}
-
-cmaes_t* CmaesEngine::getEvo() {
-	return &evo_;
-}
-
-double* CmaesEngine::getBestEver() {
-	return evo_.rgxbestever;
-}
 
 
-double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int step ) {
+
+double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals) {
 
     auto tt0 = std::chrono::system_clock::now();
     	
@@ -57,13 +44,11 @@ double CmaesEngine::run() {
 
         pop_ = cmaes_SamplePopulation(&evo_);
         for( int i=0; i<kb->_lambda; ++i)	while( !is_feasible( pop_[i], kb->_dimCount )) cmaes_ReSampleSingle( &evo_, i );
-            dt = evaluate_population( &evo_, arFunvals_, _step);
+            dt = evaluate_population( &evo_, arFunvals_);
         _elapsedTime += dt;
 	
         cmaes_UpdateDistribution(1, &evo_, arFunvals_);
 
-
-        _step++;
     }
 
     gt2_ = std::chrono::system_clock::now();

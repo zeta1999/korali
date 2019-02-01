@@ -33,19 +33,12 @@ class CmaesEngine {
 public:
 	CmaesEngine(int dim, double (*fun) (double*, int), int restart = 0);
 
-	~CmaesEngine();
-
 	double run();
-
-	cmaes_t* getEvo();
-	double   getBestFunVal();
-	double*  getBestEver();
 
 
 private:
 
     double _elapsedTime;
-    int _step;
     bool _restart;
 
 	cmaes_t evo_;
@@ -60,7 +53,7 @@ private:
 
 	static double (*fitfun_) (double*, int);
 	static void taskfun_(double *x, int *no, double* res);
-    double evaluate_population( cmaes_t *evo, double *arFunvals, int step );
+    double evaluate_population( cmaes_t *evo, double *arFunvals );
     int is_feasible(double *pop, int dim);
 
 
