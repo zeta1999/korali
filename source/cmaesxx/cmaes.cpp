@@ -33,21 +33,7 @@ double rgdouMax( const double *rgd, int len);
 double rgdouMin( const double *rgd, int len);
 int    MaxIdx( const double *rgd, int len);
 int    MinIdx( const double *rgd, int len);
-const char * c_cmaes_version = "3.20.00.beta";
 
-/* --------------------------------------------------------- */
-/* ---------------- Functions: cmaes_t --------------------- */
-/* --------------------------------------------------------- */
-
-char * cmaes_SayHello(cmaes_t *t)
-{
-    sprintf(t->sOutString, 
-            "(%d,%d)-CMA-ES(mu_eff=%.1f), Ver=\"%s\", dimension=%d, diagonalIterations=%ld, randomSeed=%d",
-            kb->_mu, kb->_lambda, kb->_muEffective, c_cmaes_version, kb->_dimCount, kb->_diagonalCovarianceMatrixEvalFrequency,
-            kb->_seed);
-
-    return t->sOutString; 
-}
 
 double * cmaes_init(cmaes_t *t /* "this" */)
 {

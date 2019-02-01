@@ -9,7 +9,10 @@ CmaesEngine::CmaesEngine(int dim, double (*fun) (double*, int), int restart) : d
 {
 		fitfun_ = fun;
     arFunvals_ = cmaes_init(&evo_);
-		printf("%s\n", cmaes_SayHello(&evo_));
+
+    printf("(%d,%d)-CMA-ES(mu_eff=%.1f), dimension=%d, diagonalIterations=%ld, randomSeed=%d",
+            kb->_mu, kb->_lambda, kb->_muEffective,  kb->_dimCount, kb->_diagonalCovarianceMatrixEvalFrequency,
+            kb->_seed);
 }
 
 double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals) {
