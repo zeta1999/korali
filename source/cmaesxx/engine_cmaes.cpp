@@ -39,9 +39,6 @@ double* CmaesEngine::getBestEver() {
 	return evo_.rgxbestever;
 }
 
-double CmaesEngine::getBestFunVal() {
-	return cmaes_Get(&evo_,"fbestever");
-}
 
 double CmaesEngine::evaluate_population( cmaes_t *evo, double *arFunvals, int step ) {
 

@@ -61,10 +61,6 @@ static int  Check_Eigen( int N,  double **C, double *diag, double **Q);
 static void QLalgo2 (int n, double *d, double *e, double **V); 
 static void Householder2(int n, double **V, double *d, double *e); 
 static void Adapt_C2(cmaes_t *t, int hsig);
-static void FATAL(char const *sz1, char const *s2, 
-        char const *s3, char const *s4);
-static void ERRORMESSAGE(char const *sz1, char const *s2, 
-        char const *s3, char const *s4);
 static int isNoneStr(const char * filename);
 static void   Sorted_index( const double *rgFunVal, int *index, int n);
 static int    SignOfDiff( const void *d1, const void * d2);
@@ -75,13 +71,7 @@ static int    intMin( int i, int j);
 static int    MaxIdx( const double *rgd, int len);
 static int    MinIdx( const double *rgd, int len);
 static double myhypot(double a, double b);
-static double * new_double( int n);
-static void * new_void( int n, size_t size); 
-static char * new_string( const char *); 
-static void assign_string( char **, const char*);
 static const char * c_cmaes_version = "3.20.00.beta";
-static char * szCat(const char *sz1, const char*sz2, 
-        const char *sz3, const char *sz4);
 
 /* --------------------------------------------------------- */
 /* ---------------- Functions: cmaes_t --------------------- */
@@ -131,34 +121,34 @@ double * cmaes_init_final(cmaes_t *t /* "this" */)
     t->dLastMinEWgroesserNull = 1.0;
     t->printtime = t->writetime = t->firstwritetime = t->firstprinttime = 0; 
 
-    t->rgpc = new_double(N);
-    t->rgps = new_double(N);
-    t->rgdTmp = new_double(N+1);
-    t->rgBDz = new_double(N);
-    t->rgxmean = new_double(N+2); t->rgxmean[0] = N; ++t->rgxmean;
-    t->rgxold = new_double(N+2); t->rgxold[0] = N; ++t->rgxold; 
-    t->rgxbestever = new_double(N+3); t->rgxbestever[0] = N; ++t->rgxbestever; 
-    t->rgout = new_double(N+2); t->rgout[0] = N; ++t->rgout;
-    t->rgD = new_double(N);
-    t->C = (double**)new_void(N, sizeof(double*));
-    t->B = (double**)new_void(N, sizeof(double*));
-    t->publicFitness = new_double(kb->_lambda);
-    t->rgFuncValue = new_double(kb->_lambda+1);
+    t->rgpc = (double*) calloc (sizeof(double), N);
+    t->rgps = (double*) calloc (sizeof(double), N);
+    t->rgdTmp = (double*) calloc (sizeof(double), N+1);
+    t->rgBDz = (double*) calloc (sizeof(double), N);
+    t->rgxmean = (double*) calloc (sizeof(double), N+2); t->rgxmean[0] = N; ++t->rgxmean;
+    t->rgxold = (double*) calloc (sizeof(double), N+2); t->rgxold[0] = N; ++t->rgxold;
+    t->rgxbestever = (double*) calloc (sizeof(double), N+3); t->rgxbestever[0] = N; ++t->rgxbestever;
+    t->rgout = (double*) calloc (sizeof(double), N+2); t->rgout[0] = N; ++t->rgout;
+    t->rgD = (double*) calloc (sizeof(double), N);
+    t->C = (double**) calloc (sizeof(double*), N);
+    t->B = (double**)calloc (sizeof(double*), N);
+    t->publicFitness = (double*) calloc (sizeof(double), kb->_lambda);
+    t->rgFuncValue = (double*) calloc (sizeof(double), kb->_lambda+1);
     t->rgFuncValue[0]=kb->_lambda; ++t->rgFuncValue;
-    t->arFuncValueHist = new_double(10+(int)ceil(3.*10.*N/kb->_lambda)+1);
+    t->arFuncValueHist = (double*) calloc (sizeof(double), 10+(int)ceil(3.*10.*N/kb->_lambda)+1);
     t->arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/kb->_lambda));
     t->arFuncValueHist++; 
 
     for (i = 0; i < N; ++i) {
-        t->C[i] = new_double(i+1);
-        t->B[i] = new_double(N);
+        t->C[i] = (double*) calloc (sizeof(double), i+1);
+        t->B[i] = (double*) calloc (sizeof(double), N);
     }
-    t->index = (int *) new_void(kb->_lambda, sizeof(int));
+    t->index = (int *) calloc (sizeof(int*), kb->_lambda);
     for (i = 0; i < kb->_lambda; ++i)
         t->index[i] = i; /* should not be necessary */
-    t->rgrgx = (double **)new_void(kb->_lambda, sizeof(double*));
+    t->rgrgx = (double **) calloc (sizeof(double*), kb->_lambda);
     for (i = 0; i < kb->_lambda; ++i) {
-        t->rgrgx[i] = new_double(N+2);
+        t->rgrgx[i] = (double*) calloc (sizeof(double), N+2);
         t->rgrgx[i][0] = N; 
         t->rgrgx[i]++;
     }
@@ -217,8 +207,8 @@ double const * cmaes_SetMean(cmaes_t *t, const double *xmean)
     int i, N=kb->_dimCount;
 
     if (t->state >= 1 && t->state < 3)
-        FATAL("cmaes_SetMean: mean cannot be set inbetween the calls of ",
-                "SamplePopulation and UpdateDistribution",0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_SetMean: mean cannot be set inbetween the calls of ",
+                "SamplePopulation and UpdateDistribution");
 
     if (xmean != NULL && xmean != t->rgxmean)
         for(i = 0; i < N; ++i)
@@ -287,7 +277,7 @@ double const * cmaes_ReSampleSingle_old(cmaes_t *t, double *rgx)
     double sum; 
 
     if (rgx == NULL)
-        FATAL("cmaes_ReSampleSingle(): Missing input double *x",0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_ReSampleSingle(): Missing input double *x");
 
     for (i = 0; i < N; ++i)
         t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
@@ -311,7 +301,7 @@ double * const * cmaes_ReSampleSingle(cmaes_t *t, int iindex)
 
     if (iindex < 0 || iindex >= kb->_lambda) {
         sprintf(s, "index==%d must be between 0 and %d", iindex, kb->_lambda);
-        FATAL("cmaes_ReSampleSingle(): Population member ",s,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_ReSampleSingle(): Population member ",s,0,0);
     }
     rgx = t->rgrgx[iindex];
 
@@ -334,7 +324,7 @@ double * cmaes_SampleSingleInto(cmaes_t *t, double *rgx)
     double sum; 
 
     if (rgx == NULL)
-        rgx = new_double(N);
+        rgx = (double*) calloc (sizeof(double), N);
 
     for (i = 0; i < N; ++i)
         t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
@@ -355,9 +345,9 @@ double * cmaes_PerturbSolutionInto(cmaes_t *t, double *rgx, double const *xmean,
     double sum; 
 
     if (rgx == NULL)
-        rgx = new_double(N);
+        rgx = (double*) calloc (sizeof(double), N);
     if (xmean == NULL)
-        FATAL("cmaes_PerturbSolutionInto(): xmean was not given",0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_PerturbSolutionInto(): xmean was not given");
 
     for (i = 0; i < N; ++i)
         t->rgdTmp[i] = t->rgD[i] * cmaes_random_Gauss(&t->rand);
@@ -388,7 +378,7 @@ const double * cmaes_Optimize(cmaes_t *evo, double(*pFun)(double const *, int di
         pop = cmaes_SamplePopulation(evo); /* do not change content of pop */
 
         /* Compute fitness value for each candidate solution */
-        for (i = 0; i < cmaes_Get(evo, "popsize"); ++i) {
+        for (i = 0; i < kb->_lambda; ++i) {
             evo->publicFitness[i] = (*pFun)(pop[i], kb->_dimCount);
         }
 
@@ -413,16 +403,16 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     double psxps; 
 
     if(t->state == 3)
-        FATAL("cmaes_UpdateDistribution(): You need to call \n",
-                "SamplePopulation() before update can take place.",0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): You need to call \n",
+                "SamplePopulation() before update can take place.");
     if(rgFunVal == NULL) 
-        FATAL("cmaes_UpdateDistribution(): ", 
-                "Fitness function value array input is missing.",0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): ",
+                "Fitness function value array input is missing.");
 
     if(save_hist && t->state == 1)  /* function values are delivered here */
         t->countevals += kb->_lambda;
     else
-        ERRORMESSAGE("cmaes_UpdateDistribution(): unexpected state",0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): unexpected state");
 
     /* assign function values */
     for (i=0; i < kb->_lambda; ++i)
@@ -436,8 +426,7 @@ double * cmaes_UpdateDistribution(int save_hist, cmaes_t *t, const double *rgFun
     if (t->rgFuncValue[t->index[0]] == 
             t->rgFuncValue[t->index[(int)kb->_lambda/2]]) {
         t->sigma *= exp(0.2+kb->_sigmaCumulationFactor/kb->_dampFactor);
-        ERRORMESSAGE("Warning: sigma increased due to equal function values\n",
-                "   Reconsider the formulation of the objective function",0,0);
+        fprintf(stderr, "[CMAES] Error: Warning: sigma increased due to equal function values. Reconsider the formulation of the objective function\n");
     }
 
     /* update function value history */
@@ -657,60 +646,7 @@ static double function_value_difference(cmaes_t *t) {
                rgdouMin(t->rgFuncValue, kb->_lambda));
 }
 
-/* --------------------------------------------------------- */
-double cmaes_Get( cmaes_t *t, char const *s)
-{
-    int N=kb->_dimCount;
 
-    if (strncmp(s, "axisratio", 5) == 0) { /* between lengths of longest and shortest principal axis of the distribution ellipsoid */
-        return (rgdouMax(t->rgD, N)/rgdouMin(t->rgD, N));
-    }
-    else if (strncmp(s, "eval", 4) == 0) { /* number of function evaluations */
-        return (t->countevals);
-    }
-    else if (strncmp(s, "fctvalue", 6) == 0
-            || strncmp(s, "funcvalue", 6) == 0
-            || strncmp(s, "funvalue", 6) == 0
-            || strncmp(s, "fitness", 3) == 0) { /* recent best function value */
-        return(t->rgFuncValue[t->index[0]]);
-    }
-    else if (strncmp(s, "fbestever", 7) == 0) { /* ever best function value */
-        return(t->rgxbestever[N]);
-    }
-    else if (strncmp(s, "generation", 3) == 0
-            || strncmp(s, "iteration", 4) == 0) { 
-        return(t->gen);
-    }
-    else if (strncmp(s, "maxaxislength", 5) == 0) { /* sigma * max(diag(D)) */
-        return(t->sigma * sqrt(t->maxEW));
-    }
-    else if (strncmp(s, "minaxislength", 5) == 0) { /* sigma * min(diag(D)) */
-        return(t->sigma * sqrt(t->minEW));
-    }
-    else if (strncmp(s, "maxstddev", 4) == 0) { /* sigma * sqrt(max(diag(C))) */
-        return(t->sigma * sqrt(t->maxdiagC));
-    }
-    else if (strncmp(s, "minstddev", 4) == 0) { /* sigma * sqrt(min(diag(C))) */
-        return(t->sigma * sqrt(t->mindiagC));
-    }
-    else if (strncmp(s, "N", 1) == 0 || strcmp(s, "n") == 0 || 
-            strncmp(s, "dimension", 3) == 0) {
-        return (N);
-    }
-    else if (strncmp(s, "lambda", 3) == 0
-            || strncmp(s, "samplesize", 8) == 0
-            || strncmp(s, "popsize", 7) == 0) { /* sample size, offspring population size */
-        return(kb->_lambda);
-    }
-    else if (strncmp(s, "sigma", 3) == 0) {
-        return(t->sigma);
-    }
-    else if (strncmp(s, "lastrange", 3) == 0) {
-        return function_value_difference(t);
-    }
-    FATAL( "cmaes_Get(cmaes_t, char const * s): No match found for s='", s, "'",0);
-    return(0);
-} /* cmaes_Get() */
 
 /* --------------------------------------------------------- */
 double * cmaes_GetInto( cmaes_t *t, char const *s, double *res)
@@ -718,7 +654,7 @@ double * cmaes_GetInto( cmaes_t *t, char const *s, double *res)
     int i, N = kb->_dimCount;
     double const * res0 = cmaes_GetPtr(t, s);
     if (res == NULL)
-        res = new_double(N);
+        res = (double*) calloc (sizeof(double), N);
     for (i = 0; i < N; ++i)
         res[i] = res0[i];
     return res; 
@@ -887,7 +823,7 @@ const char * cmaes_TestForTermination( cmaes_t *t)
         cp += sprintf(cp, "Manual: stop signal read\n");
 
     if (cp - sTestOutString>320)
-        ERRORMESSAGE("Bug in cmaes_t:Test(): sTestOutString too short",0,0,0);
+        fprintf(stderr, "[CMAES] Error: Bug in cmaes_t:Test(): sTestOutString too short");
 
     if (cp != sTestOutString) {
         return sTestOutString;
@@ -925,14 +861,12 @@ static int Check_Eigen( int N,  double **C, double *diag, double **Q)
                     && fabs(cc - C[i>j?i:j][i>j?j:i]) > 3e-14) {
                 sprintf(s, "%d %d: %.17e %.17e, %e", 
                         i, j, cc, C[i>j?i:j][i>j?j:i], cc-C[i>j?i:j][i>j?j:i]);
-                ERRORMESSAGE("cmaes_t:Eigen(): imprecise result detected ", 
-                        s, 0, 0);
+                fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): imprecise result detected ");
                 ++res; 
             }
             if (fabs(dd - (i==j)) > 1e-10) {
                 sprintf(s, "%d %d %.17e ", i, j, dd);
-                ERRORMESSAGE("cmaes_t:Eigen(): imprecise result detected (Q not orthog.)", 
-                        s, 0, 0);
+                fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): imprecise result detected (Q not orthog.)");
                 ++res;
             }
         }
@@ -998,7 +932,7 @@ static void Eigen( int N,  double **C, double *diag, double **Q, double *rgtmp)
     int i, j;
 
     if (rgtmp == NULL) /* was OK in former versions */
-        FATAL("cmaes_t:Eigen(): input parameter double *rgtmp must be non-NULL", 0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_t:Eigen(): input parameter double *rgtmp must be non-NULL", 0,0,0);
 
     /* copy C to Q */
     if (C != Q) {
@@ -1349,7 +1283,7 @@ double cmaes_timings_update(cmaes_timings_t *t)
     time_t lt = t->lasttime;   /* measure time in s */
 
     if (t->isstarted != 1)
-        FATAL("cmaes_timings_started() must be called before using timings... functions",0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_timings_started() must be called before using timings... functions");
 
     t->lastclock = clock(); /* measures at most 2147 seconds, where 1s = 1e6 CLOCKS_PER_SEC */
     t->lasttime = time(NULL);
@@ -1364,7 +1298,7 @@ double cmaes_timings_update(cmaes_timings_t *t)
         t->lastdiff = diffc;
 
     if (t->lastdiff < 0)
-        FATAL("BUG in time measurement", 0, 0, 0);
+        fprintf(stderr, "[CMAES] Error: BUG in time measurement");
 
     t->totaltime += t->lastdiff;
     t->totaltotaltime += t->lastdiff;
@@ -1379,7 +1313,7 @@ double cmaes_timings_update(cmaes_timings_t *t)
 void cmaes_timings_tic(cmaes_timings_t *t)
 {
     if (t->istic) { /* message not necessary ? */
-        ERRORMESSAGE("Warning: cmaes_timings_tic called twice without toc",0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_timings_tic called twice without toc");
         return; 
     }
     cmaes_timings_update(t); 
@@ -1389,7 +1323,7 @@ void cmaes_timings_tic(cmaes_timings_t *t)
 double cmaes_timings_toc(cmaes_timings_t *t)
 {
     if (!t->istic) {
-        ERRORMESSAGE("Warning: cmaes_timings_toc called without tic",0,0,0);
+        fprintf(stderr, "[CMAES] Error: cmaes_timings_toc called without tic");
         return -1; 
     }
     cmaes_timings_update(t);
@@ -1419,7 +1353,7 @@ long cmaes_random_init( cmaes_random_t *t, long unsigned inseed)
     clock_t cloc = clock();
 
     t->flgstored = 0;
-    t->rgrand = (long *) new_void(32, sizeof(long));
+    t->rgrand = (long *) calloc (sizeof(long), 32);
 
     return cmaes_random_Start(t, inseed);
 }
@@ -1595,133 +1529,5 @@ static void Sorted_index(const double *rgFunVal, int *iindex, int n)
 }
 #endif 
 
-static void * new_void(int n, size_t size)
-{
-    static char s[70];
-    void *p = calloc((unsigned) n, size);
-    if (p == NULL) {
-        sprintf(s, "new_void(): calloc(%ld,%ld) failed",(long)n,(long)size);
-        FATAL(s,0,0,0);
-    }
-    return p;
-}
 
-double * cmaes_NewDouble(int n) 
-{
-    return new_double(n);
-}
 
-static double * new_double(int n)
-{
-    static char s[170];
-    double *p = (double *) calloc((unsigned) n, sizeof(double));
-    if (p == NULL) {
-        sprintf(s, "new_double(): calloc(%ld,%ld) failed",
-                (long)n,(long)sizeof(double));
-        FATAL(s,0,0,0);
-    }
-    return p;
-}
-
-static char * new_string(const char *ins)
-{
-    static char s[170];
-    unsigned i; 
-    char *p; 
-    unsigned len = (unsigned) ((ins != NULL) ? strlen(ins) : 0);
-
-    if (len > 1000) {
-        FATAL("new_string(): input string length was larger then 1000 ",
-                "(possibly due to uninitialized char *filename)",0,0);
-    }
-
-    p = (char *) calloc( len + 1, sizeof(char));
-    if (p == NULL) {
-        sprintf(s, "new_string(): calloc(%ld,%ld) failed",
-                (long)len,(long)sizeof(char));
-        FATAL(s,0,0,0);
-    }
-    for (i = 0; i < len; ++i)
-        p[i] = ins[i];
-    return p;
-}
-static void assign_string(char ** pdests, const char *ins)
-{
-    if (*pdests)
-        free(*pdests);
-    if (ins == NULL)
-        *pdests = NULL;
-    else    
-        *pdests = new_string(ins);
-}
-
-/* --------------------------------------------------------- */
-/* --------------------------------------------------------- */
-
-/* ========================================================= */
-void cmaes_FATAL(char const *s1, char const *s2, char const *s3, 
-            char const *s4)
-{
-    time_t t = time(NULL);
-    ERRORMESSAGE( s1, s2, s3, s4);
-    ERRORMESSAGE("*** Exiting cmaes_t ***",0,0,0);
-    printf("\n -- %s %s\n", asctime(localtime(&t)), 
-            s2 ? szCat(s1, s2, s3, s4) : s1);
-    printf(" *** CMA-ES ABORTED, see errcmaes.err *** \n");
-    fflush(stdout);
-    exit(1);
-}
-
-/* ========================================================= */
-static void FATAL(char const *s1, char const *s2, char const *s3, 
-            char const *s4)
-{
-    cmaes_FATAL(s1, s2, s3, s4);
-}
-
-/* ========================================================= */
-static void ERRORMESSAGE( char const *s1, char const *s2, 
-        char const *s3, char const *s4)
-{
-#if 1
-    /*  static char szBuf[700];  desirable but needs additional input argument 
-        sprintf(szBuf, "%f:%f", gen, gen*lambda);
-        */
-    time_t t = time(NULL);
-    FILE *fp = fopen( "errcmaes.err", "a");
-    if (!fp)
-    {
-        printf("\nFATAL ERROR: %s\n", s2 ? szCat(s1, s2, s3, s4) : s1);
-        printf("cmaes_t could not open file 'errcmaes.err'.");
-        printf("\n *** CMA-ES ABORTED *** ");
-        fflush(stdout);
-        exit(1);
-    }
-    fprintf( fp, "\n -- %s %s\n", asctime(localtime(&t)), 
-            s2 ? szCat(s1, s2, s3, s4) : s1);
-    fclose (fp);
-#endif
-}
-
-/* ========================================================= */
-static char *szCat(const char *sz1, const char*sz2, 
-        const char *sz3, const char *sz4)
-{
-    static char szBuf[700];
-
-    if (!sz1)
-        FATAL("szCat() : Invalid Arguments",0,0,0);
-
-    strncpy ((char *)szBuf, sz1, (unsigned)intMin( (int)strlen(sz1), 698));
-    szBuf[intMin( (int)strlen(sz1), 698)] = '\0';
-    if (sz2)
-        strncat ((char *)szBuf, sz2, 
-                (unsigned)intMin((int)strlen(sz2)+1, 698 - (int)strlen((char const *)szBuf)));
-    if (sz3)
-        strncat((char *)szBuf, sz3, 
-                (unsigned)intMin((int)strlen(sz3)+1, 698 - (int)strlen((char const *)szBuf)));
-    if (sz4)
-        strncat((char *)szBuf, sz4, 
-                (unsigned)intMin((int)strlen(sz4)+1, 698 - (int)strlen((char const *)szBuf)));
-    return (char *) szBuf;
-}

@@ -62,19 +62,6 @@ double cmaes_utils_load_pop_from_file(int verbose, int step, double * const* pop
     return tt1-tt0;
 }
 
-
-void cmaes_utils_print_the_best( cmaes_t evo, int step ) {
-    int dim    = cmaes_Get( &evo, "dim");
-    	
-    const double *xbever = cmaes_GetPtr(&evo, "xbestever");
-    double        fbever = cmaes_Get(   &evo, "fbestever");
-
-    printf("BEST @ %5d: ", step);
-    for( int i = 0; i < dim; i++ )
-        printf("%25.16lf ", xbever[i]);
-    printf("%25.16lf\n", fbever);
-}
-
 void cmaes_utils_write_pop_to_file( cmaes_t evo, double *arFunvals, double * const* pop, int step ){
     int dim    = kb->_dimCount;
     int lambda = kb->_lambda;
