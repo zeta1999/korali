@@ -37,16 +37,18 @@ class KoraliCMAES : public KoraliBase
 
   // Configuration Variables
 
+  size_t _lambda; // Number of offspring per sample cycle
+  size_t _mu;
+  std::string _muType;
   double* _muWeights;
   double _muEffective;
   double _muCovariance;
+
   double _sigmaCumulationFactor;
   double _dampFactor;
   double _cumulativeCovariance;
   double _covarianceMatrixLearningRate;
 
-  size_t _lambda; // Number of offspring per sample cycle
-  size_t _mu;
   size_t _diagonalCovarianceMatrixEvalFrequency;
   size_t _covarianceEigensystemEvaluationFrequency;
 

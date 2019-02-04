@@ -3,11 +3,6 @@
 
 Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed = 0) : Korali::KoraliBase::KoraliBase(dim, fun, seed)
 {
-	_lambda = 128;
-	setMu(64);
-	_muCovariance = _muEffective;
-	_diagonalCovarianceMatrixEvalFrequency = 0; //2 + 100 * ceil((double)_dimCount / sqrt((double)_lambda));
-
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
 	_stopFitnessDiffHistoryThreshold = 1e-13;
@@ -16,18 +11,20 @@ Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_
 	_stopMaxTimePerEigendecomposition = 1.0;
 	_stopMinFitness = -std::numeric_limits<double>::max();
 
-	setSigmaCumulationFactor(-1);
-	setDampingFactor(-1);
-	setCumulativeCovariance(-1);
-	setCovarianceMatrixLearningRate(-1);
-
-	_covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_dimCount)/10.0);
+	_lambda = 128;
+	_mu = 64;
+	_muType = "Logarithmic";
+	_muCovariance = _muEffective;
+	_diagonalCovarianceMatrixEvalFrequency = 0; //2 + 100 * ceil((double)_dimCount / sqrt((double)_lambda));
+	_sigmaCumulationFactor = -1;
+	_dampFactor = -1;
+	_cumulativeCovariance = -1;
+	_covarianceMatrixLearningRate = -1;
 }
 
 void Korali::KoraliCMAES::setLambda(size_t lambda) { _lambda = lambda; }
-void Korali::KoraliCMAES::setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; } // Should be 1 or more.
+void Korali::KoraliCMAES::setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
 void Korali::KoraliCMAES::setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
-
 void Korali::KoraliCMAES::setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
 void Korali::KoraliCMAES::setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
 void Korali::KoraliCMAES::setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
@@ -35,66 +32,12 @@ void Korali::KoraliCMAES::setStopMinDeltaX(double stopMinDeltaX) { _stopMinDelta
 void Korali::KoraliCMAES::setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
 void Korali::KoraliCMAES::setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
 void Korali::KoraliCMAES::setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
-
-void Korali::KoraliCMAES::setMu(size_t mu, std::string type)
-{
-	_mu = mu;
-	_muWeights = new double[_mu];
-
-  if (type == "LinearDecreasing") for (int i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;
-  if (type == "Equal")  for (int i = 0; i < _mu; i++)   _muWeights[i] = 1;
-  if (type == "Logarithmic") for (int i = 0; i < _mu; i++)  _muWeights[i] = log(_mu+1.)-log(i+1.);
-
-  /* normalize weights vector and set mueff */
-  double s1 = 0.0;
-  double s2 = 0.0;
-
-  for (int i=0; i < _mu; i++)
-  {
-   s1 += _muWeights[i];
-   s2 += _muWeights[i]*_muWeights[i];
-  }
-
-  _muEffective = s1*s1/s2;
-
-  for (int i = 0; i < _mu; i++) _muWeights[i] /= s1;
-
-  if(_mu < 1 || _mu > _lambda || (_mu == _lambda && _muWeights[0] == _muWeights[_mu-1]))
-  { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%lu) and/or Lambda (%lu)\n", _mu, _lambda); exit(-1); }
-
-}
-
+void Korali::KoraliCMAES::setMu(size_t mu, std::string muType) { _mu = mu; _muType = muType; }
 void Korali::KoraliCMAES::setMuCovariance(double muCovariance) { if (muCovariance < 1) _muCovariance = _muEffective; else _muCovariance = muCovariance; }
-void Korali::KoraliCMAES::setSigmaCumulationFactor(double sigmaCumulationFactor)
-{
-  if (sigmaCumulationFactor > 0) _sigmaCumulationFactor *= (_muEffective + 2.0) / (_dimCount + _muEffective + 3.0);
-  if (sigmaCumulationFactor <= 0 || _sigmaCumulationFactor >= 1)  _sigmaCumulationFactor = (_muEffective + 2.) / (_dimCount + _muEffective + 3.0);
-}
-
-void Korali::KoraliCMAES::setDampingFactor(double dampFactor)
-{
-  if (dampFactor < 0) _dampFactor = 1;
-  _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_dimCount+1.0)) - 1))     /* basic factor */
-      * std::max(0.3, 1. - (double)_dimCount / (1e-6+std::min(_maxGenerations, _maxFitnessEvaluations/_lambda)))
-      + _sigmaCumulationFactor;                                                 /* minor increment */
-}
-
-void Korali::KoraliCMAES::setCumulativeCovariance(double cumulativeCovariance)
-{
-  if (cumulativeCovariance <= 0 || cumulativeCovariance> 1)  _cumulativeCovariance = 4. / (_dimCount + 4);
-}
-
-void Korali::KoraliCMAES::setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate)
-{
-  double t1 = 2. / ((_dimCount+1.4142)*(_dimCount+1.4142));
-  double t2 = (2.*_muEffective-1.) / ((_dimCount+2.)*(_dimCount+2.)+_muEffective);
-  t2 = (t2 > 1) ? 1 : t2;
-  t2 = (1./_muCovariance) * t1 + (1.-1./_muCovariance) * t2;
-  if (covarianceMatrixLearningRate >= 0) /* ccov holds the read factor */
-      _covarianceMatrixLearningRate *= t2;
-  if (covarianceMatrixLearningRate < 0 || covarianceMatrixLearningRate > 1) /* set default in case */
-      _covarianceMatrixLearningRate = t2;
-}
+void Korali::KoraliCMAES::setSigmaCumulationFactor(double sigmaCumulationFactor) { _sigmaCumulationFactor = sigmaCumulationFactor;}
+void Korali::KoraliCMAES::setDampingFactor(double dampFactor) { _dampFactor = dampFactor; }
+void Korali::KoraliCMAES::setCumulativeCovariance(double cumulativeCovariance) { _cumulativeCovariance = cumulativeCovariance; }
+void Korali::KoraliCMAES::setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate) { _covarianceMatrixLearningRate = covarianceMatrixLearningRate; }
 
 double Korali::KoraliCMAES::doubleRangeMax(const double *rgd, int len)
 {
@@ -118,6 +61,67 @@ void Korali::KoraliCMAES::initializeInternalVariables()
 {
     int i, j, N;
     double dtest, trace;
+
+    // Initializing MU and its weights
+
+  	_muWeights = new double[_mu];
+
+    if (_muType == "LinearDecreasing") for (int i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;
+    if (_muType == "Equal")  for (int i = 0; i < _mu; i++)   _muWeights[i] = 1;
+    if (_muType == "Logarithmic") for (int i = 0; i < _mu; i++)  _muWeights[i] = log(_mu+1.)-log(i+1.);
+
+    /* normalize weights vector and set mueff */
+    double s1 = 0.0;
+    double s2 = 0.0;
+
+    for (int i=0; i < _mu; i++)
+    {
+     s1 += _muWeights[i];
+     s2 += _muWeights[i]*_muWeights[i];
+    }
+
+    _muEffective = s1*s1/s2;
+
+    for (int i = 0; i < _mu; i++) _muWeights[i] /= s1;
+
+    if(_mu < 1 || _mu > _lambda || (_mu == _lambda && _muWeights[0] == _muWeights[_mu-1]))
+    { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%lu) and/or Lambda (%lu)\n", _mu, _lambda); exit(-1); }
+
+    // Setting Sigma Cumulation Factor
+
+    double tmpSigma = _sigmaCumulationFactor;
+    if (tmpSigma > 0) _sigmaCumulationFactor *= (_muEffective + 2.0) / (_dimCount + _muEffective + 3.0);
+    if (tmpSigma <= 0 || tmpSigma >= 1)  _sigmaCumulationFactor = (_muEffective + 2.) / (_dimCount + _muEffective + 3.0);
+
+    // Setting Damping Factor
+
+    if (_dampFactor < 0) _dampFactor = 1;
+    _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_dimCount+1.0)) - 1))     /* basic factor */
+        * std::max(0.3, 1. - (double)_dimCount / (1e-6+std::min(_maxGenerations, _maxFitnessEvaluations/_lambda)))
+        + _sigmaCumulationFactor;                                                 /* minor increment */
+
+    // Setting Cumulative Covariance
+
+    if (_cumulativeCovariance <= 0 || _cumulativeCovariance> 1)  _cumulativeCovariance = 4. / (_dimCount + 4);
+
+    // Set covariance Matrix Learning Rate
+
+    double t1 = 2. / ((_dimCount+1.4142)*(_dimCount+1.4142));
+    double t2 = (2.*_muEffective-1.) / ((_dimCount+2.)*(_dimCount+2.)+_muEffective);
+    t2 = (t2 > 1) ? 1 : t2;
+    t2 = (1./_muCovariance) * t1 + (1.-1./_muCovariance) * t2;
+
+    double tmpCovarianceRate = _covarianceMatrixLearningRate;
+    if (tmpCovarianceRate >= 0)   _covarianceMatrixLearningRate *= t2;
+    if (tmpCovarianceRate < 0 || tmpCovarianceRate > 1)  _covarianceMatrixLearningRate = t2;
+
+    // Checking Evaluation Frequency
+
+    if (_diagonalCovarianceMatrixEvalFrequency < 1)
+    { fprintf( stderr, "[Korali] Error: Matrix covariance evaluation frequency is less than 1 (%lu)\n", _diagonalCovarianceMatrixEvalFrequency); exit(-1); }
+
+    // Setting Eigensystem evaluation Frequency
+  	_covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_dimCount)/10.0);
 
     N = _dimCount; /* for convenience */
 
