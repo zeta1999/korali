@@ -33,45 +33,26 @@ void Korali::KoraliCMAES::run()
 	auto startTime = std::chrono::system_clock::now();
 
 
-	while( !cmaes_TestForTermination() )
+	while( !checkTermination() )
 	{
         _samplePopulation = cmaes_SamplePopulation();
-        for(int i = 0; i < _lambda; ++i)	while( !is_feasible( _samplePopulation[i] )) cmaes_ReSampleSingle(i );
         for(int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
         for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
-        cmaes_UpdateDistribution(1, _fitnessVector);
+        updateDistribution(_fitnessVector);
   }
 
 	auto endTime = std::chrono::system_clock::now();
 
-		cmaes_PrintResults();
+		printResults();
 
 
     printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(endTime-startTime).count());
 
 }
 
-double Korali::KoraliCMAES::evaluate_population()
+bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 {
-
-    auto tt0 = std::chrono::system_clock::now();
-    for( int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
-    for( int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
-    auto tt1 = std::chrono::system_clock::now();
-    return std::chrono::duration<double>(tt1-tt0).count();
-};
-
-
-int Korali::KoraliCMAES::is_feasible(double *pop)
-{
-    int i, good;
-    for (i = 0; i < _dimCount; i++) {
-        good = (_dims[i]._lowerBound <= pop[i]) && (pop[i] <= _dims[i]._upperBound);
-        if (!good) {
-            return 0;
-        }
-    }
-    return 1;
+    for (int i = 0; i < _dimCount; i++) if (pop[i] < _dims[i]._lowerBound || pop[i] > _dims[i]._upperBound) return false; return true;
 }
 
 
@@ -261,6 +242,8 @@ double** Korali::KoraliCMAES::cmaes_SamplePopulation()
         ++gen;
     state = 1;
 
+    for(int i = 0; i < _lambda; ++i)	while( !cmaes_isFeasible( rgrgx[i] )) cmaes_ReSampleSingle(i );
+
     return(rgrgx);
 } /* SamplePopulation() */
 
@@ -289,26 +272,8 @@ double** Korali::KoraliCMAES::cmaes_ReSampleSingle(int iindex)
     return(rgrgx);
 }
 
-double* Korali::KoraliCMAES::cmaes_SampleSingleInto(double *rgx)
-{
-    int i, j, N=_dimCount;
-    double sum;
 
-    if (rgx == NULL)
-        rgx = (double*) calloc (sizeof(double), N);
-
-    for (i = 0; i < N; ++i)
-        rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
-    /* add mutation (sigma * B * (D*z)) */
-    for (i = 0; i < N; ++i) {
-        for (j = 0, sum = 0.; j < N; ++j)
-            sum += B[i][j] * rgdTmp[j];
-        rgx[i] = rgxmean[i] + sigma * sum;
-    }
-    return rgx;
-}
-
-double* Korali::KoraliCMAES::cmaes_UpdateDistribution(int save_hist, const double *rgFunVal)
+double* Korali::KoraliCMAES::updateDistribution(const double *fitnessVector)
 {
     int i, j, iNk, hsig, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -316,22 +281,22 @@ double* Korali::KoraliCMAES::cmaes_UpdateDistribution(int save_hist, const doubl
     double psxps;
 
     if(state == 3)
-        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): You need to call SamplePopulation() before update can take place.");
-    if(rgFunVal == NULL)
-        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): Fitness function value array input is missing.");
+        fprintf(stderr, "[CMAES] Error: updateDistribution(): You need to call SamplePopulation() before update can take place.");
+    if(fitnessVector == NULL)
+        fprintf(stderr, "[CMAES] Error: updateDistribution(): Fitness function value array input is missing.");
 
-    if(save_hist && state == 1)  /* function values are delivered here */
+    if(state == 1)  /* function values are delivered here */
         countevals += _lambda;
     else
-        fprintf(stderr, "[CMAES] Error: cmaes_UpdateDistribution(): unexpected state");
+        fprintf(stderr, "[CMAES] Error: updateDistribution(): unexpected state");
 
     /* assign function values */
     for (i=0; i < _lambda; ++i)
-        rgrgx[i][N] = rgFuncValue[i] = rgFunVal[i];
+        rgrgx[i][N] = rgFuncValue[i] = fitnessVector[i];
 
 
     /* Generate index */
-    Sorted_index(rgFunVal, index, _lambda);
+    Sorted_index(fitnessVector, index, _lambda);
 
     /* Test if function values are identical, escape flat fitness */
     if (rgFuncValue[index[0]] ==
@@ -341,14 +306,12 @@ double* Korali::KoraliCMAES::cmaes_UpdateDistribution(int save_hist, const doubl
     }
 
     /* update function value history */
-    if (save_hist) {
-        for(i = (int)*(arFuncValueHist-1)-1; i > 0; --i)
-            arFuncValueHist[i] = arFuncValueHist[i-1];
-        arFuncValueHist[0] = rgFunVal[index[0]];
-    }
+			for(i = (int)*(arFuncValueHist-1)-1; i > 0; --i)
+					arFuncValueHist[i] = arFuncValueHist[i-1];
+			arFuncValueHist[0] = fitnessVector[index[0]];
 
     /* update xbestever */
-    if (save_hist && (rgxbestever[N] > rgrgx[index[0]][N] || gen == 1))
+    if ((rgxbestever[N] > rgrgx[index[0]][N] || gen == 1))
         for (i = 0; i <= N; ++i) {
             rgxbestever[i] = rgrgx[index[0]][i];
             rgxbestever[N+1] = countevals;
@@ -462,7 +425,7 @@ void Korali::KoraliCMAES::TestMinStdDevs()
 } /* cmaes_TestMinStdDevs() */
 
 
-void Korali::KoraliCMAES::cmaes_PrintResults()
+void Korali::KoraliCMAES::printResults()
 
     /* this hack reads key words from input key for data to be written to
      * a file, see file signals.par as input file. The length of the keys
@@ -517,7 +480,7 @@ double Korali::KoraliCMAES::function_value_difference()
                doubleRangeMin(rgFuncValue, _lambda));
 }
 
-bool Korali::KoraliCMAES::cmaes_TestForTermination()
+bool Korali::KoraliCMAES::checkTermination()
 {
 
     double range, fac;
@@ -718,12 +681,12 @@ int Korali::KoraliCMAES::MinIdx(const double *rgd, int len)
 }
 
 /* dirty index sort */
-void Korali::KoraliCMAES::Sorted_index(const double *rgFunVal, int *iindex, int n)
+void Korali::KoraliCMAES::Sorted_index(const double *fitnessVector, int *iindex, int n)
 {
     int i, j;
     for (i=1, iindex[0]=0; i<n; ++i) {
         for (j=i; j>0; --j) {
-            if (rgFunVal[iindex[j-1]] < rgFunVal[i])
+            if (fitnessVector[iindex[j-1]] < fitnessVector[i])
                 break;
             iindex[j] = iindex[j-1]; /* shift up */
         }

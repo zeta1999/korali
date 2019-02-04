@@ -19,7 +19,7 @@ class KoraliBase
   void setMaxFitnessEvaluations(size_t maxFitnessEvaluations);
   void setMaxGenerations(size_t maxGenerations);
 
-  virtual void run() = 0;
+  void run();
 
   protected:
 
@@ -37,8 +37,9 @@ class KoraliBase
   size_t _maxGenerations; // Defines maximum number of generations
 
   virtual void initializeInternalVariables() = 0;
-  virtual int is_feasible(double *pop) = 0;
-  virtual double evaluate_population() = 0;
+  virtual void printResults() = 0;
+  virtual double* updateDistribution(const double *fitnessVector) = 0;
+  virtual bool checkTermination() = 0;
 };
 
 } // namespace Korali

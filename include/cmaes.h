@@ -100,25 +100,23 @@ class KoraliCMAES : public KoraliBase
 
   double** cmaes_SamplePopulation();
   double** cmaes_ReSampleSingle(int iindex);
-  double* cmaes_SampleSingleInto(double *rgx);
-  double* cmaes_UpdateDistribution(int save_hist, const double *rgFunVal);
+  double* updateDistribution(const double *fitnessVector);
   void Adapt_C2(int hsig);
   void TestMinStdDevs();
-  void cmaes_PrintResults();
+  void printResults();
   double function_value_difference();
-  bool cmaes_TestForTermination();
+  bool checkTermination();
   void cmaes_UpdateEigensystem(int flgforce);
   void Eigen( int N,  double **C, double *diag, double **Q);
   int MaxIdx(const double *rgd, int len);
   int MinIdx(const double *rgd, int len);
   void Sorted_index(const double *rgFunVal, int *iindex, int n);
-
+  bool cmaes_isFeasible(double *pop);
   double doubleRangeMax(const double *rgd, int len);
-  double doubleRangeMin(const double *rgd, int len);
+  double doubleRangeMin(const double *rgd, int len );
   void initializeInternalVariables();
 
-  int is_feasible(double *pop);
-  double evaluate_population();
+  int isFeasible(double *pop);
 };
 
 } // namespace Korali
