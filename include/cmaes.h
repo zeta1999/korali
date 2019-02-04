@@ -13,23 +13,22 @@ class KoraliCMAES : public KoraliBase
   // Public Methods
 	KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed);
 
-  void setLambda(size_t lambda);
-  void setMu(size_t mu, std::string type = "Logarithmic");
-  void setMuCovariance(double muCovariance);
-  void setSigmaCumulationFactor(double sigmaCumulationFactor);
-  void setDampingFactor(double dampFactor);
-  void setCumulativeCovariance(double cumulativeCovariance);
-  void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate);
-  void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency);
-  void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency);
-
-  void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold);
-  void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold);
-  void setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold);
-  void setStopMinDeltaX(double stopMinDeltaX);
-  void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor);
-  void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition);
-  void setStopMinFitness(double _stopMinFitness);
+	void setLambda(size_t lambda) { _lambda = lambda; }
+	void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
+	void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
+	void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
+	void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
+	void setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
+	void setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
+	void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
+	void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
+	void setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
+	void setMu(size_t mu, std::string muType) { _mu = mu; _muType = muType; }
+	void setMuCovariance(double muCovariance) { _muCovariance = muCovariance;}
+	void setSigmaCumulationFactor(double sigmaCumulationFactor) { _sigmaCumulationFactor = sigmaCumulationFactor;}
+	void setDampingFactor(double dampFactor) { _dampFactor = dampFactor; }
+	void setCumulativeCovariance(double cumulativeCovariance) { _cumulativeCovariance = cumulativeCovariance; }
+	void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate) { _covarianceMatrixLearningRate = covarianceMatrixLearningRate; }
 
   void run();
 

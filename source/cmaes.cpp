@@ -22,23 +22,6 @@ Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_
 	_covarianceMatrixLearningRate = -1;
 }
 
-void Korali::KoraliCMAES::setLambda(size_t lambda) { _lambda = lambda; }
-void Korali::KoraliCMAES::setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
-void Korali::KoraliCMAES::setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
-void Korali::KoraliCMAES::setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
-void Korali::KoraliCMAES::setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
-void Korali::KoraliCMAES::setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
-void Korali::KoraliCMAES::setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
-void Korali::KoraliCMAES::setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
-void Korali::KoraliCMAES::setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
-void Korali::KoraliCMAES::setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
-void Korali::KoraliCMAES::setMu(size_t mu, std::string muType) { _mu = mu; _muType = muType; }
-void Korali::KoraliCMAES::setMuCovariance(double muCovariance) { _muCovariance = muCovariance;}
-void Korali::KoraliCMAES::setSigmaCumulationFactor(double sigmaCumulationFactor) { _sigmaCumulationFactor = sigmaCumulationFactor;}
-void Korali::KoraliCMAES::setDampingFactor(double dampFactor) { _dampFactor = dampFactor; }
-void Korali::KoraliCMAES::setCumulativeCovariance(double cumulativeCovariance) { _cumulativeCovariance = cumulativeCovariance; }
-void Korali::KoraliCMAES::setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate) { _covarianceMatrixLearningRate = covarianceMatrixLearningRate; }
-
 double Korali::KoraliCMAES::doubleRangeMax(const double *rgd, int len)
 {
     int i;
