@@ -42,6 +42,10 @@ void Korali::KoraliBase::run()
 	_rankId = upcxx::rank_me();
 	__kbRuntime = this;
 
+
+//	Use broadcast to send the sample vector to everyone.
+//	Take sample vector away from CMAES and put it into base
+
   // Checking Lambda's value
   if(_lambda < 1 )  { fprintf( stderr, "[Korali] Error: Lambda (%lu) should be higher than one.\n", _lambda); exit(-1); }
 
@@ -55,21 +59,21 @@ void Korali::KoraliBase::run()
   	for (int i = 1; i < upcxx::rank_n(); i++) _workers.push(i);
   	Korali_InitializeInternalVariables();
   	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
-  	_fitnessCalculated = (bool*) calloc (sizeof(bool), _lambda);
 
 		while( !Korali_CheckTermination() )
 		{
+	  	  upcxx::future<> fut_all = upcxx::make_future();
 				_samplePopulation = Korali_GetSamplePopulation();
-				for(int i = 0; i < _lambda; i++) _fitnessCalculated[i] = false;
 
 				for(int i = 0; i < _lambda; i++) //_fitnessVector[i] = -_fitnessFunction(_samplePopulation[i], _dimCount);
 				{
 					while(_workers.empty()) upcxx::progress();
-					upcxx::rpc_ff(_workers.front(), workerEvaluateFitnessFunction, i, _samplePopulation[i][0], _samplePopulation[i][1], _samplePopulation[i][2], _samplePopulation[i][3]);
-					_workers.pop();
+          auto fut = upcxx::rpc(_workers.front(), workerEvaluateFitnessFunction, i, _samplePopulation[i][0], _samplePopulation[i][1], _samplePopulation[i][2], _samplePopulation[i][3]);
+          fut_all = upcxx::when_all(fut_all, fut);
+          _workers.pop();
 				}
 
-				for(int i = 0; i < _lambda; i++) while(_fitnessCalculated[i] == false) upcxx::progress();
+				fut_all.wait();
 
 				for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
 				Korali_UpdateDistribution(_fitnessVector);
@@ -96,7 +100,6 @@ void Korali::KoraliBase::workerThread()
 void Korali::workerComeback(size_t worker, size_t position, double fitness)
 {
 	__kbRuntime->_fitnessVector[position] = fitness;
-	__kbRuntime->_fitnessCalculated[position] = true;
 	__kbRuntime->_workers.push(worker);
 }
 

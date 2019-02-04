@@ -25,7 +25,6 @@ class KoraliBase
 
 	// These values should be protected, but they need to be public for RPCs to work
   double* _fitnessVector;
-  bool* _fitnessCalculated;
 	std::queue<int> _workers;
 	size_t _dimCount;
   double (*_fitnessFunction) (double*, int);
