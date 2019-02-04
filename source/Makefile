@@ -6,7 +6,7 @@ CXXFLAGS += -I../include
 
 all: libkorali.a
 
-libkorali.a: korali.o distribution.o dimension.o 
+libkorali.a: base.o distribution.o dimension.o cmaes.o
 
 clean:; rm -rf *.o *.a
 

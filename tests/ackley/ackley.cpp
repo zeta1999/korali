@@ -12,7 +12,7 @@ double f_Ackley(double *x, int N) {
 
 int main(int argc, char* argv[])
 {
-	auto korali = Korali::KoraliBase(4, f_Ackley, 53753);
+	auto korali = Korali::KoraliCMAES(4, f_Ackley, 53753);
 
 	for (int i = 0; i < 4; i++)	korali[i]->setPriorDistribution("Uniform", -6.0, 6.0);
 	for (int i = 0; i < 4; i++)	korali[i]->setBounds(-32.0, +32.0);

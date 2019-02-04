@@ -1,19 +1,8 @@
-#include "korali.h"
+#include "cmaes.h"
 #include <chrono>
 
-Korali::KoraliBase::KoraliBase(size_t dim, double (*fun) (double*, int), size_t seed = 0)
+Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed = 0) : Korali::KoraliBase::KoraliBase(dim, fun, seed)
 {
-	_seed = seed;
-	_dimCount = dim;
-
-	gsl_rng_env_setup();
-	_dims = new Dimension[dim];
-	for (int i = 0; i < dim; i++) _dims[i].setSeed(seed++);
-	_gaussianGenerator = new GaussianDistribution(0, 1, _seed++);
-	_fitnessFunction = fun;
-
-	_maxFitnessEvaluations = 900*(_dimCount+3)*(_dimCount+3);
-	_maxGenerations = std::numeric_limits<size_t>::max();
 	_lambda = 128;
 	setMu(64);
 	_muCovariance = _muEffective;
@@ -35,39 +24,19 @@ Korali::KoraliBase::KoraliBase(size_t dim, double (*fun) (double*, int), size_t 
 	_covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_dimCount)/10.0);
 }
 
-Korali::Dimension* Korali::KoraliBase::getDimension(int dim) { return &_dims[dim]; }
-Korali::Dimension* Korali::KoraliBase::operator[](int dim) { return getDimension(dim); }
+void Korali::KoraliCMAES::setLambda(size_t lambda) { _lambda = lambda; }
+void Korali::KoraliCMAES::setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; } // Should be 1 or more.
+void Korali::KoraliCMAES::setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
 
+void Korali::KoraliCMAES::setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
+void Korali::KoraliCMAES::setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
+void Korali::KoraliCMAES::setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
+void Korali::KoraliCMAES::setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
+void Korali::KoraliCMAES::setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
+void Korali::KoraliCMAES::setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
+void Korali::KoraliCMAES::setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
 
-double Korali::KoraliBase::getTotalDensity(double* x)
-{
- double density = 1.0;
- for (int i = 0; i < _dimCount; i++) density *= _dims[i].getPriorDistribution()->getDensity(x[i]);
- return density;
-}
-
-double Korali::KoraliBase::getTotalDensityLog(double* x)
-{
- double densityLog = 0.0;
- for (int i = 0; i < _dimCount; i++) densityLog += _dims[i].getPriorDistribution()->getDensityLog(x[i]);
- return densityLog;
-}
-
-void Korali::KoraliBase::setMaxFitnessEvaluations(size_t maxFitnessEvaluations) { _maxFitnessEvaluations = maxFitnessEvaluations; }
-void Korali::KoraliBase::setMaxGenerations(size_t maxGenerations) { _maxGenerations = maxGenerations; }
-void Korali::KoraliBase::setLambda(size_t lambda) { _lambda = lambda; }
-void Korali::KoraliBase::setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; } // Should be 1 or more.
-void Korali::KoraliBase::setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
-
-void Korali::KoraliBase::setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
-void Korali::KoraliBase::setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
-void Korali::KoraliBase::setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
-void Korali::KoraliBase::setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
-void Korali::KoraliBase::setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
-void Korali::KoraliBase::setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
-void Korali::KoraliBase::setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
-
-void Korali::KoraliBase::setMu(size_t mu, std::string type)
+void Korali::KoraliCMAES::setMu(size_t mu, std::string type)
 {
 	_mu = mu;
 	_muWeights = new double[_mu];
@@ -95,14 +64,14 @@ void Korali::KoraliBase::setMu(size_t mu, std::string type)
 
 }
 
-void Korali::KoraliBase::setMuCovariance(double muCovariance) { if (muCovariance < 1) _muCovariance = _muEffective; else _muCovariance = muCovariance; }
-void Korali::KoraliBase::setSigmaCumulationFactor(double sigmaCumulationFactor)
+void Korali::KoraliCMAES::setMuCovariance(double muCovariance) { if (muCovariance < 1) _muCovariance = _muEffective; else _muCovariance = muCovariance; }
+void Korali::KoraliCMAES::setSigmaCumulationFactor(double sigmaCumulationFactor)
 {
   if (sigmaCumulationFactor > 0) _sigmaCumulationFactor *= (_muEffective + 2.0) / (_dimCount + _muEffective + 3.0);
   if (sigmaCumulationFactor <= 0 || _sigmaCumulationFactor >= 1)  _sigmaCumulationFactor = (_muEffective + 2.) / (_dimCount + _muEffective + 3.0);
 }
 
-void Korali::KoraliBase::setDampingFactor(double dampFactor)
+void Korali::KoraliCMAES::setDampingFactor(double dampFactor)
 {
   if (dampFactor < 0) _dampFactor = 1;
   _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_dimCount+1.0)) - 1))     /* basic factor */
@@ -110,12 +79,12 @@ void Korali::KoraliBase::setDampingFactor(double dampFactor)
       + _sigmaCumulationFactor;                                                 /* minor increment */
 }
 
-void Korali::KoraliBase::setCumulativeCovariance(double cumulativeCovariance)
+void Korali::KoraliCMAES::setCumulativeCovariance(double cumulativeCovariance)
 {
   if (cumulativeCovariance <= 0 || cumulativeCovariance> 1)  _cumulativeCovariance = 4. / (_dimCount + 4);
 }
 
-void Korali::KoraliBase::setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate)
+void Korali::KoraliCMAES::setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate)
 {
   double t1 = 2. / ((_dimCount+1.4142)*(_dimCount+1.4142));
   double t2 = (2.*_muEffective-1.) / ((_dimCount+2.)*(_dimCount+2.)+_muEffective);
@@ -127,7 +96,7 @@ void Korali::KoraliBase::setCovarianceMatrixLearningRate(double covarianceMatrix
       _covarianceMatrixLearningRate = t2;
 }
 
-double Korali::KoraliBase::doubleRangeMax(const double *rgd, int len)
+double Korali::KoraliCMAES::doubleRangeMax(const double *rgd, int len)
 {
     int i;
     double max = rgd[0];
@@ -136,7 +105,7 @@ double Korali::KoraliBase::doubleRangeMax(const double *rgd, int len)
     return max;
 }
 
-double Korali::KoraliBase::doubleRangeMin(const double *rgd, int len)
+double Korali::KoraliCMAES::doubleRangeMin(const double *rgd, int len)
 {
     int i;
     double min = rgd[0];
@@ -145,7 +114,7 @@ double Korali::KoraliBase::doubleRangeMin(const double *rgd, int len)
     return min;
 }
 
-void Korali::KoraliBase::initializeInternalVariables()
+void Korali::KoraliCMAES::initializeInternalVariables()
 {
     int i, j, N;
     double dtest, trace;
@@ -224,7 +193,7 @@ void Korali::KoraliBase::initializeInternalVariables()
 }
 
 
-double** Korali::KoraliBase::cmaes_SamplePopulation()
+double** Korali::KoraliCMAES::cmaes_SamplePopulation()
 {
     int iNk, i, j, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -270,7 +239,7 @@ double** Korali::KoraliBase::cmaes_SamplePopulation()
 } /* SamplePopulation() */
 
 
-double** Korali::KoraliBase::cmaes_ReSampleSingle(int iindex)
+double** Korali::KoraliCMAES::cmaes_ReSampleSingle(int iindex)
 {
     int i, j, N=_dimCount;
     double *rgx;
@@ -294,7 +263,7 @@ double** Korali::KoraliBase::cmaes_ReSampleSingle(int iindex)
     return(rgrgx);
 }
 
-double* Korali::KoraliBase::cmaes_SampleSingleInto(double *rgx)
+double* Korali::KoraliCMAES::cmaes_SampleSingleInto(double *rgx)
 {
     int i, j, N=_dimCount;
     double sum;
@@ -313,7 +282,7 @@ double* Korali::KoraliBase::cmaes_SampleSingleInto(double *rgx)
     return rgx;
 }
 
-double* Korali::KoraliBase::cmaes_UpdateDistribution(int save_hist, const double *rgFunVal)
+double* Korali::KoraliCMAES::cmaes_UpdateDistribution(int save_hist, const double *rgFunVal)
 {
     int i, j, iNk, hsig, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -415,7 +384,7 @@ double* Korali::KoraliBase::cmaes_UpdateDistribution(int save_hist, const double
 }
 
 
-void Korali::KoraliBase::Adapt_C2(int hsig)
+void Korali::KoraliCMAES::Adapt_C2(int hsig)
 {
     int i, j, k, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -455,7 +424,7 @@ void Korali::KoraliBase::Adapt_C2(int hsig)
 }
 
 
-void Korali::KoraliBase::TestMinStdDevs()
+void Korali::KoraliCMAES::TestMinStdDevs()
     /* increases sigma */
 {
     int i, N = _dimCount;
@@ -467,7 +436,7 @@ void Korali::KoraliBase::TestMinStdDevs()
 } /* cmaes_TestMinStdDevs() */
 
 
-void Korali::KoraliBase::cmaes_PrintResults()
+void Korali::KoraliCMAES::cmaes_PrintResults()
 
     /* this hack reads key words from input key for data to be written to
      * a file, see file signals.par as input file. The length of the keys
@@ -514,7 +483,7 @@ void Korali::KoraliBase::cmaes_PrintResults()
 		for(i=0; i<N; ++i) printf(" %12g%c", B[i][k], (i%5==4||i==N-1)?'\n':' ');
 }
 
-double Korali::KoraliBase::function_value_difference()
+double Korali::KoraliCMAES::function_value_difference()
 {
     return std::max(doubleRangeMax(arFuncValueHist, (int)std::min(gen,*(arFuncValueHist-1))),
     		doubleRangeMax(rgFuncValue, _lambda)) -
@@ -522,7 +491,7 @@ double Korali::KoraliBase::function_value_difference()
                doubleRangeMin(rgFuncValue, _lambda));
 }
 
-bool Korali::KoraliBase::cmaes_TestForTermination()
+bool Korali::KoraliCMAES::cmaes_TestForTermination()
 {
 
     double range, fac;
@@ -643,7 +612,7 @@ bool Korali::KoraliBase::cmaes_TestForTermination()
 } /* cmaes_Test() */
 
 
-void Korali::KoraliBase::cmaes_UpdateEigensystem(int flgforce)
+void Korali::KoraliCMAES::cmaes_UpdateEigensystem(int flgforce)
 {
     int N = _dimCount;
 
@@ -660,7 +629,7 @@ void Korali::KoraliBase::cmaes_UpdateEigensystem(int flgforce)
     flgEigensysIsUptodate = 1;
 }
 
-void Korali::KoraliBase::Eigen( int N,  double **C, double *diag, double **Q)
+void Korali::KoraliCMAES::Eigen( int N,  double **C, double *diag, double **Q)
     /*
        Calculating eigenvalues and vectors.
        Input:
@@ -704,7 +673,7 @@ void Korali::KoraliBase::Eigen( int N,  double **C, double *diag, double **Q)
 
 }
 
-int Korali::KoraliBase::MaxIdx(const double *rgd, int len)
+int Korali::KoraliCMAES::MaxIdx(const double *rgd, int len)
 {
     int i, res;
     for(i=1, res=0; i<len; ++i)
@@ -713,7 +682,7 @@ int Korali::KoraliBase::MaxIdx(const double *rgd, int len)
     return res;
 }
 
-int Korali::KoraliBase::MinIdx(const double *rgd, int len)
+int Korali::KoraliCMAES::MinIdx(const double *rgd, int len)
 {
     int i, res;
     for(i=1, res=0; i<len; ++i)
@@ -723,7 +692,7 @@ int Korali::KoraliBase::MinIdx(const double *rgd, int len)
 }
 
 /* dirty index sort */
-void Korali::KoraliBase::Sorted_index(const double *rgFunVal, int *iindex, int n)
+void Korali::KoraliCMAES::Sorted_index(const double *rgFunVal, int *iindex, int n)
 {
     int i, j;
     for (i=1, iindex[0]=0; i<n; ++i) {
@@ -737,7 +706,7 @@ void Korali::KoraliBase::Sorted_index(const double *rgFunVal, int *iindex, int n
 }
 
 
-void Korali::KoraliBase::run()
+void Korali::KoraliCMAES::run()
 {
 	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
 	initializeInternalVariables();
@@ -766,7 +735,7 @@ void Korali::KoraliBase::run()
 
 }
 
-double Korali::KoraliBase::evaluate_population()
+double Korali::KoraliCMAES::evaluate_population()
 {
 
     auto tt0 = std::chrono::system_clock::now();
@@ -777,9 +746,7 @@ double Korali::KoraliBase::evaluate_population()
 };
 
 
-
-
-int Korali::KoraliBase::is_feasible(double *pop)
+int Korali::KoraliCMAES::is_feasible(double *pop)
 {
     int i, good;
     for (i = 0; i < _dimCount; i++) {
