@@ -45,10 +45,10 @@ void Korali::KoraliBase::run()
 
 	while( !Korali_CheckTermination() )
 	{
-			_samplePopulation = Korali_GetSamplePopulation();
-			for(int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
-			for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
-			Korali_UpdateDistribution(_fitnessVector);
+		_samplePopulation = Korali_GetSamplePopulation();
+		for(int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
+		for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
+		Korali_UpdateDistribution(_fitnessVector);
   }
 
 	auto endTime = std::chrono::system_clock::now();
