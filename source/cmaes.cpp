@@ -22,23 +22,58 @@ Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_
 	_covarianceMatrixLearningRate = -1;
 }
 
-double Korali::KoraliCMAES::doubleRangeMax(const double *rgd, int len)
+void Korali::KoraliCMAES::run()
 {
-    int i;
-    double max = rgd[0];
-    for (i = 1; i < len; ++i)
-        max = (max < rgd[i]) ? rgd[i] : max;
-    return max;
+	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
+	initializeInternalVariables();
+  printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu\n", _mu, _lambda, _muEffective,  _dimCount, _diagonalCovarianceMatrixEvalFrequency,  _seed);
+
+	//  if (_dimCount != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimCount, dimCount); exit(-1); }
+
+	auto startTime = std::chrono::system_clock::now();
+
+
+	while( !cmaes_TestForTermination() )
+	{
+        _samplePopulation = cmaes_SamplePopulation();
+        for(int i = 0; i < _lambda; ++i)	while( !is_feasible( _samplePopulation[i] )) cmaes_ReSampleSingle(i );
+        for(int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
+        for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
+        cmaes_UpdateDistribution(1, _fitnessVector);
+  }
+
+	auto endTime = std::chrono::system_clock::now();
+
+		cmaes_PrintResults();
+
+
+    printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(endTime-startTime).count());
+
 }
 
-double Korali::KoraliCMAES::doubleRangeMin(const double *rgd, int len)
+double Korali::KoraliCMAES::evaluate_population()
 {
-    int i;
-    double min = rgd[0];
-    for (i = 1; i < len; ++i)
-        min = (min > rgd[i]) ? rgd[i] : min;
-    return min;
+
+    auto tt0 = std::chrono::system_clock::now();
+    for( int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
+    for( int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
+    auto tt1 = std::chrono::system_clock::now();
+    return std::chrono::duration<double>(tt1-tt0).count();
+};
+
+
+int Korali::KoraliCMAES::is_feasible(double *pop)
+{
+    int i, good;
+    for (i = 0; i < _dimCount; i++) {
+        good = (_dims[i]._lowerBound <= pop[i]) && (pop[i] <= _dims[i]._upperBound);
+        if (!good) {
+            return 0;
+        }
+    }
+    return 1;
 }
+
 
 void Korali::KoraliCMAES::initializeInternalVariables()
 {
@@ -697,55 +732,20 @@ void Korali::KoraliCMAES::Sorted_index(const double *rgFunVal, int *iindex, int 
 }
 
 
-void Korali::KoraliCMAES::run()
+double Korali::KoraliCMAES::doubleRangeMax(const double *rgd, int len)
 {
-	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
-	initializeInternalVariables();
-  printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu\n", _mu, _lambda, _muEffective,  _dimCount, _diagonalCovarianceMatrixEvalFrequency,  _seed);
-
-	//  if (_dimCount != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimCount, dimCount); exit(-1); }
-
-	auto startTime = std::chrono::system_clock::now();
-
-
-	while( !cmaes_TestForTermination() )
-	{
-        _samplePopulation = cmaes_SamplePopulation();
-        for(int i = 0; i < _lambda; ++i)	while( !is_feasible( _samplePopulation[i] )) cmaes_ReSampleSingle(i );
-        for(int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
-        for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
-        cmaes_UpdateDistribution(1, _fitnessVector);
-  }
-
-	auto endTime = std::chrono::system_clock::now();
-
-		cmaes_PrintResults();
-
-
-    printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(endTime-startTime).count());
-
+    int i;
+    double max = rgd[0];
+    for (i = 1; i < len; ++i)
+        max = (max < rgd[i]) ? rgd[i] : max;
+    return max;
 }
 
-double Korali::KoraliCMAES::evaluate_population()
+double Korali::KoraliCMAES::doubleRangeMin(const double *rgd, int len)
 {
-
-    auto tt0 = std::chrono::system_clock::now();
-    for( int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
-    for( int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
-    auto tt1 = std::chrono::system_clock::now();
-    return std::chrono::duration<double>(tt1-tt0).count();
-};
-
-
-int Korali::KoraliCMAES::is_feasible(double *pop)
-{
-    int i, good;
-    for (i = 0; i < _dimCount; i++) {
-        good = (_dims[i]._lowerBound <= pop[i]) && (pop[i] <= _dims[i]._upperBound);
-        if (!good) {
-            return 0;
-        }
-    }
-    return 1;
+    int i;
+    double min = rgd[0];
+    for (i = 1; i < len; ++i)
+        min = (min > rgd[i]) ? rgd[i] : min;
+    return min;
 }
-
