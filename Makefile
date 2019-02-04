@@ -7,4 +7,4 @@ clean:
 	@$(MAKE) -j -C tests clean
 
 test:
-	./tests/ackley/ackley
+	upcxx-run -n 8 ./tests/ackley/ackley

@@ -8,18 +8,18 @@ all: $(TARGET)
 
 DIR_KORALI = $L../../source
 
-LDXLIBS := -L$(DIR_KORALI) -lkorali $(LDXLIBS)  
+LDFLAGS += -L$(DIR_KORALI) -lkorali 
 
 CXXFLAGS += -I../../include
 
 $(TARGET): $(TARGET).o
-	$(LINK.o.xx) $^ $(LDXLIBS) $(CXXFLAGS)
+	upcxx -o $@ $^ $(LDFLAGS) $(CXXFLAGS)
 
 $(TARGET).o: $(TARGET).cpp
-	mpic++ -c $< $(CXXFLAGS)
+	upcxx -c $< $(CXXFLAGS)
 
 test: $(TARGET)
-	./$(TARGET)
+	upcxx-run -n 1 ./$(TARGET)
 
 clean:; rm -rf $(TARGET) *.o
 

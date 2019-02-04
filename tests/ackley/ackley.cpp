@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < 4; i++)	korali[i]->setInitialStdDev(3.0);
 
 	korali.setStopMinDeltaX(1e-11);
-	korali.setLambda(128);
+	korali.setLambda(64);
 
 	korali.run();
 }

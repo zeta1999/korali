@@ -1,15 +1,14 @@
 # compilers and flags
 
-CXX := mpic++
-LDX := mpic++
+CXX = upcxx
 
-CXXFLAGS += -O3 -std=c++11
+#CXXFLAGS += -O3 -std=c++17
+CXXFLAGS += -O0 -g -std=c++17
 CXXFLAGS += -Wall -Wfatal-errors
-LDXLIBS += `gsl-config --libs` -lm
+LDFLAGS += `gsl-config --libs` -lm
 
 COMPILE.cxx = $(CXX) $(CXXFLAGS) -c -o $@
-LINK.o      = $(LD)  $(LDFLAGS)     -o $@
-LINK.o.xx   = $(LDX) $(LDFLAGS)     -o $@
+LINK.o      = $(CXX) $(LDFLAGS)     -o $@
 
 # rules
 
