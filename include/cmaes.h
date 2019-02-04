@@ -13,7 +13,6 @@ class KoraliCMAES : public KoraliBase
   // Public Methods
 	KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed);
 
-	void setLambda(size_t lambda) { _lambda = lambda; }
 	void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
 	void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
 	void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
@@ -30,13 +29,10 @@ class KoraliCMAES : public KoraliBase
 	void setCumulativeCovariance(double cumulativeCovariance) { _cumulativeCovariance = cumulativeCovariance; }
 	void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate) { _covarianceMatrixLearningRate = covarianceMatrixLearningRate; }
 
-  void run();
-
   private:
 
   // Configuration Variables
 
-  size_t _lambda; // Number of offspring per sample cycle
   size_t _mu;
   std::string _muType;
   double* _muWeights;
@@ -95,28 +91,26 @@ class KoraliCMAES : public KoraliBase
   double genOfEigensysUpdate;
   double dMaxSignifKond;
 
+  // Overriding Base Korali Class virtual methods
+  void Korali_InitializeInternalVariables();
+  double** Korali_GetSamplePopulation();
+  bool Korali_CheckTermination();
+  void Korali_PrintResults();
+  double* Korali_UpdateDistribution(const double *fitnessVector);
 
   // Private CMAES-Specific Methods
-
-  double** cmaes_SamplePopulation();
-  double** cmaes_ReSampleSingle(int iindex);
-  double* updateDistribution(const double *fitnessVector);
-  void Adapt_C2(int hsig);
-  void TestMinStdDevs();
-  void printResults();
-  double function_value_difference();
-  bool checkTermination();
-  void cmaes_UpdateEigensystem(int flgforce);
-  void Eigen( int N,  double **C, double *diag, double **Q);
-  int MaxIdx(const double *rgd, int len);
-  int MinIdx(const double *rgd, int len);
-  void Sorted_index(const double *rgFunVal, int *iindex, int n);
+  double** cmaes_reSampleSingle(int iindex);
+  void cmaes_adaptC2(int hsig);
+  void cmaes_testMinStdDevs();
+  double cmaes_function_value_difference();
+  void cmaes_updateEigensystem(int flgforce);
+  void cmaes_eigen( int N,  double **C, double *diag, double **Q);
+  int cmaes_maxIdx(const double *rgd, int len);
+  int cmaes_minIdx(const double *rgd, int len);
+  void cmaes_sorted_index(const double *rgFunVal, int *iindex, int n);
   bool cmaes_isFeasible(double *pop);
-  double doubleRangeMax(const double *rgd, int len);
-  double doubleRangeMin(const double *rgd, int len );
-  void initializeInternalVariables();
-
-  int isFeasible(double *pop);
+  double cmaes_doubleRangeMax(const double *rgd, int len);
+  double cmaes_doubleRangeMin(const double *rgd, int len );
 };
 
 } // namespace Korali

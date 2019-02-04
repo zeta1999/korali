@@ -1,5 +1,4 @@
 #include "cmaes.h"
-#include <chrono>
 
 Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed = 0) : Korali::KoraliBase::KoraliBase(dim, fun, seed)
 {
@@ -22,33 +21,7 @@ Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_
 	_covarianceMatrixLearningRate = -1;
 }
 
-void Korali::KoraliCMAES::run()
-{
-	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
-	initializeInternalVariables();
-  printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu\n", _mu, _lambda, _muEffective,  _dimCount, _diagonalCovarianceMatrixEvalFrequency,  _seed);
 
-	//  if (_dimCount != dimCount) { fprintf( stderr, "[Korali] Error: Prior has a different dimension count (%d) than the problem (%d). \n", _dimCount, dimCount); exit(-1); }
-
-	auto startTime = std::chrono::system_clock::now();
-
-
-	while( !checkTermination() )
-	{
-        _samplePopulation = cmaes_SamplePopulation();
-        for(int i = 0; i < _lambda; ++i) _fitnessVector[i] = - _fitnessFunction(_samplePopulation[i], _dimCount);
-        for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
-        updateDistribution(_fitnessVector);
-  }
-
-	auto endTime = std::chrono::system_clock::now();
-
-		printResults();
-
-
-    printf("Total elapsed time      = %.3lf  seconds\n", std::chrono::duration<double>(endTime-startTime).count());
-
-}
 
 bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 {
@@ -56,7 +29,7 @@ bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 }
 
 
-void Korali::KoraliCMAES::initializeInternalVariables()
+void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
 {
     int i, j, N;
     double dtest, trace;
@@ -123,7 +96,7 @@ void Korali::KoraliCMAES::initializeInternalVariables()
     if (tmpCovarianceRate >= 0)   _covarianceMatrixLearningRate *= t2;
     if (tmpCovarianceRate < 0 || tmpCovarianceRate > 1)  _covarianceMatrixLearningRate = t2;
 
-    // Setting Eigensystem evaluation Frequency
+    // Setting cmaes_eigensystem evaluation Frequency
   	_covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_dimCount)/10.0);
 
     N = _dimCount; /* for convenience */
@@ -189,8 +162,8 @@ void Korali::KoraliCMAES::initializeInternalVariables()
         rgpc[i] = rgps[i] = 0.;
     }
 
-    minEW = doubleRangeMin(rgD, N); minEW = minEW * minEW;
-    maxEW = doubleRangeMax(rgD, N); maxEW = maxEW * maxEW;
+    minEW = cmaes_doubleRangeMin(rgD, N); minEW = minEW * minEW;
+    maxEW = cmaes_doubleRangeMax(rgD, N); maxEW = maxEW * maxEW;
 
     maxdiagC=C[0][0]; for(i=1;i<N;++i) if(maxdiagC<C[i][i]) maxdiagC=C[i][i];
     mindiagC=C[0][0]; for(i=1;i<N;++i) if(mindiagC>C[i][i]) mindiagC=C[i][i];
@@ -200,28 +173,28 @@ void Korali::KoraliCMAES::initializeInternalVariables()
 }
 
 
-double** Korali::KoraliCMAES::cmaes_SamplePopulation()
+double** Korali::KoraliCMAES::Korali_GetSamplePopulation()
 {
     int iNk, i, j, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
     double sum;
     double const *xmean = rgxmean;
 
-    /* calculate eigensystem  */
+    /* calculate cmaes_eigensystem  */
     if (!flgEigensysIsUptodate) {
         if (!flgdiag)
-            cmaes_UpdateEigensystem(0);
+            cmaes_updateEigensystem(0);
         else {
             for (i = 0; i < N; ++i)
                 rgD[i] = sqrt(C[i][i]);
-            minEW = doubleRangeMin(rgD, N) * doubleRangeMin(rgD, N);
-            maxEW = doubleRangeMax(rgD, N) * doubleRangeMin(rgD, N);
+            minEW = cmaes_doubleRangeMin(rgD, N) * cmaes_doubleRangeMin(rgD, N);
+            maxEW = cmaes_doubleRangeMax(rgD, N) * cmaes_doubleRangeMin(rgD, N);
             flgEigensysIsUptodate = 1;
         }
     }
 
     /* treat minimal standard deviations and numeric problems */
-    TestMinStdDevs();
+    cmaes_testMinStdDevs();
 
     for (iNk = 0; iNk < _lambda; ++iNk)
     { /* generate scaled cmaes_random vector (D * z)    */
@@ -242,13 +215,13 @@ double** Korali::KoraliCMAES::cmaes_SamplePopulation()
         ++gen;
     state = 1;
 
-    for(int i = 0; i < _lambda; ++i)	while( !cmaes_isFeasible( rgrgx[i] )) cmaes_ReSampleSingle(i );
+    for(int i = 0; i < _lambda; ++i)	while( !cmaes_isFeasible( rgrgx[i] )) cmaes_reSampleSingle(i );
 
     return(rgrgx);
 } /* SamplePopulation() */
 
 
-double** Korali::KoraliCMAES::cmaes_ReSampleSingle(int iindex)
+double** Korali::KoraliCMAES::cmaes_reSampleSingle(int iindex)
 {
     int i, j, N=_dimCount;
     double *rgx;
@@ -257,7 +230,7 @@ double** Korali::KoraliCMAES::cmaes_ReSampleSingle(int iindex)
 
     if (iindex < 0 || iindex >= _lambda) {
         sprintf(s, "index==%d must be between 0 and %lu", iindex, _lambda);
-        fprintf(stderr, "[CMAES] Error: cmaes_ReSampleSingle(): Population member \n");
+        fprintf(stderr, "[CMAES] Error: cmaes_reSampleSingle(): Population member \n");
     }
     rgx = rgrgx[iindex];
 
@@ -273,7 +246,7 @@ double** Korali::KoraliCMAES::cmaes_ReSampleSingle(int iindex)
 }
 
 
-double* Korali::KoraliCMAES::updateDistribution(const double *fitnessVector)
+double* Korali::KoraliCMAES::Korali_UpdateDistribution(const double *fitnessVector)
 {
     int i, j, iNk, hsig, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -296,7 +269,7 @@ double* Korali::KoraliCMAES::updateDistribution(const double *fitnessVector)
 
 
     /* Generate index */
-    Sorted_index(fitnessVector, index, _lambda);
+    cmaes_sorted_index(fitnessVector, index, _lambda);
 
     /* Test if function values are identical, escape flat fitness */
     if (rgFuncValue[index[0]] ==
@@ -361,7 +334,7 @@ double* Korali::KoraliCMAES::updateDistribution(const double *fitnessVector)
 
     /* update of C  */
 
-    Adapt_C2(hsig);
+    cmaes_adaptC2(hsig);
 
     /* update of sigma */
     sigma *= exp(((sqrt(psxps)/chiN)-1.)*_sigmaCumulationFactor/_dampFactor);
@@ -373,7 +346,7 @@ double* Korali::KoraliCMAES::updateDistribution(const double *fitnessVector)
 }
 
 
-void Korali::KoraliCMAES::Adapt_C2(int hsig)
+void Korali::KoraliCMAES::cmaes_adaptC2(int hsig)
 {
     int i, j, k, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -413,7 +386,7 @@ void Korali::KoraliCMAES::Adapt_C2(int hsig)
 }
 
 
-void Korali::KoraliCMAES::TestMinStdDevs()
+void Korali::KoraliCMAES::cmaes_testMinStdDevs()
     /* increases sigma */
 {
     int i, N = _dimCount;
@@ -422,10 +395,10 @@ void Korali::KoraliCMAES::TestMinStdDevs()
         while (sigma * sqrt(C[i][i]) < _dims[i]._minStdDevChange)
             sigma *= exp(0.05+_sigmaCumulationFactor/_dampFactor);
 
-} /* cmaes_TestMinStdDevs() */
+} /* cmaes_cmaes_testMinStdDevs() */
 
 
-void Korali::KoraliCMAES::printResults()
+void Korali::KoraliCMAES::Korali_PrintResults()
 
     /* this hack reads key words from input key for data to be written to
      * a file, see file signals.par as input file. The length of the keys
@@ -436,6 +409,8 @@ void Korali::KoraliCMAES::printResults()
 {
     int i, k, N=_dimCount;
 
+    printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu\n", _mu, _lambda, _muEffective,  _dimCount, _diagonalCovarianceMatrixEvalFrequency,  _seed);
+
 		printf(" N %d\n", N);
 		printf(" seed %lu\n", _seed);
 		printf("function evaluations %.0f\n", countevals);
@@ -443,7 +418,7 @@ void Korali::KoraliCMAES::printResults()
 		printf("maximal standard deviation %g\n", sigma*sqrt(maxdiagC));
 		printf("minimal standard deviation %g\n", sigma*sqrt(mindiagC));
 		printf("sigma %g\n", sigma);
-		printf("axisratio %g\n", doubleRangeMax(rgD, N)/doubleRangeMin(rgD, N));
+		printf("axisratio %g\n", cmaes_doubleRangeMax(rgD, N)/cmaes_doubleRangeMin(rgD, N));
 		printf("xbestever found after %.0f evaluations, function value %g\n",	rgxbestever[N+1], rgxbestever[N]);
 
 		for(i=0; i<N; ++i) printf(" %12g%c", rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
@@ -463,24 +438,24 @@ void Korali::KoraliCMAES::printResults()
 		for(i=0; i<N; ++i)	printf(" %12g%c", sigma*rgdTmp[N-1-i],(i%5==4||i==N-1)?'\n':' ');
 
 		printf("Longest axis (b_i where d_ii=max(diag(D))\n");
-		k = MaxIdx(rgD, N);
+		k = cmaes_maxIdx(rgD, N);
 
 		for(i=0; i<N; ++i) printf(" %12g%c", B[i][k], (i%5==4||i==N-1)?'\n':' ');
 		printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
-		k = MinIdx(rgD, N);
+		k = cmaes_minIdx(rgD, N);
 
 		for(i=0; i<N; ++i) printf(" %12g%c", B[i][k], (i%5==4||i==N-1)?'\n':' ');
 }
 
-double Korali::KoraliCMAES::function_value_difference()
+double Korali::KoraliCMAES::cmaes_function_value_difference()
 {
-    return std::max(doubleRangeMax(arFuncValueHist, (int)std::min(gen,*(arFuncValueHist-1))),
-    		doubleRangeMax(rgFuncValue, _lambda)) -
-        std::min(doubleRangeMin(arFuncValueHist, (int)std::min(gen, *(arFuncValueHist-1))),
-               doubleRangeMin(rgFuncValue, _lambda));
+    return std::max(cmaes_doubleRangeMax(arFuncValueHist, (int)std::min(gen,*(arFuncValueHist-1))),
+    		cmaes_doubleRangeMax(rgFuncValue, _lambda)) -
+        std::min(cmaes_doubleRangeMin(arFuncValueHist, (int)std::min(gen, *(arFuncValueHist-1))),
+               cmaes_doubleRangeMin(rgFuncValue, _lambda));
 }
 
-bool Korali::KoraliCMAES::checkTermination()
+bool Korali::KoraliCMAES::Korali_CheckTermination()
 {
 
     double range, fac;
@@ -497,7 +472,7 @@ bool Korali::KoraliCMAES::checkTermination()
     }
 
     /* TolFun */
-    range = function_value_difference();
+    range = cmaes_function_value_difference();
 
     if (gen > 0 && range <= _stopFitnessDiffThreshold) {
         terminate = true; printf(
@@ -507,8 +482,8 @@ bool Korali::KoraliCMAES::checkTermination()
 
     /* TolFunHist */
     if (gen > *(arFuncValueHist-1)) {
-        range = doubleRangeMax(arFuncValueHist, (int)*(arFuncValueHist-1))
-            - doubleRangeMin(arFuncValueHist, (int)*(arFuncValueHist-1));
+        range = cmaes_doubleRangeMax(arFuncValueHist, (int)*(arFuncValueHist-1))
+            - cmaes_doubleRangeMin(arFuncValueHist, (int)*(arFuncValueHist-1));
         if (range <= _stopFitnessDiffHistoryThreshold)
         {
             terminate = true; printf(
@@ -601,68 +576,68 @@ bool Korali::KoraliCMAES::checkTermination()
 } /* cmaes_Test() */
 
 
-void Korali::KoraliCMAES::cmaes_UpdateEigensystem(int flgforce)
+void Korali::KoraliCMAES::cmaes_updateEigensystem(int flgforce)
 {
     int N = _dimCount;
 
     if(flgforce == 0) if (flgEigensysIsUptodate == 1) return;
 
-    Eigen( N, C, rgD, B);
+    cmaes_eigen( N, C, rgD, B);
 
-    /* find largest and smallest eigenvalue, they are supposed to be sorted anyway */
-    minEW = doubleRangeMin(rgD, N);
-    maxEW = doubleRangeMax(rgD, N);
+    /* find largest and smallest cmaes_eigenvalue, they are supposed to be sorted anyway */
+    minEW = cmaes_doubleRangeMin(rgD, N);
+    maxEW = cmaes_doubleRangeMax(rgD, N);
 
     for (int i = 0; i < N; ++i) 	rgD[i] = sqrt(rgD[i]);
 
     flgEigensysIsUptodate = 1;
 }
 
-void Korali::KoraliCMAES::Eigen( int N,  double **C, double *diag, double **Q)
+void Korali::KoraliCMAES::cmaes_eigen( int N,  double **C, double *diag, double **Q)
     /*
-       Calculating eigenvalues and vectors.
+       Calculating cmaes_eigenvalues and vectors.
        Input:
        N: dimension.
        C: symmetric (1:N)xN-matrix, solely used to copy data to Q
        niter: number of maximal iterations for QL-Algorithm.
        Output:
-       diag: N eigenvalues.
-       Q: Columns are normalized eigenvectors.
+       diag: N cmaes_eigenvalues.
+       Q: Columns are normalized cmaes_eigenvectors.
        */
 {
-    double* data = (double*) malloc (sizeof(double) * N * N);
+  double* data = (double*) malloc (sizeof(double) * N * N);
 
-    for (int i = 0; i <  N; i++)
-    for (int j = 0; j <= i; j++)
-    {
-    	data[i*N + j] = C[i][j];
-    	data[j*N + i] = C[i][j];
-    }
+  for (int i = 0; i <  N; i++)
+  for (int j = 0; j <= i; j++)
+  {
+  	data[i*N + j] = C[i][j];
+  	data[j*N + i] = C[i][j];
+  }
 
-    gsl_matrix_view m  = gsl_matrix_view_array (data, N, N);
+  gsl_matrix_view m  = gsl_matrix_view_array (data, N, N);
 
-    gsl_vector *eval = gsl_vector_alloc (N);
-    gsl_matrix *evec = gsl_matrix_alloc (N, N);
-    gsl_eigen_symmv_workspace * w =  gsl_eigen_symmv_alloc (N);
-    gsl_eigen_symmv (&m.matrix, eval, evec, w);
-    gsl_eigen_symmv_free (w);
-    gsl_eigen_symmv_sort (eval, evec, GSL_EIGEN_SORT_ABS_ASC);
-		for (int i = 0; i < N; i++)
-		{
-			double eval_i = gsl_vector_get (eval, i);
-			gsl_vector_view evec_i = gsl_matrix_column (evec, i);
-			for (int j = 0; j < N; j++)	Q[j][i] =  -gsl_vector_get (&evec_i.vector, j);
-		}
+  gsl_vector *eval = gsl_vector_alloc (N);
+  gsl_matrix *evec = gsl_matrix_alloc (N, N);
+  gsl_eigen_symmv_workspace * w =  gsl_eigen_symmv_alloc (N);
+  gsl_eigen_symmv (&m.matrix, eval, evec, w);
+  gsl_eigen_symmv_free (w);
+  gsl_eigen_symmv_sort (eval, evec, GSL_EIGEN_SORT_ABS_ASC);
+	for (int i = 0; i < N; i++)
+	{
+		double eval_i = gsl_vector_get (eval, i);
+		gsl_vector_view evec_i = gsl_matrix_column (evec, i);
+		for (int j = 0; j < N; j++)	Q[j][i] =  -gsl_vector_get (&evec_i.vector, j);
+	}
 
-		for (int i = 0; i < N; i++)	diag[i] = gsl_vector_get (eval, i);
+	for (int i = 0; i < N; i++)	diag[i] = gsl_vector_get (eval, i);
 
-    gsl_vector_free (eval);
-    gsl_matrix_free (evec);
-    free(data);
+  gsl_vector_free (eval);
+  gsl_matrix_free (evec);
+  free(data);
 
 }
 
-int Korali::KoraliCMAES::MaxIdx(const double *rgd, int len)
+int Korali::KoraliCMAES::cmaes_maxIdx(const double *rgd, int len)
 {
     int i, res;
     for(i=1, res=0; i<len; ++i)
@@ -671,7 +646,7 @@ int Korali::KoraliCMAES::MaxIdx(const double *rgd, int len)
     return res;
 }
 
-int Korali::KoraliCMAES::MinIdx(const double *rgd, int len)
+int Korali::KoraliCMAES::cmaes_minIdx(const double *rgd, int len)
 {
     int i, res;
     for(i=1, res=0; i<len; ++i)
@@ -681,7 +656,7 @@ int Korali::KoraliCMAES::MinIdx(const double *rgd, int len)
 }
 
 /* dirty index sort */
-void Korali::KoraliCMAES::Sorted_index(const double *fitnessVector, int *iindex, int n)
+void Korali::KoraliCMAES::cmaes_sorted_index(const double *fitnessVector, int *iindex, int n)
 {
     int i, j;
     for (i=1, iindex[0]=0; i<n; ++i) {
@@ -695,7 +670,7 @@ void Korali::KoraliCMAES::Sorted_index(const double *fitnessVector, int *iindex,
 }
 
 
-double Korali::KoraliCMAES::doubleRangeMax(const double *rgd, int len)
+double Korali::KoraliCMAES::cmaes_doubleRangeMax(const double *rgd, int len)
 {
     int i;
     double max = rgd[0];
@@ -704,7 +679,7 @@ double Korali::KoraliCMAES::doubleRangeMax(const double *rgd, int len)
     return max;
 }
 
-double Korali::KoraliCMAES::doubleRangeMin(const double *rgd, int len)
+double Korali::KoraliCMAES::cmaes_doubleRangeMin(const double *rgd, int len)
 {
     int i;
     double min = rgd[0];
