@@ -51,11 +51,6 @@ class KoraliBase
   virtual void Korali_GetSamplePopulation() = 0;
   virtual bool Korali_CheckTermination() = 0;
 
-  private:
-
-  // Tasking Layer Methods
-  void supervisorThread();
-  void workerThread();
 };
 
 void workerEvaluateFitnessFunction(size_t position, double d0, double d1, double d2, double d3);

@@ -53,7 +53,7 @@ void Korali::KoraliBase::run()
 	// Initializing solver variables
   _continueEvaluations = true;
 
-  if (_rankId != 0) workerThread();
+  if (_rankId != 0) while(__kbRuntime->_continueEvaluations) upcxx::progress();
   else
   {
     auto startTime = std::chrono::system_clock::now();
@@ -91,11 +91,6 @@ void Korali::KoraliBase::run()
 
 	upcxx::barrier();
   upcxx::finalize();
-}
-
-void Korali::KoraliBase::workerThread()
-{
-	while(__kbRuntime->_continueEvaluations) upcxx::progress();
 }
 
 void Korali::workerComeback(size_t worker, size_t position, double fitness)
