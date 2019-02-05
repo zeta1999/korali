@@ -67,6 +67,7 @@ void Korali::KoraliBase::workerThread()
 		 _bcastFuture.wait();
 	}
 }
+
 void Korali::KoraliBase::supervisorThread()
 {
 	auto startTime = std::chrono::system_clock::now();
