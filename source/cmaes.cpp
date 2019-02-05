@@ -1,6 +1,6 @@
 #include "cmaes.h"
 
-Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed = 0) : Korali::KoraliBase::KoraliBase(dim, fun, seed)
+Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(dim, fun, seed, comm)
 {
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
@@ -10,7 +10,6 @@ Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_
 	_stopMaxTimePerEigendecomposition = 1.0;
 	_stopMinFitness = -std::numeric_limits<double>::max();
 
-	_lambda = 128;
 	_mu = 64;
 	_muType = "Logarithmic";
 	_muCovariance = -1;
