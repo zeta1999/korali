@@ -42,12 +42,13 @@ void Korali::KoraliBase::run()
 	_rankId = upcxx::rank_me();
 	__kbRuntime = this;
 
-
-//	Use broadcast to send the sample vector to everyone.
-//	Take sample vector away from CMAES and put it into base
-
   // Checking Lambda's value
   if(_lambda < 1 )  { fprintf( stderr, "[Korali] Error: Lambda (%lu) should be higher than one.\n", _lambda); exit(-1); }
+
+  //	Use broadcast to send the sample vector to everyone.
+  //	Take sample vector away from CMAES and put it into base
+  // Allocating sample matrix
+  _samplePopulation = (double *) calloc (sizeof(double), _lambda*_dimCount);
 
 	// Initializing solver variables
   _continueEvaluations = true;
@@ -63,7 +64,7 @@ void Korali::KoraliBase::run()
 		while( !Korali_CheckTermination() )
 		{
 	  	  upcxx::future<> fut_all = upcxx::make_future();
-				_samplePopulation = Korali_GetSamplePopulation();
+				Korali_GetSamplePopulation();
 
 				for(int i = 0; i < _lambda; i++) //_fitnessVector[i] = -_fitnessFunction(&_samplePopulation[i*_dimCount], _dimCount);
 				{

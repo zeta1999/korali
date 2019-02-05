@@ -47,8 +47,8 @@ class KoraliBase
 
   virtual void Korali_InitializeInternalVariables() = 0;
   virtual void Korali_PrintResults() = 0;
-  virtual double* Korali_UpdateDistribution(const double *fitnessVector) = 0;
-  virtual double* Korali_GetSamplePopulation() = 0;
+  virtual void Korali_UpdateDistribution(const double *fitnessVector) = 0;
+  virtual void Korali_GetSamplePopulation() = 0;
   virtual bool Korali_CheckTermination() = 0;
 
   private:
