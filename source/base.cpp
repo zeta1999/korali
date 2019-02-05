@@ -70,7 +70,7 @@ void Korali::KoraliBase::workerThread()
 void Korali::KoraliBase::supervisorThread()
 {
 	auto startTime = std::chrono::system_clock::now();
-	for (int i = 1; i < _rankCount; i++) _workers.push(i);
+	for (int i = 0; i < _rankCount; i++) _workers.push(i);
 	Korali_InitializeInternalVariables();
 	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
 
