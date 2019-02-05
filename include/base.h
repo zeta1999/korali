@@ -41,14 +41,14 @@ class KoraliBase
   size_t _generation;
   Dimension* _dims;
   Distribution* _gaussianGenerator;
-  double** _samplePopulation;
+  double* _samplePopulation;
   size_t _maxFitnessEvaluations;   // Defines maximum number of fitness evaluations
   size_t _maxGenerations; // Defines maximum number of generations
 
   virtual void Korali_InitializeInternalVariables() = 0;
   virtual void Korali_PrintResults() = 0;
   virtual double* Korali_UpdateDistribution(const double *fitnessVector) = 0;
-  virtual double** Korali_GetSamplePopulation() = 0;
+  virtual double* Korali_GetSamplePopulation() = 0;
   virtual bool Korali_CheckTermination() = 0;
 
   private:

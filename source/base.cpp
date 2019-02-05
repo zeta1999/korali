@@ -65,17 +65,17 @@ void Korali::KoraliBase::run()
 	  	  upcxx::future<> fut_all = upcxx::make_future();
 				_samplePopulation = Korali_GetSamplePopulation();
 
-				for(int i = 0; i < _lambda; i++) //_fitnessVector[i] = -_fitnessFunction(_samplePopulation[i], _dimCount);
+				for(int i = 0; i < _lambda; i++) //_fitnessVector[i] = -_fitnessFunction(&_samplePopulation[i*_dimCount], _dimCount);
 				{
 					while(_workers.empty()) upcxx::progress();
-          auto fut = upcxx::rpc(_workers.front(), workerEvaluateFitnessFunction, i, _samplePopulation[i][0], _samplePopulation[i][1], _samplePopulation[i][2], _samplePopulation[i][3]);
+          auto fut = upcxx::rpc(_workers.front(), workerEvaluateFitnessFunction, i, _samplePopulation[i*_dimCount + 0], _samplePopulation[i*_dimCount + 1], _samplePopulation[i*_dimCount + 2], _samplePopulation[i*_dimCount + 3]);
           fut_all = upcxx::when_all(fut_all, fut);
           _workers.pop();
 				}
 
 				fut_all.wait();
 
-				for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(_samplePopulation[i]);
+				for(int i = 0; i < _lambda; i++) _fitnessVector[i] -= getTotalDensityLog(&_samplePopulation[i*_dimCount]);
 				Korali_UpdateDistribution(_fitnessVector);
 				_generation++;
 		}

@@ -25,7 +25,9 @@ Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_
 
 bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 {
-    for (int i = 0; i < _dimCount; i++) if (pop[i] < _dims[i]._lowerBound || pop[i] > _dims[i]._upperBound) return false; return true;
+    for (int i = 0; i < _dimCount; i++)
+    	if (pop[i] < _dims[i]._lowerBound || pop[i] > _dims[i]._upperBound) return false;
+    return true;
 }
 
 
@@ -141,12 +143,8 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
     index = (int *) calloc (sizeof(int*), _lambda);
     for (i = 0; i < _lambda; ++i)
         index[i] = i; /* should not be necessary */
-    rgrgx = (double **) calloc (sizeof(double*), _lambda);
-    for (i = 0; i < _lambda; ++i) {
-        rgrgx[i] = (double*) calloc (sizeof(double), N+2);
-        rgrgx[i][0] = N;
-        rgrgx[i]++;
-    }
+    rgrgx = (double *) calloc (sizeof(double), _lambda*N);
+    curBest = (double *) calloc (sizeof(double), _lambda);
 
     /* Initialize newed space  */
 
@@ -173,7 +171,7 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
 }
 
 
-double** Korali::KoraliCMAES::Korali_GetSamplePopulation()
+double* Korali::KoraliCMAES::Korali_GetSamplePopulation()
 {
     int iNk, i, j, N=_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -200,7 +198,7 @@ double** Korali::KoraliCMAES::Korali_GetSamplePopulation()
     { /* generate scaled cmaes_random vector (D * z)    */
         for (i = 0; i < N; ++i)
             if (flgdiag)
-                rgrgx[iNk][i] = xmean[i] + sigma * rgD[i] * _gaussianGenerator->getRandomNumber();
+                rgrgx[iNk * N + i] = xmean[i] + sigma * rgD[i] * _gaussianGenerator->getRandomNumber();
             else
                 rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
         if (!flgdiag)
@@ -208,20 +206,20 @@ double** Korali::KoraliCMAES::Korali_GetSamplePopulation()
             for (i = 0; i < N; ++i) {
                 for (j = 0, sum = 0.; j < N; ++j)
                     sum += B[i][j] * rgdTmp[j];
-                rgrgx[iNk][i] = xmean[i] + sigma * sum;
+                rgrgx[iNk * N + i] = xmean[i] + sigma * sum;
             }
     }
-    if(state == 3 || gen == 0)
-        ++gen;
+
+    if(state == 3 || gen == 0)   ++gen;
     state = 1;
 
-    for(int i = 0; i < _lambda; ++i)	while( !cmaes_isFeasible( rgrgx[i] )) cmaes_reSampleSingle(i );
+    for(int i = 0; i < _lambda; ++i)	while( !cmaes_isFeasible(&rgrgx[i*N] )) cmaes_reSampleSingle(i );
 
     return(rgrgx);
 } /* SamplePopulation() */
 
 
-double** Korali::KoraliCMAES::cmaes_reSampleSingle(int iindex)
+double* Korali::KoraliCMAES::cmaes_reSampleSingle(int iindex)
 {
     int i, j, N=_dimCount;
     double *rgx;
@@ -232,7 +230,7 @@ double** Korali::KoraliCMAES::cmaes_reSampleSingle(int iindex)
         sprintf(s, "index==%d must be between 0 and %lu", iindex, _lambda);
         fprintf(stderr, "[CMAES] Error: cmaes_reSampleSingle(): Population member \n");
     }
-    rgx = rgrgx[iindex];
+    rgx = &rgrgx[iindex*N];
 
     for (i = 0; i < N; ++i)
         rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
@@ -264,9 +262,7 @@ double* Korali::KoraliCMAES::Korali_UpdateDistribution(const double *fitnessVect
         fprintf(stderr, "[CMAES] Error: updateDistribution(): unexpected state");
 
     /* assign function values */
-    for (i=0; i < _lambda; ++i)
-        rgrgx[i][N] = rgFuncValue[i] = fitnessVector[i];
-
+    for (i=0; i < _lambda; i++)	curBest[i] = rgFuncValue[i] = fitnessVector[i];
 
     /* Generate index */
     cmaes_sorted_index(fitnessVector, index, _lambda);
@@ -284,18 +280,19 @@ double* Korali::KoraliCMAES::Korali_UpdateDistribution(const double *fitnessVect
 			arFuncValueHist[0] = fitnessVector[index[0]];
 
     /* update xbestever */
-    if ((rgxbestever[N] > rgrgx[index[0]][N] || gen == 1))
-        for (i = 0; i <= N; ++i) {
-            rgxbestever[i] = rgrgx[index[0]][i];
-            rgxbestever[N+1] = countevals;
-        }
+    if ((rgxbestever[N] > curBest[index[0]] || gen == 1))
+    {
+        for (i = 0; i < N; ++i) rgxbestever[i] = rgrgx[index[0]*N + i];
+        rgxbestever[N] = curBest[index[0]];
+        rgxbestever[N+1] = countevals;
+    }
 
     /* calculate xmean and rgBDz~N(0,C) */
     for (i = 0; i < N; ++i) {
         rgxold[i] = rgxmean[i];
         rgxmean[i] = 0.;
         for (iNk = 0; iNk < _mu; ++iNk)
-            rgxmean[i] += _muWeights[iNk] * rgrgx[index[iNk]][i];
+            rgxmean[i] += _muWeights[iNk] * rgrgx[index[iNk]*N + i];
         rgBDz[i] = sqrt(_muEffective)*(rgxmean[i] - rgxold[i])/sigma;
     }
 
@@ -369,8 +366,8 @@ void Korali::KoraliCMAES::cmaes_adaptC2(int hsig)
                             + (1-hsig)*_cumulativeCovariance*(2.-_cumulativeCovariance) * C[i][j]);
                 for (k = 0; k < _mu; ++k) { /* additional rank mu update */
                     C[i][j] += ccovmu * _muWeights[k]
-                        * (rgrgx[index[k]][i] - rgxold[i])
-                        * (rgrgx[index[k]][j] - rgxold[j])
+                        * (rgrgx[index[k]*N + i] - rgxold[i])
+                        * (rgrgx[index[k]*N + j] - rgxold[j])
                         / sigmasquare;
                 }
             }
@@ -414,7 +411,7 @@ void Korali::KoraliCMAES::Korali_PrintResults()
 		printf(" N %d\n", N);
 		printf(" seed %lu\n", _seed);
 		printf("function evaluations %.0f\n", countevals);
-		printf("function value f(x)=%g\n", rgrgx[index[0]][N]);
+		printf("function value f(x)=%g\n", curBest[index[0]]);
 		printf("maximal standard deviation %g\n", sigma*sqrt(maxdiagC));
 		printf("minimal standard deviation %g\n", sigma*sqrt(mindiagC));
 		printf("sigma %g\n", sigma);
@@ -423,9 +420,9 @@ void Korali::KoraliCMAES::Korali_PrintResults()
 
 		for(i=0; i<N; ++i) printf(" %12g%c", rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
 
-		printf("xbest (of last generation, function value %g)\n",	rgrgx[index[0]][N]);
+		printf("xbest (of last generation, function value %g)\n",	curBest[index[0]]);
 
-		for(i=0; i<N; ++i) printf(" %12g%c", rgrgx[index[0]][i],(i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %12g%c", rgrgx[index[0]*N + i],(i%5==4||i==N-1)?'\n':' ');
 
 		printf("xmean \n");
 		for(i=0; i<N; ++i) printf(" %12g%c", rgxmean[i],	(i%5==4||i==N-1)?'\n':' ');

@@ -61,7 +61,8 @@ class KoraliCMAES : public KoraliBase
 
   double *rgxmean;  /* mean x vector, "parent" */
   double *rgxbestever;
-  double **rgrgx;   /* range of x-vectors, lambda offspring */
+  double *rgrgx;   /* matrix of doubles, lambda offspring times the N dimensions */
+  double *curBest;
   int *index;       /* sorting index of sample pop. */
   double *arFuncValueHist;
 
@@ -93,13 +94,13 @@ class KoraliCMAES : public KoraliBase
 
   // Overriding Base Korali Class virtual methods
   void Korali_InitializeInternalVariables();
-  double** Korali_GetSamplePopulation();
+  double* Korali_GetSamplePopulation();
   bool Korali_CheckTermination();
   void Korali_PrintResults();
   double* Korali_UpdateDistribution(const double *fitnessVector);
 
   // Private CMAES-Specific Methods
-  double** cmaes_reSampleSingle(int iindex);
+  double* cmaes_reSampleSingle(int iindex);
   void cmaes_adaptC2(int hsig);
   void cmaes_testMinStdDevs();
   double cmaes_function_value_difference();
