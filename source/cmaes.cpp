@@ -1,6 +1,6 @@
 #include "cmaes.h"
 
-Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(dim, fun, seed, comm)
+Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
 {
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
@@ -18,14 +18,16 @@ Korali::KoraliCMAES::KoraliCMAES(size_t dim, double (*fun) (double*, int), size_
 	_dampFactor = -1;
 	_cumulativeCovariance = -1;
 	_covarianceMatrixLearningRate = -1;
+
+	_gaussianGenerator = new GaussianDistribution(0, 1, problem->_seed++);
 }
 
 
 
 bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 {
-    for (int i = 0; i < _dimCount; i++)
-    	if (pop[i] < _dims[i]._lowerBound || pop[i] > _dims[i]._upperBound) return false;
+    for (int i = 0; i < _problem->_dimCount; i++)
+    	if (pop[i] < _problem->_priors[i]._lowerBound || pop[i] > _problem->_priors[i]._upperBound) return false;
     return true;
 }
 
@@ -65,31 +67,31 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
 
     // Checking Covariance Matrix Evaluation Frequency
 
-    if  (_diagonalCovarianceMatrixEvalFrequency == -1)  _diagonalCovarianceMatrixEvalFrequency = 2 + 100. * _dimCount / sqrt((double)_lambda);
+    if  (_diagonalCovarianceMatrixEvalFrequency == -1)  _diagonalCovarianceMatrixEvalFrequency = 2 + 100. * _problem->_dimCount / sqrt((double)_lambda);
     if (_diagonalCovarianceMatrixEvalFrequency < 1)
     { fprintf( stderr, "[Korali] Error: Matrix covariance evaluation frequency is less than 1 (%lu)\n", _diagonalCovarianceMatrixEvalFrequency); exit(-1); }
 
     // Setting Sigma Cumulation Factor
 
     double tmpSigma = _sigmaCumulationFactor;
-    if (tmpSigma > 0) _sigmaCumulationFactor *= (_muEffective + 2.0) / (_dimCount + _muEffective + 3.0);
-    if (tmpSigma <= 0 || tmpSigma >= 1)  _sigmaCumulationFactor = (_muEffective + 2.) / (_dimCount + _muEffective + 3.0);
+    if (tmpSigma > 0) _sigmaCumulationFactor *= (_muEffective + 2.0) / (_problem->_dimCount + _muEffective + 3.0);
+    if (tmpSigma <= 0 || tmpSigma >= 1)  _sigmaCumulationFactor = (_muEffective + 2.) / (_problem->_dimCount + _muEffective + 3.0);
 
     // Setting Damping Factor
 
     if (_dampFactor < 0) _dampFactor = 1;
-    _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_dimCount+1.0)) - 1))     /* basic factor */
-        * std::max(0.3, 1. - (double)_dimCount / (1e-6+std::min(_maxGenerations, _maxFitnessEvaluations/_lambda)))
+    _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_problem->_dimCount+1.0)) - 1))     /* basic factor */
+        * std::max(0.3, 1. - (double)_problem->_dimCount / (1e-6+std::min(_maxGenerations, _maxFitnessEvaluations/_lambda)))
         + _sigmaCumulationFactor;                                                 /* minor increment */
 
     // Setting Cumulative Covariance
 
-    if (_cumulativeCovariance <= 0 || _cumulativeCovariance> 1)  _cumulativeCovariance = 4. / (_dimCount + 4);
+    if (_cumulativeCovariance <= 0 || _cumulativeCovariance> 1)  _cumulativeCovariance = 4. / (_problem->_dimCount + 4);
 
     // Set covariance Matrix Learning Rate
 
-    double t1 = 2. / ((_dimCount+1.4142)*(_dimCount+1.4142));
-    double t2 = (2.*_muEffective-1.) / ((_dimCount+2.)*(_dimCount+2.)+_muEffective);
+    double t1 = 2. / ((_problem->_dimCount+1.4142)*(_problem->_dimCount+1.4142));
+    double t2 = (2.*_muEffective-1.) / ((_problem->_dimCount+2.)*(_problem->_dimCount+2.)+_muEffective);
     t2 = (t2 > 1) ? 1 : t2;
     t2 = (1./_muCovariance) * t1 + (1.-1./_muCovariance) * t2;
 
@@ -98,12 +100,11 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
     if (tmpCovarianceRate < 0 || tmpCovarianceRate > 1)  _covarianceMatrixLearningRate = t2;
 
     // Setting cmaes_eigensystem evaluation Frequency
-  	_covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_dimCount)/10.0);
+  	_covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_problem->_dimCount)/10.0);
 
-    N = _dimCount; /* for convenience */
+    N = _problem->_dimCount; /* for convenience */
 
-    for (i = 0, trace = 0.; i < N; ++i)
-        trace += _dims[i]._initialStdDev*_dims[i]._initialStdDev;
+    for (i = 0, trace = 0.; i < N; ++i)   trace += _problem->_priors[i]._initialStdDev*_problem->_priors[i]._initialStdDev;
     sigma = sqrt(trace/N); /* _muEffective/(0.2*_muEffective+sqrt(N)) * sqrt(trace/N); */
 
     chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
@@ -152,7 +153,7 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
     for (i = 0; i < N; ++i)
     {
         B[i][i] = 1.;
-        C[i][i] = rgD[i] = _dims[i]._initialStdDev * sqrt(N / trace);
+        C[i][i] = rgD[i] = _problem->_priors[i]._initialStdDev * sqrt(N / trace);
         C[i][i] *= C[i][i];
         rgpc[i] = rgps[i] = 0.;
     }
@@ -164,13 +165,13 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
     mindiagC=C[0][0]; for(i=1;i<N;++i) if(mindiagC>C[i][i]) mindiagC=C[i][i];
 
     /* set xmean */
-    for (i = 0; i < N; ++i)  rgxmean[i] = rgxold[i] = _dims[i]._initialX;
+    for (i = 0; i < N; ++i)  rgxmean[i] = rgxold[i] = _problem->_priors[i]._initialX;
 }
 
 
 void Korali::KoraliCMAES::Korali_GetSamplePopulation()
 {
-    int iNk, i, j, N=_dimCount;
+    int iNk, i, j, N=_problem->_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
     double sum;
     double const *xmean = rgxmean;
@@ -217,7 +218,7 @@ void Korali::KoraliCMAES::Korali_GetSamplePopulation()
 
 void Korali::KoraliCMAES::cmaes_reSampleSingle(int iindex)
 {
-    int i, j, N=_dimCount;
+    int i, j, N=_problem->_dimCount;
     double *rgx;
     double sum;
     char s[99];
@@ -241,7 +242,7 @@ void Korali::KoraliCMAES::cmaes_reSampleSingle(int iindex)
 
 void Korali::KoraliCMAES::Korali_UpdateDistribution(const double *fitnessVector)
 {
-    int i, j, iNk, hsig, N=_dimCount;
+    int i, j, iNk, hsig, N=_problem->_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
     double sum;
     double psxps;
@@ -337,7 +338,7 @@ void Korali::KoraliCMAES::Korali_UpdateDistribution(const double *fitnessVector)
 
 void Korali::KoraliCMAES::cmaes_adaptC2(int hsig)
 {
-    int i, j, k, N=_dimCount;
+    int i, j, k, N=_problem->_dimCount;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
 
     if (_covarianceMatrixLearningRate != 0.0) {
@@ -378,10 +379,10 @@ void Korali::KoraliCMAES::cmaes_adaptC2(int hsig)
 void Korali::KoraliCMAES::cmaes_testMinStdDevs()
     /* increases sigma */
 {
-    int i, N = _dimCount;
+    int i, N = _problem->_dimCount;
 
     for (i = 0; i < N; ++i)
-        while (sigma * sqrt(C[i][i]) < _dims[i]._minStdDevChange)
+        while (sigma * sqrt(C[i][i]) < _problem->_priors[i]._minStdDevChange)
             sigma *= exp(0.05+_sigmaCumulationFactor/_dampFactor);
 
 } /* cmaes_cmaes_testMinStdDevs() */
@@ -396,12 +397,12 @@ void Korali::KoraliCMAES::Korali_PrintResults()
      * must be zero terminated.
      */
 {
-    int i, k, N=_dimCount;
+    int i, k, N=_problem->_dimCount;
 
-    printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu\n", _mu, _lambda, _muEffective,  _dimCount, _diagonalCovarianceMatrixEvalFrequency,  _seed);
+    printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu\n", _mu, _lambda, _muEffective,  _problem->_dimCount, _diagonalCovarianceMatrixEvalFrequency,  _problem->_seed);
 
 		printf(" N %d\n", N);
-		printf(" seed %lu\n", _seed);
+		printf(" seed %lu\n", _problem->_seed);
 		printf("function evaluations %.0f\n", countevals);
 		printf("function value f(x)=%g\n", curBest[index[0]]);
 		printf("maximal standard deviation %g\n", sigma*sqrt(maxdiagC));
@@ -450,7 +451,7 @@ bool Korali::KoraliCMAES::Korali_CheckTermination()
     double range, fac;
     int iAchse, iKoo;
     int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
-    int i, cTemp, N=_dimCount;
+    int i, cTemp, N=_problem->_dimCount;
     bool terminate = false;
 
     /* function value reached */
@@ -494,7 +495,7 @@ bool Korali::KoraliCMAES::Korali_CheckTermination()
 
     /* TolUpX */
     for(i=0; i<N; ++i) {
-        if (sigma * sqrt(C[i][i]) > _stopMaxStdDevXFactor * _dims[i]._initialStdDev)
+        if (sigma * sqrt(C[i][i]) > _stopMaxStdDevXFactor * _problem->_priors[i]._initialStdDev)
             break;
     }
 
@@ -567,7 +568,7 @@ bool Korali::KoraliCMAES::Korali_CheckTermination()
 
 void Korali::KoraliCMAES::cmaes_updateEigensystem(int flgforce)
 {
-    int N = _dimCount;
+    int N = _problem->_dimCount;
 
     if(flgforce == 0) if (flgEigensysIsUptodate == 1) return;
 

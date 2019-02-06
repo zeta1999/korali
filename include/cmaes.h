@@ -11,7 +11,7 @@ class KoraliCMAES : public KoraliBase
   public:
 
   // Public Methods
-	KoraliCMAES(size_t dim, double (*fun) (double*, int), size_t seed, MPI_Comm comm);
+	KoraliCMAES(Problem* problem, MPI_Comm comm);
 
 	void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
 	void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
@@ -58,6 +58,7 @@ class KoraliCMAES : public KoraliBase
 
   // Private CMAES-Specific Variables
   double sigma;  /* step size */
+  Distribution* _gaussianGenerator;
 
   double *rgxmean;  /* mean x vector, "parent" */
   double *rgxbestever;
