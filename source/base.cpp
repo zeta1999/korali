@@ -90,7 +90,7 @@ void Korali::workerComeback(int worker, size_t position, double fitness)
 
 void Korali::workerEvaluateFitnessFunction(size_t position)
 {
-	double fitness = -_kb->_problem->_fitnessFunction(&_kb->_samplePopulation[position*_kb->_problem->_dimCount], _kb->_problem->_dimCount);
+	double fitness = _kb->_problem->_fitnessFunction(&_kb->_samplePopulation[position*_kb->_problem->_dimCount], _kb->_problem->_dimCount);
 	upcxx::rpc_ff(0, workerComeback, _kb->_rankId, position, fitness);
 }
 

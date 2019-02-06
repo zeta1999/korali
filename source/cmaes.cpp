@@ -409,9 +409,9 @@ void Korali::KoraliCMAES::Korali_PrintResults()
 		printf("minimal standard deviation %g\n", sigma*sqrt(mindiagC));
 		printf("sigma %g\n", sigma);
 		printf("axisratio %g\n", cmaes_doubleRangeMax(rgD, N)/cmaes_doubleRangeMin(rgD, N));
-		printf("xbestever found after %.0f evaluations, function value %g\n",	rgxbestever[N+1], rgxbestever[N]);
+		printf("xbestever found after %.0f evaluations, function value %.10g\n",	rgxbestever[N+1], rgxbestever[N]);
 
-		for(i=0; i<N; ++i) printf(" %12g%c", rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
+		for(i=0; i<N; ++i) printf(" %.12g%c", rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
 
 		printf("xbest (of last generation, function value %g)\n",	curBest[index[0]]);
 

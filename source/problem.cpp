@@ -7,7 +7,7 @@ Korali::Problem::Problem(size_t dim, double (*fun) (double*, int), size_t seed)
 	_dimCount = dim;
 
   gsl_rng_env_setup();
-	for (int i = 0; i < dim; i++) _priors[i].setSeed(seed++);
+	for (int i = 0; i < dim; i++) _priors[i].setSeed(_seed++);
 
 	_fitnessFunction = fun;
 }
