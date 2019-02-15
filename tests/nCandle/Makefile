@@ -15,7 +15,7 @@ auxiliar/auxiliar.o:
 	$(MAKE) -C auxiliar
 
 %.o: %.cpp
-	$(CC) -c $(CFLAGS) $< -qopt-report=5
+	$(CC) -c $(CFLAGS) $<
 
 .PHONY: clean
 clean:

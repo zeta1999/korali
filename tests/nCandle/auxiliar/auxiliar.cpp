@@ -13,7 +13,6 @@ int main(int argc, char** argv)
 
 	for (int i = 0; i < argc; i++)
 	{
-			if(!strcmp(argv[i], "-s") || !strcmp(argv[i], "--save"))   { s.saveOutput = true; }
 			if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))   { s.printHelp(); exit(0); }
 	}
 
@@ -24,41 +23,7 @@ int main(int argc, char** argv)
   auto end = std::chrono::system_clock::now();
 	s.totalTime = std::chrono::duration<double>(end-start).count();
 
-	double* timePerGrid = (double*) calloc (sizeof(double), s.gridCount);
-	double* timePerOp = (double*) calloc (sizeof(double), 5);
-	double totalSmoothingTime = 0.0;
-	double totalResidualTime = 0.0;
-	double totalRestrictionTime = 0.0;
-	double totalProlongTime = 0.0;
-	double totalL2NormTime = 0.0;
-
-	for (int i = 0; i < s.gridCount; i++) timePerGrid[i] = s.smoothingTime[i] + s.residualTime[i] + s.restrictionTime[i] + s.prolongTime[i] + s.L2NormTime[i];
-	for (int i = 0; i < s.gridCount; i++) totalSmoothingTime += s.smoothingTime[i];
-	for (int i = 0; i < s.gridCount; i++) totalResidualTime += s.residualTime[i];
-	for (int i = 0; i < s.gridCount; i++) totalRestrictionTime += s.restrictionTime[i];
-	for (int i = 0; i < s.gridCount; i++) totalProlongTime += s.prolongTime[i];
-	for (int i = 0; i < s.gridCount; i++) totalL2NormTime += s.L2NormTime[i];
-
-	double totalMeasured = totalSmoothingTime + totalResidualTime + totalRestrictionTime + totalProlongTime + totalL2NormTime;
-
-	printf("   Time (s)    "); for (int i = 0; i < s.gridCount; i++) printf("Grid%d   ", i);                    printf("   Total  \n");
-	printf("-------------|-"); for (int i = 0; i < s.gridCount; i++) printf("--------"); printf("|---------\n");
-	printf("Smoothing    | "); for (int i = 0; i < s.gridCount; i++) printf("%2.3f   ", s.smoothingTime[i]);    printf("|  %2.3f  \n", totalSmoothingTime);
-	printf("Residual     | "); for (int i = 0; i < s.gridCount; i++) printf("%2.3f   ", s.residualTime[i]);     printf("|  %2.3f  \n", totalResidualTime);
-	printf("Restriction  | "); for (int i = 0; i < s.gridCount; i++) printf("%2.3f   ", s.restrictionTime[i]);  printf("|  %2.3f  \n", totalRestrictionTime);
-	printf("Prolongation | "); for (int i = 0; i < s.gridCount; i++) printf("%2.3f   ", s.prolongTime[i]);      printf("|  %2.3f  \n", totalProlongTime);
-	printf("L2Norm       | "); for (int i = 0; i < s.gridCount; i++) printf("%2.3f   ", s.L2NormTime[i]);       printf("|  %2.3f  \n", totalL2NormTime);
-	printf("-------------|-"); for (int i = 0; i < s.gridCount; i++) printf("--------"); printf("|---------\n");
-	printf("Total        | "); for (int i = 0; i < s.gridCount; i++) printf("%2.3f   ", timePerGrid[i]); printf("|  %2.3f  \n", totalMeasured);
-	printf("-------------|-"); for (int i = 0; i < s.gridCount; i++) printf("--------"); printf("|---------\n");
-	printf("\n");
-	printf("Fine grid elements: %lu x %lu (n = %lu)\n", s.N, s.N, s.N0);
-	printf("V-Cycle Iterations: %d\n", s.iteration);
-	printf("Final L2 Residual : %e\n", s.L2Norm);
-	printf("Convergence Rate  : %e\n", s.L2NormDiff);
-	printf("Running Time      : %.3fs\n", s.totalTime);
-
-  if (s.saveOutput) s.outputSolution();
+	s.printResults();
 
 	return 0;
 }
@@ -66,12 +31,46 @@ int main(int argc, char** argv)
 Heat2DSetup::Heat2DSetup()
 {
 	iteration = 0;
-
-  saveOutput = false; // Write output to file flag
-
   L2Norm = 0.0;
   L2NormPrev = std::numeric_limits<double>::max();
   L2NormDiff = std::numeric_limits<double>::max();
+}
+
+void Heat2DSetup::printResults()
+{
+	double* timePerGrid = (double*) calloc (sizeof(double), gridCount);
+	double* timePerOp = (double*) calloc (sizeof(double), 5);
+	double totalSmoothingTime = 0.0;
+	double totalResidualTime = 0.0;
+	double totalRestrictionTime = 0.0;
+	double totalProlongTime = 0.0;
+	double totalL2NormTime = 0.0;
+
+	for (int i = 0; i < gridCount; i++) timePerGrid[i] = smoothingTime[i] + residualTime[i] + restrictionTime[i] + prolongTime[i] + L2NormTime[i];
+	for (int i = 0; i < gridCount; i++) totalSmoothingTime += smoothingTime[i];
+	for (int i = 0; i < gridCount; i++) totalResidualTime += residualTime[i];
+	for (int i = 0; i < gridCount; i++) totalRestrictionTime += restrictionTime[i];
+	for (int i = 0; i < gridCount; i++) totalProlongTime += prolongTime[i];
+	for (int i = 0; i < gridCount; i++) totalL2NormTime += L2NormTime[i];
+
+	double totalMeasured = totalSmoothingTime + totalResidualTime + totalRestrictionTime + totalProlongTime + totalL2NormTime;
+
+	printf("   Time (s)    "); for (int i = 0; i < gridCount; i++) printf("Grid%d   ", i);                    printf("   Total  \n");
+	printf("-------------|-"); for (int i = 0; i < gridCount; i++) printf("--------"); printf("|---------\n");
+	printf("Smoothing    | "); for (int i = 0; i < gridCount; i++) printf("%2.3f   ", smoothingTime[i]);    printf("|  %2.3f  \n", totalSmoothingTime);
+	printf("Residual     | "); for (int i = 0; i < gridCount; i++) printf("%2.3f   ", residualTime[i]);     printf("|  %2.3f  \n", totalResidualTime);
+	printf("Restriction  | "); for (int i = 0; i < gridCount; i++) printf("%2.3f   ", restrictionTime[i]);  printf("|  %2.3f  \n", totalRestrictionTime);
+	printf("Prolongation | "); for (int i = 0; i < gridCount; i++) printf("%2.3f   ", prolongTime[i]);      printf("|  %2.3f  \n", totalProlongTime);
+	printf("L2Norm       | "); for (int i = 0; i < gridCount; i++) printf("%2.3f   ", L2NormTime[i]);       printf("|  %2.3f  \n", totalL2NormTime);
+	printf("-------------|-"); for (int i = 0; i < gridCount; i++) printf("--------"); printf("|---------\n");
+	printf("Total        | "); for (int i = 0; i < gridCount; i++) printf("%2.3f   ", timePerGrid[i]); printf("|  %2.3f  \n", totalMeasured);
+	printf("-------------|-"); for (int i = 0; i < gridCount; i++) printf("--------"); printf("|---------\n");
+	printf("\n");
+	printf("Fine grid elements: %lu x %lu (n = %lu)\n", N, N, N0);
+	printf("V-Cycle Iterations: %d\n", iteration);
+	printf("Final L2 Residual : %e\n", L2Norm);
+	printf("Convergence Rate  : %e\n", L2NormDiff);
+	printf("Running Time      : %.3fs\n", totalTime);
 }
 
 void Heat2DSetup::setGridCount(int count)
@@ -146,7 +145,6 @@ void Heat2DSetup::printHelp()
     printf("/**********************************************************************/\n");
     printf("\n");
     printf("Usage:\n");
-    printf("  -s or --save - Saves computed solution problemN.cpt\n");
     printf("  -h  -  Prints this help info.\n");
 }
 
@@ -186,26 +184,3 @@ void Heat2DSetup::loadProblem()
 	}
 }
 
-
-void Heat2DSetup::outputSolution()
-{
-		FILE *fid;
-		char pfile[50];
-		sprintf(pfile, "solution.out");
-
-    printf("Writing computed solution to file %s...\n", pfile);
-
-    fid = fopen(pfile, "w");
-
-    // U
-    for (int i = 0; i < N; i++)
-    {
-        for (int j = 0; j < N; j++)
-        {
-            fprintf(fid, "%22.15e ", U[i*N + j]);
-        }
-        fprintf(fid, "\n");
-    }
-
-    fclose(fid);
-}

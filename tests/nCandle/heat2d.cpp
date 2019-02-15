@@ -17,9 +17,9 @@ public:
 void heat2DSolver(Heat2DSetup& s)
 {
 	// Multigrid parameters -- Find the best configuration!
-	s.setGridCount(5);     // Number of Multigrid levels to use
-	s.downRelaxations = 3; // Number of Relaxations before restriction
-	s.upRelaxations   = 4;   // Number of Relaxations after prolongation
+	s.setGridCount(2);     // Number of Multigrid levels to use
+	s.downRelaxations = 2; // Number of Relaxations before restriction
+	s.upRelaxations   = 1;   // Number of Relaxations after prolongation
 
 	// Allocating Grids -- Is there a better way to allocate these grids?
 	GridLevel* g = (GridLevel*) _mm_malloc(sizeof(GridLevel) * s.gridCount, 64);

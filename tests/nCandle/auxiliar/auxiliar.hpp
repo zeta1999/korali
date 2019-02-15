@@ -13,8 +13,6 @@ class Heat2DSetup
 
 	public:
 
-  bool saveOutput; // Write output to file flag
-
   // Timekeeping variables:
   double* smoothingTime;
   double* residualTime;
@@ -52,9 +50,9 @@ class Heat2DSetup
   void calculateL2Norm_(GridLevel* g, int l);
 
   // Helper Functions
-  void outputSolution();
   void verifySolution();
   void printHelp();
+  void printResults();
   void printGrid(double** g, int N);
 };
 
