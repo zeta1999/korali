@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 {
 	const size_t nDim = 4;
 
-  auto problem = Korali::Problem(nDim, f_Ackley, 53754);
+  auto problem = Korali::Problem("Minimizer", nDim, f_Ackley, 53754);
 
 	for (int i = 0; i < nDim; i++)	problem[i]->setBounds(-32.0, +32.0);
 	for (int i = 0; i < nDim; i++)	problem[i]->setInitialX(5.0 + i);

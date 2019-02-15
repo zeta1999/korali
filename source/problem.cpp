@@ -1,8 +1,9 @@
 #include "problem.h"
 
-Korali::Problem::Problem(size_t dim, double (*fun) (double*, int), size_t seed)
+Korali::Problem::Problem(std::string type, size_t dim, double (*fun) (double*, int), size_t seed)
 {
 	_seed = seed;
+	_type = type;
 	_priors = new Prior[dim];
 	_dimCount = dim;
 
@@ -11,7 +12,6 @@ Korali::Problem::Problem(size_t dim, double (*fun) (double*, int), size_t seed)
 
 	_fitnessFunction = fun;
 }
-
 
 double Korali::Problem::getTotalDensity(double* x)
 {
@@ -27,5 +27,11 @@ double Korali::Problem::getTotalDensityLog(double* x)
  return densityLog;
 }
 
+double Korali::Problem::evaluateFitness(double* sample)
+{
+	if (_type == "Minimizer") { return  _fitnessFunction(sample, _dimCount); }
+	if (_type == "Maximizer") { return  -_fitnessFunction(sample, _dimCount); }
 
+	return -1.0;
+}
 
