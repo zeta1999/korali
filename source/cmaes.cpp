@@ -1,6 +1,6 @@
 #include "cmaes.h"
 
-Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
+Korali::KoraliCMAES::KoraliCMAES(ProblemBase* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
 {
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;

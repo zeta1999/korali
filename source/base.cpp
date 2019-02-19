@@ -3,7 +3,7 @@
 
 Korali::KoraliBase* _kb;
 
-Korali::KoraliBase::KoraliBase(Problem* problem, MPI_Comm comm)
+Korali::KoraliBase::KoraliBase(ProblemBase* problem, MPI_Comm comm)
 {
   _problem = problem;
 	_comm = comm;

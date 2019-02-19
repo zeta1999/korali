@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	const size_t nDim = 4;
 
-  auto problem = Korali::Problem("Maximizer", heat2DWrapper);
+  auto problem = Korali::Likelihood(heat2DWrapper);
   Korali::Parameter intensity, width, xPos, yPos;
 
   intensity.setPriorDistribution("Uniform", 0.0, 50.0);
@@ -32,6 +32,8 @@ int main(int argc, char* argv[])
   problem.addParameter(width);
   problem.addParameter(xPos);
   problem.addParameter(yPos);
+
+  problem.addReferenceData(0.6);
 
 	auto solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
 

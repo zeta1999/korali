@@ -6,24 +6,48 @@
 namespace Korali
 {
 
-class Problem
+class ProblemBase
 {
   public:
 
-	Problem(std::string type, double (*fun) (double*, int), size_t seed = 0);
+	ProblemBase(void (*fun) (double*, int, double*), size_t seed = 0);
 
 	void addParameter(Parameter p);
   double getTotalDensityLog(double* x);
   double getTotalDensity(double* x);
-  double evaluateFitness(double* sample);
-
+  virtual double evaluateFitness(double* sample) = 0;
+  void (*_fitnessFunction) (double*, int, double*);
   size_t _dimCount;
 	size_t _seed;
-	std::string _type;
-  double (*_fitnessFunction) (double*, int);
+
   std::vector<Parameter> _parameters;
 };
 
+class Maximizer : public ProblemBase
+{
+  public:
+
+	Maximizer(void (*fun) (double*, int, double*), size_t seed = 0);
+	double evaluateFitness(double* sample);
+};
+
+class Minimizer : public ProblemBase
+{
+  public:
+
+	Minimizer(void (*fun) (double*, int, double*), size_t seed = 0);
+	double evaluateFitness(double* sample);
+};
+
+class Likelihood : public ProblemBase
+{
+  public:
+
+	Likelihood(void (*fun) (double*, int, double*), size_t seed = 0);
+	void addReferenceData(double ref);
+  std::vector<double> _refData;
+	double evaluateFitness(double* sample);
+};
 
 } // namespace Korali
 

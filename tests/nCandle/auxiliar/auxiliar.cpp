@@ -13,7 +13,7 @@
 #include <chrono>
 #include "auxiliar.hpp"
 
-double heat2DWrapper(double* pars, int n)
+void heat2DWrapper(double* pars, int n, double* results)
 {
 	// User-defined Parameters
 	Heat2DSetup s;
@@ -38,7 +38,7 @@ double heat2DWrapper(double* pars, int n)
 //		printf("[%.1f,%.1f] %f\n", points[i].x, points[i].y, s.U[p*s.N+q]);
 		int p = ceil(0.70/h);	int q = ceil(0.15/h);
 		printf("[%.2f, %.2f, %.2f, %.2f] - [%.1f,%.1f] %f\n", intensity, width, xPos, yPos, 0.70, 0.15, s.U[p*s.N+q]);
-		return s.U[p*s.N+q];
+		results[0] = s.U[p*s.N+q];
 //	}
 
 	// s.printResults();

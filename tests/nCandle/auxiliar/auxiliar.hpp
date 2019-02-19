@@ -62,7 +62,7 @@ class Heat2DSetup
   void printGrid(double** g, int N);
 };
 
-double heat2DWrapper(double* pars, int n);
+void heat2DWrapper(double* pars, int n, double* results);
 void heat2DSolver(Heat2DSetup& s);
 
 // Solver functions

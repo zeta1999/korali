@@ -1,46 +1,63 @@
 #include "problem.h"
 #include <time.h>
+#include <stdlib.h>
 
-Korali::Problem::Problem(std::string type, double (*fun) (double*, int), size_t seed)
+Korali::ProblemBase::ProblemBase(void (*fun) (double*, int, double*), size_t seed)
 {
 	_seed = seed;
-
 	if (_seed == 0) _seed = clock();
-
-	_type = type;
-	_dimCount = 0;
-
-  gsl_rng_env_setup();
-
 	_fitnessFunction = fun;
+	_dimCount = 0;
+  gsl_rng_env_setup();
 }
 
-void Korali::Problem::addParameter(Parameter p)
+Korali::Minimizer::Minimizer(  void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) {}
+Korali::Maximizer::Maximizer(  void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) {}
+Korali::Likelihood::Likelihood(void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) {}
+
+void Korali::ProblemBase::addParameter(Parameter p)
 {
 	_parameters.push_back(p);
 	p.setSeed(_seed++);
-	_dimCount++;
+	_dimCount = _parameters.size();
 }
 
-double Korali::Problem::getTotalDensity(double* x)
+double Korali::ProblemBase::getTotalDensity(double* x)
 {
  double density = 1.0;
  for (int i = 0; i < _parameters.size(); i++) density *= _parameters[i].getPriorDistribution()->getDensity(x[i]);
  return density;
 }
 
-double Korali::Problem::getTotalDensityLog(double* x)
+double Korali::ProblemBase::getTotalDensityLog(double* x)
 {
  double densityLog = 0.0;
  for (int i = 0; i < _dimCount; i++) densityLog += _parameters[i].getPriorDistribution()->getDensityLog(x[i]);
  return densityLog;
 }
 
-double Korali::Problem::evaluateFitness(double* sample)
+double Korali::Minimizer::evaluateFitness(double* sample)
 {
-	if (_type == "Minimizer") { return  _fitnessFunction(sample, _dimCount); }
-	if (_type == "Maximizer") { return  -_fitnessFunction(sample, _dimCount); }
-
-	return -1.0;
+	double result;
+  _fitnessFunction(sample, _dimCount, &result);
+  return result;
 }
 
+double Korali::Maximizer::evaluateFitness(double* sample)
+{
+	double result;
+  _fitnessFunction(sample, _dimCount, &result);
+  return -result;
+}
+
+double Korali::Likelihood::evaluateFitness(double* sample)
+{
+	double* results = (double*) calloc (sizeof(double), _refData.size());
+	_fitnessFunction(sample, _dimCount, results);
+  return -results[0];
+}
+
+void Korali::Likelihood::addReferenceData(double ref)
+{
+	_refData.push_back(ref);
+}
