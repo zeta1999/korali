@@ -27,7 +27,7 @@ Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) : Korali::Kora
 bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 {
     for (int i = 0; i < _problem->_dimCount; i++)
-    	if (pop[i] < _problem->_priors[i]._lowerBound || pop[i] > _problem->_priors[i]._upperBound) return false;
+    	if (pop[i] < _problem->_parameters[i]._lowerBound || pop[i] > _problem->_parameters[i]._upperBound) return false;
     return true;
 }
 
@@ -104,7 +104,7 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
 
     N = _problem->_dimCount; /* for convenience */
 
-    for (i = 0, trace = 0.; i < N; ++i)   trace += _problem->_priors[i]._initialStdDev*_problem->_priors[i]._initialStdDev;
+    for (i = 0, trace = 0.; i < N; ++i)   trace += _problem->_parameters[i]._initialStdDev*_problem->_parameters[i]._initialStdDev;
     sigma = sqrt(trace/N); /* _muEffective/(0.2*_muEffective+sqrt(N)) * sqrt(trace/N); */
 
     chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
@@ -153,7 +153,7 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
     for (i = 0; i < N; ++i)
     {
         B[i][i] = 1.;
-        C[i][i] = rgD[i] = _problem->_priors[i]._initialStdDev * sqrt(N / trace);
+        C[i][i] = rgD[i] = _problem->_parameters[i]._initialStdDev * sqrt(N / trace);
         C[i][i] *= C[i][i];
         rgpc[i] = rgps[i] = 0.;
     }
@@ -165,7 +165,7 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
     mindiagC=C[0][0]; for(i=1;i<N;++i) if(mindiagC>C[i][i]) mindiagC=C[i][i];
 
     /* set xmean */
-    for (i = 0; i < N; ++i)  rgxmean[i] = rgxold[i] = _problem->_priors[i]._initialX;
+    for (i = 0; i < N; ++i)  rgxmean[i] = rgxold[i] = _problem->_parameters[i]._initialX;
 }
 
 
@@ -382,7 +382,7 @@ void Korali::KoraliCMAES::cmaes_testMinStdDevs()
     int i, N = _problem->_dimCount;
 
     for (i = 0; i < N; ++i)
-        while (sigma * sqrt(C[i][i]) < _problem->_priors[i]._minStdDevChange)
+        while (sigma * sqrt(C[i][i]) < _problem->_parameters[i]._minStdDevChange)
             sigma *= exp(0.05+_sigmaCumulationFactor/_dampFactor);
 
 } /* cmaes_cmaes_testMinStdDevs() */
@@ -495,7 +495,7 @@ bool Korali::KoraliCMAES::Korali_CheckTermination()
 
     /* TolUpX */
     for(i=0; i<N; ++i) {
-        if (sigma * sqrt(C[i][i]) > _stopMaxStdDevXFactor * _problem->_priors[i]._initialStdDev)
+        if (sigma * sqrt(C[i][i]) > _stopMaxStdDevXFactor * _problem->_parameters[i]._initialStdDev)
             break;
     }
 

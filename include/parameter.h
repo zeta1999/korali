@@ -1,5 +1,5 @@
-#ifndef _PRIOR_H_
-#define _PRIOR_H_
+#ifndef _PARAMETER_H_
+#define _PARAMETER_H_
 
 #include <vector>
 #include <limits>
@@ -9,7 +9,7 @@
 namespace Korali
 {
 
-class Prior
+class Parameter
 {
  private:
  public:
@@ -22,7 +22,7 @@ class Prior
  double _minStdDevChange;
  int _seed;
 
- Prior();
+ Parameter();
  void setPriorDistribution(std::string type, double a, double b = 0.0);
  Distribution* getPriorDistribution();
  void setBounds(double lowerBound, double upperBound);
@@ -36,4 +36,4 @@ class Prior
 
 } // Namespace Korali
 
-#endif // _PRIOR_H_
+#endif // _PARAMETER_H_

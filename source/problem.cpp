@@ -4,11 +4,11 @@ Korali::Problem::Problem(std::string type, size_t dim, double (*fun) (double*, i
 {
 	_seed = seed;
 	_type = type;
-	_priors = new Prior[dim];
+  _parameters = new Parameter[dim];
 	_dimCount = dim;
 
   gsl_rng_env_setup();
-	for (int i = 0; i < dim; i++) _priors[i].setSeed(_seed++);
+	for (int i = 0; i < dim; i++) _parameters[i].setSeed(_seed++);
 
 	_fitnessFunction = fun;
 }
@@ -16,14 +16,14 @@ Korali::Problem::Problem(std::string type, size_t dim, double (*fun) (double*, i
 double Korali::Problem::getTotalDensity(double* x)
 {
  double density = 1.0;
- for (int i = 0; i < _dimCount; i++) density *= _priors[i].getPriorDistribution()->getDensity(x[i]);
+ for (int i = 0; i < _dimCount; i++) density *= _parameters[i].getPriorDistribution()->getDensity(x[i]);
  return density;
 }
 
 double Korali::Problem::getTotalDensityLog(double* x)
 {
  double densityLog = 0.0;
- for (int i = 0; i < _dimCount; i++) densityLog += _priors[i].getPriorDistribution()->getDensityLog(x[i]);
+ for (int i = 0; i < _dimCount; i++) densityLog += _parameters[i].getPriorDistribution()->getDensityLog(x[i]);
  return densityLog;
 }
 
