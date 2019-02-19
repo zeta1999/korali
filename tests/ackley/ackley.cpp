@@ -24,16 +24,11 @@ int main(int argc, char* argv[])
   p.setInitialX(5.0);
   p.setInitialStdDev(2.0);
 
-  const size_t nDim = 4;
+	for (int i = 0; i < 4; i++)	problem.addParameter(p);
 
-	for (int i = 0; i < nDim; i++)	problem.addParameter(p);
-
-	auto solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
-
-	solver.setStopMinDeltaX(1e-11);
-	solver.setLambda(128);
-
-	solver.run();
+	problem.getEngine()->setStopMinDeltaX(1e-11);
+	problem.getEngine()->setLambda(128);
+	problem.solve();
 
 	return 0;
 }

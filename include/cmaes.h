@@ -2,6 +2,7 @@
 #define _CMAES_H_
 
 #include "base.h"
+#include "distribution.h"
 
 namespace Korali
 {

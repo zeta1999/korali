@@ -1,13 +1,14 @@
 #ifndef _BASE_H_
 #define _BASE_H_
 
-#include "problem.h"
 #include "mpi.h"
 #include <upcxx/upcxx.hpp>
 #include <queue>
 
 namespace Korali
 {
+
+class ProblemBase;
 
 class KoraliBase
 {

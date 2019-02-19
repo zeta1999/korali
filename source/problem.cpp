@@ -11,9 +11,21 @@ Korali::ProblemBase::ProblemBase(void (*fun) (double*, int, double*), size_t see
   gsl_rng_env_setup();
 }
 
-Korali::Minimizer::Minimizer(  void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) {}
-Korali::Maximizer::Maximizer(  void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) {}
-Korali::Likelihood::Likelihood(void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) {}
+Korali::Minimizer::Minimizer(  void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) { _engine = new Korali::KoraliCMAES(this, MPI_COMM_WORLD); }
+Korali::Maximizer::Maximizer(  void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed) { _engine = new Korali::KoraliCMAES(this, MPI_COMM_WORLD); }
+
+Korali::Posterior::Posterior(void (*fun) (double*, int, double*), size_t seed) : Korali::ProblemBase::ProblemBase(fun, seed)
+{
+	_engine = new Korali::KoraliCMAES(this, MPI_COMM_WORLD);
+
+	Korali::Parameter sigma;
+	sigma.setPriorDistribution("Uniform", 0, std::numeric_limits<double>::max());
+	sigma.setBounds(0, std::numeric_limits<double>::max());
+	sigma.setInitialX(1);
+	sigma.setInitialStdDev(1);
+
+	addParameter(sigma);
+}
 
 void Korali::ProblemBase::addParameter(Parameter p)
 {
@@ -50,14 +62,24 @@ double Korali::Maximizer::evaluateFitness(double* sample)
   return -result;
 }
 
-double Korali::Likelihood::evaluateFitness(double* sample)
+double Korali::Posterior::evaluateFitness(double* sample)
 {
 	double* results = (double*) calloc (sizeof(double), _refData.size());
-	_fitnessFunction(sample, _dimCount, results);
-  return -results[0];
+	_fitnessFunction(sample+1, _dimCount-1, results);
+
+  double sigma2 = sample[0]*sample[0];
+  double ssn = 0.0;
+  int nData = _refData.size();
+
+  for(int i = 0; i < nData; i++) { double diff = _refData[i] - results[i]; ssn += diff*diff; }
+
+  double res = 0.5* (nData*log(2*M_PI) + nData*log(sigma2) + ssn/sigma2);
+
+  printf("Sigma: %.2f - Res: %f\n", sample[0], res);
+	return res;
 }
 
-void Korali::Likelihood::addReferenceData(double ref)
+void Korali::Posterior::addReferenceData(double ref)
 {
 	_refData.push_back(ref);
 }

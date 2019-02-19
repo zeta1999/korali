@@ -1,4 +1,5 @@
 #include "base.h"
+#include "problem.h"
 #include <chrono>
 
 Korali::KoraliBase* _kb;
@@ -12,7 +13,7 @@ Korali::KoraliBase::KoraliBase(ProblemBase* problem, MPI_Comm comm)
 	_rankId = -1;
 	_rankCount = -1;
 
-	_maxFitnessEvaluations = 900*(_problem->_dimCount+3)*(_problem->_dimCount+3);
+	_maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 	_maxGenerations = std::numeric_limits<size_t>::max();
 
   _bcastFuture = upcxx::make_future();

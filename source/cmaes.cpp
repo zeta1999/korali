@@ -1,4 +1,5 @@
 #include "cmaes.h"
+#include "problem.h"
 
 Korali::KoraliCMAES::KoraliCMAES(ProblemBase* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
 {
