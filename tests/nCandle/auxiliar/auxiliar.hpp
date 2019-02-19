@@ -1,17 +1,23 @@
 #ifndef _HEAT2D_H_
 #define _HEAT2D_H_
 
+typedef struct pointStruct {
+    double x;
+    double y;
+} Point;
+
 class GridLevel;
 
 class Heat2DSetup
 {
 	private:
 
-  double* U;
   double* f;
   double* sol;
 
 	public:
+
+  double* U;
 
   // Timekeeping variables:
   double* smoothingTime;
@@ -36,7 +42,7 @@ class Heat2DSetup
 
   // Setup and finish functions
   Heat2DSetup();
-  void loadProblem();
+  void generateInitialConditions(double c1, double c2, double c3, double c4);
   void setGridCount(int count);
   double getInitial(size_t x, size_t y) { return U[x*N + y]; }
   double getRHS(size_t x, size_t y) { return f[x*N + y]; }
@@ -56,6 +62,7 @@ class Heat2DSetup
   void printGrid(double** g, int N);
 };
 
+double heat2DWrapper(double* pars, int n);
 void heat2DSolver(Heat2DSetup& s);
 
 // Solver functions

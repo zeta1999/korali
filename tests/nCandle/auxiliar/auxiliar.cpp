@@ -1,3 +1,10 @@
+/**********************************************************************/
+// A still unoptimized Multigrid Solver for the Heat Equation         //
+// Course Material for HPCSE-II, Spring 2019, ETH Zurich              //
+// Authors: Sergio Martin, Georgios Arampatzis                        //
+// License: Use if you like, but give us credit.                      //
+/**********************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,26 +13,35 @@
 #include <chrono>
 #include "auxiliar.hpp"
 
-int main(int argc, char** argv)
+double heat2DWrapper(double* pars, int n)
 {
 	// User-defined Parameters
 	Heat2DSetup s;
 
-	for (int i = 0; i < argc; i++)
-	{
-			if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))   { s.printHelp(); exit(0); }
-	}
+	double intensity = pars[0];
+	double width = pars[1];
+	double xPos = pars[2];
+	double yPos = pars[3];
 
-  s.loadProblem();
+	s.generateInitialConditions(intensity, width, xPos, yPos);
 
   auto start = std::chrono::system_clock::now();
 	heat2DSolver(s);
   auto end = std::chrono::system_clock::now();
 	s.totalTime = std::chrono::duration<double>(end-start).count();
 
-	s.printResults();
+	double h = 1.0/(s.N-1);
 
-	return 0;
+//	for(int i = 0; i < nPoints; i++)
+//	{
+//		int p = ceil(points[i].x/h);	int q = ceil(points[i].y/h);
+//		printf("[%.1f,%.1f] %f\n", points[i].x, points[i].y, s.U[p*s.N+q]);
+		int p = ceil(0.70/h);	int q = ceil(0.15/h);
+		printf("[%.2f, %.2f, %.2f, %.2f] - [%.1f,%.1f] %f\n", intensity, width, xPos, yPos, 0.70, 0.15, s.U[p*s.N+q]);
+		return s.U[p*s.N+q];
+//	}
+
+	// s.printResults();
 }
 
 Heat2DSetup::Heat2DSetup()
@@ -135,22 +151,10 @@ void Heat2DSetup::calculateL2Norm_(GridLevel* g, int l)
 }
 
 
-void Heat2DSetup::printHelp()
-{
-    printf("/**********************************************************************/\n");
-    printf("// A still unoptimized Multigrid Solver for the Heat Equation         //\n");
-    printf("// Course Material for HPCSE-II, Spring 2019, ETH Zurich              //\n");
-    printf("// Authors: Sergio Martin, Georgios Arampatzis                        //\n");
-    printf("// License: Use if you like, but give us credit.                      //\n");
-    printf("/**********************************************************************/\n");
-    printf("\n");
-    printf("Usage:\n");
-    printf("  -h  -  Prints this help info.\n");
-}
 
-void Heat2DSetup::loadProblem()
+void Heat2DSetup::generateInitialConditions(double c1, double c2, double c3, double c4)
 {
-	N0 = 7; // 2^N0 + 1 elements per side
+	N0 = 6; // 2^N0 + 1 elements per side
 	N = pow(2, N0) + 1;
 	U = (double*) calloc (sizeof(double), N*N);
 	f = (double*) calloc (sizeof(double), N*N);
@@ -168,19 +172,14 @@ void Heat2DSetup::loadProblem()
 	// F
 	for (int i = 0; i < N; i++) for (int j = 0; j < N; j++)
 	{
-			double c1, c2, c3, c4;
-			double h = 1.0/(N-1);
-			double x = i*h;
-			double y = j*h;
+		double h = 1.0/(N-1);
+		double x = i*h;
+		double y = j*h;
 
-			f[i*N +j] = 0.0;
+		f[i*N +j] = 0.0;
 
-			// Heat Source: Candle 1
-			c1 = 30; // intensity
-			c2 = 0.02; // variance
-			c3 = 0.1; // x0
-			c4 = 0.8; // y0
-			f[i*N + j] += -(4*c1*exp( -(pow(c3 - y, 2) + pow(c4 - x, 2)) / c2 ) * (pow(c3,2) - 2*c3*y + pow(c4,2) - 2*c4*x + pow(y,2) + pow(x,2) - c2))/pow(c2,2);
+		// Heat Source: Candle
+		f[i*N + j] += -(4*c1*exp( -(pow(c3 - y, 2) + pow(c4 - x, 2)) / c2 ) * (pow(c3,2) - 2*c3*y + pow(c4,2) - 2*c4*x + pow(y,2) + pow(x,2) - c2))/pow(c2,2);
 	}
 }
 

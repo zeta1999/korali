@@ -1,21 +1,22 @@
 include ../../common.mk
 
-LFLAGS = 
-
-BINARIES = heat2d
+LDFLAGS  += -L../../source -lkorali
+CXXFLAGS += -I../../include
+BINARIES = nCandle
+CC = upcxx
 
 .SECONDARY: 
 .PHONY: all 
 all: $(BINARIES)
 
-heat2d: auxiliar/auxiliar.o heat2d.o 
-	$(CC) $(CXXFLAGS) $(LFLAGS) -o $@ $^
+nCandle: auxiliar/auxiliar.o heat2d.o nCandle.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 auxiliar/auxiliar.o:
-	$(MAKE) -C auxiliar
+	$(MAKE) -C auxiliar 
 
 %.o: %.cpp
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CXXFLAGS) $<
 
 .PHONY: clean
 clean:
