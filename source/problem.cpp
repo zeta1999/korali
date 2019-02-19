@@ -1,22 +1,31 @@
 #include "problem.h"
+#include <time.h>
 
-Korali::Problem::Problem(std::string type, size_t dim, double (*fun) (double*, int), size_t seed)
+Korali::Problem::Problem(std::string type, double (*fun) (double*, int), size_t seed)
 {
 	_seed = seed;
+
+	if (_seed == 0) _seed = clock();
+
 	_type = type;
-  _parameters = new Parameter[dim];
-	_dimCount = dim;
+	_dimCount = 0;
 
   gsl_rng_env_setup();
-	for (int i = 0; i < dim; i++) _parameters[i].setSeed(_seed++);
 
 	_fitnessFunction = fun;
+}
+
+void Korali::Problem::addParameter(Parameter p)
+{
+	_parameters.push_back(p);
+	p.setSeed(_seed++);
+	_dimCount++;
 }
 
 double Korali::Problem::getTotalDensity(double* x)
 {
  double density = 1.0;
- for (int i = 0; i < _dimCount; i++) density *= _parameters[i].getPriorDistribution()->getDensity(x[i]);
+ for (int i = 0; i < _parameters.size(); i++) density *= _parameters[i].getPriorDistribution()->getDensity(x[i]);
  return density;
 }
 

@@ -10,20 +10,18 @@ class Problem
 {
   public:
 
-	Problem(std::string type, size_t dim, double (*fun) (double*, int), size_t seed);
+	Problem(std::string type, double (*fun) (double*, int), size_t seed = 0);
 
-  Parameter* getParameter(int Parameter) { return &_parameters[Parameter]; }
-  Parameter* operator[](int Parameter) { return getParameter(Parameter); }
-
+	void addParameter(Parameter p);
   double getTotalDensityLog(double* x);
   double getTotalDensity(double* x);
   double evaluateFitness(double* sample);
 
-	size_t _dimCount;
+  size_t _dimCount;
 	size_t _seed;
 	std::string _type;
   double (*_fitnessFunction) (double*, int);
-  Parameter* _parameters;
+  std::vector<Parameter> _parameters;
 };
 
 

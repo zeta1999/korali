@@ -5,27 +5,33 @@ int main(int argc, char* argv[])
 {
 	const size_t nDim = 4;
 
-  auto problem = Korali::Problem("Maximizer", nDim, heat2DWrapper, 53754);
+  auto problem = Korali::Problem("Maximizer", heat2DWrapper);
+  Korali::Parameter intensity, width, xPos, yPos;
 
-  problem[0]->setPriorDistribution("Uniform", 0.0, 50.0);
-	problem[0]->setBounds(0.0, 50.0);
-	problem[0]->setInitialX(10.0);
-	problem[0]->setInitialStdDev(5.0);
+  intensity.setPriorDistribution("Uniform", 0.0, 50.0);
+  intensity.setBounds(0.0, 50.0);
+  intensity.setInitialX(10.0);
+  intensity.setInitialStdDev(5.0);
 
-	problem[1]->setPriorDistribution("Uniform", 0.0, 0.1);
-	problem[1]->setBounds(0.0, 0.1);
-	problem[1]->setInitialX(0.0);
-	problem[1]->setInitialStdDev(0.01);
+  width.setPriorDistribution("Uniform", 0.0, 0.1);
+  width.setBounds(0.0, 0.1);
+  width.setInitialX(0.0);
+  width.setInitialStdDev(0.01);
 
-	problem[2]->setPriorDistribution("Uniform", 0.2, 0.6);
-	problem[2]->setBounds(0.2, 0.6);
-	problem[2]->setInitialX(0.5);
-	problem[2]->setInitialStdDev(0.2);
+  xPos.setPriorDistribution("Uniform", 0.2, 0.6);
+  xPos.setBounds(0.2, 0.6);
+  xPos.setInitialX(0.5);
+  xPos.setInitialStdDev(0.2);
 
-	problem[3]->setPriorDistribution("Uniform", 0.2, 0.6);
-	problem[3]->setBounds(0.2, 0.6);
-	problem[3]->setInitialX(0.5);
-	problem[3]->setInitialStdDev(0.2);
+  yPos.setPriorDistribution("Uniform", 0.2, 0.6);
+  yPos.setBounds(0.2, 0.6);
+  yPos.setInitialX(0.5);
+  yPos.setInitialStdDev(0.2);
+
+  problem.addParameter(intensity);
+  problem.addParameter(width);
+  problem.addParameter(xPos);
+  problem.addParameter(yPos);
 
 	auto solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
 

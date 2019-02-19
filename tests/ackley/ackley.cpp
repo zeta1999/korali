@@ -16,13 +16,17 @@ double f_Ackley(double *x, int N) {
 
 int main(int argc, char* argv[])
 {
-	const size_t nDim = 4;
+  auto problem = Korali::Problem("Minimizer", f_Ackley);
 
-  auto problem = Korali::Problem("Minimizer", nDim, f_Ackley, 53754);
+  Korali::Parameter p;
+  p.setPriorDistribution("Uniform", -32.0, +32.0);
+  p.setBounds(-32.0, +32.0);
+  p.setInitialX(5.0);
+  p.setInitialStdDev(2.0);
 
-	for (int i = 0; i < nDim; i++)	problem[i]->setBounds(-32.0, +32.0);
-	for (int i = 0; i < nDim; i++)	problem[i]->setInitialX(5.0 + i);
-	for (int i = 0; i < nDim; i++)	problem[i]->setInitialStdDev(2.0 + i);
+  const size_t nDim = 4;
+
+	for (int i = 0; i < nDim; i++)	problem.addParameter(p);
 
 	auto solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
 
