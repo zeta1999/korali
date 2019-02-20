@@ -1,7 +1,7 @@
 #include "cmaes.h"
 #include "problem.h"
 
-Korali::KoraliCMAES::KoraliCMAES(ProblemBase* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
+Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
 {
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
@@ -22,8 +22,6 @@ Korali::KoraliCMAES::KoraliCMAES(ProblemBase* problem, MPI_Comm comm) : Korali::
 
 	_gaussianGenerator = new GaussianDistribution(0, 1, problem->_seed++);
 }
-
-
 
 bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 {

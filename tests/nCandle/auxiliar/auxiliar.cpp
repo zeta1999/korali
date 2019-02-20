@@ -13,35 +13,46 @@
 #include <chrono>
 #include "auxiliar.hpp"
 
-void heat2DWrapper(double* pars, int n, double* results)
+double heat2DWrapper(double* pars, int n, void* data)
 {
 	// User-defined Parameters
 	Heat2DSetup s;
   s.pars = pars;
 
 	// Problem Parameters
-	double intensity = s.pars[0];
-	double width = s.pars[1];
-	double xPos = s.pars[2];
-	double yPos = s.pars[3];
-
   auto start = std::chrono::system_clock::now();
 	heat2DSolver(s);
   auto end = std::chrono::system_clock::now();
 	s.totalTime = std::chrono::duration<double>(end-start).count();
 
+	pointsInfo* pd = (pointsInfo*) data;
+
 	double h = 1.0/(s.N-1);
+	double sigma2 = s.pars[0]*s.pars[0];
+	double ssn = 0.0;
+	int nData = pd->nPoints;
 
-//	for(int i = 0; i < nPoints; i++)
-//	{
-//		int p = ceil(points[i].x/h);	int q = ceil(points[i].y/h);
-//		printf("[%.1f,%.1f] %f\n", points[i].x, points[i].y, s.U[p*s.N+q]);
-		int p = ceil(0.70/h);	int q = ceil(0.15/h);
-		printf("[%.4f, %.4f, %.4f, %.4f] - [%.1f,%.1f] %f\n", intensity, width, xPos, yPos, 0.70, 0.15, s.U[p*s.N+q]);
-		results[0] = s.U[p*s.N+q];
-//	}
+	for(int i = 0; i < nData; i++)
+	{
+		int p = ceil(pd->xPos[i]/h);	int q = ceil(pd->yPos[i]/h);
+		double diff = pd->temp[i] - s.U[p*s.N+q];
+		ssn += diff*diff;
+		//printf("Data: %d - Value: [%.4f, %.4f] %.20f = %.20f\n", i, pd->xPos[i], pd->yPos[i], pd->temp[i], s.U[p*s.N+q]);
+	}
 
-	// s.printResults();
+	double res = 0.5* (nData*log(2*M_PI) + nData*log(sigma2) + ssn/sigma2);
+
+	printf("Sigma: %.11f - Res: %f\n", s.pars[0], res);
+
+	free(s.U);
+	free(s.f);
+	free(s.smoothingTime);
+	free(s.residualTime);
+	free(s.restrictionTime);
+	free(s.prolongTime);
+	free(s.L2NormTime);
+
+	return res;
 }
 
 Heat2DSetup::Heat2DSetup()
@@ -87,6 +98,9 @@ void Heat2DSetup::printResults()
 	printf("Final L2 Residual : %e\n", L2Norm);
 	printf("Convergence Rate  : %e\n", L2NormDiff);
 	printf("Running Time      : %.3fs\n", totalTime);
+
+	free(timePerGrid);
+	free(timePerOp);
 }
 
 void Heat2DSetup::setGridCount(int count)
@@ -150,15 +164,14 @@ void Heat2DSetup::calculateL2Norm_(GridLevel* g, int l)
 	iteration++;
 }
 
-
-
-void Heat2DSetup::generateInitialConditions(double c1, double c2, double c3, double c4)
+void Heat2DSetup::generateInitialConditions(double c1, double c3, double c4)
 {
 	N0 = 8; // 2^N0 + 1 elements per side
 	N = pow(2, N0) + 1;
 	U = (double*) calloc (sizeof(double), N*N);
 	f = (double*) calloc (sizeof(double), N*N);
-	tolerance = 1e-6;
+	tolerance = 1e-8;
+	double c2 = 0.05; // width
 
 	// Initial Guess
 	for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) U[i*N + j] = 1.0;

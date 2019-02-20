@@ -7,56 +7,25 @@
 namespace Korali
 {
 
-class ProblemBase
+class Problem
 {
   public:
 
-	ProblemBase(void (*fun) (double*, int, double*), size_t seed = 0);
+	Problem(double (*fun) (double*, int, void*), size_t seed = 0);
 
 	void addParameter(Parameter p);
   double getTotalDensityLog(double* x);
   double getTotalDensity(double* x);
-  virtual double evaluateFitness(double* sample) = 0;
+  double evaluateFitness(double* sample);
+  void setReferenceData(void* refData);
+  KoraliCMAES* _engine;
 
-  void (*_fitnessFunction) (double*, int, double*);
+  void solve() { _engine->run(); }
+  double (*_fitnessFunction) (double*, int, void*);
   size_t _dimCount;
 	size_t _seed;
+	void* _refDataBuffer;
   std::vector<Parameter> _parameters;
-};
-
-class Maximizer : public ProblemBase
-{
-  public:
-
-	KoraliCMAES* _engine;
-	KoraliCMAES* getEngine() { return _engine; }
-	void solve() { _engine->run(); }
-	Maximizer(void (*fun) (double*, int, double*), size_t seed = 0);
-	double evaluateFitness(double* sample);
-};
-
-class Minimizer : public ProblemBase
-{
-  public:
-
-	KoraliCMAES* _engine;
-	KoraliCMAES* getEngine() { return _engine; }
-	void solve() { _engine->run(); }
-	Minimizer(void (*fun) (double*, int, double*), size_t seed = 0);
-	double evaluateFitness(double* sample);
-};
-
-class Posterior : public ProblemBase
-{
-  public:
-
-	KoraliCMAES* _engine;
-	KoraliCMAES* getEngine() { return _engine; }
-	void solve() { _engine->run(); }
-	Posterior(void (*fun) (double*, int, double*), size_t seed = 0);
-	void addReferenceData(double ref);
-  std::vector<double> _refData;
-	double evaluateFitness(double* sample);
 };
 
 } // namespace Korali

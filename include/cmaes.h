@@ -12,7 +12,7 @@ class KoraliCMAES : public KoraliBase
   public:
 
   // Public Methods
-	KoraliCMAES(ProblemBase* problem, MPI_Comm comm);
+	KoraliCMAES(Problem* problem, MPI_Comm comm);
 
 	void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
 	void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }

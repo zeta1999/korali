@@ -16,16 +16,15 @@ public:
 void heat2DSolver(Heat2DSetup& s)
 {
 	// Problem Parameters
-	double intensity = s.pars[0];
-	double width = s.pars[1];
+	double intensity = s.pars[1];
 	double xPos = s.pars[2];
 	double yPos = s.pars[3];
 
-	s.generateInitialConditions(intensity, width, xPos, yPos);
+	s.generateInitialConditions(intensity,xPos, yPos);
 
 	// Multigrid parameters -- Find the best configuration!
-	s.setGridCount(6);     // Number of Multigrid levels to use
-	s.downRelaxations = 3; // Number of Relaxations before restriction
+	s.setGridCount(7);     // Number of Multigrid levels to use
+	s.downRelaxations = 4; // Number of Relaxations before restriction
 	s.upRelaxations   = 1;   // Number of Relaxations after prolongation
 
 	// Allocating Grids -- Is there a better way to allocate these grids?
@@ -67,6 +66,18 @@ void heat2DSolver(Heat2DSetup& s)
 
 	// Saving solution before returning
 	for (int i = 0; i < g[0].N; i++) for (int j = 0; j < g[0].N; j++) s.saveSolution(i, j, g[0].U[i][j]);
+
+  // Freeing grids
+	for (int i = 0; i < s.gridCount; i++)
+	{
+		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].U[j]);
+		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].f[j]);
+		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].Res[j]);
+		_mm_free(g[i].U);
+		_mm_free(g[i].f);
+		_mm_free(g[i].Res);
+	}
+	_mm_free(g);
 }
 
 void applyGaussSeidel(GridLevel* g, int l, int relaxations)

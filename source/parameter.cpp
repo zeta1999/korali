@@ -6,7 +6,7 @@ Korali::Parameter::Parameter()
  _lowerBound = -std::numeric_limits<double>::max();
  _upperBound = std::numeric_limits<double>::max();
  _initialX = 0.0;
- _initialStdDev = 0.0;
+ _initialStdDev = 0.1;
  _lowerBound = std::numeric_limits<double>::min();
 
  _seed = 0;

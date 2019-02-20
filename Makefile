@@ -8,4 +8,4 @@ clean:
 
 test:
 	#upcxx-run -n 8 ./tests/ackley/ackley
-	upcxx-run -n 8 ./tests/nCandle/nCandle
+	cd tests/nCandle && upcxx-run -n 8 ./nCandle

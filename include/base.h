@@ -8,14 +8,14 @@
 namespace Korali
 {
 
-class ProblemBase;
+class Problem;
 
 class KoraliBase
 {
   public:
 
   // Public Methods
-  KoraliBase(ProblemBase* problem, MPI_Comm comm);
+  KoraliBase(Problem* problem, MPI_Comm comm);
 
 	void setLambda(size_t lambda) { _lambda = lambda; }
   void setMaxFitnessEvaluations(size_t maxFitnessEvaluations) { _maxFitnessEvaluations = maxFitnessEvaluations; }
@@ -28,7 +28,7 @@ class KoraliBase
   int _rankId;
   int _rankCount;
 
-  ProblemBase* _problem;
+  Problem* _problem;
   double* _fitnessVector;
   bool _continueEvaluations;
   double* _samplePopulation;
