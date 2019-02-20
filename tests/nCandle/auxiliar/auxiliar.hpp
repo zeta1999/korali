@@ -18,6 +18,7 @@ class Heat2DSetup
 	public:
 
   double* U;
+  double* pars;
 
   // Timekeeping variables:
   double* smoothingTime;
@@ -49,7 +50,7 @@ class Heat2DSetup
   void saveSolution(size_t x, size_t y, double val) { U[x*N + y] = val; }
 
   // Timekeeping surrogates for the solver functions
-  void applyJacobi_(GridLevel* g, int l, int relaxations);
+  void applyGaussSeidel_(GridLevel* g, int l, int relaxations);
   void applyProlongation_(GridLevel* g, int l);
   void applyRestriction_(GridLevel* g, int l);
   void calculateResidual_(GridLevel* g, int l);
@@ -66,7 +67,7 @@ void heat2DWrapper(double* pars, int n, double* results);
 void heat2DSolver(Heat2DSetup& s);
 
 // Solver functions
-void applyJacobi(GridLevel* g, int l, int relaxations);
+void applyGaussSeidel(GridLevel* g, int l, int relaxations);
 void calculateResidual(GridLevel* g, int l);
 void applyRestriction(GridLevel* g, int l);
 void applyProlongation(GridLevel* g, int l);

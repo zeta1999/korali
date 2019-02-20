@@ -9,16 +9,23 @@ public:
 	size_t N; // Number of points per dimension in the grid level
 	double h; // DeltaX = DeltaY, the distance between points in the discretized [0,1]x[0,1] domain
 	double** f; // Right hand side (external heat sources)
-	double** U; // Main grid for Jacobi
-	double** Un; // Previous' step grid
+	double** U; // Main grid
 	double** Res; // Residual Grid
 };
 
 void heat2DSolver(Heat2DSetup& s)
 {
+	// Problem Parameters
+	double intensity = s.pars[0];
+	double width = s.pars[1];
+	double xPos = s.pars[2];
+	double yPos = s.pars[3];
+
+	s.generateInitialConditions(intensity, width, xPos, yPos);
+
 	// Multigrid parameters -- Find the best configuration!
-	s.setGridCount(2);     // Number of Multigrid levels to use
-	s.downRelaxations = 2; // Number of Relaxations before restriction
+	s.setGridCount(6);     // Number of Multigrid levels to use
+	s.downRelaxations = 3; // Number of Relaxations before restriction
 	s.upRelaxations   = 1;   // Number of Relaxations after prolongation
 
 	// Allocating Grids -- Is there a better way to allocate these grids?
@@ -29,7 +36,6 @@ void heat2DSolver(Heat2DSetup& s)
 		g[i].h = 1.0/(g[i].N-1);
 
 		g[i].U   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].U[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
-		g[i].Un  = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].Un[j]  = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
 		g[i].Res = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].Res[j] = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
 		g[i].f   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].f[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
 	}
@@ -40,20 +46,20 @@ void heat2DSolver(Heat2DSetup& s)
 
 	while (s.L2NormDiff > s.tolerance)  // Multigrid solver start
 	{
-		s.applyJacobi_(g, 0, s.downRelaxations); // Relaxing the finest grid first
+		s.applyGaussSeidel_(g, 0, s.downRelaxations); // Relaxing the finest grid first
 		s.calculateResidual_(g, 0); // Calculating Initial Residual
 
 		for (int grid = 1; grid < s.gridCount; grid++) // Going down the V-Cycle
 		{
 				s.applyRestriction_(g, grid); // Restricting the residual to the coarser grid's solution vector (f)
-				s.applyJacobi_(g, grid, s.downRelaxations); // Smoothing coarser level
+				s.applyGaussSeidel_(g, grid, s.downRelaxations); // Smoothing coarser level
 				s.calculateResidual_(g, grid); // Calculating Coarse Grid Residual
 		}
 
 		for (int grid = s.gridCount-1; grid > 0; grid--) // Going up the V-Cycle
 		{
 				s.applyProlongation_(g, grid); // Prolonging solution for coarser level up to finer level
-				s.applyJacobi_(g, grid, s.upRelaxations); // Smoothing finer level
+				s.applyGaussSeidel_(g, grid, s.upRelaxations); // Smoothing finer level
 		}
 
 		s.calculateL2Norm_(g, 0); // Calculating Residual L2 Norm
@@ -63,18 +69,16 @@ void heat2DSolver(Heat2DSetup& s)
 	for (int i = 0; i < g[0].N; i++) for (int j = 0; j < g[0].N; j++) s.saveSolution(i, j, g[0].U[i][j]);
 }
 
-void applyJacobi(GridLevel* g, int l, int relaxations)
+void applyGaussSeidel(GridLevel* g, int l, int relaxations)
 {
+ double h2 = g[l].h*g[l].h;
  for (int r = 0; r < relaxations; r++)
  {
-	double** tmp = g[l].Un; g[l].Un = g[l].U; g[l].U = tmp;
-  double h2 = pow(g[l].h,2);
-
-	for (int i = 1; i < g[l].N-1; i++)
+   for (int j = 1; j < g[l].N - 1; j++) // Gauss-Seidel Iteration -- Credit: Claudio Cannizzaro
    #pragma ivdep
-	 //#pragma vector aligned
-	 for (int j = 1; j < g[l].N-1; j++) // Perform a Jacobi Iteration
-		g[l].U[i][j] = (g[l].Un[i-1][j] + g[l].Un[i+1][j] + g[l].Un[i][j-1] + g[l].Un[i][j+1] + g[l].f[i][j]*h2)*0.25;
+   #pragma vector aligned
+    for (int i = 1; i < g[l].N - 1; i++)
+     g[l].U[i][j] = ((g[l].U[i - 1][j] + g[l].U[i + 1][j] + g[l].U[i][j - 1] + g[l].U[i][j + 1]) +  g[l].f[i][j] * h2 ) * 0.25;
  }
 }
 
@@ -82,11 +86,11 @@ void calculateResidual(GridLevel* g, int l)
 {
 	double h2 = 1.0 / pow(g[l].h,2);
 
-   for (int i = 1; i < g[l].N-1; i++)
-		#pragma ivdep
-    //#pragma vector aligned
-  	for (int j = 1; j < g[l].N-1; j++)
-		g[l].Res[i][j] = g[l].f[i][j] + (g[l].U[i-1][j] + g[l].U[i+1][j] - 4*g[l].U[i][j] + g[l].U[i][j-1] + g[l].U[i][j+1]) * h2;
+ for (int i = 1; i < g[l].N-1; i++)
+	#pragma ivdep
+	//#pragma vector aligned
+	for (int j = 1; j < g[l].N-1; j++)
+	g[l].Res[i][j] = g[l].f[i][j] + (g[l].U[i-1][j] + g[l].U[i+1][j] - 4*g[l].U[i][j] + g[l].U[i][j-1] + g[l].U[i][j+1]) * h2;
 }
 
 double calculateL2Norm(GridLevel* g, int l)

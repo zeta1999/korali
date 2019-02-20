@@ -17,13 +17,13 @@ void heat2DWrapper(double* pars, int n, double* results)
 {
 	// User-defined Parameters
 	Heat2DSetup s;
+  s.pars = pars;
 
-	double intensity = pars[0];
-	double width = pars[1];
-	double xPos = pars[2];
-	double yPos = pars[3];
-
-	s.generateInitialConditions(intensity, width, xPos, yPos);
+	// Problem Parameters
+	double intensity = s.pars[0];
+	double width = s.pars[1];
+	double xPos = s.pars[2];
+	double yPos = s.pars[3];
 
   auto start = std::chrono::system_clock::now();
 	heat2DSolver(s);
@@ -37,7 +37,7 @@ void heat2DWrapper(double* pars, int n, double* results)
 //		int p = ceil(points[i].x/h);	int q = ceil(points[i].y/h);
 //		printf("[%.1f,%.1f] %f\n", points[i].x, points[i].y, s.U[p*s.N+q]);
 		int p = ceil(0.70/h);	int q = ceil(0.15/h);
-		printf("[%.2f, %.2f, %.2f, %.2f] - [%.1f,%.1f] %f\n", intensity, width, xPos, yPos, 0.70, 0.15, s.U[p*s.N+q]);
+		printf("[%.4f, %.4f, %.4f, %.4f] - [%.1f,%.1f] %f\n", intensity, width, xPos, yPos, 0.70, 0.15, s.U[p*s.N+q]);
 		results[0] = s.U[p*s.N+q];
 //	}
 
@@ -106,10 +106,10 @@ void Heat2DSetup::setGridCount(int count)
   for (int i = 0; i < gridCount; i++) L2NormTime[i] = 0.0;
 }
 
-void Heat2DSetup::applyJacobi_(GridLevel* g, int l, int relaxations)
+void Heat2DSetup::applyGaussSeidel_(GridLevel* g, int l, int relaxations)
 {
 	auto t0 = std::chrono::system_clock::now();
-	applyJacobi(g, l, relaxations);
+	applyGaussSeidel(g, l, relaxations);
 	auto t1 = std::chrono::system_clock::now();
   smoothingTime[l] += std::chrono::duration<double>(t1-t0).count();
 }
@@ -154,7 +154,7 @@ void Heat2DSetup::calculateL2Norm_(GridLevel* g, int l)
 
 void Heat2DSetup::generateInitialConditions(double c1, double c2, double c3, double c4)
 {
-	N0 = 6; // 2^N0 + 1 elements per side
+	N0 = 8; // 2^N0 + 1 elements per side
 	N = pow(2, N0) + 1;
 	U = (double*) calloc (sizeof(double), N*N);
 	f = (double*) calloc (sizeof(double), N*N);
