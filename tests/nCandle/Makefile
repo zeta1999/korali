@@ -1,7 +1,7 @@
 include ../../common.mk
 
 LDFLAGS  += -L../../source -lkorali
-CXXFLAGS += -I../../include -march=native -D NOALIAS
+CXXFLAGS += -I../../include
 BINARIES = nCandle
 CC = upcxx
 
@@ -9,18 +9,21 @@ CC = upcxx
 .PHONY: all 
 all: $(BINARIES)
 
-nCandle: auxiliar/auxiliar.o heat2d.o nCandle.o
+nCandle: heat2d/auxiliar.o heat2d/heat2d.o nCandle.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-auxiliar/auxiliar.o:
-	$(MAKE) -C auxiliar 
+heat2d/auxiliar.o:
+	$(MAKE) -C heat2d auxiliar.o
+
+heat2d/heat2d.o: heat2d/heat2d.o
+	$(MAKE) -C heat2d heat2d.o
 
 %.o: %.cpp
 	$(CC) -c $(CXXFLAGS) $<
 
 .PHONY: clean
 clean:
-	$(MAKE) -C auxiliar clean
+	$(MAKE) -C heat2d clean
 	$(RM) $(BINARIES) *.o *.ti *.optrpt 
 
 

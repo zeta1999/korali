@@ -11,7 +11,7 @@
 #include <math.h>
 #include <limits>
 #include <chrono>
-#include "auxiliar.hpp"
+#include "heat2d.hpp"
 
 double heat2DWrapper(double* pars, int n, void* data)
 {

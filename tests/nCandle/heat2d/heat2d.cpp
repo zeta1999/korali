@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "auxiliar/auxiliar.hpp"
+#include "heat2d.hpp"
 
 class GridLevel
 {
