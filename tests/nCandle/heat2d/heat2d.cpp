@@ -64,7 +64,6 @@ void heat2DSolver(Heat2DSetup& s)
 		s.L2Norm = calculateL2Norm(g, 0); // Calculating Residual L2 Norm
 		s.L2NormDiff = abs(s.L2NormPrev - s.L2Norm);
 	  s.L2NormPrev = s.L2Norm;
-		s.iteration++;
 	}  // Multigrid solver end
 
 	// Saving solution before returning

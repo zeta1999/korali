@@ -1,4 +1,3 @@
-#include "korali.h"
 #include "heat2d/heat2d.hpp"
 
 int main(int argc, char* argv[])
@@ -17,13 +16,14 @@ int main(int argc, char* argv[])
   fscanf(fid, "%lu\n", &p.nPoints);
   p.xPos = (double*) calloc (sizeof(double), p.nPoints);
   p.yPos = (double*) calloc (sizeof(double), p.nPoints);
-  p.temp = (double*) calloc (sizeof(double), p.nPoints);
+  p.refTemp = (double*) calloc (sizeof(double), p.nPoints);
+  p.simTemp = (double*) calloc (sizeof(double), p.nPoints);
 
   for (int i = 0; i < p.nPoints; i++)
   {
   	fscanf(fid, "%le ", &p.xPos[i]);
   	fscanf(fid, "%le ", &p.yPos[i]);
-  	fscanf(fid, "%le ", &p.temp[i]);
+  	fscanf(fid, "%le ", &p.refTemp[i]);
     fscanf(fid, "\n");
   }
 

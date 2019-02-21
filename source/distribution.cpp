@@ -21,3 +21,21 @@ double Korali::GammaDistribution::getRandomNumber() { return gsl_ran_gamma(_rang
 double Korali::ExponentialDistribution::getDensity(double x) { return  gsl_ran_exponential_pdf(x, _mean); }
 double Korali::ExponentialDistribution::getDensityLog(double x) { if (x < 0) return -INFINITY; 	return - log(_mean) - x/_mean;}
 double Korali::ExponentialDistribution::getRandomNumber() { return gsl_ran_exponential(_range, _mean);}
+
+double Korali::GaussianDistribution::getError(double sigma, int nData, double* x, double* u)
+{
+	double sigma2 = sigma*sigma;
+	double ssn = 0.0;
+
+	for(int i = 0; i < nData; i++)
+  {
+		double diff = x[i] - u[i];
+		ssn += diff*diff;
+  }
+
+	double res = 0.5* (nData*log(2*M_PI) + nData*log(sigma2) + ssn/sigma2);
+
+	printf("Sigma: %.11f - Res: %f\n", sigma, res);
+
+	return res;
+}

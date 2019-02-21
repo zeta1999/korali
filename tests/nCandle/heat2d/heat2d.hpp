@@ -1,11 +1,14 @@
 #ifndef _HEAT2D_H_
 #define _HEAT2D_H_
 
+#include "korali.h"
+
 typedef struct pointsInfoStruct {
     size_t nPoints;
     double* xPos;
     double* yPos;
-    double* temp;
+    double* refTemp;
+    double* simTemp;
 } pointsInfo;
 
 class GridLevel;
@@ -18,12 +21,8 @@ public:
   double** U;
   double* pars;
 
-  // Timekeeping variables:
-  double totalTime;
-
   size_t N0;
   size_t N; // 2^N0 + 1 elements per side
-  int iteration;
 
   int gridCount; // Number of multigrid levels to use
   int downRelaxations; // Number of Jacobi iterations before restriction
@@ -37,7 +36,6 @@ public:
   Heat2DSetup();
   ~Heat2DSetup();
   void generateInitialConditions(double c1, double c3, double c4);
-  void printResults();
 };
 
 double heat2DWrapper(double* pars, int n, void* data);
