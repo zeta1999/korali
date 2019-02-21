@@ -14,16 +14,11 @@ class Heat2DSetup
 {
 public:
 
-  double* f;
-  double* U;
+  double** f;
+  double** U;
   double* pars;
 
   // Timekeeping variables:
-  double* smoothingTime;
-  double* residualTime;
-  double* restrictionTime;
-  double* prolongTime;
-  double* L2NormTime;
   double totalTime;
 
   size_t N0;
@@ -39,26 +34,10 @@ public:
   double L2NormDiff; // L2Norm Difference compared to previous step
   double tolerance; // L2 Difference Tolerance before reaching convergence.
 
-  // Setup and finish functions
   Heat2DSetup();
+  ~Heat2DSetup();
   void generateInitialConditions(double c1, double c3, double c4);
-  void setGridCount(int count);
-  double getInitial(size_t x, size_t y) { return U[x*N + y]; }
-  double getRHS(size_t x, size_t y) { return f[x*N + y]; }
-  void saveSolution(size_t x, size_t y, double val) { U[x*N + y] = val; }
-
-  // Timekeeping surrogates for the solver functions
-  void applyGaussSeidel_(GridLevel* g, int l, int relaxations);
-  void applyProlongation_(GridLevel* g, int l);
-  void applyRestriction_(GridLevel* g, int l);
-  void calculateResidual_(GridLevel* g, int l);
-  void calculateL2Norm_(GridLevel* g, int l);
-
-  // Helper Functions
-  void verifySolution();
-  void printHelp();
   void printResults();
-  void printGrid(double** g, int N);
 };
 
 double heat2DWrapper(double* pars, int n, void* data);

@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
   // Read solution from file
   FILE *fid;
   char pfile[50];
-  sprintf(pfile, "auxiliar/problem%d.in", problemNumber);
+  sprintf(pfile, "problem%d.in", problemNumber);
   printf("Running problem from file %s... \n", pfile);
   fid = fopen(pfile, "r");
 
@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
   Korali::Parameter sigma, intensity, width, xPos, yPos;
 
   problem.setReferenceData(&p);
-
 	sigma.setBounds(0, 5.0);
   intensity.setBounds(0.0, 50.0);
   width.setBounds(0.0, 0.1);
@@ -46,6 +45,7 @@ int main(int argc, char* argv[])
   auto Solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
 	Solver.setStopMinDeltaX(1e-9);
 	Solver.setLambda(64);
+
 	Solver.run();
 
 	return 0;
