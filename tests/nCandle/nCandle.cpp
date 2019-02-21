@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
   fid = fopen(pfile, "r");
 
   pointsInfo p;
-  fscanf(fid, "%lu\n", &p.nPoints);
+  fscanf(fid, "%lu", &p.nPoints);
   p.xPos = (double*) calloc (sizeof(double), p.nPoints);
   p.yPos = (double*) calloc (sizeof(double), p.nPoints);
   p.refTemp = (double*) calloc (sizeof(double), p.nPoints);
@@ -24,7 +24,6 @@ int main(int argc, char* argv[])
   	fscanf(fid, "%le ", &p.xPos[i]);
   	fscanf(fid, "%le ", &p.yPos[i]);
   	fscanf(fid, "%le ", &p.refTemp[i]);
-    fscanf(fid, "\n");
   }
 
   auto problem = Korali::Problem(heat2DWrapper);

@@ -17,7 +17,6 @@ class Heat2DSetup
 {
 public:
 
-  double** f;
   double** U;
   double* pars;
 
@@ -34,8 +33,7 @@ public:
   double tolerance; // L2 Difference Tolerance before reaching convergence.
 
   Heat2DSetup();
-  ~Heat2DSetup();
-  void generateInitialConditions(double c1, double c3, double c4);
+  void generateInitialConditions(double c1, double c3, double c4, double** U, double** f);
 };
 
 double heat2DWrapper(double* pars, int n, void* data);

@@ -27,6 +27,8 @@ double heat2DWrapper(double* pars, int n, void* data)
 		pd->simTemp[i] = s.U[p][q];
 	}
 
+	for (int i = 0; i < s.N ; i++) _mm_free(s.U[i]);
+	_mm_free(s.U);
 	return Korali::GaussianDistribution::getError(s.pars[0], pd->nPoints, pd->refTemp, pd->simTemp);
 }
 
@@ -35,12 +37,4 @@ Heat2DSetup::Heat2DSetup()
   L2Norm = 0.0;
   L2NormPrev = std::numeric_limits<double>::max();
   L2NormDiff = std::numeric_limits<double>::max();
-}
-
-Heat2DSetup::~Heat2DSetup()
-{
-	for (int i = 0; i < N ; i++) _mm_free(U[i]);
-	for (int i = 0; i < N ; i++) _mm_free(f[i]);
-	_mm_free(U);
-	_mm_free(f);
 }

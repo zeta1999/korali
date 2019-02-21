@@ -20,7 +20,8 @@ void heat2DSolver(Heat2DSetup& s)
 	double xPos = s.pars[2];
 	double yPos = s.pars[3];
 
-	s.generateInitialConditions(intensity, xPos, yPos);
+	s.N0 = 7; // 2^N0 + 1 elements per side
+	s.N = pow(2, s.N0) + 1;
 
 	// Multigrid parameters -- Find the best configuration!
 	s.gridCount       = 6;     // Number of Multigrid levels to use
@@ -39,9 +40,8 @@ void heat2DSolver(Heat2DSetup& s)
 		g[i].f   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].f[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
 	}
 
-	// Setting up problem.
-	for (int i = 0; i < s.N; i++) for (int j = 0; j < s.N; j++) g[0].U[i][j] = s.U[i][j];
-	for (int i = 0; i < s.N; i++) for (int j = 0; j < s.N; j++) g[0].f[i][j] = s.f[i][j];
+	s.generateInitialConditions(intensity, xPos, yPos, g[0].U, g[0].f);
+	s.U  = (double**) _mm_malloc(sizeof(double*) * s.N, 16); for (int i = 0; i < s.N ; i++)	s.U[i] = (double*) _mm_malloc(sizeof(double) * s.N, 16);
 
 	while (s.L2NormDiff > s.tolerance)  // Multigrid solver start
 	{
@@ -168,14 +168,8 @@ void applyProlongation(GridLevel* g, int l)
 			g[l-1].U[2*i-1][2*j-1] += ( g[l].U[i-1][j-1] + g[l].U[i-1][j] + g[l].U[i][j-1] + g[l].U[i][j] ) *0.25;
 }
 
-void Heat2DSetup::generateInitialConditions(double c1, double c3, double c4)
+void Heat2DSetup::generateInitialConditions(double c1, double c3, double c4, double** U, double** f)
 {
-	N0 = 7; // 2^N0 + 1 elements per side
-	N = pow(2, N0) + 1;
-
-	U = (double**) _mm_malloc(sizeof(double*) * N, 16); for (int i = 0; i < N ; i++)	U[i] = (double*) _mm_malloc(sizeof(double) * N, 16);
-	f = (double**) _mm_malloc(sizeof(double*) * N, 16); for (int i = 0; i < N ; i++)	f[i] = (double*) _mm_malloc(sizeof(double) * N, 16);
-
 	tolerance = 1e-8;
 	double c2 = 0.05; // width
 
