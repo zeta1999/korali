@@ -20,12 +20,12 @@ void heat2DSolver(Heat2DSetup& s)
 	double xPos = s.pars[2];
 	double yPos = s.pars[3];
 
-	s.generateInitialConditions(intensity,xPos, yPos);
+	s.generateInitialConditions(intensity, xPos, yPos);
 
 	// Multigrid parameters -- Find the best configuration!
-	s.gridCount       = 6; // Number of Multigrid levels to use
+	s.gridCount       = 6;     // Number of Multigrid levels to use
 	s.downRelaxations = 4; // Number of Relaxations before restriction
-	s.upRelaxations   = 1; // Number of Relaxations after prolongation
+	s.upRelaxations   = 1;   // Number of Relaxations after prolongation
 
 	// Allocating Grids -- Is there a better way to allocate these grids?
 	GridLevel* g = (GridLevel*) _mm_malloc(sizeof(GridLevel) * s.gridCount, 64);
@@ -177,14 +177,14 @@ void Heat2DSetup::generateInitialConditions(double c1, double c3, double c4)
 	U = (double**) _mm_malloc(sizeof(double*) * N, 16); for (int i = 0; i < N ; i++)	U[i] = (double*) _mm_malloc(sizeof(double) * N, 16);
 	f = (double**) _mm_malloc(sizeof(double*) * N, 16); for (int i = 0; i < N ; i++)	f[i] = (double*) _mm_malloc(sizeof(double) * N, 16);
 
-	tolerance = 1e-9;
+	tolerance = 1e-8;
 	double c2 = 0.05; // width
 
 	// Initial Guess
 	for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) U[i][j] = 1.0;
 
 	// Boundary Conditions
-	for (int i = 0; i < N; i++) U[i][0]   = 0.0;
+	for (int i = 0; i < N; i++) U[0][i]   = 0.0;
 	for (int i = 0; i < N; i++) U[N-1][i] = 0.0;
 	for (int i = 0; i < N; i++) U[i][0]   = 0.0;
 	for (int i = 0; i < N; i++) U[i][N-1] = 0.0;
