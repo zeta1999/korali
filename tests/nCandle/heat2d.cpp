@@ -97,9 +97,9 @@ void calculateResidual(GridLevel* g, int l)
 {
 	double h2 = 1.0 / pow(g[l].h,2);
 
+#pragma vector aligned
  for (int i = 1; i < g[l].N-1; i++)
 	#pragma ivdep
-	//#pragma vector aligned
 	for (int j = 1; j < g[l].N-1; j++)
 	g[l].Res[i][j] = g[l].f[i][j] + (g[l].U[i-1][j] + g[l].U[i+1][j] - 4*g[l].U[i][j] + g[l].U[i][j-1] + g[l].U[i][j+1]) * h2;
 }

@@ -1,7 +1,7 @@
 include ../../common.mk
 
 LDFLAGS  += -L../../source -lkorali
-CXXFLAGS += -I../../include
+CXXFLAGS += -I../../include -march=native -D NOALIAS
 BINARIES = nCandle
 CC = upcxx
 
