@@ -11,7 +11,7 @@ Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) : Korali::Kora
 	_stopMaxTimePerEigendecomposition = 1.0;
 	_stopMinFitness = -std::numeric_limits<double>::max();
 
-	_mu = 64;
+	_mu = -1;
 	_muType = "Logarithmic";
 	_muCovariance = -1;
 	_diagonalCovarianceMatrixEvalFrequency = -1;
@@ -38,6 +38,7 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
 
     // Initializing MU and its weights
 
+    if (_mu == -1) _mu = _lambda;
   	_muWeights = new double[_mu];
 
     if (_muType == "LinearDecreasing") for (int i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;

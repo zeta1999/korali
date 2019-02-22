@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
   MPI_Bcast(p.yPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   MPI_Bcast(p.refTemp, p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  auto problem = Korali::Problem(heat2DWrapper);
+  auto problem = Korali::Problem(heat2DSolver);
   Korali::Parameter sigma, intensity, width, xPos, yPos;
 
   problem.setReferenceData(&p);
@@ -58,8 +58,9 @@ int main(int argc, char* argv[])
   problem.addParameter(yPos);
 
   auto Solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
-	Solver.setStopMinDeltaX(1e-9);
-	Solver.setLambda(64);
+	Solver.setStopMinDeltaX(1e-7);
+	Solver.setLambda(32);
+
 
 	Solver.run();
 

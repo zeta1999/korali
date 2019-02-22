@@ -1,38 +1,40 @@
+/**********************************************************************/
+// A now optimized Multigrid Solver for the Heat Equation             //
+// Course Material for HPCSE-II, Spring 2019, ETH Zurich              //
+// Authors: Sergio Martin, Georgios Arampatzis                        //
+// License: Use if you like, but give us credit.                      //
+/**********************************************************************/
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include "heat2d.hpp"
 
-class GridLevel
-{
-public:
-	size_t N; // Number of points per dimension in the grid level
-	double h; // DeltaX = DeltaY, the distance between points in the discretized [0,1]x[0,1] domain
-	double** f; // Right hand side (external heat sources)
-	double** U; // Main grid
-	double** Res; // Residual Grid
-};
-
-void heat2DSolver(Heat2DSetup& s)
+double heat2DSolver(double* pars, int n, void* data)
 {
 	// Problem Parameters
-	double intensity = s.pars[1];
-	double xPos = s.pars[2];
-	double yPos = s.pars[3];
+	double intensity = pars[1];
+	double xPos = pars[2];
+	double yPos = pars[3];
 
-	s.N0 = 7; // 2^N0 + 1 elements per side
-	s.N = pow(2, s.N0) + 1;
+	double L2Norm = 0.0; // L2 Norm of the residual
+  double L2NormPrev = std::numeric_limits<double>::max(); // Previous L2 Norm
+  double L2NormDiff = std::numeric_limits<double>::max(); // L2Norm Difference compared to previous step
+  double tolerance = 1e-8; // L2 Difference Tolerance before reaching convergence.
+
+  size_t N0 = 7; // 2^N0 + 1 elements per side
+  size_t N = pow(2, N0) + 1;
 
 	// Multigrid parameters -- Find the best configuration!
-	s.gridCount       = 6;     // Number of Multigrid levels to use
-	s.downRelaxations = 4; // Number of Relaxations before restriction
-	s.upRelaxations   = 1;   // Number of Relaxations after prolongation
+	int gridCount       = 6;     // Number of Multigrid levels to use
+	int downRelaxations = 4; // Number of Relaxations before restriction
+	int upRelaxations   = 1;   // Number of Relaxations after prolongation
 
-	// Allocating Grids -- Is there a better way to allocate these grids?
-	GridLevel* g = (GridLevel*) _mm_malloc(sizeof(GridLevel) * s.gridCount, 64);
-	for (int i = 0; i < s.gridCount; i++)
+	// Allocating Grids
+	gridLevel* g = (gridLevel*) _mm_malloc(sizeof(gridLevel) * gridCount, 64);
+	for (int i = 0; i < gridCount; i++)
 	{
-		g[i].N = pow(2, s.N0-i) + 1;
+		g[i].N = pow(2, N0-i) + 1;
 		g[i].h = 1.0/(g[i].N-1);
 
 		g[i].U   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].U[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
@@ -40,37 +42,41 @@ void heat2DSolver(Heat2DSetup& s)
 		g[i].f   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].f[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
 	}
 
-	s.generateInitialConditions(intensity, xPos, yPos, g[0].U, g[0].f);
-	s.U  = (double**) _mm_malloc(sizeof(double*) * s.N, 16); for (int i = 0; i < s.N ; i++)	s.U[i] = (double*) _mm_malloc(sizeof(double) * s.N, 16);
+	generateInitialConditions(N, intensity, xPos, yPos, g[0].U, g[0].f);
 
-	while (s.L2NormDiff > s.tolerance)  // Multigrid solver start
+	while (L2NormDiff > tolerance)  // Multigrid solver start
 	{
-		applyGaussSeidel(g, 0, s.downRelaxations); // Relaxing the finest grid first
+		applyGaussSeidel(g, 0, downRelaxations); // Relaxing the finest grid first
 		calculateResidual(g, 0); // Calculating Initial Residual
 
-		for (int grid = 1; grid < s.gridCount; grid++) // Going down the V-Cycle
+		for (int grid = 1; grid < gridCount; grid++) // Going down the V-Cycle
 		{
 			applyRestriction(g, grid); // Restricting the residual to the coarser grid's solution vector (f)
-			applyGaussSeidel(g, grid, s.downRelaxations); // Smoothing coarser level
+			applyGaussSeidel(g, grid, downRelaxations); // Smoothing coarser level
 			calculateResidual(g, grid); // Calculating Coarse Grid Residual
 		}
 
-		for (int grid = s.gridCount-1; grid > 0; grid--) // Going up the V-Cycle
+		for (int grid = gridCount-1; grid > 0; grid--) // Going up the V-Cycle
 		{
 			applyProlongation(g, grid); // Prolonging solution for coarser level up to finer level
-			applyGaussSeidel(g, grid, s.upRelaxations); // Smoothing finer level
+			applyGaussSeidel(g, grid, upRelaxations); // Smoothing finer level
 		}
 
-		s.L2Norm = calculateL2Norm(g, 0); // Calculating Residual L2 Norm
-		s.L2NormDiff = abs(s.L2NormPrev - s.L2Norm);
-	  s.L2NormPrev = s.L2Norm;
+		L2Norm = calculateL2Norm(g, 0); // Calculating Residual L2 Norm
+		L2NormDiff = abs(L2NormPrev - L2Norm);
+	  L2NormPrev = L2Norm;
 	}  // Multigrid solver end
 
-	// Saving solution before returning
-	for (int i = 0; i < g[0].N; i++) for (int j = 0; j < g[0].N; j++) s.U[i][j] = g[0].U[i][j];
+	pointsInfo* pd = (pointsInfo*) data;
+	double h = 1.0/(N-1);
+	for(int i = 0; i < pd->nPoints; i++)
+	{
+		int p = ceil(pd->xPos[i]/h);	int q = ceil(pd->yPos[i]/h);
+		pd->simTemp[i] = g[0].U[p][q];
+	}
 
   // Freeing grids
-	for (int i = 0; i < s.gridCount; i++)
+	for (int i = 0; i < gridCount; i++)
 	{
 		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].U[j]);
 		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].f[j]);
@@ -80,9 +86,11 @@ void heat2DSolver(Heat2DSetup& s)
 		_mm_free(g[i].Res);
 	}
 	_mm_free(g);
+
+	return Korali::GaussianDistribution::getError(pars[0], pd->nPoints, pd->refTemp, pd->simTemp);
 }
 
-void applyGaussSeidel(GridLevel* g, int l, int relaxations)
+void applyGaussSeidel(gridLevel* g, int l, int relaxations)
 {
  double h2 = g[l].h*g[l].h;
  for (int r = 0; r < relaxations; r++)
@@ -95,7 +103,7 @@ void applyGaussSeidel(GridLevel* g, int l, int relaxations)
  }
 }
 
-void calculateResidual(GridLevel* g, int l)
+void calculateResidual(gridLevel* g, int l)
 {
 	double h2 = 1.0 / pow(g[l].h,2);
 
@@ -106,7 +114,7 @@ void calculateResidual(GridLevel* g, int l)
 	g[l].Res[i][j] = g[l].f[i][j] + (g[l].U[i-1][j] + g[l].U[i+1][j] - 4*g[l].U[i][j] + g[l].U[i][j-1] + g[l].U[i][j+1]) * h2;
 }
 
-double calculateL2Norm(GridLevel* g, int l)
+double calculateL2Norm(gridLevel* g, int l)
 {
   double tmp = 0.0;
 
@@ -125,7 +133,7 @@ double calculateL2Norm(GridLevel* g, int l)
  return sqrt(tmp);
 }
 
-void applyRestriction(GridLevel* g, int l)
+void applyRestriction(gridLevel* g, int l)
 {
 	for (int i = 1; i < g[l].N-1; i++)
    #pragma ivdep
@@ -142,7 +150,7 @@ void applyRestriction(GridLevel* g, int l)
 		g[l].U[i][j] = 0;
 }
 
-void applyProlongation(GridLevel* g, int l)
+void applyProlongation(gridLevel* g, int l)
 {
 	for (int i = 1; i < g[l].N-1; i++)
    #pragma ivdep
@@ -168,10 +176,9 @@ void applyProlongation(GridLevel* g, int l)
 			g[l-1].U[2*i-1][2*j-1] += ( g[l].U[i-1][j-1] + g[l].U[i-1][j] + g[l].U[i][j-1] + g[l].U[i][j] ) *0.25;
 }
 
-void Heat2DSetup::generateInitialConditions(double c1, double c3, double c4, double** U, double** f)
+void generateInitialConditions(size_t N, double c1, double c2, double c3, double** U, double** f)
 {
-	tolerance = 1e-8;
-	double c2 = 0.05; // width
+	double width = 0.05; // width
 
 	// Initial Guess
 	for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) U[i][j] = 1.0;
@@ -193,6 +200,6 @@ void Heat2DSetup::generateInitialConditions(double c1, double c3, double c4, dou
 		f[i][j] = 0.0;
 
 		// Heat Source: Candle
-		f[i][j] += -(4*c1*exp( -(pow(c3 - y, 2) + pow(c4 - x, 2)) / c2 ) * (pow(c3,2) - 2*c3*y + pow(c4,2) - 2*c4*x + pow(y,2) + pow(x,2) - c2))/pow(c2,2);
+		f[i][j] += -(4*c1*exp( -(pow(c2 - y, 2) + pow(c3 - x, 2)) / width ) * (pow(c2,2) - 2*c2*y + pow(c3,2) - 2*c3*x + pow(y,2) + pow(x,2) - width))/pow(width,2);
 	}
 }

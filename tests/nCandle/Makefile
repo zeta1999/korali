@@ -9,11 +9,8 @@ CC = upcxx
 .PHONY: all 
 all: $(BINARIES)
 
-nCandle: heat2d/auxiliar.o heat2d/heat2d.o nCandle.o
+nCandle: heat2d/heat2d.o nCandle.o
 	$(CC) -o $@ $^ $(LDFLAGS)
-
-heat2d/auxiliar.o:
-	$(MAKE) -C heat2d auxiliar.o
 
 heat2d/heat2d.o: heat2d/heat2d.o
 	$(MAKE) -C heat2d heat2d.o

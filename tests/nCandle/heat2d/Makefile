@@ -5,7 +5,7 @@ CXXFLAGS += -I../../../include -march=native -D NOALIAS
 
 .SECONDARY: 
 .PHONY: all 
-all: auxiliar.o heat2d.o
+all: heat2d.o
 
 %.o: %.cpp
 	$(CC) -c $(CXXFLAGS) $<

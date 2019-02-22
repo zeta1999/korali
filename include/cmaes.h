@@ -23,7 +23,7 @@ class KoraliCMAES : public KoraliBase
 	void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
 	void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
 	void setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
-	void setMu(size_t mu, std::string muType) { _mu = mu; _muType = muType; }
+	void setMu(size_t mu, std::string muType = "Logarithmic") { _mu = mu; _muType = muType; }
 	void setMuCovariance(double muCovariance) { _muCovariance = muCovariance;}
 	void setSigmaCumulationFactor(double sigmaCumulationFactor) { _sigmaCumulationFactor = sigmaCumulationFactor;}
 	void setDampingFactor(double dampFactor) { _dampFactor = dampFactor; }
