@@ -42,11 +42,13 @@ class Likelihood : public Problem
 	bool evaluateSettings(char* errorCode);
 };
 
-class Posterior : Likelihood
+class Posterior : public Likelihood
 {
   public:
 
+	Posterior(double* (*modelFunction) (double*, void*), size_t seed = 0);
 	bool evaluateSettings(char* errorCode);
+	double evaluateFitness(double* sample);
 };
 
 class Minimization : public Problem

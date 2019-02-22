@@ -22,7 +22,7 @@ double Korali::ExponentialDistribution::getDensity(double x) { return  gsl_ran_e
 double Korali::ExponentialDistribution::getDensityLog(double x) { if (x < 0) return -INFINITY; 	return - log(_mean) - x/_mean;}
 double Korali::ExponentialDistribution::getRandomNumber() { return gsl_ran_exponential(_range, _mean);}
 
-double Korali::GaussianDistribution::getError(double sigma, int nData, double* x, double* u)
+double Korali::GaussianDistribution::logLikelihood(double sigma, int nData, double* x, double* u)
 {
 	double sigma2 = sigma*sigma;
 	double ssn = 0.0;

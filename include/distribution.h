@@ -37,7 +37,7 @@ class GaussianDistribution : public Distribution
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
-  static double getError(double sigma, int nData, double* x, double* u);
+  static double logLikelihood(double sigma, int nData, double* x, double* u);
 };
 
 class UniformDistribution : public Distribution
