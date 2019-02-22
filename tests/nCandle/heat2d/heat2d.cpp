@@ -10,7 +10,7 @@
 #include "heat2d.hpp"
 #include "korali.h"
 
-double heat2DSolver(double* pars, int n, void* data)
+double* heat2DSolver(double* pars, void* data)
 {
   double tolerance = 1e-8; // L2 Difference Tolerance before reaching convergence.
   size_t N0 = 7; // 2^N0 + 1 elements per side
@@ -43,6 +43,7 @@ double heat2DSolver(double* pars, int n, void* data)
 		calculateL2Norm(g, 0); // Calculating Residual L2 Norm
 	}  // Multigrid solver end
 
+	// Saving the value of temperatures at specified points
 	pointsInfo* pd = (pointsInfo*) data;
 	double h = 1.0/(g[0].N-1);
 	for(int i = 0; i < pd->nPoints; i++)
@@ -53,7 +54,7 @@ double heat2DSolver(double* pars, int n, void* data)
 
   freeGrids(g, gridCount);
 
-	return Korali::GaussianDistribution::getError(pars[0], pd->nPoints, pd->refTemp, pd->simTemp);
+  return pd->simTemp;
 }
 
 void applyGaussSeidel(gridLevel* g, int l, int relaxations)
@@ -147,9 +148,9 @@ void applyProlongation(gridLevel* g, int l)
 gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars)
 {
 	// Problem Parameters
-	double intensity = pars[1];
-	double xPos = pars[2];
-	double yPos = pars[3];
+	double intensity = pars[0];
+	double xPos = pars[1];
+	double yPos = pars[2];
 	double width = 0.05;
 
 	// Allocating Grids
@@ -196,7 +197,6 @@ gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars)
 
 void freeGrids(gridLevel* g, int gridCount)
 {
-  // Freeing grids
 	for (int i = 0; i < gridCount; i++)
 	{
 		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].U[j]);

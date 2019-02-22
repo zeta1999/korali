@@ -23,7 +23,7 @@ typedef struct gridLevelStruct {
 } gridLevel;
 
 // Main solver
-double heat2DSolver(double* pars, int n, void* data);
+double* heat2DSolver(double* pars, void* data);
 
 // Helper Functions
 gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars);

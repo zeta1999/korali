@@ -11,22 +11,53 @@ class Problem
 {
   public:
 
-	Problem(double (*fun) (double*, int, void*), size_t seed = 0);
+	Problem(size_t seed = 0);
 
 	void addParameter(Parameter p);
-  double getTotalDensityLog(double* x);
-  double getTotalDensity(double* x);
-  double evaluateFitness(double* sample);
-  void setReferenceData(void* refData);
-  KoraliCMAES* _engine;
+  virtual double evaluateFitness(double* sample) = 0;
+  virtual bool evaluateSettings(char* errorCode) = 0;
 
-  void solve() { _engine->run(); }
-  double (*_fitnessFunction) (double*, int, void*);
-  size_t _dimCount;
+  size_t _parameterCount;
 	size_t _seed;
-	void* _refDataBuffer;
+
   std::vector<Parameter> _parameters;
 };
+
+class Likelihood : public Problem
+{
+  public:
+
+	size_t _nData;
+	double* _referenceData;
+	void* _modelData;
+	double* (*_modelFunction) (double*, void*);
+
+	bool _modelDataSet;
+	bool _referenceDataSet;
+
+  void setModelData(void* modelData);
+  void setReferenceData(size_t nData, double* referenceData);
+	Likelihood(double* (*modelFunction) (double*, void*), size_t seed = 0);
+	double evaluateFitness(double* sample);
+	bool evaluateSettings(char* errorCode);
+};
+
+class Posterior : Likelihood
+{
+  public:
+
+	bool evaluateSettings(char* errorCode);
+};
+
+class Minimization : public Problem
+{
+  public:
+	double (*_modelFunction) (double*);
+	Minimization(double (*modelFunction) (double*), size_t seed = 0);
+	double evaluateFitness(double* sample);
+	bool evaluateSettings(char* errorCode);
+};
+
 
 } // namespace Korali
 

@@ -14,7 +14,11 @@ class Parameter
  private:
  public:
 
+ bool _priorSet;
+ bool _boundsSet;
+
  Distribution* _prior;
+ std::string _name;
  double _lowerBound;
  double _upperBound;
  double _initialX;
@@ -23,6 +27,8 @@ class Parameter
  int _seed;
 
  Parameter();
+ Parameter(std::string name);
+ void setName(std::string name);
  void setPriorDistribution(std::string type, double a, double b = 0.0);
  Distribution* getPriorDistribution();
  void setBounds(double lowerBound, double upperBound);
