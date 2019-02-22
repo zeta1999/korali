@@ -1,7 +1,7 @@
 #ifndef _HEAT2D_H_
 #define _HEAT2D_H_
 
-#include "korali.h"
+#include <stdlib.h>
 
 typedef struct pointsInfoStruct {
     size_t nPoints;
@@ -17,16 +17,23 @@ typedef struct gridLevelStruct {
 	double** f; // Right hand side (external heat sources)
 	double** U; // Main grid
 	double** Res; // Residual Grid
+	double L2Norm; // L2 Norm of the residual
+  double L2NormPrev; // Previous L2 Norm
+  double L2NormDiff; // L2Norm Difference compared to previous step
 } gridLevel;
 
-void generateInitialConditions(size_t N, double c1, double c2, double c3, double** U, double** f);
+// Main solver
 double heat2DSolver(double* pars, int n, void* data);
+
+// Helper Functions
+gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars);
+void freeGrids(gridLevel* g, int gridCount);
 
 // Solver functions
 void applyGaussSeidel(gridLevel* g, int l, int relaxations);
 void calculateResidual(gridLevel* g, int l);
 void applyRestriction(gridLevel* g, int l);
 void applyProlongation(gridLevel* g, int l);
-double calculateL2Norm(gridLevel* g, int l);
+void calculateL2Norm(gridLevel* g, int l);
 
 #endif // _HEAT2D_H_

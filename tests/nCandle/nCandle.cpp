@@ -1,4 +1,7 @@
 #include "heat2d/heat2d.hpp"
+#include "mpi.h"
+#include <string.h>
+#include "korali.h"
 
 int main(int argc, char* argv[])
 {

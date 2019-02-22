@@ -7,44 +7,22 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
 #include "heat2d.hpp"
+#include "korali.h"
 
 double heat2DSolver(double* pars, int n, void* data)
 {
-	// Problem Parameters
-	double intensity = pars[1];
-	double xPos = pars[2];
-	double yPos = pars[3];
-
-	double L2Norm = 0.0; // L2 Norm of the residual
-  double L2NormPrev = std::numeric_limits<double>::max(); // Previous L2 Norm
-  double L2NormDiff = std::numeric_limits<double>::max(); // L2Norm Difference compared to previous step
   double tolerance = 1e-8; // L2 Difference Tolerance before reaching convergence.
-
   size_t N0 = 7; // 2^N0 + 1 elements per side
-  size_t N = pow(2, N0) + 1;
 
 	// Multigrid parameters -- Find the best configuration!
 	int gridCount       = 6;     // Number of Multigrid levels to use
 	int downRelaxations = 4; // Number of Relaxations before restriction
 	int upRelaxations   = 1;   // Number of Relaxations after prolongation
 
-	// Allocating Grids
-	gridLevel* g = (gridLevel*) _mm_malloc(sizeof(gridLevel) * gridCount, 64);
-	for (int i = 0; i < gridCount; i++)
-	{
-		g[i].N = pow(2, N0-i) + 1;
-		g[i].h = 1.0/(g[i].N-1);
+	gridLevel* g = generateInitialConditions(N0, gridCount, pars);
 
-		g[i].U   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].U[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
-		g[i].Res = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].Res[j] = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
-		g[i].f   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].f[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
-	}
-
-	generateInitialConditions(N, intensity, xPos, yPos, g[0].U, g[0].f);
-
-	while (L2NormDiff > tolerance)  // Multigrid solver start
+	while (g[0].L2NormDiff > tolerance)  // Multigrid solver start
 	{
 		applyGaussSeidel(g, 0, downRelaxations); // Relaxing the finest grid first
 		calculateResidual(g, 0); // Calculating Initial Residual
@@ -62,30 +40,18 @@ double heat2DSolver(double* pars, int n, void* data)
 			applyGaussSeidel(g, grid, upRelaxations); // Smoothing finer level
 		}
 
-		L2Norm = calculateL2Norm(g, 0); // Calculating Residual L2 Norm
-		L2NormDiff = abs(L2NormPrev - L2Norm);
-	  L2NormPrev = L2Norm;
+		calculateL2Norm(g, 0); // Calculating Residual L2 Norm
 	}  // Multigrid solver end
 
 	pointsInfo* pd = (pointsInfo*) data;
-	double h = 1.0/(N-1);
+	double h = 1.0/(g[0].N-1);
 	for(int i = 0; i < pd->nPoints; i++)
 	{
 		int p = ceil(pd->xPos[i]/h);	int q = ceil(pd->yPos[i]/h);
 		pd->simTemp[i] = g[0].U[p][q];
 	}
 
-  // Freeing grids
-	for (int i = 0; i < gridCount; i++)
-	{
-		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].U[j]);
-		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].f[j]);
-		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].Res[j]);
-		_mm_free(g[i].U);
-		_mm_free(g[i].f);
-		_mm_free(g[i].Res);
-	}
-	_mm_free(g);
+  freeGrids(g, gridCount);
 
 	return Korali::GaussianDistribution::getError(pars[0], pd->nPoints, pd->refTemp, pd->simTemp);
 }
@@ -114,7 +80,7 @@ void calculateResidual(gridLevel* g, int l)
 	g[l].Res[i][j] = g[l].f[i][j] + (g[l].U[i-1][j] + g[l].U[i+1][j] - 4*g[l].U[i][j] + g[l].U[i][j-1] + g[l].U[i][j+1]) * h2;
 }
 
-double calculateL2Norm(gridLevel* g, int l)
+void calculateL2Norm(gridLevel* g, int l)
 {
   double tmp = 0.0;
 
@@ -130,7 +96,9 @@ double calculateL2Norm(gridLevel* g, int l)
 	 for (int j = 0; j < g[l].N; j++)
 		 tmp += g[l].Res[i][j];
 
- return sqrt(tmp);
+	g[l].L2Norm = sqrt(tmp);
+	g[l].L2NormDiff = abs(g[l].L2NormPrev - g[l].L2Norm);
+	g[l].L2NormPrev = g[l].L2Norm;
 }
 
 void applyRestriction(gridLevel* g, int l)
@@ -176,30 +144,67 @@ void applyProlongation(gridLevel* g, int l)
 			g[l-1].U[2*i-1][2*j-1] += ( g[l].U[i-1][j-1] + g[l].U[i-1][j] + g[l].U[i][j-1] + g[l].U[i][j] ) *0.25;
 }
 
-void generateInitialConditions(size_t N, double c1, double c2, double c3, double** U, double** f)
+gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars)
 {
-	double width = 0.05; // width
+	// Problem Parameters
+	double intensity = pars[1];
+	double xPos = pars[2];
+	double yPos = pars[3];
+	double width = 0.05;
+
+	// Allocating Grids
+	gridLevel* g = (gridLevel*) _mm_malloc(sizeof(gridLevel) * gridCount, 16);
+	for (int i = 0; i < gridCount; i++)
+	{
+		g[i].N = pow(2, N0-i) + 1;
+		g[i].h = 1.0/(g[i].N-1);
+
+		g[i].U   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].U[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
+		g[i].Res = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].Res[j] = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
+		g[i].f   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].f[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
+
+		g[i].L2Norm = 0.0;
+		g[i].L2NormPrev = std::numeric_limits<double>::max();
+		g[i].L2NormDiff = std::numeric_limits<double>::max();
+	}
 
 	// Initial Guess
-	for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) U[i][j] = 1.0;
+	for (int i = 0; i < g[0].N; i++) for (int j = 0; j < g[0].N; j++) g[0].U[i][j] = 1.0;
 
 	// Boundary Conditions
-	for (int i = 0; i < N; i++) U[0][i]   = 0.0;
-	for (int i = 0; i < N; i++) U[N-1][i] = 0.0;
-	for (int i = 0; i < N; i++) U[i][0]   = 0.0;
-	for (int i = 0; i < N; i++) U[i][N-1] = 0.0;
+	for (int i = 0; i < g[0].N; i++) g[0].U[0][i]        = 0.0;
+	for (int i = 0; i < g[0].N; i++) g[0].U[g[0].N-1][i] = 0.0;
+	for (int i = 0; i < g[0].N; i++) g[0].U[i][0]        = 0.0;
+	for (int i = 0; i < g[0].N; i++) g[0].U[i][g[0].N-1] = 0.0;
 
 	// F
-	for (int i = 0; i < N; i++)
-	for (int j = 0; j < N; j++)
+	for (int i = 0; i < g[0].N; i++)
+	for (int j = 0; j < g[0].N; j++)
 	{
-		double h = 1.0/(N-1);
+		double h = 1.0/(g[0].N-1);
 		double x = i*h;
 		double y = j*h;
 
-		f[i][j] = 0.0;
+		g[0].f[i][j] = 0.0;
 
 		// Heat Source: Candle
-		f[i][j] += -(4*c1*exp( -(pow(c2 - y, 2) + pow(c3 - x, 2)) / width ) * (pow(c2,2) - 2*c2*y + pow(c3,2) - 2*c3*x + pow(y,2) + pow(x,2) - width))/pow(width,2);
+		g[0].f[i][j] += -(4*intensity*exp( -(pow(xPos - y, 2) + pow(yPos - x, 2)) / width ) * (pow(xPos,2) - 2*xPos*y + pow(yPos,2) - 2*yPos*x + pow(y,2) + pow(x,2) - width))/pow(width,2);
 	}
+
+	return g;
+}
+
+void freeGrids(gridLevel* g, int gridCount)
+{
+  // Freeing grids
+	for (int i = 0; i < gridCount; i++)
+	{
+		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].U[j]);
+		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].f[j]);
+		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].Res[j]);
+		_mm_free(g[i].U);
+		_mm_free(g[i].f);
+		_mm_free(g[i].Res);
+	}
+	_mm_free(g);
 }
