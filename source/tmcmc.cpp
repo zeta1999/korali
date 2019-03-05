@@ -9,8 +9,8 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 	_comm = comm;
 
 	_popSize = -1;
-	_rankId = -1;
-	_rankCount = -1;
+	_rankId = 0;
+	_rankCount = 1;
 
   _bcastFuture = upcxx::make_future();
   _continueEvaluations = true;
@@ -36,23 +36,29 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 
 void Korali::KoraliTMCMC::run()
 {
-	_kt = this;
-	upcxx::init();
-	_rankId = upcxx::rank_me();
-	_rankCount = upcxx::rank_n();
+//	_kt = this;
+//	upcxx::init();
+//	_rankId = upcxx::rank_me();
+//	_rankCount = upcxx::rank_n();
 
   // Verifying Parameter correctness.
 	char errorString[500];
   if(Korali_VerifyParameters(errorString)) { if (_rankId == 0) fprintf(stderr, "%s", errorString); exit(-1); }
 
-
-//  // Allocating sample matrix
-//  _samplePopulation = (double *) calloc (_kt->_problem->_parameterCount*_kt->_popSize, sizeof(double));
-//
-//  if (_rankId == 0) supervisorThread(); else workerThread();
+  if (_rankId == 0) Korali_SupervisorThread(); else Korali_WorkerThread();
 //
 //	upcxx::barrier();
 //  upcxx::finalize();
+}
+
+void Korali::KoraliTMCMC::Korali_SupervisorThread()
+{
+
+}
+
+void Korali::KoraliTMCMC::Korali_WorkerThread()
+{
+
 }
 
 bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)

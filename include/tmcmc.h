@@ -165,8 +165,19 @@ class KoraliTMCMC // : public KoraliBase
   resdb_t curres_db;
 
   // Public Methods
+
+  // Korali Engine Methods
 	KoraliTMCMC(Problem* problem, MPI_Comm comm);
 	void run();
+
+	bool Korali_VerifyParameters(char* errorString);
+	void Korali_InitializeInternalVariables();
+  void Korali_GetSamplePopulation();
+  bool Korali_CheckTermination(){if (runinfo.Gen++ == 0) return false; return true;};
+  void Korali_PrintResults(){};
+  void Korali_UpdateDistribution(const double *fitnessVector){};
+  void Korali_SupervisorThread();
+  void Korali_WorkerThread();
 
 	// TMCMC Configuration Methods
 	void setPopulationSize(int popSize) { _popSize = popSize; }
@@ -184,13 +195,8 @@ class KoraliTMCMC // : public KoraliBase
 	void setStepSize(double Step) { data.options.Step = Step; }
 	void setBounds(double lower, double upper) { data.options.LowerBound = lower; data.options.UpperBound = upper; }
 
-  // Overriding Base Korali Class virtual methods
-	bool Korali_VerifyParameters(char* errorString);
-	void Korali_InitializeInternalVariables();
-  void Korali_GetSamplePopulation();
-  bool Korali_CheckTermination(){if (runinfo.Gen++ == 0) return false; return true;};
-  void Korali_PrintResults(){};
-  void Korali_UpdateDistribution(const double *fitnessVector){};
+
+
 
   // Internal TMCMC Methods
   int prepareNewGeneration(int nchains, cgdbp_t *leaders);
