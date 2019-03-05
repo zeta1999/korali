@@ -1,8 +1,10 @@
 #ifndef _TMCMC_H_
 #define _TMCMC_H_
 
-#include "base.h"
-#include "distribution.h"
+#include "mpi.h"
+#include <upcxx/upcxx.hpp>
+#include "problem.h"
+#include <queue>
 
 namespace Korali
 {
@@ -135,9 +137,23 @@ typedef struct sort_s {
     double F;
 } sort_t;
 
-class KoraliTMCMC : public KoraliBase
+class KoraliTMCMC // : public KoraliBase
 {
   public:
+
+	// Korali Runtime Variables
+  MPI_Comm _comm;
+  int _rankId;
+  int _rankCount;
+
+  Problem* _problem;
+  double* _fitnessVector;
+  bool _continueEvaluations;
+
+  std::queue<int> _workers;
+  upcxx::future<> _bcastFuture;
+
+  size_t _popSize; // Number of offspring per sample cycle
 
 	// TMCMC Fields
   data_t    data;
@@ -150,8 +166,10 @@ class KoraliTMCMC : public KoraliBase
 
   // Public Methods
 	KoraliTMCMC(Problem* problem, MPI_Comm comm);
+	void run();
 
 	// TMCMC Configuration Methods
+	void setPopulationSize(int popSize) { _popSize = popSize; }
 	void setMaxStages(int MaxStages) { data.MaxStages = MaxStages; }
 	void setToleranceCOV(double TolCOV) { data.TolCOV = TolCOV; }
 	void setUseLocalCOV(double use_local_cov) { data.use_local_cov = use_local_cov; }
@@ -167,9 +185,10 @@ class KoraliTMCMC : public KoraliBase
 	void setBounds(double lower, double upper) { data.options.LowerBound = lower; data.options.UpperBound = upper; }
 
   // Overriding Base Korali Class virtual methods
-  void Korali_InitializeInternalVariables();
+	bool Korali_VerifyParameters(char* errorString);
+	void Korali_InitializeInternalVariables();
   void Korali_GetSamplePopulation();
-  bool Korali_CheckTermination(){if (runinfo.Gen == 0) return false; return true;};
+  bool Korali_CheckTermination(){if (runinfo.Gen++ == 0) return false; return true;};
   void Korali_PrintResults(){};
   void Korali_UpdateDistribution(const double *fitnessVector){};
 
@@ -179,5 +198,7 @@ class KoraliTMCMC : public KoraliBase
 };
 
 } // namespace Korali
+
+extern Korali::KoraliTMCMC* _kt;
 
 #endif // _TMCMC_H_

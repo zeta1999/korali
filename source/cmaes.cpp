@@ -1,8 +1,22 @@
 #include "cmaes.h"
-#include "problem.h"
 
-Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
+Korali::KoraliCMAES* _kc;
+
+Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) //: Korali::KoraliBase::KoraliBase(problem, comm)
 {
+  _problem = problem;
+	_comm = comm;
+
+	_lambda = -1;
+	_rankId = -1;
+	_rankCount = -1;
+
+	_maxFitnessEvaluations = std::numeric_limits<size_t>::max();
+	_maxGenerations = std::numeric_limits<size_t>::max();
+
+  _bcastFuture = upcxx::make_future();
+  _continueEvaluations = true;
+
 	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
 	_stopFitnessDiffThreshold = 1e-12;
 	_stopFitnessDiffHistoryThreshold = 1e-13;
@@ -22,6 +36,89 @@ Korali::KoraliCMAES::KoraliCMAES(Problem* problem, MPI_Comm comm) : Korali::Kora
 
 	_gaussianGenerator = new GaussianDistribution(0, 1, problem->_seed++);
 }
+
+void Korali::KoraliCMAES::run()
+{
+	_kc = this;
+	upcxx::init();
+	_rankId = upcxx::rank_me();
+	_rankCount = upcxx::rank_n();
+
+	// Checking Problem's settings
+	char errorString[500];
+	if (_problem->evaluateSettings(errorString)) { if (_rankId == 0) fprintf(stderr, "%s", errorString); exit(-1); };
+
+  // Checking Lambda's value
+  if(_lambda < 1 )  { if (_rankId == 0) fprintf( stderr, "[Korali] Error: Lambda (%lu) should be higher than one.\n", _lambda); exit(-1); }
+
+  // Allocating sample matrix
+  _samplePopulation = (double *) calloc (_kc->_problem->_parameterCount*_kc->_lambda, sizeof(double));
+
+  if (_rankId == 0) Korali_SupervisorThread(); else Korali_WorkerThread();
+
+	upcxx::barrier();
+  upcxx::finalize();
+}
+
+void Korali::KoraliCMAES::Korali_WorkerThread()
+{
+	while(_continueEvaluations)
+	{
+		 upcxx::progress();
+		 _bcastFuture.wait();
+	}
+}
+
+void Korali::KoraliCMAES::Korali_SupervisorThread()
+{
+	auto startTime = std::chrono::system_clock::now();
+	for (int i = 0; i < _rankCount; i++) _workers.push(i);
+	Korali_InitializeInternalVariables();
+	_fitnessVector = (double*) calloc (sizeof(double), _lambda);
+
+	while( !Korali_CheckTermination() )
+	{
+		upcxx::future<> futures = upcxx::make_future();
+
+		Korali_GetSamplePopulation();
+		for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, broadcastSamples);
+		upcxx::broadcast(_samplePopulation, _problem->_parameterCount*_lambda, 0).wait();
+
+		for(int i = 0; i < _lambda; i++)
+		{
+			while(_workers.empty()) upcxx::progress();
+			futures = upcxx::when_all(futures, upcxx::rpc(_workers.front(), workerEvaluateFitnessFunction, i));
+			_workers.pop();
+		}
+
+		futures.wait();
+
+		Korali_UpdateDistribution(_fitnessVector);
+	}
+
+	for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, finalizeEvaluation);
+
+	auto endTime = std::chrono::system_clock::now();
+	Korali_PrintResults(); // Printing Solver results
+	printf("Total elapsed time = %.3lf  seconds\n", std::chrono::duration<double>(endTime-startTime).count());
+
+}
+
+void Korali::KoraliCMAES::workerComeback(int worker, size_t position, double fitness)
+{
+	_kc->_fitnessVector[position] = fitness;
+	_kc->_workers.push(worker);
+}
+
+void Korali::KoraliCMAES::workerEvaluateFitnessFunction(size_t position)
+{
+	double fitness = _kc->_problem->evaluateFitness(&_kc->_samplePopulation[position*_kc->_problem->_parameterCount]);
+	upcxx::rpc_ff(0, workerComeback, _kc->_rankId, position, fitness);
+}
+
+void Korali::KoraliCMAES::broadcastSamples() { _kc->_bcastFuture = upcxx::broadcast(_kc->_samplePopulation, _kc->_problem->_parameterCount*_kc->_lambda, 0); }
+void Korali::KoraliCMAES::finalizeEvaluation() { _kc->_continueEvaluations = false; }
+
 
 bool Korali::KoraliCMAES::cmaes_isFeasible(double *pop)
 {

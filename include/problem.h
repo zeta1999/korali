@@ -2,7 +2,6 @@
 #define _PROBLEM_H_
 
 #include "parameter.h"
-#include "cmaes.h"
 
 namespace Korali
 {
@@ -54,23 +53,15 @@ class Posterior : public Likelihood
 	double evaluateFitness(double* sample);
 };
 
-class Minimization : public Problem
+class DirectEvaluation : public Problem
 {
   public:
 	double (*_modelFunction) (double*);
-	Minimization(double (*modelFunction) (double*), size_t seed = -1);
+	DirectEvaluation(double (*modelFunction) (double*), size_t seed = -1);
 	double evaluateFitness(double* sample);
 	bool evaluateSettings(char* errorCode);
 };
 
-class Sample : public Problem
-{
-  public:
-	double (*_modelFunction) (double*);
-	Sample(double (*modelFunction) (double*), size_t seed = -1);
-	double evaluateFitness(double* sample);
-	bool evaluateSettings(char* errorCode);
-};
 
 
 } // namespace Korali

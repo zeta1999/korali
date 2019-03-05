@@ -1,8 +1,20 @@
 #include "tmcmc.h"
 #include "problem.h"
 
-Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) : Korali::KoraliBase::KoraliBase(problem, comm)
+Korali::KoraliTMCMC* _kt;
+
+Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::KoraliBase::KoraliBase(problem, comm)
 {
+  _problem = problem;
+	_comm = comm;
+
+	_popSize = -1;
+	_rankId = -1;
+	_rankCount = -1;
+
+  _bcastFuture = upcxx::make_future();
+  _continueEvaluations = true;
+
 	data.MaxStages = -1;
 
 	data.MinChainLength = 0;
@@ -22,24 +34,76 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) : Korali::Kora
 	data.options.UpperBound = 1.0;
 }
 
+void Korali::KoraliTMCMC::run()
+{
+	_kt = this;
+	upcxx::init();
+	_rankId = upcxx::rank_me();
+	_rankCount = upcxx::rank_n();
+
+  // Verifying Parameter correctness.
+	char errorString[500];
+  if(Korali_VerifyParameters(errorString)) { if (_rankId == 0) fprintf(stderr, "%s", errorString); exit(-1); }
+
+
+//  // Allocating sample matrix
+//  _samplePopulation = (double *) calloc (_kt->_problem->_parameterCount*_kt->_popSize, sizeof(double));
+//
+//  if (_rankId == 0) supervisorThread(); else workerThread();
+//
+//	upcxx::barrier();
+//  upcxx::finalize();
+}
+
+bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
+{
+	// Checking Problem's settings
+	if (_problem->evaluateSettings(errorString)) return true;
+
+	for (int i = 0; i < _problem->_parameterCount; i++)
+	if (_problem->_parameters[i]._boundsSet == false)
+	{
+		sprintf(errorString, "[Korali] Error: Bounds for parameter \'%s\' have not been set.\n", _problem->_parameters[i]._name.c_str());
+		return true;
+	}
+
+  for (int i = 0; i < _problem->_parameterCount; i++)
+	if (_problem->_parameters[i]._priorSet == false)
+	{
+		sprintf(errorString, "[Korali] Error: Prior for parameter \'%s\' have not been set.\n", _problem->_parameters[i]._name.c_str());
+		return true;
+	}
+
+  // Checking TMCMC Settings
+
+  if(_popSize < 32 )
+  {
+  	sprintf(errorString, "[Korali] Error: Population Size (%lu) should be higher than 32.\n", _popSize);
+  	return true;
+  }
+
+  return false;
+}
+
 void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 {
 	int nDim = _problem->_parameterCount;
 
+
 	// Initializing TMCMC Leaders
-	data.nChains = _lambda;
-  leaders    = (cgdbp_t*) calloc (sizeof(cgdbp_t), _lambda);
-  for (int i = 0; i< _lambda; ++i) leaders[i].point = (double*) calloc (sizeof(double), nDim);
+	data.nChains = _popSize;
+  leaders    = (cgdbp_t*) calloc (sizeof(cgdbp_t), _popSize);
+  for (int i = 0; i< _popSize; ++i) leaders[i].point = (double*) calloc (sizeof(double), nDim);
 
 	// Initializing Data Variables
   data.Num = (int*) calloc (sizeof(int), data.MaxStages);
   for (int i = 0; i < data.MaxStages; ++i) {
-  	data.Num[i] = _lambda;
+  	data.Num[i] = _popSize;
   }
 
-  double *LCmem  = (double*) calloc (sizeof(double), _lambda*nDim*nDim);
-  data.local_cov = (double**) calloc (sizeof(double*), _lambda);
-  for (int pos=0; pos < _lambda; ++pos)
+  double *LCmem  = (double*) calloc (sizeof(double), _popSize*nDim*nDim);
+  data.local_cov = (double**) calloc (sizeof(double*), _popSize);
+  for (int pos=0; pos < _popSize; ++pos)
   {
   	data.local_cov[pos] = LCmem + pos*nDim*nDim;
     for (int i=0; i<nDim; ++i) data.local_cov[pos][i*nDim+i] = 1;
@@ -50,9 +114,9 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   curres_db.entries = 0;
   full_db.entries = 0;
 
-  curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_lambda*sizeof(cgdbp_t));
-	curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_lambda*sizeof(cgdbp_t));
-  full_db.entry   =   (dbp_t *)calloc(1, data.MaxStages*_lambda*sizeof(dbp_t));
+  curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_popSize*sizeof(cgdbp_t));
+	curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_popSize*sizeof(cgdbp_t));
+  full_db.entry   =   (dbp_t *)calloc(1, data.MaxStages*_popSize*sizeof(dbp_t));
 
   // Initializing Run Variables
   runinfo.CoefVar        = (double*) calloc (sizeof(double), data.MaxStages+1);
@@ -81,8 +145,8 @@ void Korali::KoraliTMCMC::Korali_GetSamplePopulation()
 	// Initialize first sample distribution from prior distribution
 	if (runinfo.Gen == 0)
 	{
-    for (int i = 0; i < _lambda; i++) for (int d = 0; d < nDim; d++)
-   	_samplePopulation[i*nDim + d] = _problem->_parameters[d].getRandomNumber();
+    for (int i = 0; i < _popSize; i++) for (int d = 0; d < nDim; d++)
+    	leaders[i].point[d] = _problem->_parameters[d].getRandomNumber();
     return;
 	}
 }

@@ -1,19 +1,41 @@
 #ifndef _CMAES_H_
 #define _CMAES_H_
 
-#include "base.h"
-#include "distribution.h"
+#include "mpi.h"
+#include <upcxx/upcxx.hpp>
+#include "problem.h"
+#include <queue>
+#include <chrono>
 
 namespace Korali
 {
 
-class KoraliCMAES : public KoraliBase
+class KoraliCMAES //: public KoraliBase
 {
   public:
 
   // Public Methods
 	KoraliCMAES(Problem* problem, MPI_Comm comm);
 
+  // Runtime Methods (to be inherited from base class in the future)
+  void run();
+  void Korali_InitializeInternalVariables();
+  void Korali_GetSamplePopulation();
+  bool Korali_CheckTermination();
+  void Korali_PrintResults();
+  void Korali_UpdateDistribution(const double *fitnessVector);
+  void Korali_SupervisorThread();
+  void Korali_WorkerThread();
+
+  static void workerEvaluateFitnessFunction(size_t position);
+  static void workerComeback(int worker, size_t position, double fitness);
+  static void broadcastSamples();
+  static void finalizeEvaluation();
+
+	// Configuration Methods
+	void setLambda(size_t lambda) { _lambda = lambda; }
+  void setMaxFitnessEvaluations(size_t maxFitnessEvaluations) { _maxFitnessEvaluations = maxFitnessEvaluations; }
+  void setMaxGenerations(size_t maxGenerations) { _maxGenerations = maxGenerations; }
 	void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
 	void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
 	void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
@@ -32,8 +54,21 @@ class KoraliCMAES : public KoraliBase
 
   private:
 
-  // Configuration Variables
+	// Korali Runtime Variables
+  MPI_Comm _comm;
+  int _rankId;
+  int _rankCount;
 
+  Problem* _problem;
+  double* _fitnessVector;
+  bool _continueEvaluations;
+  double* _samplePopulation;
+
+  std::queue<int> _workers;
+  upcxx::future<> _bcastFuture;
+
+  // Configuration Variables
+	size_t _lambda; // Number of offspring per sample cycle
   size_t _mu;
   std::string _muType;
   double* _muWeights;
@@ -49,6 +84,8 @@ class KoraliCMAES : public KoraliBase
   size_t _covarianceEigensystemEvaluationFrequency;
 
   // Stop conditions
+  size_t _maxFitnessEvaluations;   // Defines maximum number of fitness evaluations
+  size_t _maxGenerations; // Defines maximum number of generations
   double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
   double _stopFitnessDiffThreshold; // Defines minimum function value differences before stopping
   double _stopFitnessDiffHistoryThreshold; // Defines minimum function value differences among best values before stopping
@@ -93,13 +130,6 @@ class KoraliCMAES : public KoraliBase
   double genOfEigensysUpdate;
   double dMaxSignifKond;
 
-  // Overriding Base Korali Class virtual methods
-  void Korali_InitializeInternalVariables();
-  void Korali_GetSamplePopulation();
-  bool Korali_CheckTermination();
-  void Korali_PrintResults();
-  void Korali_UpdateDistribution(const double *fitnessVector);
-
   // Private CMAES-Specific Methods
   void cmaes_reSampleSingle(int iindex);
   void cmaes_adaptC2(int hsig);
@@ -116,5 +146,7 @@ class KoraliCMAES : public KoraliBase
 };
 
 } // namespace Korali
+
+extern Korali::KoraliCMAES* _kc;
 
 #endif // _CMAES_H_

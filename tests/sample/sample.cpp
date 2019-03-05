@@ -17,7 +17,7 @@ double f_Ackley(double *x)
 
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::Sample(f_Ackley);
+  auto problem = Korali::DirectEvaluation(f_Ackley);
 
   Korali::Parameter p;
   p.setBounds(-32.0, +32.0);
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
   auto Solver = Korali::KoraliTMCMC(&problem, MPI_COMM_WORLD);
-	Solver.setLambda(128);
+	Solver.setPopulationSize(32);
 	Solver.run();
 
 	return 0;

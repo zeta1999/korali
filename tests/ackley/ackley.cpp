@@ -17,7 +17,7 @@ double f_Ackley(double *x)
 
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::Minimization(f_Ackley);
+  auto problem = Korali::DirectEvaluation(f_Ackley);
 
   Korali::Parameter p;
   p.setBounds(-32.0, +32.0);

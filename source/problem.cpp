@@ -31,19 +31,14 @@ double Korali::Problem::getPriorsProbabilityDensity(double *x)
   return dp;
 }
 
-Korali::Minimization::Minimization(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
+Korali::DirectEvaluation::DirectEvaluation(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
 {
 	_modelFunction = modelFunction;
 }
 
-double Korali::Minimization::evaluateFitness(double* sample)
+double Korali::DirectEvaluation::evaluateFitness(double* sample)
 {
   return _modelFunction(sample);
-}
-
-Korali::Sample::Sample(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
-{
-	_modelFunction = modelFunction;
 }
 
 Korali::Likelihood::Likelihood(double* (*modelFunction) (double*, void*), size_t seed) : Korali::Problem::Problem(seed)
@@ -82,7 +77,7 @@ double Korali::Likelihood::evaluateFitness(double* sample)
 	return Korali::GaussianDistribution::logLikelihood(sigma, _nData, _referenceData, measuredData);
 }
 
-bool Korali::Minimization::evaluateSettings(char* errorCode)
+bool Korali::DirectEvaluation::evaluateSettings(char* errorCode)
 {
   for (int i = 0; i < _parameterCount; i++)
   	if (_parameters[i]._boundsSet == false)
@@ -151,28 +146,4 @@ double Korali::Posterior::evaluateFitness(double* sample)
   //printf("Before: %f, After: %f\n", prev, posterior);
 
   return posterior;
-}
-
-bool Korali::Sample::evaluateSettings(char* errorCode)
-{
-  for (int i = 0; i < _parameterCount; i++)
-	if (_parameters[i]._boundsSet == false)
-	{
-		sprintf(errorCode, "[Korali] Error: Bounds for parameter \'%s\' have not been set.\n", _parameters[i]._name.c_str());
-		return true;
-	}
-
-  for (int i = 0; i < _parameterCount; i++)
-	if (_parameters[i]._priorSet == false)
-	{
-		sprintf(errorCode, "[Korali] Error: Prior for parameter \'%s\' have not been set.\n", _parameters[i]._name.c_str());
-		return true;
-	}
-
-  return false;
-}
-
-double Korali::Sample::evaluateFitness(double* sample)
-{
-  return 0.0;
 }
