@@ -173,6 +173,9 @@ class KoraliTMCMC : public KoraliBase
   void Korali_PrintResults(){};
   void Korali_UpdateDistribution(const double *fitnessVector){};
 
+  // Internal TMCMC Methods
+  int prepareNewGeneration(int nchains, cgdbp_t *leaders);
+
 };
 
 } // namespace Korali

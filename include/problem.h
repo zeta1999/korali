@@ -21,6 +21,9 @@ class Problem
 	size_t _seed;
 
   std::vector<Parameter> _parameters;
+
+  double getPriorsLogProbabilityDensity(double *x);
+  double getPriorsProbabilityDensity(double *x);
 };
 
 class Likelihood : public Problem

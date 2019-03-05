@@ -31,7 +31,11 @@ class KoraliBase
   Problem* _problem;
   double* _fitnessVector;
   bool _continueEvaluations;
+
   double* _samplePopulation;
+  bool*   _dependencyVector;
+  bool*   _executedVector;
+
   size_t _lambda; // Number of offspring per sample cycle
 
   std::queue<int> _workers;

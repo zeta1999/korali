@@ -63,15 +63,21 @@ void Korali::KoraliBase::supervisorThread()
 	{
 		upcxx::future<> futures = upcxx::make_future();
 
+		for (int i = 0; i < _lambda; i++) _dependencyVector[i] = false;
+		for (int i = 0; i < _lambda; i++) _executedVector[i]   = false;
+
 		Korali_GetSamplePopulation();
 		for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, broadcastSamples);
 		upcxx::broadcast(_samplePopulation, _problem->_parameterCount*_lambda, 0).wait();
 
-		for(int i = 0; i < _lambda; i++)
+		size_t evaluationCount = 0;
+		while(evaluationCount < _lambda) for(int i = 0; i < _lambda; i++) if (_dependencyVector[i] == false && _executedVector[i] == false)
 		{
 			while(_workers.empty()) upcxx::progress();
 			futures = upcxx::when_all(futures, upcxx::rpc(_workers.front(), workerEvaluateFitnessFunction, i));
 			_workers.pop();
+			evaluationCount++;
+			_executedVector[i] = true;
 		}
 
 		futures.wait();

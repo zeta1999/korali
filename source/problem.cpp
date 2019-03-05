@@ -17,6 +17,20 @@ void Korali::Problem::addParameter(Parameter p)
 	_parameterCount = _parameters.size();
 }
 
+double Korali::Problem::getPriorsLogProbabilityDensity(double *x)
+{
+  double logp = 0.0;
+  for (int i = 0; i < _parameterCount; i++) logp += x[i];
+  return logp;
+}
+
+double Korali::Problem::getPriorsProbabilityDensity(double *x)
+{
+  double dp = 1.0;
+  for (int i = 0; i < _parameterCount; i++) dp *= x[i];
+  return dp;
+}
+
 Korali::Minimization::Minimization(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
 {
 	_modelFunction = modelFunction;
