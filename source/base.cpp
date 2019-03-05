@@ -35,7 +35,9 @@ void Korali::KoraliBase::run()
   if(_lambda < 1 )  { if (_rankId == 0) fprintf( stderr, "[Korali] Error: Lambda (%lu) should be higher than one.\n", _lambda); exit(-1); }
 
   // Allocating sample matrix
-  _samplePopulation = (double *) calloc (_kb->_problem->_parameterCount*_kb->_lambda, sizeof(double));
+  _samplePopulation = (double *) calloc (_problem->_parameterCount*_lambda, sizeof(double));
+  _dependencyVector = (bool *)   calloc (_problem->_parameterCount*_lambda, sizeof(bool));
+  _executedVector   = (bool *)   calloc (_problem->_parameterCount*_lambda, sizeof(bool));
 
   if (_rankId == 0) supervisorThread(); else workerThread();
 
