@@ -33,8 +33,26 @@ void Korali::Parameter::setBounds(double lowerBound, double upperBound)
 	_boundsSet = true;
 }
 
+double Korali::Parameter::getRandomNumber()
+{
+  double x = _prior->getRandomNumber();
+
+  while (x < _lowerBound || x > _upperBound) x = _prior->getRandomNumber();
+
+  return x;
+}
+
+double Korali::Parameter::getDensityLog(double x)
+{
+  return _prior->getDensityLog(x);
+}
+
+double Korali::Parameter::getDensity(double x)
+{
+  return _prior->getDensity(x);
+}
+
 void Korali::Parameter::setName(std::string name) { _name = name; }
-Korali::Distribution* Korali::Parameter::getPriorDistribution() { return _prior; }
 void Korali::Parameter::setInitialX(double initialX) { _initialX = initialX; }
 void Korali::Parameter::setInitialStdDev(double initialStdDev) { _initialStdDev = initialStdDev; }
 void Korali::Parameter::setSeed(int seed) { _seed = seed; }

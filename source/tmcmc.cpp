@@ -46,7 +46,6 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   }
 
   // Initializing Databases
-
   curgen_db.entries = 0;
   curres_db.entries = 0;
   full_db.entries = 0;
@@ -82,12 +81,23 @@ void Korali::KoraliTMCMC::Korali_GetSamplePopulation()
 	// Initialize first sample distribution from prior distribution
 	if (runinfo.Gen == 0)
 	{
-    for (int i = 0; i < _lambda; i++)
-	for (int d = 0; d < nDim; d++) _samplePopulation[i*nDim + d] = _problem->_parameters[d].getPriorDistribution()->getRandomNumber();
-	}
-	else
-	{
+    for (int i = 0; i < _lambda; i++) for (int d = 0; d < nDim; d++)
+   	_samplePopulation[i*nDim + d] = _problem->_parameters[d].getRandomNumber();
 
+
+    printf("Lambda: %ld, nDim: %d\n", _lambda, nDim);
+
+  	for (int i = 0; i < _lambda; i++)
+  	{
+  		printf("[");
+  		for (int j = 0; j < nDim; j++)		printf("%f, ", _samplePopulation[i*nDim + j]);
+  		printf("]\n");
+  	}runinfo.Gen++;
+
+
+    return;
 	}
+
+
 
 }

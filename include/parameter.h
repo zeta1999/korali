@@ -11,13 +11,11 @@ namespace Korali
 
 class Parameter
 {
- private:
  public:
 
  bool _priorSet;
  bool _boundsSet;
 
- Distribution* _prior;
  std::string _name;
  double _lowerBound;
  double _upperBound;
@@ -28,14 +26,21 @@ class Parameter
 
  Parameter();
  Parameter(std::string name);
+
+ double getRandomNumber();
+ double getDensityLog(double x);
+ double getDensity(double x);
+
  void setName(std::string name);
  void setPriorDistribution(std::string type, double a, double b = 0.0);
- Distribution* getPriorDistribution();
  void setBounds(double lowerBound, double upperBound);
  void setInitialX(double initialX);
  void setInitialStdDev(double initialStdDev);
  void setMinStdDevChange(double minStdDevChange);
  void setSeed(int seed);
+
+ private:
+ Distribution* _prior;
 
 };
 

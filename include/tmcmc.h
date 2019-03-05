@@ -169,9 +169,9 @@ class KoraliTMCMC : public KoraliBase
   // Overriding Base Korali Class virtual methods
   void Korali_InitializeInternalVariables();
   void Korali_GetSamplePopulation();
-  bool Korali_CheckTermination();
-  void Korali_PrintResults();
-  void Korali_UpdateDistribution(const double *fitnessVector);
+  bool Korali_CheckTermination(){if (runinfo.Gen == 0) return false; return true;};
+  void Korali_PrintResults(){};
+  void Korali_UpdateDistribution(const double *fitnessVector){};
 
 };
 

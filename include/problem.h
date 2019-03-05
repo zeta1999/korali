@@ -37,7 +37,7 @@ class Likelihood : public Problem
 
   void setModelData(void* modelData);
   void setReferenceData(size_t nData, double* referenceData);
-	Likelihood(double* (*modelFunction) (double*, void*), size_t seed = 0);
+	Likelihood(double* (*modelFunction) (double*, void*), size_t seed = -1);
 	double evaluateFitness(double* sample);
 	bool evaluateSettings(char* errorCode);
 };
@@ -46,7 +46,7 @@ class Posterior : public Likelihood
 {
   public:
 
-	Posterior(double* (*modelFunction) (double*, void*), size_t seed = 0);
+	Posterior(double* (*modelFunction) (double*, void*), size_t seed = -1);
 	bool evaluateSettings(char* errorCode);
 	double evaluateFitness(double* sample);
 };
@@ -55,7 +55,16 @@ class Minimization : public Problem
 {
   public:
 	double (*_modelFunction) (double*);
-	Minimization(double (*modelFunction) (double*), size_t seed = 0);
+	Minimization(double (*modelFunction) (double*), size_t seed = -1);
+	double evaluateFitness(double* sample);
+	bool evaluateSettings(char* errorCode);
+};
+
+class Sample : public Problem
+{
+  public:
+	double (*_modelFunction) (double*);
+	Sample(double (*modelFunction) (double*), size_t seed = -1);
 	double evaluateFitness(double* sample);
 	bool evaluateSettings(char* errorCode);
 };

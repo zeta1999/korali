@@ -5,3 +5,5 @@
 *.txt
 *.err
 tests/ackley/ackley
+source/tmcmc/
+tests/sample/sample

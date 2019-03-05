@@ -5,7 +5,7 @@
 Korali::Problem::Problem(size_t seed)
 {
 	_seed = seed;
-	if (_seed == 0) _seed = clock();
+	if (_seed == -1) _seed = clock();
 	_parameterCount = 0;
   gsl_rng_env_setup();
 }
@@ -25,6 +25,11 @@ Korali::Minimization::Minimization(double (*modelFunction) (double*), size_t see
 double Korali::Minimization::evaluateFitness(double* sample)
 {
   return _modelFunction(sample);
+}
+
+Korali::Sample::Sample(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
+{
+	_modelFunction = modelFunction;
 }
 
 Korali::Likelihood::Likelihood(double* (*modelFunction) (double*, void*), size_t seed) : Korali::Problem::Problem(seed)
@@ -127,9 +132,33 @@ double Korali::Posterior::evaluateFitness(double* sample)
   double posterior = Korali::GaussianDistribution::logLikelihood(sigma, _nData, _referenceData, measuredData);
   double prev = posterior;
   //for (int i = 0; i < _parameterCount; i++) printf("%d) %f - %f\n", i, sample[i], log(_parameters[i]._prior->getDensity(sample[i])));
-  for (int i = 0; i < _parameterCount; i++) posterior -= log(_parameters[i]._prior->getDensity(sample[i]));
+  for (int i = 0; i < _parameterCount; i++) posterior -= log(_parameters[i].getDensity(sample[i]));
 
   //printf("Before: %f, After: %f\n", prev, posterior);
 
   return posterior;
+}
+
+bool Korali::Sample::evaluateSettings(char* errorCode)
+{
+  for (int i = 0; i < _parameterCount; i++)
+	if (_parameters[i]._boundsSet == false)
+	{
+		sprintf(errorCode, "[Korali] Error: Bounds for parameter \'%s\' have not been set.\n", _parameters[i]._name.c_str());
+		return true;
+	}
+
+  for (int i = 0; i < _parameterCount; i++)
+	if (_parameters[i]._priorSet == false)
+	{
+		sprintf(errorCode, "[Korali] Error: Prior for parameter \'%s\' have not been set.\n", _parameters[i]._name.c_str());
+		return true;
+	}
+
+  return false;
+}
+
+double Korali::Sample::evaluateFitness(double* sample)
+{
+  return 0.0;
 }

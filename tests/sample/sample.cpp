@@ -17,14 +17,14 @@ double f_Ackley(double *x)
 
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::Minimization(f_Ackley);
+  auto problem = Korali::Sample(f_Ackley);
 
   Korali::Parameter p;
   p.setBounds(-32.0, +32.0);
+  p.setPriorDistribution("Gaussian", 0.0, +8.0);
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
-  auto Solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
-	Solver.setStopMinDeltaX(1e-11);
+  auto Solver = Korali::KoraliTMCMC(&problem, MPI_COMM_WORLD);
 	Solver.setLambda(128);
 	Solver.run();
 
