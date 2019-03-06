@@ -168,12 +168,9 @@ void Korali::KoraliTMCMC::dump_curgen_db()
 {
 	int pos;
 	FILE *fp;
-	char fname[256];
-
 	int nDim = _problem->_parameterCount;
 
-	sprintf(fname, "curres_db_%03d.txt", runinfo.Gen);
-	fp = fopen(fname, "w");
+	fp = fopen("tmcmc.txt", "w");
 	printf("Writing File, Entries: %d\n", curgen_db.entries);
 	for (pos = 0; pos < curgen_db.entries; pos++) {
 		int i;
@@ -213,7 +210,7 @@ void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *ou
         else
             for (int i = 0; i < nDim; ++i) chain_mean[i] = leader[i];
 
-        bool candidate_inbds = compute_candidate(candidate, chain_mean); // I keep this for the moment, for performance reasons
+        while(compute_candidate(candidate, chain_mean) == false);
 
         //printf("Leader: [");
         //for (int i = 0; i < nDim; i++) printf("%.3f, ", leader[i]);
@@ -223,7 +220,6 @@ void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *ou
         //for (int i = 0; i < nDim; i++) printf("%.3f, ", candidate[i]);
         //printf("]\n");
 
-        if (candidate_inbds) {
           	loglik_candidate = _problem->evaluateFitness(candidate);
             logprior_candidate = _problem->getPriorsLogProbabilityDensity(candidate);
             double L = exp((logprior_candidate-logprior_leader)+(loglik_candidate-loglik_leader)*pj);
@@ -239,7 +235,6 @@ void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *ou
 
             }
             //else printf("Reject\n");
-        }
 
         /* increase counter or add the leader again in curgen_db */
         if (step >= burn_in) {
