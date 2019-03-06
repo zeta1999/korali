@@ -27,20 +27,20 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 	data.MaxStages = 20;
 
 	data.MinChainLength = 1;
-	data.MaxChainLength = 8;
+	data.MaxChainLength = 5;
 
 	data.TolCOV  = 1;
-	data.MinStep = 1e-6;
-	data.bbeta   = 0.2;
-	data.burn_in = 1;
+	data.MinStep = 1e-9;
+	data.bbeta   = 0.005;
+	data.burn_in = 0;
 	data.use_local_cov = false;
 
 	data.options.MaxIter    = 1000;
 	data.options.Tol        = 1e-12;
 	data.options.Display    = true;
-	data.options.Step       = 1e-4;
-	data.options.LowerBound = 0.0;
-	data.options.UpperBound = 4.0;
+	data.options.Step       = 1e-8;
+	data.options.LowerBound = -10.0;
+	data.options.UpperBound = 10.0;
 
 	range = gsl_rng_alloc (gsl_rng_default);
 	gsl_rng_set(range, _problem->_seed+500);

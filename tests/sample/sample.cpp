@@ -2,6 +2,19 @@
 #include "math.h"
 #include "mpi.h"
 
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_cblas.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_eigen.h>
+#include <gsl/gsl_matrix.h>
+
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_sf.h>
+#include <gsl/gsl_linalg.h>
+
 #define NDIMS 2
 double f_Rosenbrock(double *x)
 {
@@ -26,30 +39,36 @@ double f_Ackley(double *x)
 
 double f_Gaussian(double *x)
 {
-	double sigma = 0.2;
-  double mean[NDIMS];
-  for (int i = 0; i < NDIMS; i++) mean[i] = 0.0;
+	double mean[NDIMS] = {0.0, 0.0};
+	double sigma[NDIMS*NDIMS] = {1.0, 0.0, 0.0, 1.0};
+	double work[NDIMS];
 
-	double mul = 1.0 / (sigma * sqrt(2*M_PI));
-	double inExp = 0.0;
+  gsl_vector_view vals_view 	= gsl_vector_view_array(x, NDIMS);
+  gsl_vector_view mean_view 	= gsl_vector_view_array(mean, NDIMS);
+  gsl_matrix_view sigma_view 	= gsl_matrix_view_array(sigma, NDIMS,NDIMS);
+  gsl_vector_view work_view 	= gsl_vector_view_array(work, NDIMS);
 
-  for (int i = 0; i < NDIMS; i++)  { double xp = (x[i] - mean[i])/sigma; inExp += xp*xp; }
+  gsl_matrix *L = gsl_matrix_alloc(NDIMS,NDIMS);
+  gsl_matrix_memcpy(L, &sigma_view.matrix);
+  gsl_linalg_cholesky_decomp(L);
 
-  return mul*exp(-0.5 * inExp );
+  double res = 0.0; gsl_ran_multivariate_gaussian_log_pdf(&vals_view.vector, &mean_view.vector, L, &res, &work_view.vector);
+
+  return res;
 }
 
 
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::DirectEvaluation(f_Rosenbrock, 982323);
+  auto problem = Korali::DirectEvaluation(f_Gaussian, 123315);
 
   Korali::Parameter p;
-  p.setBounds(-3.0, +3.0);
-  p.setPriorDistribution("Uniform", -3.0, +3.0);
+  p.setBounds(-15.0, +15.0);
+  p.setPriorDistribution("Uniform", -15.0, +15.0);
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
   auto Solver = Korali::KoraliTMCMC(&problem, MPI_COMM_WORLD);
-	Solver.setPopulationSize(20000);
+	Solver.setPopulationSize(70000);
 	Solver.run();
 
 	return 0;
