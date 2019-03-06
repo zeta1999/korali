@@ -1,8 +1,8 @@
 #include "korali.h"
+#include "math.h"
 #include "mpi.h"
 
 #define NDIMS 2
-
 double f_Rosenbrock(double *x)
 {
   double s = 0.;
@@ -24,9 +24,24 @@ double f_Ackley(double *x)
 }
 
 
+double f_Gaussian(double *x)
+{
+	double sigma = 0.2;
+  double mean[NDIMS];
+  for (int i = 0; i < NDIMS; i++) mean[i] = 0.0;
+
+	double mul = 1.0 / (sigma * sqrt(2*M_PI));
+	double inExp = 0.0;
+
+  for (int i = 0; i < NDIMS; i++)  { double xp = (x[i] - mean[i])/sigma; inExp += xp*xp; }
+
+  return mul*exp(-0.5 * inExp );
+}
+
+
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::DirectEvaluation(f_Rosenbrock, 982323);
+  auto problem = Korali::DirectEvaluation(f_Gaussian, 982323);
 
   Korali::Parameter p;
   p.setBounds(-3.0, +3.0);
@@ -34,7 +49,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
   auto Solver = Korali::KoraliTMCMC(&problem, MPI_COMM_WORLD);
-	Solver.setPopulationSize(10000);
+	Solver.setPopulationSize(20000);
 	Solver.run();
 
 	return 0;

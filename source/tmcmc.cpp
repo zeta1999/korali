@@ -210,8 +210,8 @@ void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *ou
         else
             for (int i = 0; i < nDim; ++i) chain_mean[i] = leader[i];
 
-        while(compute_candidate(candidate, chain_mean) == false);
-
+        if(compute_candidate(candidate, chain_mean))
+        {
         //printf("Leader: [");
         //for (int i = 0; i < nDim; i++) printf("%.3f, ", leader[i]);
         //printf("]\n");
@@ -222,6 +222,9 @@ void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *ou
 
           	loglik_candidate = _problem->evaluateFitness(candidate);
             logprior_candidate = _problem->getPriorsLogProbabilityDensity(candidate);
+
+            printf("Log: %f\n", logprior_candidate);
+
             double L = exp((logprior_candidate-logprior_leader)+(loglik_candidate-loglik_leader)*pj);
             double P = uniformrand(0,1, range);
 
@@ -235,6 +238,7 @@ void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *ou
 
             }
             //else printf("Reject\n");
+        }
 
         /* increase counter or add the leader again in curgen_db */
         if (step >= burn_in) {

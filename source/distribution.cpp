@@ -7,11 +7,11 @@ Korali::Distribution::Distribution(size_t seed) : _seed(seed)
 }
 
 double Korali::GaussianDistribution::getDensity(double x) { return gsl_ran_gaussian_pdf(x - _mean, _sigma); }
-double Korali::GaussianDistribution::getDensityLog(double x) { return -0.5*log(2*M_PI) - log(_sigma) - 0.5*pow((x-_mean)/_sigma, 2);} // Optimize by pre-calculating constants and using multiplication instead of power.
+double Korali::GaussianDistribution::getDensityLog(double x) { printf("maxmin: %f\n", x); return -0.5*log(2*M_PI) - log(_sigma) - 0.5*pow((x-_mean)/_sigma, 2);} // Optimize by pre-calculating constants and using multiplication instead of power.
 double Korali::GaussianDistribution::getRandomNumber() { return _mean + gsl_ran_gaussian(_range, _sigma); }
 
 double Korali::UniformDistribution::getDensity(double x) { return gsl_ran_flat_pdf(x, _min, _max);}
-double Korali::UniformDistribution::getDensityLog(double x) { if (x >= _min && x <= _max) return -log(_max-_min); return -INFINITY; }
+double Korali::UniformDistribution::getDensityLog(double x) {printf("maxmin: %f\n", _max-_min); if (x >= _min && x <= _max) return -log(_max-_min); return -INFINITY; }
 double Korali::UniformDistribution::getRandomNumber() { return gsl_ran_flat(_range, _min, _max); }
 
 double Korali::GammaDistribution::getDensity(double x) { return gsl_ran_gamma_pdf( x, _shape, _rate ); }

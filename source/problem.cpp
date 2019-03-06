@@ -20,14 +20,14 @@ void Korali::Problem::addParameter(Parameter p)
 double Korali::Problem::getPriorsLogProbabilityDensity(double *x)
 {
   double logp = 0.0;
-  for (int i = 0; i < _parameterCount; i++) logp += x[i];
+  for (int i = 0; i < _parameterCount; i++) logp += _parameters[i].getDensityLog(x[i]);
   return logp;
 }
 
 double Korali::Problem::getPriorsProbabilityDensity(double *x)
 {
   double dp = 1.0;
-  for (int i = 0; i < _parameterCount; i++) dp *= x[i];
+  for (int i = 0; i < _parameterCount; i++) dp *= _parameters[i].getDensity(x[i]);
   return dp;
 }
 
