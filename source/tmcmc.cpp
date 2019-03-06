@@ -223,8 +223,6 @@ void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *ou
           	loglik_candidate = _problem->evaluateFitness(candidate);
             logprior_candidate = _problem->getPriorsLogProbabilityDensity(candidate);
 
-            printf("Log: %f\n", logprior_candidate);
-
             double L = exp((logprior_candidate-logprior_leader)+(loglik_candidate-loglik_leader)*pj);
             double P = uniformrand(0,1, range);
 
