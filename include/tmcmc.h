@@ -73,6 +73,7 @@ class KoraliTMCMC // : public KoraliBase
 
   // Internal TMCMC Methods
 	void evalGen();
+	void dump_curgen_db();
   int prepareNewGeneration(int nchains, cgdbp_t *leaders);
   void chaintask(double in_tparam[], int *pnsteps, double *out_tparam, int winfo[4], double *init_mean, double *chain_cov);
   bool compute_candidate(double candidate[], double chain_mean[]);

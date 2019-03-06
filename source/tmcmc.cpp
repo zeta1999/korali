@@ -90,7 +90,7 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
       if (data.options.Display) print_runinfo();
   }
 
-   if(data.options.Display) print_runinfo();
+	dump_curgen_db();
 
    printf("Acceptance rate         :  %lf \n", runinfo.acceptance[runinfo.Gen]) ;
    printf("Annealing exponent      :  %lf \n", runinfo.p[runinfo.Gen]) ;
@@ -162,8 +162,29 @@ void Korali::KoraliTMCMC::evalGen()
     //runinfo_t::save(runinfo, nDim, data.MaxStages);
 
     //if (data.restart) check_for_exit();
+}
 
+void Korali::KoraliTMCMC::dump_curgen_db()
+{
+	int pos;
+	FILE *fp;
+	char fname[256];
 
+	int nDim = _problem->_parameterCount;
+
+	sprintf(fname, "curres_db_%03d.txt", runinfo.Gen);
+	fp = fopen(fname, "w");
+	printf("Writing File, Entries: %d\n", curgen_db.entries);
+	for (pos = 0; pos < curgen_db.entries; pos++) {
+		int i;
+
+		for (i = 0; i < nDim; i++) {
+			fprintf(fp, "%3.12lf, ", curgen_db.entry[pos].point[i]);
+		}
+		fprintf(fp, "%3.12lf\n", curgen_db.entry[pos].F);
+/*		fprintf(fp, "\n");*/
+	}
+	fclose(fp);
 }
 
 void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *out_tparam, int winfo[4], double *init_mean, double *chain_cov)
@@ -310,6 +331,7 @@ void Korali::KoraliTMCMC::print_runinfo()
 {
 	int nDim = _problem->_parameterCount;
     printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    printf("Current DB Entries      :  %d  \n", curgen_db.entries);
     printf("runinfo.Gen = \n\n   %d\n\n", runinfo.Gen);
     print_matrix("runinfo.p", runinfo.p, runinfo.Gen+1);
     print_matrix_2d("runinfo.SS", runinfo.SS, nDim, nDim);
