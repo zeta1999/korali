@@ -72,7 +72,10 @@ class KoraliTMCMC // : public KoraliBase
 	void setBounds(double lower, double upper) { data.options.LowerBound = lower; data.options.UpperBound = upper; }
 
   // Internal TMCMC Methods
+	void evalGen();
   int prepareNewGeneration(int nchains, cgdbp_t *leaders);
+  void chaintask(double in_tparam[], int *pnsteps, double *out_tparam, int winfo[4], double *init_mean, double *chain_cov);
+  bool compute_candidate(double candidate[], double chain_mean[]);
   void update_curgen_db(double point[], double F, double prior);
   void calculate_statistics(double flc[], int nselections, int gen, unsigned int sel[]);
   void precompute_chain_covariances(const cgdbp_t* leader,double** init_mean, double** chain_cov, int newchains);

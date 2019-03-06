@@ -4,6 +4,13 @@
 #include "tmcmc_types.h"
 #include <gsl/gsl_rng.h>
 
+//#define _USE_FMINCON_
+#define _USE_FMINSEARCH_
+#define _USE_FZEROFIND_
+
+#define LARGE_SCALE_POPS
+
+
 namespace Korali
 {
 
@@ -11,16 +18,6 @@ namespace Korali
 //TODO: align with cmaes (cmaes_utils) (DW)
 
 #include <sys/time.h>
-
-// TODO: where should this go (DW)
-static int g_nfeval;
-static int l_nfeval = 0;
-static int t_nfeval = 0;
-
-int get_nfc();
-int get_tfc();
-void inc_nfc();
-void reset_nfc();
 
 int compar_desc(const void *p1, const void *p2);
 
@@ -36,8 +33,6 @@ double scale_to_box(const double* point, double sc, const double* add_vec, const
 
 int in_rect(double *v1, double *v2, double *diam, double sc, int D);
 
-int make_posdef(double *mat, int dim, int method);
-
 void print_matrix(const char *name, double *x, int n);
 
 void print_matrix_i(char *name, int *x, int n);
@@ -47,6 +42,7 @@ void print_matrix_2d(const char *name, double **x, int n1, int n2);
 
 void multinomialrand(size_t K, unsigned int N, double q[], unsigned int nn[], gsl_rng* range);
 int mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range);
+double uniformrand(double a, double b, gsl_rng* range);
 
 } // namespace Korali
 

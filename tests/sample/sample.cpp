@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
   auto Solver = Korali::KoraliTMCMC(&problem, MPI_COMM_WORLD);
-	Solver.setPopulationSize(5000);
+	Solver.setPopulationSize(10000);
 	Solver.run();
 
 	return 0;
