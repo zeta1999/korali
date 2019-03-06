@@ -16,30 +16,30 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
   _problem = problem;
 	_comm = comm;
 
-	_popSize = -1;
+	_popSize = 1000;
 	_rankId = 0;
 	_rankCount = 1;
 
   _bcastFuture = upcxx::make_future();
   _continueEvaluations = true;
 
-	data.MaxStages = -1;
+	data.MaxStages = 100;
 
-	data.MinChainLength = 0;
-	data.MaxChainLength = 0;
+	data.MinChainLength = 1;
+	data.MaxChainLength = 5;
 
-	data.TolCOV  = -1;
+	data.TolCOV  = 1;
 	data.MinStep = 1e-6;
-	data.bbeta   = -1;
-	data.burn_in = -1;
+	data.bbeta   = 0.2;
+	data.burn_in = 0;
 	data.use_local_cov = false;
 
-	data.options.MaxIter    = -1;
-	data.options.Tol        = -1;
-	data.options.Display    = false;
-	data.options.Step       = -1;
+	data.options.MaxIter    = 1000;
+	data.options.Tol        = 1e-12;
+	data.options.Display    = true;
+	data.options.Step       = 1e-4;
 	data.options.LowerBound = 0.0;
-	data.options.UpperBound = 1.0;
+	data.options.UpperBound = 4.0;
 
 	range = gsl_rng_alloc (gsl_rng_default);
 }
@@ -80,25 +80,11 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 	  /* update current db entry */
 	  update_curgen_db(leaders[i].point, leaders[i].F, logprior);
 	}
+
+  data.nChains = prepareNewGeneration(data.nChains, leaders);
+  if (data.options.Display) print_runinfo();
 }
 
-void Korali::KoraliTMCMC::update_curgen_db(double point[], double F, double prior)
-{
-	int nDim = _problem->_parameterCount;
-  int pos = curgen_db.entries;
-  curgen_db.entries++;
-
-  if (curgen_db.entry[pos].point == NULL) curgen_db.entry[pos].point = (double *)malloc(nDim*sizeof(double));
-  for (int i = 0; i < nDim; ++i) curgen_db.entry[pos].point[i] = point[i];
-  curgen_db.entry[pos].F = F;
-  curgen_db.entry[pos].prior = prior;
-}
-
-
-void Korali::KoraliTMCMC::Korali_WorkerThread()
-{
-
-}
 
 bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
 {
@@ -129,6 +115,35 @@ bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
 
   return false;
 }
+
+void Korali::KoraliTMCMC::update_curgen_db(double point[], double F, double prior)
+{
+	int nDim = _problem->_parameterCount;
+  int pos = curgen_db.entries;
+  curgen_db.entries++;
+
+  if (curgen_db.entry[pos].point == NULL) curgen_db.entry[pos].point = (double *)malloc(nDim*sizeof(double));
+  for (int i = 0; i < nDim; ++i) curgen_db.entry[pos].point[i] = point[i];
+  curgen_db.entry[pos].F = F;
+  curgen_db.entry[pos].prior = prior;
+}
+
+
+void Korali::KoraliTMCMC::Korali_WorkerThread()
+{
+
+}
+
+void Korali::KoraliTMCMC::print_runinfo()
+{
+	int nDim = _problem->_parameterCount;
+    printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    printf("runinfo.Gen = \n\n   %d\n\n", runinfo.Gen);
+    print_matrix("runinfo.p", runinfo.p, runinfo.Gen+1);
+    print_matrix_2d("runinfo.SS", runinfo.SS, nDim, nDim);
+    printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+}
+
 
 void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 {
@@ -243,6 +258,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 					}
 			}
 
+			printf("runinfo.Gen: %d\n", runinfo.Gen);
 			runinfo.currentuniques[runinfo.Gen] = un;
 			runinfo.acceptance[runinfo.Gen]     = (1.0*runinfo.currentuniques[runinfo.Gen])/data.Num[runinfo.Gen]; /* check this*/
 

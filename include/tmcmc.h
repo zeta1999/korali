@@ -82,6 +82,7 @@ class KoraliTMCMC // : public KoraliBase
   static double tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero);
   static double tmcmc_objlogp_gsl(double x, void *param);
   static double tmcmc_objlogp_gsl2(const gsl_vector *v, void *param);
+  void print_runinfo();
 
 };
 
