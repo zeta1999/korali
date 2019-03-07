@@ -3,7 +3,7 @@ include ../../common.mk
 LDFLAGS  += -L../../source -lkorali
 CXXFLAGS += -I../../include
 BINARIES = minimize_function sample_function
-OBJECTS = model/ackley.o
+OBJECTS = model/rosenbrock.o
 CC = upcxx
 
 .SECONDARY:
@@ -13,7 +13,7 @@ all: $(BINARIES)
 $(BINARIES) : % : %.o $(OBJECTS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-model/ackley.o: 
+model/%.o: 
 	$(MAKE) -C model all 
 
 %.o: %.cpp

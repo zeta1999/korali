@@ -60,7 +60,7 @@ double f_Gaussian(double *x)
 
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::DirectEvaluation(f_Gaussian, 123315);
+  auto problem = Korali::DirectEvaluation(f_Rosenbrock, 123315);
 
   Korali::Parameter p;
   p.setBounds(-15.0, +15.0);
