@@ -86,7 +86,14 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 
   while(runinfo.p[runinfo.Gen] < 1.0 && ++runinfo.Gen < data.MaxStages) {
       data.nChains = prepareNewGeneration(data.nChains, leaders);
-      evalGen();
+
+ 	   auto  gt0 = std::chrono::system_clock::now();
+ 	  evalGen();
+    auto gt1 = std::chrono::system_clock::now();
+     printf("evalGen: Generation %d - ", runinfo.Gen);
+     printf("generation elapsed time = %lf secs\n",
+   	std::chrono::duration<double>(gt1-gt0).count());
+
       if (data.options.Display) print_runinfo();
   }
 
@@ -104,7 +111,7 @@ void Korali::KoraliTMCMC::evalGen()
 	int nDim = _problem->_parameterCount;
 
     int nsteps;
-   auto  gt0 = std::chrono::system_clock::now();
+
 
 		int winfo[4];
 		double in_tparam[nDim];
@@ -149,19 +156,6 @@ void Korali::KoraliTMCMC::evalGen()
 				chaintask( in_tparam, &nsteps, out_tparam, winfo, init_mean, chain_cov );
 		}
 
-
-
-   auto gt1 = std::chrono::system_clock::now();
-    printf("evalGen: Generation %d - ", runinfo.Gen);
-    printf("generation elapsed time = %lf secs\n",
-    		std::chrono::duration<double>(gt1-gt0).count());
-
-    //if (data.icdump) dump_curgen_db();
-    //if (data.ifdump) dump_full_db();
-
-    //runinfo_t::save(runinfo, nDim, data.MaxStages);
-
-    //if (data.restart) check_for_exit();
 }
 
 void Korali::KoraliTMCMC::dump_curgen_db()
@@ -500,7 +494,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 
 #endif
 
-	qsort(list, n, sizeof(sort_t), compar_desc);
+	qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
 
 #if VERBOSE
 	printf("Points after qsort\n");
@@ -526,7 +520,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 					}
 			}
 
-			qsort(list, n, sizeof(sort_t), compar_desc);
+			qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
 
 #if VERBOSE
 			printf("Points broken\n");
@@ -547,7 +541,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 					}
 			}
 
-			qsort(list, n, sizeof(sort_t), compar_desc);
+			qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
 
 #if VERBOSE
 			printf("Points advanced\n");
@@ -619,6 +613,12 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nselections, in
 
     double fmin = 0, xmin = 0;
     bool conv = 0;
+
+    //#define _USE_FMINCON_
+    #define _USE_FMINSEARCH_
+    #define _USE_FZEROFIND_
+
+
 
 #ifdef _USE_FMINCON_
     conv = fmincon(flc, curgen_db.entries, p[gen], data.TolCOV, &xmin, &fmin,
@@ -852,6 +852,8 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(const cgdbp_t* leader,dou
 
 double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
 {
+
+#define LARGE_SCALE_POPS
 
     const double fjmax = gsl_stats_max(fj, 1, fn);
 #ifdef LARGE_SCALE_POPS
@@ -1195,4 +1197,155 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
 
 
     return converged;
+}
+
+int Korali::KoraliTMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int D)
+{
+    int d;
+    for (d = 0; d < D; ++d) {
+        if (fabs(v1[d]-v2[d]) > sc*diam[d]) return 0;
+    }
+    return 1;
+}
+
+
+int Korali::KoraliTMCMC::compar_desc(const void* p1, const void* p2)
+{
+    int dir = +1;   /* -1: ascending order, +1: descending order */
+    sort_t *s1 = (sort_t *) p1;
+    sort_t *s2 = (sort_t *) p2;
+
+    if (s1->nsel < s2->nsel) return dir;
+    if (s1->nsel > s2->nsel) return -dir;
+
+    return 0;
+}
+
+double Korali::KoraliTMCMC::compute_sum(double *v, int n)
+{
+    double s = 0;
+    for (int i = 0; i < n; i++) s += v[i];
+    return s;
+}
+
+
+double Korali::KoraliTMCMC::compute_dot_product(double row_vector[], double vector[], int dim)
+{
+	double sum = 0.0;
+	for(int row=0; row<dim; row++) sum += row_vector[row] * vector[row];
+
+	return sum;
+}
+
+
+void Korali::KoraliTMCMC::compute_mat_product_vect(double *mat/*2D*/, double vect[], double res_vect[], double coef, int dim)
+{
+    int row, column;
+    double current_dot_product;
+
+	for(row=0; row<dim; ++row){
+		current_dot_product = 0.0;
+        for(column=0; column<dim; ++column) current_dot_product += mat[row*dim+column] * vect[column];
+        res_vect[row] = coef * current_dot_product;
+    }
+    return;
+}
+
+
+void Korali::KoraliTMCMC::inv_matrix(double *current_hessian/*2D*/, double *inv_hessian/*2D*/, int dim)
+{
+    gsl_matrix_view m   = gsl_matrix_view_array(current_hessian, dim, dim);
+    gsl_matrix_view inv = gsl_matrix_view_array(inv_hessian, dim, dim);
+    gsl_permutation * p = gsl_permutation_alloc (dim);
+
+    int s;
+    gsl_linalg_LU_decomp (&m.matrix, p, &s);
+    gsl_linalg_LU_invert (&m.matrix, p, &inv.matrix);
+
+    gsl_permutation_free (p);
+    return;
+}
+
+
+double Korali::KoraliTMCMC::scale_to_box(const double* point, double sc, const double* add_vec, const double *elbds, const double *eubds, int dims)
+{
+	double pp[dims];
+	for(int i=0; i<dims; ++i) pp[i] = point[i]+sc*add_vec[i];
+
+	sc = fabs(sc);
+	double c;
+	for (int l=0; l<dims; l++)
+	{
+		if (pp[l]<elbds[l])
+		{
+			c = fabs( (elbds[l]-point[l]) / add_vec[l] );
+			sc = fmin(sc,c);
+		}
+		if (pp[l]>eubds[l])
+		{
+			c = fabs( (point[l]-eubds[l]) / add_vec[l] );
+			sc = fmin(sc,c);
+		}
+	}
+	return sc;
+}
+
+
+void Korali::KoraliTMCMC::print_matrix(const char *name, double *x, int n)
+{
+    printf("\n%s =\n\n", name);
+    for (int i = 0; i < n; ++i) printf("   %20.15lf\n", x[i]);
+    printf("\n");
+}
+
+void Korali::KoraliTMCMC::print_matrix_i(char *title, int *v, int n)
+{
+    printf("\n%s =\n\n", title);
+    for (int i = 0; i < n; i++) printf("  %8d\n", v[i]);
+    printf("\n");
+}
+
+
+void Korali::KoraliTMCMC::print_matrix_2d(const char *name, double **x, int n1, int n2)
+{
+    printf("\n%s =\n\n", name);
+    for (int i = 0; i < n1; i++) {
+        for (int j = 0; j < n2; j++) {
+            printf("   %20.15lf", x[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+
+}
+
+void Korali::KoraliTMCMC::multinomialrand(size_t K, unsigned int N, double q[], unsigned int nn[], gsl_rng* range)
+{
+    gsl_ran_multinomial (range, K, N, q, nn);
+
+    return;
+}
+
+
+int Korali::KoraliTMCMC::mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range)
+{
+    int res;
+
+    gsl_vector_view mean_view 	= gsl_vector_view_array(mean, N);
+    gsl_matrix_view sigma_view 	= gsl_matrix_view_array(sigma, N,N);
+    gsl_vector_view out_view 	= gsl_vector_view_array(out, N);
+
+    gsl_matrix *L = gsl_matrix_alloc(N,N);
+    gsl_matrix_memcpy( L, &sigma_view.matrix);
+    gsl_linalg_cholesky_decomp( L );
+
+
+	res = gsl_ran_multivariate_gaussian( range, &mean_view.vector, L, &out_view.vector);
+
+    return res;
+}
+
+double Korali::KoraliTMCMC::uniformrand(double a, double b, gsl_rng* range)
+{
+    return gsl_ran_flat( range, a, b );
 }
