@@ -15,7 +15,7 @@ class KoraliCMAES //: public KoraliBase
   public:
 
   // Public Methods
-	KoraliCMAES(Problem* problem, MPI_Comm comm);
+	KoraliCMAES(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
 
   // Runtime Methods (to be inherited from base class in the future)
   void run();

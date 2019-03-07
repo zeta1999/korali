@@ -1,26 +1,24 @@
-# source/CMAES/test/Makefile
-
 include ../../common.mk
 
-TARGET ?= ackley
-
-all: $(TARGET)
-
-DIR_KORALI = $L../../source
-
-LDFLAGS += -L$(DIR_KORALI) -lkorali 
-
+LDFLAGS  += -L../../source -lkorali
 CXXFLAGS += -I../../include
+BINARIES = minimize_function
+CC = upcxx
 
-$(TARGET): $(TARGET).o
-	upcxx -o $@ $^ $(LDFLAGS) $(CXXFLAGS)
+.SECONDARY:
+.PHONY: all
+all: $(BINARIES)
 
-$(TARGET).o: $(TARGET).cpp
-	upcxx -c $< $(CXXFLAGS)
+minimize_function: model/ackley.o minimize_function.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test: $(TARGET)
-	upcxx-run -n 1 ./$(TARGET)
+model/ackley.o: 
+	$(MAKE) -C model all 
 
-clean:; rm -rf $(TARGET) *.o
+%.o: %.cpp
+	$(CC) -c $(CXXFLAGS) $<
 
-.PHONY: clean all
+.PHONY: clean
+clean:
+	$(MAKE) -C model clean
+	$(RM) $(BINARIES) *.o *.ti *.optrpt
