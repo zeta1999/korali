@@ -12,6 +12,7 @@ Korali::Problem::Problem(size_t seed)
 
 void Korali::Problem::addParameter(Parameter p)
 {
+	if(p._name == "") p._name = "Parameter" + std::to_string(_parameterCount);
 	_parameters.push_back(p);
 	p.setSeed(_seed++);
 	_parameterCount = _parameters.size();

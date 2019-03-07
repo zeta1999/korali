@@ -171,7 +171,7 @@ class KoraliTMCMC // : public KoraliBase
   // Public Methods
 
   // Korali Engine Methods
-	KoraliTMCMC(Problem* problem, MPI_Comm comm);
+	KoraliTMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
 	void run();
 
 	bool Korali_VerifyParameters(char* errorString);
