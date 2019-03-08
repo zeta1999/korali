@@ -14,7 +14,6 @@ double gaussian(double *x)
 	gsl_vector_view vals_view = gsl_vector_view_array(x, NDIMS);
   double res = 0.0;
   gsl_ran_multivariate_gaussian_log_pdf(&vals_view.vector, &mean_view.vector, L, &res, &work_view.vector);
-  printf("res: %f\n", res);
   return res;
 }
 

@@ -109,52 +109,96 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 void Korali::KoraliTMCMC::evalGen()
 {
 	int nDim = _problem->_parameterCount;
+	int nsteps;
+	double init_mean[nDim];
+	double chain_cov[nDim*nDim];
 
-    int nsteps;
+	for (int c = 0; c < data.nChains; c++)
+	{
+		nsteps = leaders[c].nsel;
 
+		if (data.use_local_cov) {
+				for (int d = 0; d < nDim*nDim; ++d)
+						chain_cov[d] = data.local_cov[c][d];
 
-		int winfo[4];
-		double in_tparam[nDim];
-		double init_mean[nDim];
-		double chain_cov[nDim*nDim];
+				for (int d = 0; d < nDim; ++d) {
+						if (data.use_proposal_cma)
+								init_mean[d] = data.init_mean[c][d];
+						else
+								init_mean[d] = leaders[c].point[d];
+				}
+		} else {
+				for (int d = 0; d < nDim; ++d)
+						for (int e = 0; e < nDim; ++e)
+								chain_cov[d*nDim+e]=
+										data.bbeta*runinfo.SS[d][e];
 
+				for (int d = 0; d < nDim; ++d)
+						init_mean[d] = leaders[c].point[d];
+		}
 
-		for (int i = 0; i < data.nChains; ++i)
+		double logprior_leader  = _problem->getPriorsLogProbabilityDensity(leaders[c].point);
+		double candidate[nDim], loglik_candidate, logprior_candidate;   /* new*/
+
+		double pj = runinfo.p[runinfo.Gen];
+
+		int burn_in = data.burn_in;
+
+		for (int step = 0; step < nsteps + burn_in; ++step)
 		{
-				winfo[0] = runinfo.Gen;
-				winfo[1] = i;
-				winfo[2] = -1;    /* not used */
-				winfo[3] = -1;    /* not used */
+				double chain_mean[nDim];
+				if (step == 0) for (int i = 0; i < nDim; ++i) chain_mean[i] = init_mean[i];
+				else 	         for (int i = 0; i < nDim; ++i) chain_mean[i] = leaders[c].point[i];
 
-				for(int d = 0; d < nDim; ++d)
-						in_tparam[d] = leaders[i].point[d];
+				///////////////// COMPUTING NEW CANDIDATE /////////////////////
 
-				nsteps = leaders[i].nsel;
+				 bool goodCandidate = true;
+			    double bSS[nDim*nDim];
 
-				if (data.use_local_cov) {
-						for (int d = 0; d < nDim*nDim; ++d)
-								chain_cov[d] = data.local_cov[i][d];
+			    for (int i = 0; i < nDim; ++i)
+			        for (int j = 0; j < nDim; ++j)
+			            bSS[i*nDim+j]= data.bbeta*runinfo.SS[i][j];
 
-						for (int d = 0; d < nDim; ++d) {
-								if (data.use_proposal_cma)
-										init_mean[d] = data.init_mean[i][d];
-								else
-										init_mean[d] = leaders[i].point[d];
+
+			    mvnrnd(chain_mean, (double *)bSS, candidate, nDim, range);
+
+			    int idx = 0;
+			    for (; idx < nDim; ++idx) {
+			        if (isnan(candidate[idx])) {
+			            printf("!!!!  compute_candidate: isnan in candidate point!\n");
+			            break;
+			        }
+			        if ((candidate[idx] < _problem->_parameters[idx]._lowerBound) || (candidate[idx] > _problem->_parameters[idx]._upperBound))  {goodCandidate = false; break; }
+			    }
+
+				//////////////// END COMPUTING NEW CANDIDATE //////////////////
+
+
+				if(goodCandidate)
+				{
+						loglik_candidate = _problem->evaluateFitness(candidate);
+						logprior_candidate = _problem->getPriorsLogProbabilityDensity(candidate);
+
+						double L = exp((logprior_candidate-logprior_leader)+(loglik_candidate-leaders[c].F)*pj);
+						double P = uniformrand(0,1, range);
+
+						//printf("P: %f - L: %f\n", P, L);
+
+						if (P < L) {
+								/* accept new leader */
+								for (int i = 0; i < nDim; ++i) leaders[c].point[i] = candidate[i];
+								leaders[c].F = loglik_candidate;
 						}
-				} else {
-						for (int d = 0; d < nDim; ++d)
-								for (int e = 0; e < nDim; ++e)
-										chain_cov[d*nDim+e]=
-												data.bbeta*runinfo.SS[d][e];
-
-						for (int d = 0; d < nDim; ++d)
-								init_mean[d] = in_tparam[d];
 				}
 
-				double* out_tparam = &leaders[i].F;    /* loglik_leader...*/
-
-				chaintask( in_tparam, &nsteps, out_tparam, winfo, init_mean, chain_cov );
+				/* increase counter or add the leader again in curgen_db */
+				if (step >= burn_in) {
+						logprior_leader = logprior_candidate = _problem->getPriorsLogProbabilityDensity(leaders[c].point);
+						update_curgen_db(leaders[c].point, leaders[c].F, logprior_leader);
+				}
 		}
+
+	}
 
 }
 
@@ -178,96 +222,7 @@ void Korali::KoraliTMCMC::dump_curgen_db()
 	fclose(fp);
 }
 
-void Korali::KoraliTMCMC::chaintask(double in_tparam[], int *pnsteps, double *out_tparam, int winfo[4], double *init_mean, double *chain_cov)
-{
-	int nDim = _problem->_parameterCount;
-    int nsteps   = *pnsteps;
-    int gen_id   = winfo[0];
-    int chain_id = winfo[1];
 
-    double leader[nDim], loglik_leader, logprior_leader;            /* old*/
-    double candidate[nDim], loglik_candidate, logprior_candidate;   /* new*/
-
-    // get initial leader and its value
-    for (int i = 0; i < nDim; ++i) leader[i] = in_tparam[i];
-    loglik_leader   = *out_tparam;
-    logprior_leader = _problem->getPriorsLogProbabilityDensity(leader);
-
-    double pj = runinfo.p[runinfo.Gen];
-
-    int burn_in = data.burn_in;
-
-    for (int step = 0; step < nsteps + burn_in; ++step) {
-        double chain_mean[nDim];
-        if (step == 0)
-            for (int i = 0; i < nDim; ++i) chain_mean[i] = init_mean[i];
-        else
-            for (int i = 0; i < nDim; ++i) chain_mean[i] = leader[i];
-
-        if(compute_candidate(candidate, chain_mean))
-        {
-        //printf("Leader: [");
-        //for (int i = 0; i < nDim; i++) printf("%.3f, ", leader[i]);
-        //printf("]\n");
-
-        //printf("Candidate: [");
-        //for (int i = 0; i < nDim; i++) printf("%.3f, ", candidate[i]);
-        //printf("]\n");
-
-          	loglik_candidate = _problem->evaluateFitness(candidate);
-            logprior_candidate = _problem->getPriorsLogProbabilityDensity(candidate);
-
-            double L = exp((logprior_candidate-logprior_leader)+(loglik_candidate-loglik_leader)*pj);
-            double P = uniformrand(0,1, range);
-
-            //printf("P: %f - L: %f\n", P, L);
-
-            if (P < L) {
-            	//   printf("Accept\n");
-                /* accept new leader */
-                for (int i = 0; i < nDim; ++i) leader[i] = candidate[i];
-                loglik_leader = loglik_candidate;
-
-            }
-            //else printf("Reject\n");
-        }
-
-        /* increase counter or add the leader again in curgen_db */
-        if (step >= burn_in) {
-            logprior_leader = logprior_candidate = _problem->getPriorsLogProbabilityDensity(leader);
-            update_curgen_db(leader, loglik_leader, logprior_leader);
-        }
-    }
-
-    return;
-}
-
-
-bool Korali::KoraliTMCMC::compute_candidate(double candidate[], double chain_mean[])
-{
-	int nDim = _problem->_parameterCount;
-    double bSS[nDim*nDim];
-
-    for (int i = 0; i < nDim; ++i)
-        for (int j = 0; j < nDim; ++j)
-            bSS[i*nDim+j]= data.bbeta*runinfo.SS[i][j];
-
-
-    mvnrnd(chain_mean, (double *)bSS, candidate, nDim, range);
-
-    int idx = 0;
-    for (; idx < nDim; ++idx) {
-        if (isnan(candidate[idx])) {
-            printf("!!!!  compute_candidate: isnan in candidate point!\n");
-            break;
-        }
-        if ((candidate[idx] < _problem->_parameters[idx]._lowerBound) || (candidate[idx] > _problem->_parameters[idx]._upperBound)) break;
-    }
-
-    if (idx < nDim) return false;
-
-    return true;// all good
-}
 
 
 bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
