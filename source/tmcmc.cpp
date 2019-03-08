@@ -75,7 +75,7 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 	  update_curgen_db(leaders[i].point, leaders[i].F, leaders[i].prior);
 	}
 
-  while(runinfo.p[runinfo.Gen] < 1.0 && ++runinfo.Gen < data.MaxStages) {
+  while(runinfo.p < 1.0 && ++runinfo.Gen < data.MaxStages) {
       data.nChains = prepareNewGeneration(data.nChains, leaders);
 
  	   auto  gt0 = std::chrono::system_clock::now();
@@ -92,7 +92,7 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 	 dump_curgen_db();
 
    printf("Acceptance rate         :  %lf \n", runinfo.acceptance) ;
-   printf("Annealing exponent      :  %lf \n", runinfo.p[runinfo.Gen]) ;
+   printf("Annealing exponent      :  %lf \n", runinfo.p) ;
    printf("Coeficient of Variation :  %lf \n", runinfo.CoefVar) ;
    printf("----------------------------------------------------------------\n");
    return;
@@ -124,7 +124,7 @@ void Korali::KoraliTMCMC::evalGen()
 				loglik_candidate = _problem->evaluateFitness(candidate);
 				logprior_candidate = _problem->getPriorsLogProbabilityDensity(candidate);
 
-				double L = exp((logprior_candidate-leaders[c].prior)+(loglik_candidate-leaders[c].F)*runinfo.p[runinfo.Gen]);
+				double L = exp((logprior_candidate-leaders[c].prior)+(loglik_candidate-leaders[c].F)*runinfo.p);
 				double P = uniformrand(0,1, range);
 
 				if (P < L) {
@@ -217,7 +217,7 @@ void Korali::KoraliTMCMC::print_runinfo()
     printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
     printf("Current DB Entries      :  %d  \n", curgen_db.entries);
     printf("runinfo.Gen = \n\n   %d\n\n", runinfo.Gen);
-    printf("runinfo.p: %f\n", runinfo.p[runinfo.Gen]);
+    printf("runinfo.p: %f\n", runinfo.p);
     printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 }
 
@@ -246,7 +246,7 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
   // Initializing Run Variables
   runinfo.CoefVar        = 0;
-	runinfo.p              = (double*) calloc (sizeof(double), data.MaxStages+1);
+	runinfo.p              = 0;
 	runinfo.currentuniques = 0;
 	runinfo.logselections  = 0;
 	runinfo.acceptance     = 0;
@@ -351,13 +351,9 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 	/* calculate statistics */
 	{
 			double *fj = new double[n];
-			//double t0  = torc_gettime();
 			for (i = 0; i < n; ++i)
 					fj[i] = curgen_db.entry[i].F;    /* separate point from F ?*/
-			//double t1 = torc_gettime();
-			calculate_statistics(fj, _popSize, runinfo.Gen, sel);
-			//double t2 = torc_gettime();
-			//printf("prepare_newgen: init + calc stats : %lf + %lf = %lf seconds\n", t2-t1, t1-t0, t2-t0);
+			calculate_statistics(fj, sel);
 			delete[] fj;
 	}
 
@@ -486,134 +482,84 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 	return newchains;
 }
 
-void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, int gen, unsigned int sel[])
+void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 {
     int display = data.options.Display;
     int nDim = _problem->_parameterCount;
     double coefVar       = runinfo.CoefVar;
-    double *p             = runinfo.p;
     double logselections = runinfo.logselections;
 
     double fmin = 0, xmin = 0;
     bool conv = 0;
 
-    //#define _USE_FMINCON_
-    #define _USE_FMINSEARCH_
-    #define _USE_FZEROFIND_
+    bool useFminCon = false;
+    bool useFminSearch = true;
+    bool useFminZeroFind = false;
 
+    if (useFminCon)                 conv = fmincon(flc, curgen_db.entries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
+    if (useFminSearch)   if (!conv) conv = fminsearch(flc, curgen_db.entries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
+    if (useFminZeroFind) if (!conv) conv = fzerofind(flc, curgen_db.entries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
 
+    double pPrev = runinfo.p;
 
-#ifdef _USE_FMINCON_
-    conv = fmincon(flc, curgen_db.entries, p[gen], data.TolCOV, &xmin, &fmin,
-                   data.options);
-    if (display) printf("calculate_statistics: \
-                fmincon conv=%d xmin=%.16lf fmin=%.16lf\n", conv, xmin, fmin);
-#endif
-
-#ifdef _USE_FMINSEARCH_
-    if (!conv) {
-        conv = fminsearch(flc, curgen_db.entries, p[gen], data.TolCOV, &xmin, &fmin,
-                          data.options);
-        if (display) printf("calculate_statistics: \
-                    fminsearch conv=%d xmin=%.16lf fmin=%.16lf\n", conv, xmin, fmin);
-    }
-#endif
-
-#ifdef _USE_FZEROFIND_
-    if (!conv) {
-        conv = fzerofind(flc, curgen_db.entries, p[gen], data.TolCOV, &xmin, &fmin,
-                         data.options);
-        if (display) printf("calculate_statistics: \
-                    fzerofind conv=%d xmin=%.16lf fmin=%.16lf\n", conv, xmin, fmin);
-    }
-#endif
-
-
-    /* gen: next generation number */
-    unsigned int j = gen+1;
-
-    if ( conv && (xmin > p[gen]) ) {
-        p[j]       = xmin;
+    if ( conv && (xmin > pPrev) ) {
+    	runinfo.p       = xmin;
         coefVar = pow(fmin, 0.5) + data.TolCOV;
     } else {
-        p[j]       = p[gen] + data.MinStep;
-        coefVar = pow(tmcmc_objlogp(p[j], flc, curgen_db.entries,
-                                       p[j-1], data.TolCOV), 0.5) +
-                     data.TolCOV;
+    	runinfo.p       = pPrev + data.MinStep;
+        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, curgen_db.entries, pPrev, data.TolCOV), 0.5) + data.TolCOV;
     }
 
-    if (p[j] > 1) {
-        p[j]       = 1;
-        coefVar = pow(tmcmc_objlogp(p[j], flc, curgen_db.entries,
-                                       p[j-1], data.TolCOV), 0.5) +
-                     data.TolCOV;
+    if (runinfo.p > 1.0) {
+    	runinfo.p    = 1.0;
+        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, curgen_db.entries,  pPrev, data.TolCOV), 0.5) +   data.TolCOV;
     }
 
     /* Compute weights and normalize*/
-    unsigned int i;
-
     double *flcp  = new double[curgen_db.entries];
-    for (i = 0; i < curgen_db.entries; ++i)
-        flcp[i] = flc[i]*(p[j]-p[j-1]);
-
+    for (int i = 0; i < curgen_db.entries; i++)
+        flcp[i] = flc[i]*(runinfo.p-pPrev);
 
     const double fjmax = gsl_stats_max(flcp, 1, curgen_db.entries);
     double *weight     = new double[curgen_db.entries];
-    for (i = 0; i < curgen_db.entries; ++i)
+    for (int i = 0; i < curgen_db.entries; i++)
         weight[i] = exp( flcp[i] - fjmax );
 
     delete [] flcp;
 
-    //TODO: logselections[gen+1] or ..[gen]? (DW)
-    //logselection is log(Sj), what is logselections[0] if we switch to former?
     double sum_weight = std::accumulate(weight, weight+curgen_db.entries, 0.0);
     logselections  = log(sum_weight) + fjmax - log(curgen_db.entries);
     if (display) printf("logselections: %f\n", logselections);
 
     double *q = new double[curgen_db.entries];
-    for (i = 0; i < curgen_db.entries; ++i)
-        q[i] = weight[i]/sum_weight;
+    for (int i = 0; i < curgen_db.entries; i++) q[i] = weight[i]/sum_weight;
 
     delete [] weight;
 
     if (display) printf("CoefVar: %f\n", coefVar);
 
-    unsigned int N = 1;
-
     unsigned int *nn = new unsigned int[curgen_db.entries];
 
-    for (i = 0; i < curgen_db.entries; ++i) sel[i] = 0;
+    for (int i = 0; i < curgen_db.entries; i++) sel[i] = 0;
 
-    if (nstepsections == 0) nstepsections = curgen_db.entries;
-    N = nstepsections;
-    gsl_ran_multinomial(range, curgen_db.entries, N, q, nn);
-    for (i = 0; i < curgen_db.entries; ++i) sel[i]+=nn[i];
+    gsl_ran_multinomial(range, curgen_db.entries, _popSize, q, nn);
+    for (int i = 0; i < curgen_db.entries; ++i) sel[i]+=nn[i];
 
     delete [] nn;
 
-    /* compute SS */
-    unsigned int PROBDIM = _problem->_parameterCount;
-
-
-    for (i = 0; i < PROBDIM; ++i) {
+    for (int i = 0; i < nDim; i++)
+    {
     	runinfo.meantheta[i] = 0;
-        for (j = 0; j < curgen_db.entries; ++j) runinfo.meantheta[i]+=curgen_db.entry[j].point[i]*q[j];
-
+      for (int j = 0; j < curgen_db.entries; j++) runinfo.meantheta[i] += curgen_db.entry[j].point[i]*q[j];
     }
 
-    double meanv[PROBDIM];
-    for (i = 0; i < PROBDIM; ++i) {
-        meanv[i] = runinfo.meantheta[i];
-    }
-
-    for (i = 0; i < PROBDIM; ++i) {
-        for (j = i; j < PROBDIM; ++j) {
-            double s = 0;
-            for (unsigned int k = 0; k < curgen_db.entries; ++k) {
-                s += q[k]*(curgen_db.entry[k].point[i]-meanv[i])*(curgen_db.entry[k].point[j]-meanv[j]);
-            }
-            runinfo.SS[i*nDim + j] = runinfo.SS[j*nDim + i] = s*data.bbeta;
-        }
+    double meanv[nDim];
+    for (int i = 0; i < nDim; i++)  meanv[i] = runinfo.meantheta[i];
+    for (int i = 0; i < nDim; i++) for (int j = i; j < nDim; ++j)
+    {
+			double s = 0.0;
+			for (unsigned int k = 0; k < curgen_db.entries; ++k) s += q[k]*(curgen_db.entry[k].point[i]-meanv[i])*(curgen_db.entry[k].point[j]-meanv[j]);
+			runinfo.SS[i*nDim + j] = runinfo.SS[j*nDim + i] = s*data.bbeta;
     }
 
     delete [] q;
@@ -719,26 +665,15 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(const cgdbp_t* leader,dou
 
 double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
 {
-
-#define LARGE_SCALE_POPS
-
     const double fjmax = gsl_stats_max(fj, 1, fn);
-#ifdef LARGE_SCALE_POPS
     double *weight = new double[fn];
-#else
-    double weight[fn];
-#endif
 
     for(int i = 0; i <fn; ++i)
         weight[i] = exp((fj[i]-fjmax)*(x-pj));
 
     double sum_weight = std::accumulate(weight, weight+fn, 0.0);
 
-#ifdef LARGE_SCALE_POPS
     double *q = new double[fn];
-#else
-    double q[fn];
-#endif
 
     for(int i = 0; i < fn; ++i) {
         q[i] = weight[i]/sum_weight;
@@ -748,10 +683,8 @@ double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, do
     double std_q  = gsl_stats_sd_m(q, 1, fn, mean_q);
     double cov2   = pow(std_q/mean_q-zero, 2);
 
-#ifdef LARGE_SCALE_POPS
     delete[] weight;
     delete[] q;
-#endif
 
     return cov2;
 }
@@ -993,7 +926,6 @@ int Korali::KoraliTMCMC::fminsearch(double const *fj, int fn, double pj, double 
  * adjust range and refine steps (DW: could be optimized) */
 int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
 {
-
     bool display = opt.Display;
     double tol   = opt.Tol;
     double step  = opt.Step;
@@ -1001,9 +933,6 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
     double x_hi  = opt.UpperBound;
 
     int first_try = true;
-
-    FILE *fp = NULL;
-    char fname[64];
 
     size_t iter;
     size_t niters;
@@ -1018,16 +947,11 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
         if(display) printf("fzerofind: x_lo %e x_hi %ei step %e\n", x_lo, x_hi, step);
         niters = (size_t) ((x_hi-x_lo)/step);
 
-        if (first_try) {
-            first_try = false;
-        }
-
+        if (first_try)  first_try = false;
 
         for (iter = 0; iter < niters; ++iter) {
             double x  = x_lo + iter*step;
             double fx = tmcmc_objlogp(x, fj, fn, pj, objTol);
-
-            //if (dump) fprintf(fp, "%.16f %.16f\n", x, fx);
 
             if (fx < fm) {
                 fm  = fx;
@@ -1056,17 +980,13 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
     *xmin = min;
     *fmin = fm;
 
-
     return converged;
 }
 
-int Korali::KoraliTMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int D)
+bool Korali::KoraliTMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int D)
 {
-    int d;
-    for (d = 0; d < D; ++d) {
-        if (fabs(v1[d]-v2[d]) > sc*diam[d]) return 0;
-    }
-    return 1;
+    for (int d = 0; d < D; d++)  if (fabs(v1[d]-v2[d]) > sc*diam[d]) return false;
+    return true;
 }
 
 

@@ -41,7 +41,7 @@ typedef struct data_t {
 typedef struct runinfo_t {
     int    Gen;
     double CoefVar;
-    double *p;
+    double p;
     int    currentuniques;
     double logselections;
     double acceptance;
@@ -145,7 +145,7 @@ class KoraliTMCMC // : public KoraliBase
 	void dump_curgen_db();
   int prepareNewGeneration(int nchains, cgdbp_t *leaders);
   void update_curgen_db(double point[], double F, double prior);
-  void calculate_statistics(double flc[], int nselections, int gen, unsigned int sel[]);
+  void calculate_statistics(double flc[], unsigned int sel[]);
   void precompute_chain_covariances(const cgdbp_t* leader,double** init_mean, double** chain_cov, int newchains);
   int fmincon(const double *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
   int fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
@@ -155,8 +155,7 @@ class KoraliTMCMC // : public KoraliBase
   static double tmcmc_objlogp_gsl2(const gsl_vector *v, void *param);
   void print_runinfo();
   static int compar_desc(const void *p1, const void *p2);  double compute_sum(double *v, int n);
-
-  int in_rect(double *v1, double *v2, double *diam, double sc, int D);
+  bool in_rect(double *v1, double *v2, double *diam, double sc, int D);
   int mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range);
   double uniformrand(double a, double b, gsl_rng* range);
 };
