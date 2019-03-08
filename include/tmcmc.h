@@ -39,13 +39,12 @@ typedef struct data_t {
     double TolCOV;              /* Target coefficient of variation of weights */
     double MinStep;             /* Min update of rho */
     double bbeta;               /* Covariance scaling parameter */
-    int    burn_in;             /* Number of burn in iterations */
 
     optim_options options;      /* Optimization options (see above) */
 
     int prior_type;             /* 0: uniform, 1: gaussian, 3: composite */
 
-    int *Num;               /*[MAXGENS];*/
+    int Num;
     int    use_proposal_cma;
     double **init_mean;     /* [DATANUM][PROBDIM] */
     double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
@@ -56,13 +55,13 @@ typedef struct data_t {
 
 typedef struct runinfo_t {
     int    Gen;
-    double *CoefVar;        /*[MAXGENS];*/
-    double *p;              /*[MAXGENS];*/
-    int    *currentuniques; /*[MAXGENS];*/
-    double *logselections;  /*[MAXGENS];*/
-    double *acceptance;     /*[MAXGENS];*/
+    double CoefVar;
+    double *p;
+    int    currentuniques;
+    double logselections;
+    double acceptance;
     double *SS;            /*[PROBDIM][PROBDIM];*/
-    double **meantheta;     /*[MAXGENS][PROBDIM]*/
+    double *meantheta;     /*[PROBDIM]*/
 } runinfo_t;
 
 
@@ -180,7 +179,6 @@ class KoraliTMCMC // : public KoraliBase
 	void setToleranceCOV(double TolCOV) { data.TolCOV = TolCOV; }
 	void setUseLocalCOV(double use_local_cov) { data.use_local_cov = use_local_cov; }
 	void setCovarianceScaling(double bbeta) { data.bbeta = bbeta; }
-	void setBurnInIterations(int burn_in) { data.burn_in = burn_in; }
 	void setChainLength(size_t min, size_t max) { data.MinChainLength = min; data.MaxChainLength = max; }
 
 	// Optimization Contiguration Methods

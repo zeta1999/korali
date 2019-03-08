@@ -32,7 +32,6 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 	data.TolCOV  = 1;
 	data.MinStep = 1e-9;
 	data.bbeta   = 0.005;
-	data.burn_in = 0;
 	data.use_local_cov = false;
 
 	data.options.MaxIter    = 1000;
@@ -71,16 +70,9 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 
 	for (int i = 0; i < _popSize; i++)
 	{
-
-		leaders[i].F = _problem->evaluateFitness(leaders[i].point);
-	  double logprior = _problem->getPriorsLogProbabilityDensity(leaders[i].point);
-
-	  //printf("[");
-		//for (int d = 0; d < nDim; d++)	printf("%.3f, ", leaders[i].point[d]);
-		//printf("] = [%f, %f]\n", leaders[i].F, logprior);
-
-	  /* update current db entry */
-	  update_curgen_db(leaders[i].point, leaders[i].F, logprior);
+		leaders[i].F     = _problem->evaluateFitness(leaders[i].point);
+		leaders[i].prior = _problem->getPriorsLogProbabilityDensity(leaders[i].point);
+	  update_curgen_db(leaders[i].point, leaders[i].F, leaders[i].prior);
 	}
 
   while(runinfo.p[runinfo.Gen] < 1.0 && ++runinfo.Gen < data.MaxStages) {
@@ -99,9 +91,9 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 
 	 dump_curgen_db();
 
-   printf("Acceptance rate         :  %lf \n", runinfo.acceptance[runinfo.Gen]) ;
+   printf("Acceptance rate         :  %lf \n", runinfo.acceptance) ;
    printf("Annealing exponent      :  %lf \n", runinfo.p[runinfo.Gen]) ;
-   printf("Coeficient of Variation :  %lf \n", runinfo.CoefVar[runinfo.Gen]) ;
+   printf("Coeficient of Variation :  %lf \n", runinfo.CoefVar) ;
    printf("----------------------------------------------------------------\n");
    return;
 }
@@ -113,19 +105,19 @@ void Korali::KoraliTMCMC::evalGen()
 
 	for (int c = 0; c < data.nChains; c++)
 	{
+		double leader[nDim]; for (int i = 0; i < nDim; ++i) leader[i] = leaders[c].point[i];
+
 		if (data.use_local_cov) covariance = data.local_cov[c];
 
-		for (int step = 0; step < leaders[c].nsteps + data.burn_in; ++step)
+		for (int step = 0; step < leaders[c].nsteps; step++)
 		{
-			///////////////// COMPUTING NEW CANDIDATE /////////////////////
+			///////////////// Getting New Candidate /////////////////////
 
 			double candidate[nDim], loglik_candidate, logprior_candidate;
 			bool goodCandidate = true;
-			mvnrnd(leaders[c].point, covariance, candidate, nDim, range);
+			mvnrnd(leader, covariance, candidate, nDim, range);
 			for (int idx = 0; idx < nDim; ++idx)
 			 if ((candidate[idx] < _problem->_parameters[idx]._lowerBound) || (candidate[idx] > _problem->_parameters[idx]._upperBound))  {goodCandidate = false; break; }
-
-			//////////////// END COMPUTING NEW CANDIDATE //////////////////
 
 			if(goodCandidate)
 			{
@@ -137,16 +129,13 @@ void Korali::KoraliTMCMC::evalGen()
 
 				if (P < L) {
 						/* accept new leader */
-						for (int i = 0; i < nDim; ++i) leaders[c].point[i] = candidate[i];
+						for (int i = 0; i < nDim; ++i) leader[i] = candidate[i];
 						leaders[c].F = loglik_candidate;
+						leaders[c].prior = logprior_candidate;
 				}
 			}
 
-			/* increase counter or add the leader again in curgen_db */
-			if (step >= data.burn_in) {
-					leaders[c].prior = logprior_candidate = _problem->getPriorsLogProbabilityDensity(leaders[c].point);
-					update_curgen_db(leaders[c].point, leaders[c].F, leaders[c].prior);
-			}
+			update_curgen_db(leader, leaders[c].F, leaders[c].prior); // RE-ADD BURN IN
 		}
 	}
 }
@@ -228,7 +217,7 @@ void Korali::KoraliTMCMC::print_runinfo()
     printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
     printf("Current DB Entries      :  %d  \n", curgen_db.entries);
     printf("runinfo.Gen = \n\n   %d\n\n", runinfo.Gen);
-    print_matrix("runinfo.p", runinfo.p, runinfo.Gen+1);
+    printf("runinfo.p: %f\n", runinfo.p[runinfo.Gen]);
     print_matrix_2d("runinfo.SS", runinfo.SS, nDim, nDim);
     printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 }
@@ -243,10 +232,7 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 
 	// Initializing Data Variables
-  data.Num = (int*) calloc (sizeof(int), data.MaxStages);
-  for (int i = 0; i < data.MaxStages; ++i) {
-  	data.Num[i] = _popSize;
-  }
+  	data.Num = _popSize;
 
   double *LCmem  = (double*) calloc (sizeof(double), _popSize*nDim*nDim);
   data.local_cov = (double**) calloc (sizeof(double*), _popSize);
@@ -263,19 +249,18 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_popSize*sizeof(cgdbp_t));
 
   // Initializing Run Variables
-  runinfo.CoefVar        = (double*) calloc (sizeof(double), data.MaxStages+1);
+  runinfo.CoefVar        = 0;
 	runinfo.p              = (double*) calloc (sizeof(double), data.MaxStages+1);
-	runinfo.currentuniques = (int*) calloc (sizeof(int), data.MaxStages);
-	runinfo.logselections  = (double*) calloc (sizeof(double), data.MaxStages);
-	runinfo.acceptance     = (double*) calloc (sizeof(double), data.MaxStages);
+	runinfo.currentuniques = 0;
+	runinfo.logselections  = 0;
+	runinfo.acceptance     = 0;
 
 	runinfo.Gen = 0;
-	runinfo.CoefVar[0] = std::numeric_limits<double>::infinity();
+	runinfo.CoefVar = std::numeric_limits<double>::infinity();
 
 	runinfo.SS = new double[nDim*nDim];
 
-	runinfo.meantheta = new double*[data.MaxStages+1];
-	for(int i = 0; i < data.MaxStages+1; ++i) runinfo.meantheta[i] = new double[nDim];
+	runinfo.meantheta = new double[data.MaxStages+1];
 
 	// Initializing TMCMC Leaders
 	leaders    = (cgdbp_t*) calloc (sizeof(cgdbp_t), _popSize);
@@ -349,8 +334,8 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 			}
 
 			printf("runinfo.Gen: %d\n", runinfo.Gen);
-			runinfo.currentuniques[runinfo.Gen] = un;
-			runinfo.acceptance[runinfo.Gen]     = (1.0*runinfo.currentuniques[runinfo.Gen])/data.Num[runinfo.Gen]; /* check this*/
+			runinfo.currentuniques = un;
+			runinfo.acceptance     = (1.0*runinfo.currentuniques)/data.Num; /* check this*/
 
 			if(data.options.Display) {
 
@@ -375,7 +360,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 			for (i = 0; i < n; ++i)
 					fj[i] = curgen_db.entry[i].F;    /* separate point from F ?*/
 			//double t1 = torc_gettime();
-			calculate_statistics(fj, data.Num[runinfo.Gen], runinfo.Gen, sel);
+			calculate_statistics(fj, data.Num, runinfo.Gen, sel);
 			//double t2 = torc_gettime();
 			//printf("prepare_newgen: init + calc stats : %lf + %lf = %lf seconds\n", t2-t1, t1-t0, t2-t0);
 			delete[] fj;
@@ -511,9 +496,9 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
 {
     int display = data.options.Display;
     int nDim = _problem->_parameterCount;
-    double *coefVar       = runinfo.CoefVar;
+    double coefVar       = runinfo.CoefVar;
     double *p             = runinfo.p;
-    double *logselections = runinfo.logselections;
+    double logselections = runinfo.logselections;
 
     double fmin = 0, xmin = 0;
     bool conv = 0;
@@ -555,17 +540,17 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
 
     if ( conv && (xmin > p[gen]) ) {
         p[j]       = xmin;
-        coefVar[j] = pow(fmin, 0.5) + data.TolCOV;
+        coefVar = pow(fmin, 0.5) + data.TolCOV;
     } else {
         p[j]       = p[gen] + data.MinStep;
-        coefVar[j] = pow(tmcmc_objlogp(p[j], flc, curgen_db.entries,
+        coefVar = pow(tmcmc_objlogp(p[j], flc, curgen_db.entries,
                                        p[j-1], data.TolCOV), 0.5) +
                      data.TolCOV;
     }
 
     if (p[j] > 1) {
         p[j]       = 1;
-        coefVar[j] = pow(tmcmc_objlogp(p[j], flc, curgen_db.entries,
+        coefVar = pow(tmcmc_objlogp(p[j], flc, curgen_db.entries,
                                        p[j-1], data.TolCOV), 0.5) +
                      data.TolCOV;
     }
@@ -589,8 +574,8 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
     //TODO: logselections[gen+1] or ..[gen]? (DW)
     //logselection is log(Sj), what is logselections[0] if we switch to former?
     double sum_weight = std::accumulate(weight, weight+curgen_db.entries, 0.0);
-    logselections[gen]  = log(sum_weight) + fjmax - log(curgen_db.entries);
-    if (display) print_matrix("logselections", logselections, gen);
+    logselections  = log(sum_weight) + fjmax - log(curgen_db.entries);
+    if (display) printf("logselections: %f\n", logselections);
 
     double *q = new double[curgen_db.entries];
     for (i = 0; i < curgen_db.entries; ++i)
@@ -599,7 +584,7 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
 
     delete [] weight;
 
-    if (display) print_matrix("CoefVar", coefVar, gen+1);
+    if (display) printf("CoefVar: %f\n", coefVar);
 
     unsigned int N = 1;
 
@@ -623,20 +608,18 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
     /* compute SS */
     unsigned int PROBDIM = _problem->_parameterCount;
 
-    double mean_of_theta[PROBDIM];
 
     for (i = 0; i < PROBDIM; ++i) {
-        mean_of_theta[i] = 0;
-        for (j = 0; j < curgen_db.entries; ++j) mean_of_theta[i]+=curgen_db.entry[j].point[i]*q[j];
+    	runinfo.meantheta[i] = 0;
+        for (j = 0; j < curgen_db.entries; ++j) runinfo.meantheta[i]+=curgen_db.entry[j].point[i]*q[j];
 
-        runinfo.meantheta[gen][i] = mean_of_theta[i];
     }
 
-    if (display) print_matrix("mean_of_theta", mean_of_theta, PROBDIM);
+    if (display) print_matrix("mean_of_theta", runinfo.meantheta, PROBDIM);
 
     double meanv[PROBDIM];
     for (i = 0; i < PROBDIM; ++i) {
-        meanv[i] = mean_of_theta[i];
+        meanv[i] = runinfo.meantheta[i];
     }
 
     for (i = 0; i < PROBDIM; ++i) {
