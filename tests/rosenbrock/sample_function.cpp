@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
   auto Solver = Korali::KoraliTMCMC(&problem);
-	Solver.setPopulationSize(70000);
+	Solver.setPopulationSize(10000);
 	Solver.setCovarianceScaling(0.2);
 	Solver.run();
 

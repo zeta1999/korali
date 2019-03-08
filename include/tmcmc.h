@@ -23,18 +23,8 @@ typedef struct data_t {
     int MaxStages;                  /* Max number of tmcmc generations */
     int nChains;
 
-    double *compositeprior_distr;   /*[PROBDIM]*/
-
-    double *prior_mu;
-    double *prior_sigma;
-
-    int    auxil_size;
-    double *auxil_data;
-
     int MinChainLength;         /* MinChainLength > 0: setting MinChainLength */
     int MaxChainLength;         /* MaxChainLength > 0: splitting long chains */
-
-    double lb, ub;              /* generic lower and upper bound*/
 
     double TolCOV;              /* Target coefficient of variation of weights */
     double MinStep;             /* Min update of rho */
@@ -42,14 +32,9 @@ typedef struct data_t {
 
     optim_options options;      /* Optimization options (see above) */
 
-    int prior_type;             /* 0: uniform, 1: gaussian, 3: composite */
-
-    int Num;
-    int    use_proposal_cma;
     double **init_mean;     /* [DATANUM][PROBDIM] */
     double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
     bool use_local_cov;
-    double local_scale;
 } data_t;
 
 
@@ -69,51 +54,20 @@ typedef struct cgdbp_s {
     double *point;      /*[PROBDIM];*/
     double F;
     double prior;
-
-    int counter;        /* not used (?)*/
     int nsteps;           /* for selection of leaders only*/
-    int queue;          /* for submission of leaders only*/
-    int surrogate;      //TODO: used? (DW)
-    double error;       //TODO: used? (DW)
-
-    int error_flg;
-    int posdef;         //TODO: can we combine this with error_flg? (DW)
-    double *gradient;   /*[PROBDIM]*/
-    double *cov;        /*[PROBDIM]*/
-    double *evec;       /*[PROBDIM][PROBDIM]*/
-    double *eval;       /*[PROBDIM]*/
 } cgdbp_t;
 
 
 typedef struct cgdb_s {
     int     entries;
     cgdbp_t *entry;     /*[MAX_DB_ENTRIES];*/
-    pthread_mutex_t m;
 } cgdb_t;
 
 
 typedef struct dbp_s {
     double *point; /*[PROBDIM];*/
     double F;
-    int    nG;
-    double G[64];    /* maxG*/
-    int    surrogate;
 } dbp_t;
-
-
-typedef struct resdbp_s {
-    double *point;    /*[EXPERIMENTAL_RESULTS+1]; // +1 for the result (F)*/
-    double F;
-    int counter;    /* not used (?)*/
-    int nsteps;    /* for selection of leaders only*/
-} resdbp_t;
-
-
-typedef struct resdb_s {
-    int      entries;
-    resdbp_t *entry; /*[MAX_DB_ENTRIES];*/
-} resdb_t;
-
 
 typedef struct fparam_s {
     const double *fj;
@@ -154,8 +108,6 @@ class KoraliTMCMC // : public KoraliBase
 
   cgdbp_t *leaders;
   cgdb_t  curgen_db;
-  resdb_t curres_db;
-
 	gsl_rng  *range;
 
   // Public Methods
@@ -202,16 +154,9 @@ class KoraliTMCMC // : public KoraliBase
   static double tmcmc_objlogp_gsl(double x, void *param);
   static double tmcmc_objlogp_gsl2(const gsl_vector *v, void *param);
   void print_runinfo();
-  static int compar_desc(const void *p1, const void *p2);
-  double compute_sum(double *v, int n);
-  double compute_dot_product(double row_vector[], double vector[], int dim);
-  void compute_mat_product_vect(double *mat/*2D*/, double vect[], double res_vect[], double coef, int dim);
-  void inv_matrix(double *current_hessian/*2D*/, double *inv_hessian/*2D*/, int dim);
-  double scale_to_box(const double* point, double sc, const double* add_vec, const double *elbds, const double *eubds, int dims);
+  static int compar_desc(const void *p1, const void *p2);  double compute_sum(double *v, int n);
+
   int in_rect(double *v1, double *v2, double *diam, double sc, int D);
-  void print_matrix(const char *name, double *x, int n);
-  void print_matrix_i(char *name, int *x, int n);
-  void print_matrix_2d(const char *name, double *x, int n1, int n2);
   int mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range);
   double uniformrand(double a, double b, gsl_rng* range);
 };

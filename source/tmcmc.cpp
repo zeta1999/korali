@@ -218,7 +218,6 @@ void Korali::KoraliTMCMC::print_runinfo()
     printf("Current DB Entries      :  %d  \n", curgen_db.entries);
     printf("runinfo.Gen = \n\n   %d\n\n", runinfo.Gen);
     printf("runinfo.p: %f\n", runinfo.p[runinfo.Gen]);
-    print_matrix_2d("runinfo.SS", runinfo.SS, nDim, nDim);
     printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 }
 
@@ -232,8 +231,6 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 
 	// Initializing Data Variables
-  	data.Num = _popSize;
-
   double *LCmem  = (double*) calloc (sizeof(double), _popSize*nDim*nDim);
   data.local_cov = (double**) calloc (sizeof(double*), _popSize);
   for (int pos=0; pos < _popSize; ++pos)
@@ -244,7 +241,6 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
   // Initializing Databases
   curgen_db.entries = 0;
-  curres_db.entries = 0;
 
   curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_popSize*sizeof(cgdbp_t));
 
@@ -284,7 +280,6 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 
 	int i, p;
 
-	 curres_db.entries = 0;
 	int nDim = _problem->_parameterCount;
 	int n = curgen_db.entries;
 
@@ -335,7 +330,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 
 			printf("runinfo.Gen: %d\n", runinfo.Gen);
 			runinfo.currentuniques = un;
-			runinfo.acceptance     = (1.0*runinfo.currentuniques)/data.Num; /* check this*/
+			runinfo.acceptance     = (1.0*runinfo.currentuniques)/_popSize; /* check this*/
 
 			if(data.options.Display) {
 
@@ -346,8 +341,8 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 					}
 
 					printf("prepare_newgen: CURGEN DB (UNIQUES) %d\n", runinfo.Gen);
-					print_matrix("means", meanu, nDim);
-					print_matrix("std", stdu, nDim);
+					//print_matrix("means", meanu, nDim);
+					//print_matrix("std", stdu, nDim);
 			}
 	}
 	/* end block*/
@@ -360,7 +355,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 			for (i = 0; i < n; ++i)
 					fj[i] = curgen_db.entry[i].F;    /* separate point from F ?*/
 			//double t1 = torc_gettime();
-			calculate_statistics(fj, data.Num, runinfo.Gen, sel);
+			calculate_statistics(fj, _popSize, runinfo.Gen, sel);
 			//double t2 = torc_gettime();
 			//printf("prepare_newgen: init + calc stats : %lf + %lf = %lf seconds\n", t2-t1, t1-t0, t2-t0);
 			delete[] fj;
@@ -455,7 +450,6 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 
 	delete[] list;
 
-	for (i = 0; i < newchains; ++i) leaders[i].queue = -1;    /* rr*/
 
 	if (1) {
 			double **x = g_x;
@@ -473,8 +467,8 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains, cgdbp_t *leaders)
 
 			printf("prepare_newgen: CURGEN DB (LEADER) %d: [nlead=%d]\n", runinfo.Gen, newchains);
 			if(data.options.Display) {
-					print_matrix("means", meanx, nDim);
-					print_matrix("std", stdx, nDim);
+					//print_matrix("means", meanx, nDim);
+					//print_matrix("std", stdx, nDim);
 			}
 	}
 
@@ -567,7 +561,6 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
     double *weight     = new double[curgen_db.entries];
     for (i = 0; i < curgen_db.entries; ++i)
         weight[i] = exp( flcp[i] - fjmax );
-    if (display>2) print_matrix("weight", weight, curgen_db.entries);
 
     delete [] flcp;
 
@@ -580,7 +573,6 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
     double *q = new double[curgen_db.entries];
     for (i = 0; i < curgen_db.entries; ++i)
         q[i] = weight[i]/sum_weight;
-    if (display>2) print_matrix("runinfo_q", q, curgen_db.entries);
 
     delete [] weight;
 
@@ -599,12 +591,6 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
 
     delete [] nn;
 
-    if (display>2) {
-        printf("\n s = [");
-        for (i = 0; i < curgen_db.entries; ++i) printf("%d ", sel[i]);
-        printf("]\n");
-    }
-
     /* compute SS */
     unsigned int PROBDIM = _problem->_parameterCount;
 
@@ -614,8 +600,6 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
         for (j = 0; j < curgen_db.entries; ++j) runinfo.meantheta[i]+=curgen_db.entry[j].point[i]*q[j];
 
     }
-
-    if (display) print_matrix("mean_of_theta", runinfo.meantheta, PROBDIM);
 
     double meanv[PROBDIM];
     for (i = 0; i < PROBDIM; ++i) {
@@ -633,8 +617,6 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], int nstepsections, 
     }
 
     delete [] q;
-
-    if (display) print_matrix_2d("runinfo.SS", runinfo.SS, PROBDIM, PROBDIM);
 
 }
 
@@ -1023,8 +1005,6 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
     FILE *fp = NULL;
     char fname[64];
 
-    static int counter = 0;
-
     size_t iter;
     size_t niters;
 
@@ -1033,7 +1013,6 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
 
     bool converged = false;
 
-    counter++;
     while (converged == false && 1e-16 < step) {
 
         if(display) printf("fzerofind: x_lo %e x_hi %ei step %e\n", x_lo, x_hi, step);
@@ -1041,9 +1020,6 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
 
         if (first_try) {
             first_try = false;
-            //sprintf(fname, "fzero_%03d.txt", counter);
-            //fp = fopen(fname, "w");
-            //fprintf(fp, "%-19s%-19s\n","x","fx=(cov-TolCOV)^2");
         }
 
 
@@ -1104,104 +1080,6 @@ int Korali::KoraliTMCMC::compar_desc(const void* p1, const void* p2)
     if (s1->nsteps > s2->nsteps) return -dir;
 
     return 0;
-}
-
-double Korali::KoraliTMCMC::compute_sum(double *v, int n)
-{
-    double s = 0;
-    for (int i = 0; i < n; i++) s += v[i];
-    return s;
-}
-
-
-double Korali::KoraliTMCMC::compute_dot_product(double row_vector[], double vector[], int dim)
-{
-	double sum = 0.0;
-	for(int row=0; row<dim; row++) sum += row_vector[row] * vector[row];
-
-	return sum;
-}
-
-
-void Korali::KoraliTMCMC::compute_mat_product_vect(double *mat/*2D*/, double vect[], double res_vect[], double coef, int dim)
-{
-    int row, column;
-    double current_dot_product;
-
-	for(row=0; row<dim; ++row){
-		current_dot_product = 0.0;
-        for(column=0; column<dim; ++column) current_dot_product += mat[row*dim+column] * vect[column];
-        res_vect[row] = coef * current_dot_product;
-    }
-    return;
-}
-
-
-void Korali::KoraliTMCMC::inv_matrix(double *current_hessian/*2D*/, double *inv_hessian/*2D*/, int dim)
-{
-    gsl_matrix_view m   = gsl_matrix_view_array(current_hessian, dim, dim);
-    gsl_matrix_view inv = gsl_matrix_view_array(inv_hessian, dim, dim);
-    gsl_permutation * p = gsl_permutation_alloc (dim);
-
-    int s;
-    gsl_linalg_LU_decomp (&m.matrix, p, &s);
-    gsl_linalg_LU_invert (&m.matrix, p, &inv.matrix);
-
-    gsl_permutation_free (p);
-    return;
-}
-
-
-double Korali::KoraliTMCMC::scale_to_box(const double* point, double sc, const double* add_vec, const double *elbds, const double *eubds, int dims)
-{
-	double pp[dims];
-	for(int i=0; i<dims; ++i) pp[i] = point[i]+sc*add_vec[i];
-
-	sc = fabs(sc);
-	double c;
-	for (int l=0; l<dims; l++)
-	{
-		if (pp[l]<elbds[l])
-		{
-			c = fabs( (elbds[l]-point[l]) / add_vec[l] );
-			sc = fmin(sc,c);
-		}
-		if (pp[l]>eubds[l])
-		{
-			c = fabs( (point[l]-eubds[l]) / add_vec[l] );
-			sc = fmin(sc,c);
-		}
-	}
-	return sc;
-}
-
-
-void Korali::KoraliTMCMC::print_matrix(const char *name, double *x, int n)
-{
-    printf("\n%s =\n\n", name);
-    for (int i = 0; i < n; ++i) printf("   %20.15lf\n", x[i]);
-    printf("\n");
-}
-
-void Korali::KoraliTMCMC::print_matrix_i(char *title, int *v, int n)
-{
-    printf("\n%s =\n\n", title);
-    for (int i = 0; i < n; i++) printf("  %8d\n", v[i]);
-    printf("\n");
-}
-
-
-void Korali::KoraliTMCMC::print_matrix_2d(const char *name, double *x, int n1, int n2)
-{
-    printf("\n%s =\n\n", name);
-    for (int i = 0; i < n1; i++) {
-        for (int j = 0; j < n2; j++) {
-            printf("   %20.15lf", x[i*n1 + j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-
 }
 
 
