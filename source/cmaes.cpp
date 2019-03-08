@@ -112,7 +112,7 @@ void Korali::KoraliCMAES::workerComeback(int worker, size_t position, double fit
 
 void Korali::KoraliCMAES::workerEvaluateFitnessFunction(size_t position)
 {
-	double fitness = _kc->_problem->evaluateFitness(&_kc->_samplePopulation[position*_kc->_problem->_parameterCount]);
+	double fitness = -_kc->_problem->evaluateFitness(&_kc->_samplePopulation[position*_kc->_problem->_parameterCount]);
 	upcxx::rpc_ff(0, workerComeback, _kc->_rankId, position, fitness);
 }
 
@@ -132,6 +132,10 @@ void Korali::KoraliCMAES::Korali_InitializeInternalVariables()
 {
     int i, j, N;
     double dtest, trace;
+
+    // Initialize Parameter Priors
+    for (int i = 0; i < _problem->_parameterCount; i++)
+    	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 
     // Initializing MU and its weights
 

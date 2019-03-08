@@ -23,10 +23,11 @@ typedef struct gridLevelStruct {
 } gridLevel;
 
 // Main solver
-double* heat2DSolver(double* pars, void* data);
+double* heat2DSolver(double* pars);
 
 // Helper Functions
 gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars);
+void heat2DInit(int argc, char* argv[]);
 void freeGrids(gridLevel* g, int gridCount);
 
 // Solver functions
@@ -35,5 +36,7 @@ void calculateResidual(gridLevel* g, int l);
 void applyRestriction(gridLevel* g, int l);
 void applyProlongation(gridLevel* g, int l);
 void calculateL2Norm(gridLevel* g, int l);
+
+extern pointsInfo p;
 
 #endif // _HEAT2D_H_

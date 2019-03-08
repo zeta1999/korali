@@ -1,17 +1,10 @@
-.PHONY: ackley nCandle sample
+CASES = $(shell ls -d */)
+.PHONY: $(CASES)
 
-all: ackley nCandle sample
+all: $(CASES)
 
-ackley:
-	@$(MAKE) -j -C ackley
-
-nCandle:
-	@$(MAKE) -j -C nCandle
-
-sample:	
-	@$(MAKE) -j -C sample
+$(CASES) : % : 
+	@$(MAKE) -j -C $@
 
 clean: 
-	@$(MAKE) -j -C ackley clean
-	@$(MAKE) -j -C nCandle clean
-	@$(MAKE) -j -C sample clean
+	for i in $(CASES); do $(MAKE) -j -C $$i clean; done

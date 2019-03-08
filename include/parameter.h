@@ -17,12 +17,14 @@ class Parameter
  bool _boundsSet;
 
  std::string _name;
+ std::string _type;
+ double _a; // First parameter of distribution. Could be mean (gaussian) or min (uniform)
+ double _b; // First parameter of distribution. Could be sigma (gaussian) or max (uniform)
  double _lowerBound;
  double _upperBound;
  double _initialX;
  double _initialStdDev;
  double _minStdDevChange;
- int _seed;
 
  Parameter();
  Parameter(std::string name);
@@ -37,7 +39,7 @@ class Parameter
  void setInitialX(double initialX);
  void setInitialStdDev(double initialStdDev);
  void setMinStdDevChange(double minStdDevChange);
- void setSeed(int seed);
+ void initializePriorDistribution(int seed);
 
  private:
  Distribution* _prior;

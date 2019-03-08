@@ -2,8 +2,8 @@ include ../../common.mk
 
 LDFLAGS  += -L../../source -lkorali
 CXXFLAGS += -I../../include
-BINARIES = maximize_function sample_function
-OBJECTS = model/gaussian.o
+BINARIES = maximize_likelihood maximize_posterior sample_likelihood sample_posterior
+OBJECTS = model/heat2d.o
 CC = upcxx
 
 .SECONDARY:

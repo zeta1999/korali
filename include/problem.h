@@ -31,15 +31,13 @@ class Likelihood : public Problem
 
 	size_t _nData;
 	double* _referenceData;
-	void* _modelData;
-	double* (*_modelFunction) (double*, void*);
+	double* (*_modelFunction) (double*);
 
 	bool _modelDataSet;
 	bool _referenceDataSet;
 
-  void setModelData(void* modelData);
   void setReferenceData(size_t nData, double* referenceData);
-	Likelihood(double* (*modelFunction) (double*, void*), size_t seed = -1);
+	Likelihood(double* (*modelFunction) (double*), size_t seed = -1);
 	double evaluateFitness(double* sample);
 	bool evaluateSettings(char* errorCode);
 };
@@ -48,7 +46,7 @@ class Posterior : public Likelihood
 {
   public:
 
-	Posterior(double* (*modelFunction) (double*, void*), size_t seed = -1);
+	Posterior(double* (*modelFunction) (double*), size_t seed = -1);
 	bool evaluateSettings(char* errorCode);
 	double evaluateFitness(double* sample);
 };

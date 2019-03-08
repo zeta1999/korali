@@ -83,12 +83,12 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 	  update_curgen_db(leaders[i].point, leaders[i].F, logprior);
 	}
 
-
   while(runinfo.p[runinfo.Gen] < 1.0 && ++runinfo.Gen < data.MaxStages) {
       data.nChains = prepareNewGeneration(data.nChains, leaders);
 
  	   auto  gt0 = std::chrono::system_clock::now();
  	  evalGen();
+
     auto gt1 = std::chrono::system_clock::now();
      printf("evalGen: Generation %d - ", runinfo.Gen);
      printf("generation elapsed time = %lf secs\n",
@@ -97,7 +97,7 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
       if (data.options.Display) print_runinfo();
   }
 
-	dump_curgen_db();
+	 dump_curgen_db();
 
    printf("Acceptance rate         :  %lf \n", runinfo.acceptance[runinfo.Gen]) ;
    printf("Annealing exponent      :  %lf \n", runinfo.p[runinfo.Gen]) ;
@@ -333,6 +333,10 @@ void Korali::KoraliTMCMC::print_runinfo()
 void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 {
 	int nDim = _problem->_parameterCount;
+
+  // Initialize Parameter Priors
+  for (int i = 0; i < _problem->_parameterCount; i++)
+  	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 
 	// Initializing Data Variables
   data.Num = (int*) calloc (sizeof(int), data.MaxStages);

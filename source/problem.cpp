@@ -14,7 +14,6 @@ void Korali::Problem::addParameter(Parameter p)
 {
 	if(p._name == "") p._name = "Parameter" + std::to_string(_parameterCount);
 	_parameters.push_back(p);
-	p.setSeed(_seed++);
 	_parameterCount = _parameters.size();
 }
 
@@ -42,24 +41,17 @@ double Korali::DirectEvaluation::evaluateFitness(double* sample)
   return _modelFunction(sample);
 }
 
-Korali::Likelihood::Likelihood(double* (*modelFunction) (double*, void*), size_t seed) : Korali::Problem::Problem(seed)
+Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
 {
 	_referenceData = 0;
-	_modelData = 0;
 	_nData = 0;
 	_modelFunction = modelFunction;
-	_modelDataSet = false;
 	_referenceDataSet = false;
 
 	Korali::Parameter sigma("Sigma");
 	sigma.setBounds(0, 20.0);
+	sigma.setPriorDistribution("Uniform", 0.0, +20.0);
 	addParameter(sigma);
-}
-
-void Korali::Likelihood::setModelData(void* modelData)
-{
-	_modelData = modelData;
-	_modelDataSet = true;
 }
 
 void Korali::Likelihood::setReferenceData(size_t nData, double* referenceData)
@@ -73,9 +65,9 @@ double Korali::Likelihood::evaluateFitness(double* sample)
 {
 	double sigma = sample[0];
 	double* parameters = &sample[1];
-  double* measuredData = _modelFunction(parameters, _modelData);
+  double* measuredData = _modelFunction(parameters);
 
-	return Korali::GaussianDistribution::logLikelihood(sigma, _nData, _referenceData, measuredData);
+	return -Korali::GaussianDistribution::logLikelihood(sigma, _nData, _referenceData, measuredData);
 }
 
 bool Korali::DirectEvaluation::evaluateSettings(char* errorCode)
@@ -92,12 +84,6 @@ bool Korali::DirectEvaluation::evaluateSettings(char* errorCode)
 
 bool Korali::Likelihood::evaluateSettings(char* errorCode)
 {
-	if (_modelDataSet == false)
-	{
-		sprintf(errorCode, "[Korali] Error: Problem's model dataset not defined (use: setModelData()).\n");
-		return true;
-	}
-
 	if (_referenceDataSet == false)
 	{
 		sprintf(errorCode, "[Korali] Error: Problem's reference dataset not defined (use: setReferenceData()).\n");
@@ -114,7 +100,7 @@ bool Korali::Likelihood::evaluateSettings(char* errorCode)
   return false;
 }
 
-Korali::Posterior::Posterior(double* (*modelFunction) (double*, void*), size_t seed) : Korali::Likelihood::Likelihood(modelFunction, seed)
+Korali::Posterior::Posterior(double* (*modelFunction) (double*), size_t seed) : Korali::Likelihood::Likelihood(modelFunction, seed)
 {
 	_parameters[0].setPriorDistribution("Uniform", 0.0, 20.0);
 }
@@ -137,7 +123,7 @@ double Korali::Posterior::evaluateFitness(double* sample)
 {
 	double sigma = sample[0];
 	double* parameters = &sample[1];
-  double* measuredData = _modelFunction(parameters, _modelData);
+  double* measuredData = _modelFunction(parameters);
 
   double posterior = Korali::GaussianDistribution::logLikelihood(sigma, _nData, _referenceData, measuredData);
   double prev = posterior;
@@ -146,5 +132,5 @@ double Korali::Posterior::evaluateFitness(double* sample)
 
   //printf("Before: %f, After: %f\n", prev, posterior);
 
-  return posterior;
+  return -posterior;
 }

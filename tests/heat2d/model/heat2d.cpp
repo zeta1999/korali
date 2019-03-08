@@ -7,10 +7,14 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <limits>
 #include "heat2d.hpp"
-#include "korali.h"
+#include "mpi.h"
+#include "string.h"
 
-double* heat2DSolver(double* pars, void* data)
+pointsInfo p;
+
+double* heat2DSolver(double* pars)
 {
   double tolerance = 1e-8; // L2 Difference Tolerance before reaching convergence.
   size_t N0 = 7; // 2^N0 + 1 elements per side
@@ -44,17 +48,16 @@ double* heat2DSolver(double* pars, void* data)
 	}  // Multigrid solver end
 
 	// Saving the value of temperatures at specified points
-	pointsInfo* pd = (pointsInfo*) data;
 	double h = 1.0/(g[0].N-1);
-	for(int i = 0; i < pd->nPoints; i++)
+	for(int i = 0; i < p.nPoints; i++)
 	{
-		int p = ceil(pd->xPos[i]/h);	int q = ceil(pd->yPos[i]/h);
-		pd->simTemp[i] = g[0].U[p][q];
+		int k = ceil(p.xPos[i]/h);	int l = ceil(p.yPos[i]/h);
+		p.simTemp[i] = g[0].U[k][l];
 	}
 
   freeGrids(g, gridCount);
 
-  return pd->simTemp;
+  return p.simTemp;
 }
 
 void applyGaussSeidel(gridLevel* g, int l, int relaxations)
@@ -207,4 +210,44 @@ void freeGrids(gridLevel* g, int gridCount)
 		_mm_free(g[i].Res);
 	}
 	_mm_free(g);
+}
+
+void heat2DInit(int argc, char* argv[])
+{
+	MPI_Init(&argc, &argv);
+  int myRank, rankCount;
+	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &rankCount);
+
+  int problemNumber = 1;
+  for (int i = 0; i < argc; i++) if(!strcmp(argv[i], "-p")) problemNumber = atoi(argv[++i]);
+  FILE *problemFile;
+
+  if (myRank == 0)
+  {
+		// Read solution from file
+		char pfile[50];
+		sprintf(pfile, "problem%d.in", problemNumber);
+		printf("Running problem from file %s... \n", pfile);
+		problemFile = fopen(pfile, "r");
+		fscanf(problemFile, "%lu", &p.nPoints);
+  }
+
+  MPI_Bcast(&p.nPoints, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+
+  p.xPos    = (double*) calloc (sizeof(double), p.nPoints);
+  p.yPos    = (double*) calloc (sizeof(double), p.nPoints);
+  p.refTemp = (double*) calloc (sizeof(double), p.nPoints);
+  p.simTemp = (double*) calloc (sizeof(double), p.nPoints);
+
+  if (myRank == 0) for (int i = 0; i < p.nPoints; i++)
+  {
+  	fscanf(problemFile, "%le ", &p.xPos[i]);
+  	fscanf(problemFile, "%le ", &p.yPos[i]);
+  	fscanf(problemFile, "%le ", &p.refTemp[i]);
+  }
+
+  MPI_Bcast(p.xPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(p.yPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(p.refTemp, p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
