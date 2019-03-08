@@ -61,7 +61,7 @@ typedef struct runinfo_t {
     int    *currentuniques; /*[MAXGENS];*/
     double *logselections;  /*[MAXGENS];*/
     double *acceptance;     /*[MAXGENS];*/
-    double **SS;            /*[PROBDIM][PROBDIM];*/
+    double *SS;            /*[PROBDIM][PROBDIM];*/
     double **meantheta;     /*[MAXGENS][PROBDIM]*/
 } runinfo_t;
 
@@ -72,7 +72,7 @@ typedef struct cgdbp_s {
     double prior;
 
     int counter;        /* not used (?)*/
-    int nsel;           /* for selection of leaders only*/
+    int nsteps;           /* for selection of leaders only*/
     int queue;          /* for submission of leaders only*/
     int surrogate;      //TODO: used? (DW)
     double error;       //TODO: used? (DW)
@@ -102,25 +102,17 @@ typedef struct dbp_s {
 } dbp_t;
 
 
-typedef struct db_s {
-    int   entries;
-    dbp_t *entry; /*[MAX_DB_ENTRIES];*/        /* */
-    pthread_mutex_t m;
-} db_t;
-
-
 typedef struct resdbp_s {
     double *point;    /*[EXPERIMENTAL_RESULTS+1]; // +1 for the result (F)*/
     double F;
     int counter;    /* not used (?)*/
-    int nsel;    /* for selection of leaders only*/
+    int nsteps;    /* for selection of leaders only*/
 } resdbp_t;
 
 
 typedef struct resdb_s {
     int      entries;
     resdbp_t *entry; /*[MAX_DB_ENTRIES];*/
-    pthread_mutex_t m;
 } resdb_t;
 
 
@@ -134,7 +126,7 @@ typedef struct fparam_s {
 
 typedef struct sort_s {
     int idx;
-    int nsel;
+    int nsteps;
     double F;
 } sort_t;
 
@@ -160,9 +152,8 @@ class KoraliTMCMC // : public KoraliBase
 	// TMCMC Fields
   data_t    data;
   runinfo_t runinfo;
-  cgdbp_t *leaders;
 
-  db_t    full_db;
+  cgdbp_t *leaders;
   cgdb_t  curgen_db;
   resdb_t curres_db;
 
@@ -222,8 +213,7 @@ class KoraliTMCMC // : public KoraliBase
   int in_rect(double *v1, double *v2, double *diam, double sc, int D);
   void print_matrix(const char *name, double *x, int n);
   void print_matrix_i(char *name, int *x, int n);
-  void print_matrix_2d(const char *name, double **x, int n1, int n2);
-  void multinomialrand(size_t K, unsigned int N, double q[], unsigned int nn[], gsl_rng* range);
+  void print_matrix_2d(const char *name, double *x, int n1, int n2);
   int mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range);
   double uniformrand(double a, double b, gsl_rng* range);
 };
