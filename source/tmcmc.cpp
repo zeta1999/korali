@@ -91,6 +91,7 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 
 	 dump_curgen_db();
 
+	 printf("Seed                    :  %ld \n", _problem->_seed) ;
    printf("Acceptance rate         :  %lf \n", runinfo.acceptance) ;
    printf("Annealing exponent      :  %lf \n", runinfo.p) ;
    printf("Coeficient of Variation :  %lf \n", runinfo.CoefVar) ;

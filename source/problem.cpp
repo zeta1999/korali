@@ -1,11 +1,15 @@
 #include "problem.h"
-#include <time.h>
 #include <stdlib.h>
+#include <chrono>
 
 Korali::Problem::Problem(size_t seed)
 {
 	_seed = seed;
-	if (_seed == -1) _seed = clock();
+	if (_seed == -1)
+	{
+    std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
+		_seed  = std::chrono::nanoseconds(now_c).count();
+	}
 	_parameterCount = 0;
   gsl_rng_env_setup();
 }
