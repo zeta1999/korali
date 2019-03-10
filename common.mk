@@ -2,8 +2,8 @@
 
 CXX = upcxx
 
-#CXXFLAGS += -O3 -g -std=c++17
-CXXFLAGS += -O0 -g -std=c++17
+CXXFLAGS += -O3 -g -std=c++17
+#CXXFLAGS += -O0 -g -std=c++17
 CXXFLAGS += -Wall -Wfatal-errors `gsl-config --cflags` -I/cluster/apps/intel/parallel_studio_xe_2018_r1/compilers_and_libraries_2018.1.163/linux/mpi/intel64/include
 LDFLAGS += `gsl-config --libs` -lm -L/cluster/apps/intel/parallel_studio_xe_2018_r1/compilers_and_libraries_2018.1.163/linux/mpi/intel64/lib -lmpi
 

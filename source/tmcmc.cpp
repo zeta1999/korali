@@ -36,7 +36,7 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 
 	data.options.MaxIter    = 1000;
 	data.options.Tol        = 1e-12;
-	data.options.Display    = true;
+	data.options.Display    = false;
 	data.options.Step       = 1e-8;
 	data.options.LowerBound = -10.0;
 	data.options.UpperBound = 10.0;
@@ -52,6 +52,8 @@ void Korali::KoraliTMCMC::run()
 	_rankId = upcxx::rank_me();
 	_rankCount = upcxx::rank_n();
 
+	N = _problem->_parameterCount;
+
   // Verifying Parameter correctness.
 	char errorString[500];
   if(Korali_VerifyParameters(errorString)) { if (_rankId == 0) fprintf(stderr, "%s", errorString); exit(-1); }
@@ -64,75 +66,58 @@ void Korali::KoraliTMCMC::run()
 
 void Korali::KoraliTMCMC::Korali_SupervisorThread()
 {
-	int nDim = _problem->_parameterCount;
-
 	Korali_InitializeInternalVariables();
 
 	for (int i = 0; i < _popSize; i++)
 	{
-		chainFitness[i]  = _problem->evaluateFitness(&chainPoints[i*nDim]);
-		chainLogPrior[i] = _problem->getPriorsLogProbabilityDensity(&chainPoints[i*nDim]);
-	  update_curgen_db(&chainPoints[i*nDim], chainFitness[i], chainLogPrior[i]);
+		chainFitness[i]  = _problem->evaluateFitness(&chainPoints[i*N]);
+		chainLogPrior[i] = _problem->getPriorsLogProbabilityDensity(&chainPoints[i*N]);
+	  update_curgen_db(&chainPoints[i*N], chainFitness[i], chainLogPrior[i]);
 	}
 
+	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed) ;
+
   while(runinfo.p < 1.0 && ++runinfo.Gen < data.MaxStages) {
-      data.nChains = prepareNewGeneration(data.nChains);
-
- 	   auto  gt0 = std::chrono::system_clock::now();
- 	  evalGen();
-
+ 	  auto gt0 = std::chrono::system_clock::now();
+ 	  processGeneration();
     auto gt1 = std::chrono::system_clock::now();
-     printf("evalGen: Generation %d - ", runinfo.Gen);
-     printf("generation elapsed time = %lf secs\n",
-   	std::chrono::duration<double>(gt1-gt0).count());
-
-      if (data.options.Display) print_runinfo();
+    printf("[Korali] Gen %d - Elapsed Time: %f, Annealing: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(gt1-gt0).count(), runinfo.p*100);
   }
 
-	 dump_curgen_db();
-
-	 printf("Seed                    :  %ld \n", _problem->_seed) ;
-   printf("Acceptance rate         :  %lf \n", runinfo.acceptance) ;
-   printf("Annealing exponent      :  %lf \n", runinfo.p) ;
-   printf("Coeficient of Variation :  %lf \n", runinfo.CoefVar) ;
-   printf("----------------------------------------------------------------\n");
-   return;
+	 saveResults();
 }
 
-void Korali::KoraliTMCMC::evalGen()
+void Korali::KoraliTMCMC::processGeneration()
 {
-	int nDim = _problem->_parameterCount;
-	double* covariance = runinfo.SS;
+	prepareNewGeneration();
 
 	for (int c = 0; c < data.nChains; c++)
 	{
-		double leader[nDim]; for (int i = 0; i < nDim; ++i) leader[i] = chainPoints[c*nDim + i];
-
-		if (data.use_local_cov) covariance = data.local_cov[c];
+		double leader[N]; for (int i = 0; i < N; ++i) leader[i] = chainPoints[c*N + i];
 
 		for (int step = 0; step < chainLength[c]; step++)
 		{
-			///////////////// Getting New Candidate /////////////////////
+			double candidate[N], candidateFitness, candidateLogPrior;
+			double* covariance = data.use_local_cov ? data.local_cov[c] : runinfo.SS;
+			mvnrnd(leader, covariance, candidate, N, range);
 
-			double candidate[nDim], loglik_candidate, logprior_candidate;
 			bool goodCandidate = true;
-			mvnrnd(leader, covariance, candidate, nDim, range);
-			for (int idx = 0; idx < nDim; ++idx)
-			 if ((candidate[idx] < _problem->_parameters[idx]._lowerBound) || (candidate[idx] > _problem->_parameters[idx]._upperBound))  {goodCandidate = false; break; }
+			for (int i = 0; i < N; i++)
+			 if (candidate[i] < _problem->_parameters[i]._lowerBound ||
+					 candidate[i] > _problem->_parameters[i]._upperBound) { goodCandidate = false; break; }
 
 			if(goodCandidate)
 			{
-				loglik_candidate = _problem->evaluateFitness(candidate);
-				logprior_candidate = _problem->getPriorsLogProbabilityDensity(candidate);
+				candidateFitness = _problem->evaluateFitness(candidate);
+				candidateLogPrior = _problem->getPriorsLogProbabilityDensity(candidate);
 
-				double L = exp((logprior_candidate-chainLogPrior[c])+(loglik_candidate-chainFitness[c])*runinfo.p);
-				double P = uniformrand(0,1, range);
+				double L = exp((candidateLogPrior-chainLogPrior[c])+(candidateFitness-chainFitness[c])*runinfo.p);
+				double P = gsl_ran_flat(range, 0.0, 1.0 );
 
 				if (P < L) {
-						/* accept new leader */
-						for (int i = 0; i < nDim; ++i) leader[i] = candidate[i];
-						chainFitness[c] = loglik_candidate;
-						chainLogPrior[c] = logprior_candidate;
+						for (int i = 0; i < N; ++i) leader[i] = candidate[i];
+						chainFitness[c]  = candidateFitness;
+						chainLogPrior[c] = candidateLogPrior;
 				}
 			}
 
@@ -141,46 +126,36 @@ void Korali::KoraliTMCMC::evalGen()
 	}
 }
 
-void Korali::KoraliTMCMC::dump_curgen_db()
+void Korali::KoraliTMCMC::saveResults()
 {
-	int pos;
-	FILE *fp;
-	int nDim = _problem->_parameterCount;
-
-	fp = fopen("tmcmc.txt", "w");
-	printf("Writing File, Entries: %d\n", curgen_db.entries);
-	for (pos = 0; pos < curgen_db.entries; pos++) {
-		int i;
-
-		for (i = 0; i < nDim; i++) {
-			fprintf(fp, "%3.12lf, ", curgen_db.entry[pos].point[i]);
-		}
+	char* outputName = "tmcmc.txt";
+	printf("[Korali] Saving results to file: %s...\n", outputName);
+	FILE *fp = fopen(outputName, "w");
+	for (int pos = 0; pos < curgen_db.entries; pos++)
+	{
+		for (int i = 0; i < N; i++) fprintf(fp, "%3.12lf, ", curgen_db.entry[pos].point[i]);
 		fprintf(fp, "%3.12lf\n", curgen_db.entry[pos].F);
-/*		fprintf(fp, "\n");*/
 	}
 	fclose(fp);
 }
 
 bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
 {
-	// Checking Problem's settings
 	if (_problem->evaluateSettings(errorString)) return true;
 
-	for (int i = 0; i < _problem->_parameterCount; i++)
+	for (int i = 0; i < N; i++)
 	if (_problem->_parameters[i]._boundsSet == false)
 	{
 		sprintf(errorString, "[Korali] Error: Bounds for parameter \'%s\' have not been set.\n", _problem->_parameters[i]._name.c_str());
 		return true;
 	}
 
-  for (int i = 0; i < _problem->_parameterCount; i++)
+  for (int i = 0; i < N; i++)
 	if (_problem->_parameters[i]._priorSet == false)
 	{
 		sprintf(errorString, "[Korali] Error: Prior for parameter \'%s\' have not been set.\n", _problem->_parameters[i]._name.c_str());
 		return true;
 	}
-
-  // Checking TMCMC Settings
 
   if(_popSize < 32 )
   {
@@ -193,12 +168,11 @@ bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
 
 void Korali::KoraliTMCMC::update_curgen_db(double point[], double F, double prior)
 {
-	int nDim = _problem->_parameterCount;
   int pos = curgen_db.entries;
   curgen_db.entries++;
 
-  if (curgen_db.entry[pos].point == NULL) curgen_db.entry[pos].point = (double *)malloc(nDim*sizeof(double));
-  for (int i = 0; i < nDim; ++i) curgen_db.entry[pos].point[i] = point[i];
+  if (curgen_db.entry[pos].point == NULL) curgen_db.entry[pos].point = (double *)malloc(N*sizeof(double));
+  for (int i = 0; i < N; ++i) curgen_db.entry[pos].point[i] = point[i];
   curgen_db.entry[pos].F = F;
   curgen_db.entry[pos].prior = prior;
 }
@@ -209,37 +183,24 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 
 }
 
-void Korali::KoraliTMCMC::print_runinfo()
-{
-	int nDim = _problem->_parameterCount;
-    printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-    printf("Current DB Entries      :  %d  \n", curgen_db.entries);
-    printf("runinfo.Gen = \n\n   %d\n\n", runinfo.Gen);
-    printf("runinfo.p: %f\n", runinfo.p);
-    printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-}
-
 
 void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 {
-	int nDim = _problem->_parameterCount;
-
   // Initialize Parameter Priors
-  for (int i = 0; i < _problem->_parameterCount; i++)
+  for (int i = 0; i < N; i++)
   	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 
 	// Initializing Data Variables
-  double *LCmem  = (double*) calloc (sizeof(double), _popSize*nDim*nDim);
+  double *LCmem  = (double*) calloc (sizeof(double), _popSize*N*N);
   data.local_cov = (double**) calloc (sizeof(double*), _popSize);
   for (int pos=0; pos < _popSize; ++pos)
   {
-  	data.local_cov[pos] = LCmem + pos*nDim*nDim;
-    for (int i=0; i<nDim; ++i) data.local_cov[pos][i*nDim+i] = 1;
+  	data.local_cov[pos] = LCmem + pos*N*N;
+    for (int i=0; i<N; ++i) data.local_cov[pos][i*N+i] = 1;
   }
 
   // Initializing Databases
   curgen_db.entries = 0;
-
   curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_popSize*sizeof(cgdbp_t));
 
   // Initializing Run Variables
@@ -248,17 +209,14 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	runinfo.currentuniques = 0;
 	runinfo.logselections  = 0;
 	runinfo.acceptance     = 0;
-
 	runinfo.Gen = 0;
 	runinfo.CoefVar = std::numeric_limits<double>::infinity();
-
-	runinfo.SS =  (double*) calloc (sizeof(double),nDim*nDim);
-
+	runinfo.SS =  (double*) calloc (sizeof(double),N*N);
 	runinfo.meantheta =  (double*) calloc (sizeof(double),data.MaxStages+1);
 
 	// Initializing TMCMC Leaders
 
-	chainPointsGlobalPtr  = upcxx::new_array<double>(nDim*_popSize);
+	chainPointsGlobalPtr  = upcxx::new_array<double>(N*_popSize);
 	chainFitnessGlobalPtr = upcxx::new_array<double>(_popSize);
 
 	chainPoints   = chainPointsGlobalPtr.local();
@@ -268,12 +226,12 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
   // First definition of chains and their leaders
   data.nChains = _popSize;
-  for (int i = 0; i < _popSize; i++) for (int d = 0; d < nDim; d++)	chainPoints[i*nDim + d] = _problem->_parameters[d].getRandomNumber();
+  for (int i = 0; i < _popSize; i++) for (int d = 0; d < N; d++)	chainPoints[i*N + d] = _problem->_parameters[d].getRandomNumber();
 
 	// TODO: Ensure proper memory deallocation
 }
 
-int Korali::KoraliTMCMC::prepareNewGeneration(int nchains)
+void Korali::KoraliTMCMC::prepareNewGeneration()
 {
 	/* process curgen_db -> calculate statitics */
 	/* compute probs based on F values */
@@ -283,84 +241,73 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains)
 	/* return the new sample size (number of chains) */
 
 	int i, p;
-
-	int nDim = _problem->_parameterCount;
 	int n = curgen_db.entries;
 
 	unsigned int *sel = new unsigned int[n];
 
-	double **g_x = new double*[nDim];
-	for (i = 0; i < nDim; ++i) g_x[i] = new double[n];
+	double **g_x = new double*[N];
+	for (i = 0; i < N; ++i) g_x[i] = new double[n];
 
 
 	/* calculate uniques & acceptance rate */
-	{
-			double * uf = new double[n];
-			double **uniques = g_x;
-			int un = 0, unflag, j;
+	double * uf = new double[n];
+	double **uniques = g_x;
+	int un = 0, unflag, j;
 
-			uf[un] = curgen_db.entry[0].F;
-			for( p = 0; p < nDim; ++p )
-					uniques[p][un] = curgen_db.entry[0].point[p];
+	uf[un] = curgen_db.entry[0].F;
+	for( p = 0; p < N; ++p )
+			uniques[p][un] = curgen_db.entry[0].point[p];
 
-			un++;
-			for (i = 1; i < n; ++i) {
-					double xi[nDim];
-					double fi = curgen_db.entry[i].F;
-					for (p = 0; p < nDim; ++p) xi[p] = curgen_db.entry[i].point[p];
+	un++;
+	for (i = 1; i < n; ++i) {
+			double xi[N];
+			double fi = curgen_db.entry[i].F;
+			for (p = 0; p < N; ++p) xi[p] = curgen_db.entry[i].point[p];
 
-					unflag = 1;                 /* is this point unique? */
-					for (j = 0; j < un; ++j) {  /* compare with  previous uniques */
-							for (p = 0; p < nDim; ++p) {
+			unflag = 1;                 /* is this point unique? */
+			for (j = 0; j < un; ++j) {  /* compare with  previous uniques */
+					for (p = 0; p < N; ++p) {
 
-									/* do they differ in position? */
-									if (fabs(xi[p]-uniques[p][j]) > 1e-8) break; /* check next */
+							/* do they differ in position? */
+							if (fabs(xi[p]-uniques[p][j]) > 1e-8) break; /* check next */
 
-									/* do they differ in fun eval? */
-									if (fabs(fi - uf[j]) > 1e-8) break; /* check next */
+							/* do they differ in fun eval? */
+							if (fabs(fi - uf[j]) > 1e-8) break; /* check next */
 
-									unflag = 0;         /* not unique */
-							}
-
-							if (unflag == 0) break; /* not unique - stop comparison */
+							unflag = 0;         /* not unique */
 					}
 
-					if (unflag) {               /* unique, put it in the table */
-							uf[un] = fi;
-							for (p = 0; p < nDim; ++p) uniques[p][un] = xi[p];
-							un++;
-					}
+					if (unflag == 0) break; /* not unique - stop comparison */
 			}
 
-			printf("runinfo.Gen: %d\n", runinfo.Gen);
-			runinfo.currentuniques = un;
-			runinfo.acceptance     = (1.0*runinfo.currentuniques)/_popSize; /* check this*/
-
-			if(data.options.Display) {
-
-					double meanu[nDim], stdu[nDim];
-					for (p = 0; p < nDim; ++p) {
-							meanu[p] = gsl_stats_mean(uniques[p], 1, n);
-							stdu[p]  = gsl_stats_sd_m(uniques[p], 1, n, meanu[p]);
-					}
-
-					printf("prepare_newgen: CURGEN DB (UNIQUES) %d\n", runinfo.Gen);
-					//print_matrix("means", meanu, nDim);
-					//print_matrix("std", stdu, nDim);
+			if (unflag) {               /* unique, put it in the table */
+					uf[un] = fi;
+					for (p = 0; p < N; ++p) uniques[p][un] = xi[p];
+					un++;
 			}
+	}
+	runinfo.currentuniques = un;
+	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_popSize; /* check this*/
+
+	if(data.options.Display) {
+
+			double meanu[N], stdu[N];
+			for (p = 0; p < N; ++p) {
+					meanu[p] = gsl_stats_mean(uniques[p], 1, n);
+					stdu[p]  = gsl_stats_sd_m(uniques[p], 1, n, meanu[p]);
+			}
+
+			printf("prepare_newgen: CURGEN DB (UNIQUES) %d\n", runinfo.Gen);
+			//print_matrix("means", meanu, N);
+			//print_matrix("std", stdu, N);
 	}
 	/* end block*/
 
-
-	/* calculate statistics */
-	{
 			double *fj = new double[n];
 			for (i = 0; i < n; ++i)
 					fj[i] = curgen_db.entry[i].F;    /* separate point from F ?*/
 			calculate_statistics(fj, sel);
 			delete[] fj;
-	}
-
 
 	int newchains = 0;
 	sort_t *list = new sort_t[n];
@@ -371,21 +318,7 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains)
 			if (sel[i] != 0) newchains++;
 	}
 
-#if VERBOSE
-	printf("Points before qsort\n");
-	for (i = 0; i < n; ++i)
-			printf("%d: %d %d %f\n", i, list[i].idx, list[i].nsteps, list[i].F);
-
-#endif
-
 	qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
-
-#if VERBOSE
-	printf("Points after qsort\n");
-	for (i = 0; i < n; ++i)
-			printf("%d: %d %d %f\n", i, list[i].idx, list[i].nsteps, list[i].F);
-
-#endif
 
 	/* UPPER THRESHOLD */
 	/* splitting long chains */
@@ -405,13 +338,6 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains)
 			}
 
 			qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
-
-#if VERBOSE
-			printf("Points broken\n");
-			for (i = 0; i < n; ++i)
-					printf("%d: %d %d %f\n", i, list[i].idx, list[i].nsteps, list[i].F);
-
-#endif
 	}
 
 	/* LOWER THRESHOLD */
@@ -426,21 +352,14 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains)
 			}
 
 			qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
-
-#if VERBOSE
-			printf("Points advanced\n");
-			for (i = 0; i < n; ++i) {
-					printf("%d: %d %d %f\n", i, list[i].idx, list[i].nsteps, list[i].F);
-			}
-#endif
 	}
 
 	int ldi = 0;                    /* leader index */
 	for (i = 0; i < n; ++i) {       /* newleader */
 			if (list[i].nsteps != 0) {
 					int idx = list[i].idx;
-					for (p = 0; p < nDim ; p++) {
-							chainPoints[ldi*nDim + p] = curgen_db.entry[idx].point[p];
+					for (p = 0; p < N ; p++) {
+							chainPoints[ldi*N + p] = curgen_db.entry[idx].point[p];
 					}
 					chainFitness[ldi] = curgen_db.entry[idx].F;
 					chainLength[ldi] = list[i].nsteps;
@@ -452,41 +371,40 @@ int Korali::KoraliTMCMC::prepareNewGeneration(int nchains)
 
 			double **x = g_x;
 			for (i = 0; i < newchains; ++i) {
-					for (p = 0; p < nDim; p++) {
-							x[p][i] = chainPoints[i*nDim + p];
+					for (p = 0; p < N; p++) {
+							x[p][i] = chainPoints[i*N + p];
 					}
 			}
 
-			double meanx[nDim], stdx[nDim];
-			for (p = 0; p < nDim; p++) {
+			double meanx[N], stdx[N];
+			for (p = 0; p < N; p++) {
 					meanx[p] = gsl_stats_mean(x[p], 1, newchains);
 					stdx[p]  = gsl_stats_sd_m(x[p], 1, newchains, meanx[p]);
 			}
 
-			printf("prepare_newgen: CURGEN DB (LEADER) %d: [nlead=%d]\n", runinfo.Gen, newchains);
 			if(data.options.Display) {
-					//print_matrix("means", meanx, nDim);
-					//print_matrix("std", stdx, nDim);
+				printf("prepare_newgen: CURGEN DB (LEADER) %d: [nlead=%d]\n", runinfo.Gen, newchains);
+					//print_matrix("means", meanx, N);
+					//print_matrix("std", stdx, N);
 			}
 
 	if (data.use_local_cov)
 			precompute_chain_covariances(data.init_mean, data.local_cov, newchains);
 
 	curgen_db.entries = 0;
-	printf("prepare_newgen: newchains=%d\n", newchains);
+	if(data.options.Display) printf("prepare_newgen: newchains=%d\n", newchains);
 
-	for (i = 0; i < nDim; ++i) delete g_x[i];
+	for (i = 0; i < N; ++i) delete g_x[i];
 
 	delete[] g_x;
 	delete[] sel;
 
-	return newchains;
+	data.nChains = newchains;
 }
 
 void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 {
     int display = data.options.Display;
-    int nDim = _problem->_parameterCount;
     double coefVar       = runinfo.CoefVar;
     double logselections = runinfo.logselections;
 
@@ -548,19 +466,19 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 
     delete [] nn;
 
-    for (int i = 0; i < nDim; i++)
+    for (int i = 0; i < N; i++)
     {
     	runinfo.meantheta[i] = 0;
       for (int j = 0; j < curgen_db.entries; j++) runinfo.meantheta[i] += curgen_db.entry[j].point[i]*q[j];
     }
 
-    double meanv[nDim];
-    for (int i = 0; i < nDim; i++)  meanv[i] = runinfo.meantheta[i];
-    for (int i = 0; i < nDim; i++) for (int j = i; j < nDim; ++j)
+    double meanv[N];
+    for (int i = 0; i < N; i++)  meanv[i] = runinfo.meantheta[i];
+    for (int i = 0; i < N; i++) for (int j = i; j < N; ++j)
     {
 			double s = 0.0;
 			for (unsigned int k = 0; k < curgen_db.entries; ++k) s += q[k]*(curgen_db.entry[k].point[i]-meanv[i])*(curgen_db.entry[k].point[j]-meanv[j]);
-			runinfo.SS[i*nDim + j] = runinfo.SS[j*nDim + i] = s*data.bbeta;
+			runinfo.SS[i*N + j] = runinfo.SS[j*N + i] = s*data.bbeta;
     }
 
     delete [] q;
@@ -570,26 +488,20 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, double** chain_cov, int newchains)
 {
     bool display = data.options.Display;
-    int nDim = _problem->_parameterCount;
     printf("Precomputing chain covariances for the current generation...\n");
-
-    int D = _problem->_parameterCount;
-    int N = curgen_db.entries;
-
-    double my_time = clock();
 
     // allocate space
     int* nn_ind        = new int[newchains];
     int* nn_count      = new int[newchains];
-    double* diam       = new double[D];
-    double* chain_mean = new double[D];
-    gsl_matrix* work   = gsl_matrix_alloc(D, D);
+    double* diam       = new double[N];
+    double* chain_mean = new double[N];
+    gsl_matrix* work   = gsl_matrix_alloc(N, N);
 
     // find diameters
-    for (int d = 0; d < D; ++d) {
+    for (int d = 0; d < N; ++d) {
         double d_min = +1e6;
         double d_max = -1e6;
-        for (int pos = 0; pos < N; ++pos) {
+        for (int pos = 0; pos < _popSize; ++pos) {
             double s = curgen_db.entry[pos].point[d];
             if (d_min > s) d_min = s;
             if (d_max < s) d_max = s;
@@ -602,14 +514,14 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
     int status = 0;
     double ds = 0.05;
     for (double scale = 0.1; scale <= 1.0; scale += ds) {
-        // find neighbors in a rectangle - O(N^2)
+        // find neighbors in a rectangle - O(_popSize^2)
         for (pos = 0; pos < newchains; ++pos) {
             nn_count[pos] = 0;
-            double* curr = &chainPoints[pos*nDim];
-            for (int i = 0; i < N; ++i) {
+            double* curr = &chainPoints[pos*N];
+            for (int i = 0; i < _popSize; ++i) {
                 double* s = curgen_db.entry[i].point;
-                if (in_rect(curr, s, diam, scale, D)) {
-                    nn_ind[pos*N+nn_count[pos]] = i;
+                if (in_rect(curr, s, diam, scale, N)) {
+                    nn_ind[pos*_popSize+nn_count[pos]] = i;
                     nn_count[pos]++;
                 }
             }
@@ -617,30 +529,30 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
 
         // compute the covariances
         for (pos = 0; pos < newchains; ++pos) {
-            for (int d = 0; d < D; ++d) {
+            for (int d = 0; d < N; ++d) {
                 chain_mean[d] = 0;
                 for (int k = 0; k < nn_count[pos]; ++k) {
-                    ind = nn_ind[pos*N+k];
+                    ind = nn_ind[pos*_popSize+k];
                     chain_mean[d] += curgen_db.entry[ind].point[d];
                 }
                 chain_mean[d] /= nn_count[pos];
             }
 
-            for (int i = 0; i < D; ++i)
-                for (int j = 0; j < D; ++j) {
+            for (int i = 0; i < N; ++i)
+                for (int j = 0; j < N; ++j) {
                     double s = 0;
                     for (int k = 0; k < nn_count[pos]; k++) {
-                        ind = nn_ind[pos*N+k];
+                        ind = nn_ind[pos*_popSize+k];
                         s  += (curgen_db.entry[ind].point[i]-chain_mean[i]) *
                               (curgen_db.entry[ind].point[j]-chain_mean[j]);
                     }
-                    chain_cov[pos][i*D+j] = chain_cov[pos][j*D+i] = s/nn_count[pos];
+                    chain_cov[pos][i*N+j] = chain_cov[pos][j*N+i] = s/nn_count[pos];
                 }
 
             // check if the matrix is positive definite
-            for (int i = 0; i < D; ++i)
-                for (int j = 0; j < D; ++j) {
-                    double s = chain_cov[pos][i*D+j];
+            for (int i = 0; i < N; ++i)
+                for (int j = 0; j < N; ++j) {
+                    double s = chain_cov[pos][i*N+j];
                     gsl_matrix_set(work, i, j, s);
                 }
             gsl_set_error_handler_off();
@@ -659,9 +571,6 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
     delete[] diam;
     delete[] chain_mean;
     gsl_matrix_free(work);
-
-    my_time = (clock() - my_time) / CLOCKS_PER_SEC;
-    printf("Covariance computation time: %.2lf sec\n", my_time);
 }
 
 double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
@@ -1020,9 +929,4 @@ int Korali::KoraliTMCMC::mvnrnd(double *mean, double *sigma, double *out, int N,
 	res = gsl_ran_multivariate_gaussian( range, &mean_view.vector, L, &out_view.vector);
 
     return res;
-}
-
-double Korali::KoraliTMCMC::uniformrand(double a, double b, gsl_rng* range)
-{
-    return gsl_ran_flat( range, a, b );
 }

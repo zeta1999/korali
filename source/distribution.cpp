@@ -4,7 +4,6 @@ Korali::Distribution::Distribution(size_t seed) : _seed(seed)
 {
   _range = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(_range, _seed);
-  printf("seed: %ld\n", seed);
 }
 
 double Korali::GaussianDistribution::getDensity(double x) { return gsl_ran_gaussian_pdf(x - _mean, _sigma); }

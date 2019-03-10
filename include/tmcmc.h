@@ -115,6 +115,7 @@ class KoraliTMCMC // : public KoraliBase
 	double* chainFitness;
 	double* chainLogPrior;
 	size_t* chainLength;
+	size_t N; // Parameter Count
 
   // Public Methods
 
@@ -147,9 +148,9 @@ class KoraliTMCMC // : public KoraliBase
 	void setBounds(double lower, double upper) { data.options.LowerBound = lower; data.options.UpperBound = upper; }
 
   // Internal TMCMC Methods
-	void evalGen();
-	void dump_curgen_db();
-  int prepareNewGeneration(int nchains);
+	void processGeneration();
+	void saveResults();
+  void prepareNewGeneration();
   void update_curgen_db(double point[], double F, double prior);
   void calculate_statistics(double flc[], unsigned int sel[]);
   void precompute_chain_covariances(double** init_mean, double** chain_cov, int newchains);
@@ -163,7 +164,6 @@ class KoraliTMCMC // : public KoraliBase
   static int compar_desc(const void *p1, const void *p2);  double compute_sum(double *v, int n);
   bool in_rect(double *v1, double *v2, double *diam, double sc, int D);
   int mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range);
-  double uniformrand(double a, double b, gsl_rng* range);
 };
 
 } // namespace Korali
