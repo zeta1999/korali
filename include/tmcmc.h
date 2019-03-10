@@ -106,9 +106,15 @@ class KoraliTMCMC // : public KoraliBase
   data_t    data;
   runinfo_t runinfo;
 
-  cgdbp_t *leaders;
   cgdb_t  curgen_db;
 	gsl_rng  *range;
+
+	upcxx::global_ptr<double> chainPointsGlobalPtr;
+	upcxx::global_ptr<double> chainFitnessGlobalPtr;
+	double* chainPoints;
+	double* chainFitness;
+	double* chainLogPrior;
+	size_t* chainLength;
 
   // Public Methods
 
@@ -143,10 +149,10 @@ class KoraliTMCMC // : public KoraliBase
   // Internal TMCMC Methods
 	void evalGen();
 	void dump_curgen_db();
-  int prepareNewGeneration(int nchains, cgdbp_t *leaders);
+  int prepareNewGeneration(int nchains);
   void update_curgen_db(double point[], double F, double prior);
   void calculate_statistics(double flc[], unsigned int sel[]);
-  void precompute_chain_covariances(const cgdbp_t* leader,double** init_mean, double** chain_cov, int newchains);
+  void precompute_chain_covariances(double** init_mean, double** chain_cov, int newchains);
   int fmincon(const double *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
   int fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
   int fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
