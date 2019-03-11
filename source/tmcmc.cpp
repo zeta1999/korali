@@ -94,12 +94,13 @@ void Korali::KoraliTMCMC::processGeneration()
 {
 	prepareNewGeneration();
 
-	double* cL = (double*) calloc (sizeof(double), N*_popSize);
-	for (int i = 0; i < _popSize*N; i++) cL[i] = chainPoints[i];
+//	double* leader = (double*) calloc (sizeof(double), N);  //  <<<--- This doesn't work
 
 	for (int c = 0; c < data.nChains; c++)
 	{
-		double leader[N]; for (int i = 0; i < N; ++i) leader[i] = chainPoints[c*N + i];
+		double leader[N];   // <<<--- This works
+
+		for (int i = 0; i < N; i++) leader[i] = chainPoints[c*N + i];
 
 		for (int step = 0; step < chainLength[c]; step++)
 		{
@@ -118,7 +119,7 @@ void Korali::KoraliTMCMC::processGeneration()
 
 			if(goodCandidate)
 			{
-				candidateFitness = _problem->evaluateFitness(candidate);
+				candidateFitness  = _problem->evaluateFitness(candidate);
 				candidateLogPrior = _problem->getPriorsLogProbabilityDensity(candidate);
 
 				double L = exp((candidateLogPrior-chainLogPrior[c])+(candidateFitness-chainFitness[c])*runinfo.p);
@@ -203,8 +204,8 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 
 	// Initializing Data Variables
-  double *LCmem  = (double*) calloc (sizeof(double), _popSize*N*N);
-  data.local_cov = (double**) calloc (sizeof(double*), _popSize);
+  double *LCmem  = (double*) calloc (_popSize*N*N, sizeof(double));
+  data.local_cov = (double**) calloc ( _popSize, sizeof(double*));
   for (int pos=0; pos < _popSize; ++pos)
   {
   	data.local_cov[pos] = LCmem + pos*N*N;
@@ -219,8 +220,8 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	runinfo.acceptance     = 0;
 	runinfo.Gen = 0;
 	runinfo.CoefVar = std::numeric_limits<double>::infinity();
-	runinfo.SS =  (double*) calloc (sizeof(double),N*N);
-	runinfo.meantheta =  (double*) calloc (sizeof(double),data.MaxStages+1);
+	runinfo.SS =  (double*) calloc (N*N, sizeof(double));
+	runinfo.meantheta =  (double*) calloc (data.MaxStages+1, sizeof(double));
 
 	// Initializing TMCMC Leaders
 
@@ -229,12 +230,12 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
 	chainPoints   = chainPointsGlobalPtr.local();
 	chainFitness  = chainFitnessGlobalPtr.local();
-	chainLogPrior = (double*) calloc (sizeof(double), _popSize);
-	chainLength   = (size_t*) calloc (sizeof(size_t), _popSize);
+	chainLogPrior = (double*) calloc (_popSize, sizeof(double));
+	chainLength   = (size_t*) calloc ( _popSize, sizeof(size_t));
 
 	databaseEntries = 0;
-	databasePoints   = (double*) calloc (sizeof(double), N*_popSize);
-  databaseFitness  = (double*) calloc (sizeof(double), _popSize);
+	databasePoints   = (double*) calloc (N*_popSize, sizeof(double));
+  databaseFitness  = (double*) calloc (_popSize, sizeof(double));
 
   // First definition of chains and their leaders
   data.nChains = _popSize;
@@ -247,12 +248,12 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 {
 	int n = databaseEntries;
 
-	sort_t* list = (sort_t*) calloc (sizeof(sort_t), n);
-	unsigned int *sel = (unsigned int*) calloc (sizeof(unsigned int), n);
-	double **u = (double**) calloc (sizeof(double*), N);
-	for (int i = 0; i < N; ++i) u[i] = (double*) calloc (sizeof(double), n);
-	double *fj = (double*) calloc (sizeof(double), n);
-	double *uf = (double*) calloc (sizeof(double), n);
+	sort_t* list = (sort_t*) calloc (n, sizeof(sort_t));
+	unsigned int *sel = (unsigned int*) calloc (n, sizeof(unsigned int));
+	double **u = (double**) calloc (N, sizeof(double*));
+	for (int i = 0; i < N; ++i) u[i] = (double*) calloc (n, sizeof(double));
+	double *fj = (double*) calloc (n, sizeof(double));
+	double *uf = (double*) calloc (n, sizeof(double));
 
 	/* calculate u & acceptance rate */
 	int un = 0, unflag;
