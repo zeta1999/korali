@@ -128,14 +128,26 @@ void Korali::KoraliTMCMC::processGeneration()
 
 void Korali::KoraliTMCMC::saveResults()
 {
+	double checksum = 0.0;
+
+	for (int pos = 0; pos < curgen_db.entries; pos++)
+		{
+			for (int i = 0; i < N; i++) checksum += curgen_db.entry[pos].point[i];
+			checksum += curgen_db.entry[pos].F;
+		}
+
+	printf("[Korali] Checksum: %.20f\n", checksum);
+
 	char* outputName = "tmcmc.txt";
-	printf("[Korali] Saving results to file: %s...\n", outputName);
+	printf("[Korali] Saving results to file: %s.\n", outputName);
 	FILE *fp = fopen(outputName, "w");
 	for (int pos = 0; pos < curgen_db.entries; pos++)
 	{
 		for (int i = 0; i < N; i++) fprintf(fp, "%3.12lf, ", curgen_db.entry[pos].point[i]);
 		fprintf(fp, "%3.12lf\n", curgen_db.entry[pos].F);
 	}
+
+
 	fclose(fp);
 }
 
