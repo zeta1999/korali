@@ -48,9 +48,9 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 void Korali::KoraliTMCMC::run()
 {
 	_kt = this;
-	upcxx::init();
-	_rankId = upcxx::rank_me();
-	_rankCount = upcxx::rank_n();
+//	upcxx::init();
+//	_rankId = upcxx::rank_me();
+//	_rankCount = upcxx::rank_n();
 
 	N = _problem->_parameterCount;
 
@@ -60,8 +60,8 @@ void Korali::KoraliTMCMC::run()
 
   if (_rankId == 0) Korali_SupervisorThread(); else Korali_WorkerThread();
 //
-	upcxx::barrier();
-  upcxx::finalize();
+//	upcxx::barrier();
+//  upcxx::finalize();
 }
 
 void Korali::KoraliTMCMC::Korali_SupervisorThread()
@@ -94,12 +94,10 @@ void Korali::KoraliTMCMC::processGeneration()
 {
 	prepareNewGeneration();
 
-//	double* leader = (double*) calloc (sizeof(double), N);  //  <<<--- This doesn't work
+	double* leader = (double*) calloc (N, sizeof(double));  //  <<<--- This doesn't work
 
 	for (int c = 0; c < data.nChains; c++)
 	{
-		double leader[N];   // <<<--- This works
-
 		for (int i = 0; i < N; i++) leader[i] = chainPoints[c*N + i];
 
 		for (int step = 0; step < chainLength[c]; step++)
@@ -225,11 +223,11 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
 	// Initializing TMCMC Leaders
 
-	chainPointsGlobalPtr  = upcxx::new_array<double>(N*_popSize);
-	chainFitnessGlobalPtr = upcxx::new_array<double>(_popSize);
+//	chainPointsGlobalPtr  = upcxx::new_array<double>(N*_popSize);
+//	chainFitnessGlobalPtr = upcxx::new_array<double>(_popSize);
 
-	chainPoints   = chainPointsGlobalPtr.local();
-	chainFitness  = chainFitnessGlobalPtr.local();
+	chainPoints   = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
+	chainFitness  = (double*) calloc (N*_popSize, sizeof(double)); //chainFitnessGlobalPtr.local();
 	chainLogPrior = (double*) calloc (_popSize, sizeof(double));
 	chainLength   = (size_t*) calloc ( _popSize, sizeof(size_t));
 
