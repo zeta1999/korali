@@ -20,11 +20,11 @@ double gaussian(double *x)
 
 void gaussian_init()
 {
-	double mean[NDIMS];
-	double sigma[NDIMS*NDIMS];
+	double* mean = (double*) calloc (NDIMS, sizeof(double));
+	double* sigma = (double*) calloc (NDIMS*NDIMS, sizeof(double));
 
-	for (int i = 0; i < NDIMS; i++) mean[i] = i;
-	for (int i = 0; i < NDIMS; i++) sigma[i*NDIMS+i] = i*5.0+1;
+	for (int i = 0; i < NDIMS; i++) mean[i] = -3.0;
+	for (int i = 0; i < NDIMS; i++) sigma[i*NDIMS+i] = 5.0;
 
 	mean_view 	= gsl_vector_view_array(mean, NDIMS);
 	gsl_matrix_view sigma_view 	= gsl_matrix_view_array(sigma, NDIMS,NDIMS);
