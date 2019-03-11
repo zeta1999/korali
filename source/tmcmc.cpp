@@ -245,43 +245,34 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
 void Korali::KoraliTMCMC::prepareNewGeneration()
 {
-	/* process curgen_db -> calculate statitics */
-	/* compute probs based on F values */
-	/* draw new samples (data.nChains or user-specified) */
-	/* find unique samples: fill the (new) leaders table */
-	/* count how many times they appear -> nsteps */
-	/* return the new sample size (number of chains) */
-
-	int i, p;
 	int n = curgen_db.entries;
 
-	unsigned int *sel = new unsigned int[n];
+	sort_t* list = (sort_t*) calloc (sizeof(sort_t), n);
+	unsigned int *sel = (unsigned int*) calloc (sizeof(unsigned int), n);
+	double **u = (double**) calloc (sizeof(double*), N);
+	for (int i = 0; i < N; ++i) u[i] = (double*) calloc (sizeof(double), n);
+	double *fj = (double*) calloc (sizeof(double), n);
+	double *uf = (double*) calloc (sizeof(double), n);
 
-	double **g_x = new double*[N];
-	for (i = 0; i < N; ++i) g_x[i] = new double[n];
-
-
-	/* calculate uniques & acceptance rate */
-	double * uf = new double[n];
-	double **uniques = g_x;
-	int un = 0, unflag, j;
+	/* calculate u & acceptance rate */
+	int un = 0, unflag;
 
 	uf[un] = curgen_db.entry[0].F;
-	for( p = 0; p < N; ++p )
-			uniques[p][un] = curgen_db.entry[0].point[p];
+	for(int p = 0; p < N; ++p )
+			u[p][un] = curgen_db.entry[0].point[p];
 
 	un++;
-	for (i = 1; i < n; ++i) {
+	for (int i = 1; i < n; ++i) {
 			double xi[N];
 			double fi = curgen_db.entry[i].F;
-			for (p = 0; p < N; ++p) xi[p] = curgen_db.entry[i].point[p];
+			for (int p = 0; p < N; ++p) xi[p] = curgen_db.entry[i].point[p];
 
 			unflag = 1;                 /* is this point unique? */
-			for (j = 0; j < un; ++j) {  /* compare with  previous uniques */
-					for (p = 0; p < N; ++p) {
+			for (int j = 0; j < un; ++j) {  /* compare with  previous u */
+					for (int p = 0; p < N; ++p) {
 
 							/* do they differ in position? */
-							if (fabs(xi[p]-uniques[p][j]) > 1e-8) break; /* check next */
+							if (fabs(xi[p]-u[p][j]) > 1e-8) break; /* check next */
 
 							/* do they differ in fun eval? */
 							if (fabs(fi - uf[j]) > 1e-8) break; /* check next */
@@ -294,36 +285,20 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 
 			if (unflag) {               /* unique, put it in the table */
 					uf[un] = fi;
-					for (p = 0; p < N; ++p) uniques[p][un] = xi[p];
+					for (int p = 0; p < N; ++p) u[p][un] = xi[p];
 					un++;
 			}
 	}
 	runinfo.currentuniques = un;
 	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_popSize; /* check this*/
 
-	if(data.options.Display) {
-
-			double meanu[N], stdu[N];
-			for (p = 0; p < N; ++p) {
-					meanu[p] = gsl_stats_mean(uniques[p], 1, n);
-					stdu[p]  = gsl_stats_sd_m(uniques[p], 1, n, meanu[p]);
-			}
-
-			printf("prepare_newgen: CURGEN DB (UNIQUES) %d\n", runinfo.Gen);
-			//print_matrix("means", meanu, N);
-			//print_matrix("std", stdu, N);
-	}
-	/* end block*/
-
-			double *fj = new double[n];
-			for (i = 0; i < n; ++i)
-					fj[i] = curgen_db.entry[i].F;    /* separate point from F ?*/
-			calculate_statistics(fj, sel);
-			delete[] fj;
+	for (int i = 0; i < n; ++i)
+			fj[i] = curgen_db.entry[i].F;    /* separate point from F ?*/
+	calculate_statistics(fj, sel);
 
 	int newchains = 0;
-	sort_t *list = new sort_t[n];
-	for (i = 0; i < n; ++i) {
+
+	for (int i = 0; i < n; ++i) {
 			list[i].idx  = i;
 			list[i].nsteps = sel[i];
 			list[i].F    = curgen_db.entry[i].F;
@@ -338,7 +313,7 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	if (data.MaxChainLength > 0) {
 			int initial_newchains = newchains;
 			int h_threshold = data.MaxChainLength;
-			for (i = 0; i < initial_newchains; ++i) {
+			for (int i = 0; i < initial_newchains; ++i) {
 					if (list[i].nsteps > h_threshold) {
 							while (list[i].nsteps > h_threshold) {
 									list[newchains] = list[i];
@@ -348,7 +323,6 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 							}
 					}
 			}
-
 			qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
 	}
 
@@ -357,7 +331,7 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	//TODO: untested feature (DW)
 	if (data.MinChainLength > 0) {
 			int l_threshold = data.MinChainLength;
-			for (i = 0; i < newchains; ++i) {
+			for (int i = 0; i < newchains; ++i) {
 					if ((list[i].nsteps > 0)&&(list[i].nsteps < l_threshold)) {
 							list[i].nsteps = l_threshold;
 					}
@@ -367,10 +341,10 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	}
 
 	int ldi = 0;                    /* leader index */
-	for (i = 0; i < n; ++i) {       /* newleader */
+	for (int i = 0; i < n; ++i) {       /* newleader */
 			if (list[i].nsteps != 0) {
 					int idx = list[i].idx;
-					for (p = 0; p < N ; p++) {
+					for (int p = 0; p < N ; p++) {
 							chainPoints[ldi*N + p] = curgen_db.entry[idx].point[p];
 					}
 					chainFitness[ldi] = curgen_db.entry[idx].F;
@@ -379,19 +353,16 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 			}
 	}
 
-	delete[] list;
-
-			double **x = g_x;
-			for (i = 0; i < newchains; ++i) {
-					for (p = 0; p < N; p++) {
-							x[p][i] = chainPoints[i*N + p];
+			for (int i = 0; i < newchains; ++i) {
+					for (int p = 0; p < N; p++) {
+							u[p][i] = chainPoints[i*N + p];
 					}
 			}
 
 			double meanx[N], stdx[N];
-			for (p = 0; p < N; p++) {
-					meanx[p] = gsl_stats_mean(x[p], 1, newchains);
-					stdx[p]  = gsl_stats_sd_m(x[p], 1, newchains, meanx[p]);
+			for (int p = 0; p < N; p++) {
+					meanx[p] = gsl_stats_mean(u[p], 1, newchains);
+					stdx[p]  = gsl_stats_sd_m(u[p], 1, newchains, meanx[p]);
 			}
 
 			if(data.options.Display) {
@@ -405,13 +376,14 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 
 	curgen_db.entries = 0;
 	if(data.options.Display) printf("prepare_newgen: newchains=%d\n", newchains);
-
-	for (i = 0; i < N; ++i) delete g_x[i];
-
-	delete[] g_x;
-	delete[] sel;
-
 	data.nChains = newchains;
+
+	for (int i = 0; i < N; ++i) free(u[i]);
+	free(u);
+	free(sel);
+	free(list);
+	free(fj);
+	free(uf);
 }
 
 void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
@@ -674,8 +646,8 @@ int Korali::KoraliTMCMC::fmincon(const double *fj, int fn, double pj, double obj
         fm = f_hi;
     }
 
-    int i;
-    for (i = 1; i < max_iter; ++i) {
+
+    for (int i = 1; i < max_iter; ++i) {
         double x = x_lo + i*(x_hi-x_lo)/max_iter;
         double fx = tmcmc_objlogp_gsl(x, &fp);
         if (fx < fm) {
@@ -688,17 +660,11 @@ int Korali::KoraliTMCMC::fmincon(const double *fj, int fn, double pj, double obj
         converged = true;
         gsl_vector_free(x);
         gsl_min_fminimizer_free (s);
-        if (display)
-            printf("fmincon: Early return with m = %.16f fm = %.16f\n (%dtries).", m, fm, i);
         return converged;
     }
 
     if ((fm < f_lo) && (fm < f_hi)) {
-        if (display)
-            printf("fmincon: Initialized with %d tries and m = %f (fm = %f)\n", i, m, fm);
     } else {
-        if (display)
-            printf("fmincon: Failed to initialize (%.16f, %.16f) (%d tries)!\n", f_lo, f_hi, i);
         return 0;
     }
 
