@@ -72,7 +72,10 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 	{
 		chainFitness[i]  = _problem->evaluateFitness(&chainPoints[i*N]);
 		chainLogPrior[i] = _problem->getPriorsLogProbabilityDensity(&chainPoints[i*N]);
-	  update_curgen_db(&chainPoints[i*N], chainFitness[i], chainLogPrior[i]);
+
+		for (int j = 0; j < N; j++) databasePoints[databaseEntries*N + j] = chainPoints[i*N + j];
+		databaseFitness[databaseEntries] = chainFitness[i];
+		databaseEntries++;
 	}
 
 	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed) ;
@@ -121,7 +124,10 @@ void Korali::KoraliTMCMC::processGeneration()
 				}
 			}
 
-			update_curgen_db(leader, chainFitness[c], chainLogPrior[c]); // RE-ADD BURN IN
+			// Re-add burn-in
+			for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = leader[i];
+			databaseFitness[databaseEntries] = chainFitness[c];
+			databaseEntries++;
 		}
 	}
 }
@@ -130,10 +136,10 @@ void Korali::KoraliTMCMC::saveResults()
 {
 	double checksum = 0.0;
 
-	for (int pos = 0; pos < curgen_db.entries; pos++)
+	for (int pos = 0; pos < databaseEntries; pos++)
 		{
-			for (int i = 0; i < N; i++) checksum += curgen_db.entry[pos].point[i];
-			checksum += curgen_db.entry[pos].F;
+			for (int i = 0; i < N; i++) checksum += databasePoints[pos*N + i];
+			checksum += databaseFitness[pos];
 		}
 
 	printf("[Korali] Checksum: %.20f\n", checksum);
@@ -141,10 +147,10 @@ void Korali::KoraliTMCMC::saveResults()
 	char* outputName = "tmcmc.txt";
 	printf("[Korali] Saving results to file: %s.\n", outputName);
 	FILE *fp = fopen(outputName, "w");
-	for (int pos = 0; pos < curgen_db.entries; pos++)
+	for (int pos = 0; pos < databaseEntries; pos++)
 	{
-		for (int i = 0; i < N; i++) fprintf(fp, "%3.12lf, ", curgen_db.entry[pos].point[i]);
-		fprintf(fp, "%3.12lf\n", curgen_db.entry[pos].F);
+		for (int i = 0; i < N; i++) fprintf(fp, "%3.12lf, ", databasePoints[pos*N + i]);
+		fprintf(fp, "%3.12lf\n", databaseFitness[pos]);
 	}
 
 
@@ -178,23 +184,10 @@ bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
   return false;
 }
 
-void Korali::KoraliTMCMC::update_curgen_db(double point[], double F, double prior)
-{
-  int pos = curgen_db.entries;
-  curgen_db.entries++;
-
-  if (curgen_db.entry[pos].point == NULL) curgen_db.entry[pos].point = (double *)malloc(N*sizeof(double));
-  for (int i = 0; i < N; ++i) curgen_db.entry[pos].point[i] = point[i];
-  curgen_db.entry[pos].F = F;
-  curgen_db.entry[pos].prior = prior;
-}
-
-
 void Korali::KoraliTMCMC::Korali_WorkerThread()
 {
 
 }
-
 
 void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 {
@@ -210,10 +203,6 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   	data.local_cov[pos] = LCmem + pos*N*N;
     for (int i=0; i<N; ++i) data.local_cov[pos][i*N+i] = 1;
   }
-
-  // Initializing Databases
-  curgen_db.entries = 0;
-  curgen_db.entry = (cgdbp_t *)calloc(1, (data.MinChainLength+1)*_popSize*sizeof(cgdbp_t));
 
   // Initializing Run Variables
   runinfo.CoefVar        = 0;
@@ -236,6 +225,10 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	chainLogPrior = (double*) calloc (sizeof(double), _popSize);
 	chainLength   = (size_t*) calloc (sizeof(size_t), _popSize);
 
+	databaseEntries = 0;
+	databasePoints   = (double*) calloc (sizeof(double), N*_popSize);
+  databaseFitness  = (double*) calloc (sizeof(double), _popSize);
+
   // First definition of chains and their leaders
   data.nChains = _popSize;
   for (int i = 0; i < _popSize; i++) for (int d = 0; d < N; d++)	chainPoints[i*N + d] = _problem->_parameters[d].getRandomNumber();
@@ -245,7 +238,7 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
 void Korali::KoraliTMCMC::prepareNewGeneration()
 {
-	int n = curgen_db.entries;
+	int n = databaseEntries;
 
 	sort_t* list = (sort_t*) calloc (sizeof(sort_t), n);
 	unsigned int *sel = (unsigned int*) calloc (sizeof(unsigned int), n);
@@ -257,15 +250,15 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	/* calculate u & acceptance rate */
 	int un = 0, unflag;
 
-	uf[un] = curgen_db.entry[0].F;
+	uf[un] = databaseFitness[0];
 	for(int p = 0; p < N; ++p )
-			u[p][un] = curgen_db.entry[0].point[p];
+			u[p][un] = databasePoints[0*N + p];
 
 	un++;
 	for (int i = 1; i < n; ++i) {
 			double xi[N];
-			double fi = curgen_db.entry[i].F;
-			for (int p = 0; p < N; ++p) xi[p] = curgen_db.entry[i].point[p];
+			double fi = databaseFitness[i];
+			for (int p = 0; p < N; ++p) xi[p] = databasePoints[i*N + p];
 
 			unflag = 1;                 /* is this point unique? */
 			for (int j = 0; j < un; ++j) {  /* compare with  previous u */
@@ -293,7 +286,7 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_popSize; /* check this*/
 
 	for (int i = 0; i < n; ++i)
-			fj[i] = curgen_db.entry[i].F;    /* separate point from F ?*/
+			fj[i] = databaseFitness[i];    /* separate point from F ?*/
 	calculate_statistics(fj, sel);
 
 	int newchains = 0;
@@ -301,7 +294,7 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	for (int i = 0; i < n; ++i) {
 			list[i].idx  = i;
 			list[i].nsteps = sel[i];
-			list[i].F    = curgen_db.entry[i].F;
+			list[i].F    = databaseFitness[i];
 			if (sel[i] != 0) newchains++;
 	}
 
@@ -345,9 +338,9 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 			if (list[i].nsteps != 0) {
 					int idx = list[i].idx;
 					for (int p = 0; p < N ; p++) {
-							chainPoints[ldi*N + p] = curgen_db.entry[idx].point[p];
+							chainPoints[ldi*N + p] = databasePoints[idx*N + p];
 					}
-					chainFitness[ldi] = curgen_db.entry[idx].F;
+					chainFitness[ldi] = databaseFitness[idx];
 					chainLength[ldi] = list[i].nsteps;
 					ldi++;
 			}
@@ -374,7 +367,7 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	if (data.use_local_cov)
 			precompute_chain_covariances(data.init_mean, data.local_cov, newchains);
 
-	curgen_db.entries = 0;
+	databaseEntries = 0;
 	if(data.options.Display) printf("prepare_newgen: newchains=%d\n", newchains);
 	data.nChains = newchains;
 
@@ -399,9 +392,9 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
     bool useFminSearch = true;
     bool useFminZeroFind = false;
 
-    if (useFminCon)                 conv = fmincon(flc, curgen_db.entries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
-    if (useFminSearch)   if (!conv) conv = fminsearch(flc, curgen_db.entries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
-    if (useFminZeroFind) if (!conv) conv = fzerofind(flc, curgen_db.entries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
+    if (useFminCon)                 conv = fmincon(flc, databaseEntries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
+    if (useFminSearch)   if (!conv) conv = fminsearch(flc, databaseEntries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
+    if (useFminZeroFind) if (!conv) conv = fzerofind(flc, databaseEntries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
 
     double pPrev = runinfo.p;
 
@@ -410,50 +403,50 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
         coefVar = pow(fmin, 0.5) + data.TolCOV;
     } else {
     	runinfo.p       = pPrev + data.MinStep;
-        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, curgen_db.entries, pPrev, data.TolCOV), 0.5) + data.TolCOV;
+        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries, pPrev, data.TolCOV), 0.5) + data.TolCOV;
     }
 
     if (runinfo.p > 1.0) {
     	runinfo.p    = 1.0;
-        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, curgen_db.entries,  pPrev, data.TolCOV), 0.5) +   data.TolCOV;
+        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries,  pPrev, data.TolCOV), 0.5) +   data.TolCOV;
     }
 
     /* Compute weights and normalize*/
-    double *flcp  = new double[curgen_db.entries];
-    for (int i = 0; i < curgen_db.entries; i++)
+    double *flcp  = new double[databaseEntries];
+    for (int i = 0; i < databaseEntries; i++)
         flcp[i] = flc[i]*(runinfo.p-pPrev);
 
-    const double fjmax = gsl_stats_max(flcp, 1, curgen_db.entries);
-    double *weight     = new double[curgen_db.entries];
-    for (int i = 0; i < curgen_db.entries; i++)
+    const double fjmax = gsl_stats_max(flcp, 1, databaseEntries);
+    double *weight     = new double[databaseEntries];
+    for (int i = 0; i < databaseEntries; i++)
         weight[i] = exp( flcp[i] - fjmax );
 
     delete [] flcp;
 
-    double sum_weight = std::accumulate(weight, weight+curgen_db.entries, 0.0);
-    logselections  = log(sum_weight) + fjmax - log(curgen_db.entries);
+    double sum_weight = std::accumulate(weight, weight+databaseEntries, 0.0);
+    logselections  = log(sum_weight) + fjmax - log(databaseEntries);
     if (display) printf("logselections: %f\n", logselections);
 
-    double *q = new double[curgen_db.entries];
-    for (int i = 0; i < curgen_db.entries; i++) q[i] = weight[i]/sum_weight;
+    double *q = new double[databaseEntries];
+    for (int i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
 
     delete [] weight;
 
     if (display) printf("CoefVar: %f\n", coefVar);
 
-    unsigned int *nn = new unsigned int[curgen_db.entries];
+    unsigned int *nn = new unsigned int[databaseEntries];
 
-    for (int i = 0; i < curgen_db.entries; i++) sel[i] = 0;
+    for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
 
-    gsl_ran_multinomial(range, curgen_db.entries, _popSize, q, nn);
-    for (int i = 0; i < curgen_db.entries; ++i) sel[i]+=nn[i];
+    gsl_ran_multinomial(range, databaseEntries, _popSize, q, nn);
+    for (int i = 0; i < databaseEntries; ++i) sel[i]+=nn[i];
 
     delete [] nn;
 
     for (int i = 0; i < N; i++)
     {
     	runinfo.meantheta[i] = 0;
-      for (int j = 0; j < curgen_db.entries; j++) runinfo.meantheta[i] += curgen_db.entry[j].point[i]*q[j];
+      for (int j = 0; j < databaseEntries; j++) runinfo.meantheta[i] += databasePoints[j*N+ i]*q[j];
     }
 
     double meanv[N];
@@ -461,7 +454,7 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
     for (int i = 0; i < N; i++) for (int j = i; j < N; ++j)
     {
 			double s = 0.0;
-			for (unsigned int k = 0; k < curgen_db.entries; ++k) s += q[k]*(curgen_db.entry[k].point[i]-meanv[i])*(curgen_db.entry[k].point[j]-meanv[j]);
+			for (unsigned int k = 0; k < databaseEntries; ++k) s += q[k]*(databasePoints[k*N+i]-meanv[i])*(databasePoints[k*N+j]-meanv[j]);
 			runinfo.SS[i*N + j] = runinfo.SS[j*N + i] = s*data.bbeta;
     }
 
@@ -486,7 +479,7 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
         double d_min = +1e6;
         double d_max = -1e6;
         for (int pos = 0; pos < _popSize; ++pos) {
-            double s = curgen_db.entry[pos].point[d];
+            double s = databasePoints[pos*N+d];
             if (d_min > s) d_min = s;
             if (d_max < s) d_max = s;
         }
@@ -494,7 +487,7 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
         if (display) printf("Diameter %d: %.6lf\n", d, diam[d]);
     }
 
-    int ind, pos;
+    int idx, pos;
     int status = 0;
     double ds = 0.05;
     for (double scale = 0.1; scale <= 1.0; scale += ds) {
@@ -503,7 +496,7 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
             nn_count[pos] = 0;
             double* curr = &chainPoints[pos*N];
             for (int i = 0; i < _popSize; ++i) {
-                double* s = curgen_db.entry[i].point;
+                double* s = &databasePoints[i*N];
                 if (in_rect(curr, s, diam, scale, N)) {
                     nn_ind[pos*_popSize+nn_count[pos]] = i;
                     nn_count[pos]++;
@@ -516,8 +509,8 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
             for (int d = 0; d < N; ++d) {
                 chain_mean[d] = 0;
                 for (int k = 0; k < nn_count[pos]; ++k) {
-                    ind = nn_ind[pos*_popSize+k];
-                    chain_mean[d] += curgen_db.entry[ind].point[d];
+                    idx = nn_ind[pos*_popSize+k];
+                    chain_mean[d] += databasePoints[idx*N+d];
                 }
                 chain_mean[d] /= nn_count[pos];
             }
@@ -526,9 +519,9 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
                 for (int j = 0; j < N; ++j) {
                     double s = 0;
                     for (int k = 0; k < nn_count[pos]; k++) {
-                        ind = nn_ind[pos*_popSize+k];
-                        s  += (curgen_db.entry[ind].point[i]-chain_mean[i]) *
-                              (curgen_db.entry[ind].point[j]-chain_mean[j]);
+                        idx = nn_ind[pos*_popSize+k];
+                        s  += (databasePoints[idx*N+i]-chain_mean[i]) *
+                              (databasePoints[idx*N+j]-chain_mean[j]);
                     }
                     chain_cov[pos][i*N+j] = chain_cov[pos][j*N+i] = s/nn_count[pos];
                 }

@@ -106,7 +106,6 @@ class KoraliTMCMC // : public KoraliBase
   data_t    data;
   runinfo_t runinfo;
 
-  cgdb_t  curgen_db;
 	gsl_rng  *range;
 
 	upcxx::global_ptr<double> chainPointsGlobalPtr;
@@ -116,6 +115,10 @@ class KoraliTMCMC // : public KoraliBase
 	double* chainLogPrior;
 	size_t* chainLength;
 	size_t N; // Parameter Count
+
+	size_t  databaseEntries;
+	double* databasePoints;
+	double* databaseFitness;
 
   // Public Methods
 
@@ -151,7 +154,6 @@ class KoraliTMCMC // : public KoraliBase
 	void processGeneration();
 	void saveResults();
   void prepareNewGeneration();
-  void update_curgen_db(double point[], double F, double prior);
   void calculate_statistics(double flc[], unsigned int sel[]);
   void precompute_chain_covariances(double** init_mean, double** chain_cov, int newchains);
   int fmincon(const double *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
