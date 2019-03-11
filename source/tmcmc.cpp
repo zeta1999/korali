@@ -389,6 +389,12 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 
 void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 {
+
+	double *flcp  = (double*) calloc (databaseEntries, sizeof(double));
+	double *weight     = (double*) calloc (databaseEntries, sizeof(double));
+	double *q = (double*) calloc (databaseEntries, sizeof(double));
+	unsigned int *nn = (unsigned int*) calloc (databaseEntries, sizeof(unsigned int));
+
     int display = data.options.Display;
     double coefVar       = runinfo.CoefVar;
     double logselections = runinfo.logselections;
@@ -420,36 +426,33 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
     }
 
     /* Compute weights and normalize*/
-    double *flcp  = new double[databaseEntries];
+
     for (int i = 0; i < databaseEntries; i++)
         flcp[i] = flc[i]*(runinfo.p-pPrev);
 
     const double fjmax = gsl_stats_max(flcp, 1, databaseEntries);
-    double *weight     = new double[databaseEntries];
+
     for (int i = 0; i < databaseEntries; i++)
         weight[i] = exp( flcp[i] - fjmax );
 
-    delete [] flcp;
 
     double sum_weight = std::accumulate(weight, weight+databaseEntries, 0.0);
     logselections  = log(sum_weight) + fjmax - log(databaseEntries);
     if (display) printf("logselections: %f\n", logselections);
 
-    double *q = new double[databaseEntries];
+
     for (int i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
 
-    delete [] weight;
 
     if (display) printf("CoefVar: %f\n", coefVar);
 
-    unsigned int *nn = new unsigned int[databaseEntries];
+
 
     for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
 
     gsl_ran_multinomial(range, databaseEntries, _popSize, q, nn);
     for (int i = 0; i < databaseEntries; ++i) sel[i]+=nn[i];
 
-    delete [] nn;
 
     for (int i = 0; i < N; i++)
     {
@@ -469,8 +472,10 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
     gsl_matrix_view sigma 	= gsl_matrix_view_array(runinfo.SS, N,N);
     gsl_linalg_cholesky_decomp( &sigma.matrix );
 
-    delete [] q;
-
+  	free(flcp);
+  	free(weight);
+  	free(q);
+  	free(nn);
 }
 
 void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, double** chain_cov, int newchains)
@@ -479,10 +484,10 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
     printf("Precomputing chain covariances for the current generation...\n");
 
     // allocate space
-    int* nn_ind        = new int[newchains];
-    int* nn_count      = new int[newchains];
-    double* diam       = new double[N];
-    double* chain_mean = new double[N];
+    int* nn_ind        = (int*) calloc (newchains, sizeof(int));
+    int* nn_count      = (int*) calloc (newchains, sizeof(int));
+    double* diam       = (double*) calloc (N, sizeof(double));
+    double* chain_mean = (double*) calloc (N, sizeof(double));
     gsl_matrix* work   = gsl_matrix_alloc(N, N);
 
     // find diameters
@@ -561,24 +566,27 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
 
 
     // deallocate space
-    delete[] nn_ind;
-    delete[] nn_count;
-    delete[] diam;
-    delete[] chain_mean;
+    free(nn_ind);
+    free(nn_count);
+    free(diam);
+    free(chain_mean);
     gsl_matrix_free(work);
 }
 
 double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
 {
+
+  double *weight = (double*) calloc (fn, sizeof(double));
+  double *q      = (double*) calloc (fn, sizeof(double));
+
     const double fjmax = gsl_stats_max(fj, 1, fn);
-    double *weight = new double[fn];
 
     for(int i = 0; i <fn; ++i)
         weight[i] = exp((fj[i]-fjmax)*(x-pj));
 
     double sum_weight = std::accumulate(weight, weight+fn, 0.0);
 
-    double *q = new double[fn];
+
 
     for(int i = 0; i < fn; ++i) {
         q[i] = weight[i]/sum_weight;
@@ -588,8 +596,8 @@ double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, do
     double std_q  = gsl_stats_sd_m(q, 1, fn, mean_q);
     double cov2   = pow(std_q/mean_q-zero, 2);
 
-    delete[] weight;
-    delete[] q;
+    free(weight);
+    free(q);
 
     return cov2;
 }
