@@ -94,6 +94,9 @@ void Korali::KoraliTMCMC::processGeneration()
 {
 	prepareNewGeneration();
 
+	double* cL = (double*) calloc (sizeof(double), N*_popSize);
+	for (int i = 0; i < _popSize*N; i++) cL[i] = chainPoints[i];
+
 	for (int c = 0; c < data.nChains; c++)
 	{
 		double leader[N]; for (int i = 0; i < N; ++i) leader[i] = chainPoints[c*N + i];
@@ -102,7 +105,11 @@ void Korali::KoraliTMCMC::processGeneration()
 		{
 			double candidate[N], candidateFitness, candidateLogPrior;
 			double* covariance = data.use_local_cov ? data.local_cov[c] : runinfo.SS;
-			mvnrnd(leader, covariance, candidate, N, range);
+
+	    gsl_vector_view mean_view 	= gsl_vector_view_array(leader, N);
+	    gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
+	    gsl_vector_view out_view  	= gsl_vector_view_array(candidate, N);
+		  gsl_ran_multivariate_gaussian(range, &mean_view.vector, &sigma_view.matrix, &out_view.vector);
 
 			bool goodCandidate = true;
 			for (int i = 0; i < N; i++)
@@ -458,6 +465,9 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 			runinfo.SS[i*N + j] = runinfo.SS[j*N + i] = s*data.bbeta;
     }
 
+    gsl_matrix_view sigma 	= gsl_matrix_view_array(runinfo.SS, N,N);
+    gsl_linalg_cholesky_decomp( &sigma.matrix );
+
     delete [] q;
 
 }
@@ -538,9 +548,16 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, doubl
         }
     }
 
+    for (pos = 0; pos < newchains; ++pos) {
+      gsl_matrix_view sigma 	= gsl_matrix_view_array(chain_cov[pos], N,N);
+      gsl_linalg_cholesky_decomp( &sigma.matrix );
+    }
+
     if (status != GSL_SUCCESS) {
     	fprintf(stderr, "[Korali] Error: GSL failed to create Chain Covariance Matrix.\n");
     }
+
+
 
     // deallocate space
     delete[] nn_ind;
@@ -881,23 +898,4 @@ int Korali::KoraliTMCMC::compar_desc(const void* p1, const void* p2)
     if (s1->nsteps > s2->nsteps) return -dir;
 
     return 0;
-}
-
-
-int Korali::KoraliTMCMC::mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range)
-{
-    int res;
-
-    gsl_vector_view mean_view 	= gsl_vector_view_array(mean, N);
-    gsl_matrix_view sigma_view 	= gsl_matrix_view_array(sigma, N,N);
-    gsl_vector_view out_view 	= gsl_vector_view_array(out, N);
-
-    gsl_matrix *L = gsl_matrix_alloc(N,N);
-    gsl_matrix_memcpy( L, &sigma_view.matrix);
-    gsl_linalg_cholesky_decomp( L );
-
-
-	res = gsl_ran_multivariate_gaussian( range, &mean_view.vector, L, &out_view.vector);
-
-    return res;
 }

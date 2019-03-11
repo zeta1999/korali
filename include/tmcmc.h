@@ -165,7 +165,6 @@ class KoraliTMCMC // : public KoraliBase
   void print_runinfo();
   static int compar_desc(const void *p1, const void *p2);  double compute_sum(double *v, int n);
   bool in_rect(double *v1, double *v2, double *diam, double sc, int D);
-  int mvnrnd(double *mean, double *sigma, double *out, int N, gsl_rng* range);
 };
 
 } // namespace Korali
