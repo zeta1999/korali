@@ -24,22 +24,22 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
   _bcastFuture = upcxx::make_future();
   _continueEvaluations = true;
 
-	data.MaxStages = 20;
+	MaxStages = 20;
 
-	data.MinChainLength = 1;
-	data.MaxChainLength = 5;
+	MinChainLength = 1;
+	MaxChainLength = 5;
 
-	data.TolCOV  = 1;
-	data.MinStep = 1e-9;
-	data.bbeta   = 0.005;
-	data.use_local_cov = false;
+	TolCOV  = 1;
+	MinStep = 1e-9;
+	bbeta   = 0.005;
+	use_local_cov = false;
 
-	data.options.MaxIter    = 1000;
-	data.options.Tol        = 1e-12;
-	data.options.Display    = false;
-	data.options.Step       = 1e-8;
-	data.options.LowerBound = -10.0;
-	data.options.UpperBound = 10.0;
+	options.MaxIter    = 1000;
+	options.Tol        = 1e-12;
+	options.Display    = false;
+	options.Step       = 1e-8;
+	options.LowerBound = -10.0;
+	options.UpperBound = 10.0;
 
 	range = gsl_rng_alloc (gsl_rng_default);
 	gsl_rng_set(range, _problem->_seed+0xFFF0);
@@ -80,7 +80,7 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 
 	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed) ;
 
-  while(runinfo.p < 1.0 && ++runinfo.Gen < data.MaxStages) {
+  while(runinfo.p < 1.0 && ++runinfo.Gen < MaxStages) {
  	  auto gt0 = std::chrono::system_clock::now();
  	  processGeneration();
     auto gt1 = std::chrono::system_clock::now();
@@ -96,14 +96,14 @@ void Korali::KoraliTMCMC::processGeneration()
 
 	double* leader = (double*) calloc (N, sizeof(double));  //  <<<--- This doesn't work
 
-	for (int c = 0; c < data.nChains; c++)
+	for (int c = 0; c < nChains; c++)
 	{
 		for (int i = 0; i < N; i++) leader[i] = chainPoints[c*N + i];
 
 		for (int step = 0; step < chainLength[c]; step++)
 		{
 			double candidate[N], candidateFitness, candidateLogPrior;
-			double* covariance = data.use_local_cov ? data.local_cov[c] : runinfo.SS;
+			double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
 
 	    gsl_vector_view mean_view 	= gsl_vector_view_array(leader, N);
 	    gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
@@ -203,11 +203,11 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 
 	// Initializing Data Variables
   double *LCmem  = (double*) calloc (_popSize*N*N, sizeof(double));
-  data.local_cov = (double**) calloc ( _popSize, sizeof(double*));
+  local_cov = (double**) calloc ( _popSize, sizeof(double*));
   for (int pos=0; pos < _popSize; ++pos)
   {
-  	data.local_cov[pos] = LCmem + pos*N*N;
-    for (int i=0; i<N; ++i) data.local_cov[pos][i*N+i] = 1;
+  	local_cov[pos] = LCmem + pos*N*N;
+    for (int i=0; i<N; ++i) local_cov[pos][i*N+i] = 1;
   }
 
   // Initializing Run Variables
@@ -219,7 +219,7 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	runinfo.Gen = 0;
 	runinfo.CoefVar = std::numeric_limits<double>::infinity();
 	runinfo.SS =  (double*) calloc (N*N, sizeof(double));
-	runinfo.meantheta =  (double*) calloc (data.MaxStages+1, sizeof(double));
+	runinfo.meantheta =  (double*) calloc (MaxStages+1, sizeof(double));
 
 	// Initializing TMCMC Leaders
 
@@ -236,7 +236,7 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   databaseFitness  = (double*) calloc (_popSize, sizeof(double));
 
   // First definition of chains and their leaders
-  data.nChains = _popSize;
+  nChains = _popSize;
   for (int i = 0; i < _popSize; i++) for (int d = 0; d < N; d++)	chainPoints[i*N + d] = _problem->_parameters[d].getRandomNumber();
 
 	// TODO: Ensure proper memory deallocation
@@ -309,9 +309,9 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	/* UPPER THRESHOLD */
 	/* splitting long chains */
 	//TODO: untested feature (DW)
-	if (data.MaxChainLength > 0) {
+	if (MaxChainLength > 0) {
 			int initial_newchains = newchains;
-			int h_threshold = data.MaxChainLength;
+			int h_threshold = MaxChainLength;
 			for (int i = 0; i < initial_newchains; ++i) {
 					if (list[i].nsteps > h_threshold) {
 							while (list[i].nsteps > h_threshold) {
@@ -328,8 +328,8 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	/* LOWER THRESHOLD */
 	/* setting min chain length */
 	//TODO: untested feature (DW)
-	if (data.MinChainLength > 0) {
-			int l_threshold = data.MinChainLength;
+	if (MinChainLength > 0) {
+			int l_threshold = MinChainLength;
 			for (int i = 0; i < newchains; ++i) {
 					if ((list[i].nsteps > 0)&&(list[i].nsteps < l_threshold)) {
 							list[i].nsteps = l_threshold;
@@ -364,18 +364,17 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 					stdx[p]  = gsl_stats_sd_m(u[p], 1, newchains, meanx[p]);
 			}
 
-			if(data.options.Display) {
+			if(options.Display) {
 				printf("prepare_newgen: CURGEN DB (LEADER) %d: [nlead=%d]\n", runinfo.Gen, newchains);
 					//print_matrix("means", meanx, N);
 					//print_matrix("std", stdx, N);
 			}
 
-	if (data.use_local_cov)
-			precompute_chain_covariances(data.init_mean, data.local_cov, newchains);
+	if (use_local_cov) precompute_chain_covariances(local_cov, newchains);
 
 	databaseEntries = 0;
-	if(data.options.Display) printf("prepare_newgen: newchains=%d\n", newchains);
-	data.nChains = newchains;
+	if(options.Display) printf("prepare_newgen: newchains=%d\n", newchains);
+	nChains = newchains;
 
 	for (int i = 0; i < N; ++i) free(u[i]);
 	free(u);
@@ -393,7 +392,7 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 	double *q = (double*) calloc (databaseEntries, sizeof(double));
 	unsigned int *nn = (unsigned int*) calloc (databaseEntries, sizeof(unsigned int));
 
-    int display = data.options.Display;
+    int display = options.Display;
     double coefVar       = runinfo.CoefVar;
     double logselections = runinfo.logselections;
 
@@ -404,23 +403,23 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
     bool useFminSearch = true;
     bool useFminZeroFind = false;
 
-    if (useFminCon)                 conv = fmincon(flc, databaseEntries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
-    if (useFminSearch)   if (!conv) conv = fminsearch(flc, databaseEntries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
-    if (useFminZeroFind) if (!conv) conv = fzerofind(flc, databaseEntries, runinfo.p, data.TolCOV, &xmin, &fmin, data.options);
+    if (useFminCon)                 conv = fmincon(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
+    if (useFminSearch)   if (!conv) conv = fminsearch(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
+    if (useFminZeroFind) if (!conv) conv = fzerofind(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
 
     double pPrev = runinfo.p;
 
     if ( conv && (xmin > pPrev) ) {
     	runinfo.p       = xmin;
-        coefVar = pow(fmin, 0.5) + data.TolCOV;
+        coefVar = pow(fmin, 0.5) + TolCOV;
     } else {
-    	runinfo.p       = pPrev + data.MinStep;
-        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries, pPrev, data.TolCOV), 0.5) + data.TolCOV;
+    	runinfo.p       = pPrev + MinStep;
+        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries, pPrev, TolCOV), 0.5) + TolCOV;
     }
 
     if (runinfo.p > 1.0) {
     	runinfo.p    = 1.0;
-        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries,  pPrev, data.TolCOV), 0.5) +   data.TolCOV;
+        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries,  pPrev, TolCOV), 0.5) +   TolCOV;
     }
 
     /* Compute weights and normalize*/
@@ -464,7 +463,7 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
     {
 			double s = 0.0;
 			for (unsigned int k = 0; k < databaseEntries; ++k) s += q[k]*(databasePoints[k*N+i]-meanv[i])*(databasePoints[k*N+j]-meanv[j]);
-			runinfo.SS[i*N + j] = runinfo.SS[j*N + i] = s*data.bbeta;
+			runinfo.SS[i*N + j] = runinfo.SS[j*N + i] = s*bbeta;
     }
 
     gsl_matrix_view sigma 	= gsl_matrix_view_array(runinfo.SS, N,N);
@@ -476,9 +475,9 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
   	free(nn);
 }
 
-void Korali::KoraliTMCMC::precompute_chain_covariances(double** init_mean, double** chain_cov, int newchains)
+void Korali::KoraliTMCMC::precompute_chain_covariances(double** chain_cov, int newchains)
 {
-    bool display = data.options.Display;
+    bool display = options.Display;
     printf("Precomputing chain covariances for the current generation...\n");
 
     // allocate space

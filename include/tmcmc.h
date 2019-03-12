@@ -19,25 +19,6 @@ struct optim_options {
     double UpperBound;          /* Upper bound for root finding (fmincon & fzerosearch)*/
 };
 
-typedef struct data_t {
-    int MaxStages;                  /* Max number of tmcmc generations */
-    int nChains;
-
-    int MinChainLength;         /* MinChainLength > 0: setting MinChainLength */
-    int MaxChainLength;         /* MaxChainLength > 0: splitting long chains */
-
-    double TolCOV;              /* Target coefficient of variation of weights */
-    double MinStep;             /* Min update of rho */
-    double bbeta;               /* Covariance scaling parameter */
-
-    optim_options options;      /* Optimization options (see above) */
-
-    double **init_mean;     /* [DATANUM][PROBDIM] */
-    double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
-    bool use_local_cov;
-} data_t;
-
-
 typedef struct runinfo_t {
     int    Gen;
     double CoefVar;
@@ -49,25 +30,6 @@ typedef struct runinfo_t {
     double *meantheta;     /*[PROBDIM]*/
 } runinfo_t;
 
-
-typedef struct cgdbp_s {
-    double *point;      /*[PROBDIM];*/
-    double F;
-    double prior;
-    int nsteps;           /* for selection of leaders only*/
-} cgdbp_t;
-
-
-typedef struct cgdb_s {
-    int     entries;
-    cgdbp_t *entry;     /*[MAX_DB_ENTRIES];*/
-} cgdb_t;
-
-
-typedef struct dbp_s {
-    double *point; /*[PROBDIM];*/
-    double F;
-} dbp_t;
 
 typedef struct fparam_s {
     const double *fj;
@@ -100,12 +62,28 @@ class KoraliTMCMC // : public KoraliBase
   std::queue<int> _workers;
   upcxx::future<> _bcastFuture;
 
+  // TMCMC Configuration
+
   size_t _popSize; // Number of offspring per sample cycle
 
-	// TMCMC Fields
-  data_t    data;
+  int MaxStages;                  /* Max number of tmcmc generations */
+  int nChains;
+
+  int MinChainLength;         /* MinChainLength > 0: setting MinChainLength */
+  int MaxChainLength;         /* MaxChainLength > 0: splitting long chains */
+
+  double TolCOV;              /* Target coefficient of variation of weights */
+  double MinStep;             /* Min update of rho */
+  double bbeta;               /* Covariance scaling parameter */
+
+  optim_options options;      /* Optimization options (see above) */
+
+  double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
+  bool use_local_cov;
+
   runinfo_t runinfo;
 
+	// TMCMC Fields
 	gsl_rng  *range;
 
 	upcxx::global_ptr<double> chainPointsGlobalPtr;
@@ -119,8 +97,6 @@ class KoraliTMCMC // : public KoraliBase
 	size_t  databaseEntries;
 	double* databasePoints;
 	double* databaseFitness;
-
-  // Public Methods
 
   // Korali Engine Methods
 	KoraliTMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
@@ -137,32 +113,31 @@ class KoraliTMCMC // : public KoraliBase
 
 	// TMCMC Configuration Methods
 	void setPopulationSize(int popSize) { _popSize = popSize; }
-	void setMaxStages(int MaxStages) { data.MaxStages = MaxStages; }
-	void setToleranceCOV(double TolCOV) { data.TolCOV = TolCOV; }
-	void setUseLocalCOV(double use_local_cov) { data.use_local_cov = use_local_cov; }
-	void setCovarianceScaling(double bbeta) { data.bbeta = bbeta; }
-	void setChainLength(size_t min, size_t max) { data.MinChainLength = min; data.MaxChainLength = max; }
+	void setMaxStages(int MaxStages) { MaxStages = MaxStages; }
+	void setToleranceCOV(double TolCOV) { TolCOV = TolCOV; }
+	void setUseLocalCOV(double use_local_cov) { use_local_cov = use_local_cov; }
+	void setCovarianceScaling(double bbeta) { bbeta = bbeta; }
+	void setChainLength(size_t min, size_t max) { MinChainLength = min; MaxChainLength = max; }
 
 	// Optimization Contiguration Methods
-	void setMaxIterations(size_t MaxIter) { data.options.MaxIter = MaxIter; }
-	void setTolerance(double Tol) { data.options.Tol = Tol; }
-	void setDisplay(bool Display) { data.options.Display = Display; }
-	void setStepSize(double Step) { data.options.Step = Step; }
-	void setBounds(double lower, double upper) { data.options.LowerBound = lower; data.options.UpperBound = upper; }
+	void setMaxIterations(size_t MaxIter) { options.MaxIter = MaxIter; }
+	void setTolerance(double Tol) { options.Tol = Tol; }
+	void setDisplay(bool Display) { options.Display = Display; }
+	void setStepSize(double Step) { options.Step = Step; }
+	void setBounds(double lower, double upper) { options.LowerBound = lower; options.UpperBound = upper; }
 
   // Internal TMCMC Methods
 	void processGeneration();
 	void saveResults();
   void prepareNewGeneration();
   void calculate_statistics(double flc[], unsigned int sel[]);
-  void precompute_chain_covariances(double** init_mean, double** chain_cov, int newchains);
+  void precompute_chain_covariances(double** chain_cov, int newchains);
   int fmincon(const double *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
   int fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
   int fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
   static double tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero);
   static double tmcmc_objlogp_gsl(double x, void *param);
   static double tmcmc_objlogp_gsl2(const gsl_vector *v, void *param);
-  void print_runinfo();
   static int compar_desc(const void *p1, const void *p2);  double compute_sum(double *v, int n);
   bool in_rect(double *v1, double *v2, double *diam, double sc, int D);
 };
