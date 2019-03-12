@@ -56,10 +56,8 @@ class KoraliTMCMC // : public KoraliBase
   int _rankCount;
 
   Problem* _problem;
-  double* _fitnessVector;
   bool _continueEvaluations;
 
-  std::queue<int> _workers;
   upcxx::future<> _bcastFuture;
 
   // TMCMC Configuration
@@ -86,24 +84,33 @@ class KoraliTMCMC // : public KoraliBase
 	// TMCMC Fields
 	gsl_rng  *range;
 
-	upcxx::global_ptr<double> chainPointsGlobalPtr;
-	upcxx::global_ptr<double> chainFitnessGlobalPtr;
-	double* chainPoints;
 
-	double* clPoints;  // Chain Leader Parameter Values
-	double* clFitness; // Chain Leader Fitness
+	double* chainPoints;
+	double* clPoints;   // Chain Leader Parameter Values
+	double* clFitness;  // Chain Leader Fitness
 	double* clLogPrior; // Chain Leader Log Prior
 
-	double* ccPoints; // Chain Candidate Parameter Values
-	double* ccFitness; // Chain Candidate Fitness
+	upcxx::global_ptr<double> ccPointsGlobalPtr; // Global Pointer for Chain Candidate Parameters
+	double* ccPoints;   // Chain Candidate Parameter Values
+	double* ccFitness;  // Chain Candidate Fitness
 	double* ccLogPrior; // Chain Candidate Log Prior
+	bool*   ccSuitable;   // Indicates whether the candidate is suitable.
 
+	bool*   chainPendingFitness; // Indicates that the fitness result for the chain is pending
+	size_t  finishedChains;
+	size_t* chainCurrentStep;
 	size_t* chainLength;
-	size_t N; // Parameter Count
+	size_t  N; // Parameter Count
 
 	size_t  databaseEntries;
 	double* databasePoints;
 	double* databaseFitness;
+
+	// Worker Parameters
+	std::queue<int> _workers;
+	size_t _nextChainEval;
+	bool   _evaluateChain;
+	bool   _initChain;
 
   // Korali Engine Methods
 	KoraliTMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
@@ -134,10 +141,13 @@ class KoraliTMCMC // : public KoraliBase
 	void setBounds(double lower, double upper) { options.LowerBound = lower; options.UpperBound = upper; }
 
   // Internal TMCMC Methods
-	void processGeneration();
+	void processChains();
 	void saveResults();
-  void prepareNewGeneration();
+  void prepareChains();
+  void updateDatabase(double* point, double fitness);
+  void processChainLink(size_t c);
   void calculate_statistics(double flc[], unsigned int sel[]);
+  bool generateCandidate(int c);
   void precompute_chain_covariances(double** chain_cov, int newchains);
   int fmincon(const double *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
   int fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
