@@ -94,18 +94,14 @@ void Korali::KoraliTMCMC::processGeneration()
 {
 	prepareNewGeneration();
 
-	double* leader = (double*) calloc (N, sizeof(double));  //  <<<--- This doesn't work
-
 	for (int c = 0; c < nChains; c++)
 	{
-		for (int i = 0; i < N; i++) leader[i] = chainPoints[c*N + i];
-
 		for (int step = 0; step < chainLength[c]; step++)
 		{
 			double candidate[N], candidateFitness, candidateLogPrior;
 			double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
 
-	    gsl_vector_view mean_view 	= gsl_vector_view_array(leader, N);
+	    gsl_vector_view mean_view 	= gsl_vector_view_array(&chainLeader[c*N], N);
 	    gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
 	    gsl_vector_view out_view  	= gsl_vector_view_array(candidate, N);
 		  gsl_ran_multivariate_gaussian(range, &mean_view.vector, &sigma_view.matrix, &out_view.vector);
@@ -124,14 +120,14 @@ void Korali::KoraliTMCMC::processGeneration()
 				double P = gsl_ran_flat(range, 0.0, 1.0 );
 
 				if (P < L) {
-						for (int i = 0; i < N; ++i) leader[i] = candidate[i];
+						for (int i = 0; i < N; ++i) chainLeader[c*N + i] = candidate[i];
 						chainFitness[c]  = candidateFitness;
 						chainLogPrior[c] = candidateLogPrior;
 				}
 			}
 
 			// Re-add burn-in
-			for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = leader[i];
+			for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = chainLeader[c*N + i];
 			databaseFitness[databaseEntries] = chainFitness[c];
 			databaseEntries++;
 		}
@@ -227,7 +223,8 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 //	chainFitnessGlobalPtr = upcxx::new_array<double>(_popSize);
 
 	chainPoints   = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
-	chainFitness  = (double*) calloc (N*_popSize, sizeof(double)); //chainFitnessGlobalPtr.local();
+	chainLeader   = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
+	chainFitness  = (double*) calloc (_popSize, sizeof(double)); //chainFitnessGlobalPtr.local();
 	chainLogPrior = (double*) calloc (_popSize, sizeof(double));
 	chainLength   = (size_t*) calloc ( _popSize, sizeof(size_t));
 
@@ -373,8 +370,8 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 	if (use_local_cov) precompute_chain_covariances(local_cov, newchains);
 
 	databaseEntries = 0;
-	if(options.Display) printf("prepare_newgen: newchains=%d\n", newchains);
 	nChains = newchains;
+	for (int c = 0; c < nChains; c++) for (int i = 0; i < N; i++) chainLeader[c*N + i] = chainPoints[c*N + i];
 
 	for (int i = 0; i < N; ++i) free(u[i]);
 	free(u);

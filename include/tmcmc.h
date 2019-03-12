@@ -91,6 +91,7 @@ class KoraliTMCMC // : public KoraliBase
 	double* chainPoints;
 	double* chainFitness;
 	double* chainLogPrior;
+	double* chainLeader;
 	size_t* chainLength;
 	size_t N; // Parameter Count
 
