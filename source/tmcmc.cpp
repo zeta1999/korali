@@ -70,11 +70,11 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 
 	for (int i = 0; i < _popSize; i++)
 	{
-		chainFitness[i]  = _problem->evaluateFitness(&chainPoints[i*N]);
-		chainLogPrior[i] = _problem->getPriorsLogProbabilityDensity(&chainPoints[i*N]);
+		clFitness[i]  = _problem->evaluateFitness(&chainPoints[i*N]);
+		clLogPrior[i] = _problem->getPriorsLogProbabilityDensity(&chainPoints[i*N]);
 
 		for (int j = 0; j < N; j++) databasePoints[databaseEntries*N + j] = chainPoints[i*N + j];
-		databaseFitness[databaseEntries] = chainFitness[i];
+		databaseFitness[databaseEntries] = clFitness[i];
 		databaseEntries++;
 	}
 
@@ -98,37 +98,36 @@ void Korali::KoraliTMCMC::processGeneration()
 	{
 		for (int step = 0; step < chainLength[c]; step++)
 		{
-			double candidate[N], candidateFitness, candidateLogPrior;
+
 			double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
 
-	    gsl_vector_view mean_view 	= gsl_vector_view_array(&chainLeader[c*N], N);
 	    gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
-	    gsl_vector_view out_view  	= gsl_vector_view_array(candidate, N);
+	    gsl_vector_view mean_view 	= gsl_vector_view_array(&clPoints[c*N], N);
+	    gsl_vector_view out_view  	= gsl_vector_view_array(&ccPoints[c*N], N);
 		  gsl_ran_multivariate_gaussian(range, &mean_view.vector, &sigma_view.matrix, &out_view.vector);
 
 			bool goodCandidate = true;
 			for (int i = 0; i < N; i++)
-			 if (candidate[i] < _problem->_parameters[i]._lowerBound ||
-					 candidate[i] > _problem->_parameters[i]._upperBound) { goodCandidate = false; break; }
+			 if (ccPoints[c*N + i] < _problem->_parameters[i]._lowerBound ||
+					 ccPoints[c*N + i] > _problem->_parameters[i]._upperBound) { goodCandidate = false; break; }
 
 			if(goodCandidate)
 			{
-				candidateFitness  = _problem->evaluateFitness(candidate);
-				candidateLogPrior = _problem->getPriorsLogProbabilityDensity(candidate);
+				ccFitness[c]  = _problem->evaluateFitness(&ccPoints[c*N]);
+				ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
 
-				double L = exp((candidateLogPrior-chainLogPrior[c])+(candidateFitness-chainFitness[c])*runinfo.p);
+				double L = exp((ccLogPrior[c]-clLogPrior[c])+(ccFitness[c]-clFitness[c])*runinfo.p);
 				double P = gsl_ran_flat(range, 0.0, 1.0 );
 
 				if (P < L) {
-						for (int i = 0; i < N; ++i) chainLeader[c*N + i] = candidate[i];
-						chainFitness[c]  = candidateFitness;
-						chainLogPrior[c] = candidateLogPrior;
+						for (int i = 0; i < N; ++i) clPoints[c*N + i] = ccPoints[c*N + i];
+						clFitness[c]  = ccFitness[c];
+						clLogPrior[c] = ccLogPrior[c];
 				}
 			}
 
-			// Re-add burn-in
-			for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = chainLeader[c*N + i];
-			databaseFitness[databaseEntries] = chainFitness[c];
+			for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = clPoints[c*N + i]; 			// Re-add burn-in
+			databaseFitness[databaseEntries] = clFitness[c];
 			databaseEntries++;
 		}
 	}
@@ -154,7 +153,6 @@ void Korali::KoraliTMCMC::saveResults()
 		for (int i = 0; i < N; i++) fprintf(fp, "%3.12lf, ", databasePoints[pos*N + i]);
 		fprintf(fp, "%3.12lf\n", databaseFitness[pos]);
 	}
-
 
 	fclose(fp);
 }
@@ -220,13 +218,16 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	// Initializing TMCMC Leaders
 
 //	chainPointsGlobalPtr  = upcxx::new_array<double>(N*_popSize);
-//	chainFitnessGlobalPtr = upcxx::new_array<double>(_popSize);
+//	chainLeaderFitnessGlobalPtr = upcxx::new_array<double>(_popSize);
 
-	chainPoints   = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
-	chainLeader   = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
-	chainFitness  = (double*) calloc (_popSize, sizeof(double)); //chainFitnessGlobalPtr.local();
-	chainLogPrior = (double*) calloc (_popSize, sizeof(double));
-	chainLength   = (size_t*) calloc ( _popSize, sizeof(size_t));
+	chainPoints = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
+	clPoints    = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
+	ccPoints    = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
+	ccFitness   = (double*) calloc (_popSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+	ccLogPrior  = (double*) calloc (_popSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+	clFitness   = (double*) calloc (_popSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+	clLogPrior  = (double*) calloc (_popSize, sizeof(double));
+	chainLength = (size_t*) calloc (_popSize, sizeof(size_t));
 
 	databaseEntries = 0;
 	databasePoints   = (double*) calloc (N*_popSize, sizeof(double));
@@ -343,7 +344,7 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 					for (int p = 0; p < N ; p++) {
 							chainPoints[ldi*N + p] = databasePoints[idx*N + p];
 					}
-					chainFitness[ldi] = databaseFitness[idx];
+					clFitness[ldi] = databaseFitness[idx];
 					chainLength[ldi] = list[i].nsteps;
 					ldi++;
 			}
@@ -371,7 +372,7 @@ void Korali::KoraliTMCMC::prepareNewGeneration()
 
 	databaseEntries = 0;
 	nChains = newchains;
-	for (int c = 0; c < nChains; c++) for (int i = 0; i < N; i++) chainLeader[c*N + i] = chainPoints[c*N + i];
+	for (int c = 0; c < nChains; c++) for (int i = 0; i < N; i++) clPoints[c*N + i] = chainPoints[c*N + i];
 
 	for (int i = 0; i < N; ++i) free(u[i]);
 	free(u);

@@ -89,9 +89,15 @@ class KoraliTMCMC // : public KoraliBase
 	upcxx::global_ptr<double> chainPointsGlobalPtr;
 	upcxx::global_ptr<double> chainFitnessGlobalPtr;
 	double* chainPoints;
-	double* chainFitness;
-	double* chainLogPrior;
-	double* chainLeader;
+
+	double* clPoints;  // Chain Leader Parameter Values
+	double* clFitness; // Chain Leader Fitness
+	double* clLogPrior; // Chain Leader Log Prior
+
+	double* ccPoints; // Chain Candidate Parameter Values
+	double* ccFitness; // Chain Candidate Fitness
+	double* ccLogPrior; // Chain Candidate Log Prior
+
 	size_t* chainLength;
 	size_t N; // Parameter Count
 
