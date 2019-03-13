@@ -23,6 +23,7 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 
   _bcastFuture = upcxx::make_future();
   _continueEvaluations = true;
+	_evaluateChain = false;
 
 	MaxStages = 20;
 
@@ -33,6 +34,7 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 	MinStep = 1e-9;
 	bbeta   = 0.005;
 	use_local_cov = false;
+
 
 	options.MaxIter    = 1000;
 	options.Tol        = 1e-12;
@@ -68,16 +70,15 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 	Korali_InitializeInternalVariables();
 	upcxx::broadcast(&ccPointsGlobalPtr,  1, 0).wait();
 
-	for (int c = 0; c < _popSize; c++) clFitness[c] = _problem->evaluateFitness(&chainPoints[c*N]);
-	for (int c = 0; c < _popSize; c++) updateDatabase(&_kt->chainPoints[c*N], clFitness[c]);
-
-  while(runinfo.p < 1.0 && runinfo.Gen < MaxStages) {
+  while(_continueEvaluations) {
  	  auto gt0 = std::chrono::system_clock::now();
- 		prepareChains();
  	  processChains();
     auto gt1 = std::chrono::system_clock::now();
+
     printf("[Korali] Gen %d - Elapsed Time: %f, Annealing: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(gt1-gt0).count(), runinfo.p*100);
     runinfo.Gen++;
+ 	  _continueEvaluations = runinfo.p < 1.0 && runinfo.Gen < MaxStages;
+ 	  if (_continueEvaluations) prepareChains();
   }
 
   for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_kt->_continueEvaluations = false;});
@@ -87,7 +88,6 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 void Korali::KoraliTMCMC::Korali_WorkerThread()
 {
 	upcxx::broadcast(&ccPointsGlobalPtr,  1, 0).wait();
-	_evaluateChain = false;
 
 	while(_continueEvaluations)
 	{
@@ -97,7 +97,7 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 			double candidatePoint[N];
 			upcxx::rget(ccPointsGlobalPtr + _nextChainEval, candidatePoint, N).wait();
 			double candidateFitness = _problem->evaluateFitness(candidatePoint);
-			//printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
+			// printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
 			upcxx::rpc_ff(0, [](size_t c, int workerId, double fitness){_kt->ccFitness[c] = fitness; _kt->processChainLink(c); _kt->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness);
 		}
 		 upcxx::progress();
@@ -158,6 +158,8 @@ void Korali::KoraliTMCMC::updateDatabase(double* point, double fitness)
 
 bool Korali::KoraliTMCMC::generateCandidate(int c)
 {
+	if (runinfo.Gen == 0) return true;
+
 	double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
 
   gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
@@ -275,7 +277,7 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   _isInitialization = true;
   nChains = _popSize;
 	finishedChains = 0;
-  for (int c = 0; c < _popSize; c++) for (int d = 0; d < N; d++)  ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
+  for (int c = 0; c < _popSize; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
   for (int c = 0; c < _popSize; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
   for (int c = 0; c < _popSize; c++) chainCurrentStep[c] = 0;
   for (int c = 0; c < _popSize; c++) chainLength[c] = 1;

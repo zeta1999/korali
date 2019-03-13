@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	heat2DInit(argc, argv);
 
-  auto problem = Korali::Likelihood(heat2DSolver, 1552466653);
+  auto problem = Korali::Likelihood(heat2DSolver);
   Korali::Parameter par0("Intensity");
   Korali::Parameter par1("PosX");
   Korali::Parameter par2("PosY");
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
   problem.setReferenceData(p.nPoints, p.refTemp);
 
   auto Solver = Korali::KoraliTMCMC(&problem);
-	Solver.setPopulationSize(300);
+	Solver.setPopulationSize(3000);
 	Solver.setCovarianceScaling(0.02);
 	Solver.run();
 
