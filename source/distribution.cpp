@@ -35,7 +35,7 @@ double Korali::GaussianDistribution::logLikelihood(double sigma, int nData, doub
 
 	double res = 0.5* (nData*log(2*M_PI) + nData*log(sigma2) + ssn/sigma2);
 
-	printf("Sigma: %.11f - Res: %f\n", sigma, res);
+	// printf("Sigma: %.11f - Res: %f\n", sigma, res);
 
 	return res;
 }

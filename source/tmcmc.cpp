@@ -66,30 +66,17 @@ void Korali::KoraliTMCMC::run()
 
 void Korali::KoraliTMCMC::Korali_SupervisorThread()
 {
+	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed) ;
+
 	Korali_InitializeInternalVariables();
 	upcxx::broadcast(&ccPointsGlobalPtr,  1, 0).wait();
 
-	upcxx::future<double>* fitness = (upcxx::future<double>*) calloc (_popSize, sizeof(upcxx::future<double>));
-
-	finishedChains = 0;
-
-	for (int c = 0; c < _popSize; c++)
-	{
-		clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
-//		clFitness[c] = _problem->evaluateFitness(&chainPoints[c*N]);
-		while(_workers.empty()) upcxx::progress();
-		int workerId = _workers.front(); _workers.pop();
-		upcxx::rpc_ff(workerId, [](size_t c){_kt->_nextChainEval = c; _kt->_initChain = true;}, c);
-	}
-
-	while(finishedChains < _popSize) upcxx::progress();
-
-	for(int c = 0; c < _popSize; c++) updateDatabase(&_kt->chainPoints[c*N], clFitness[c]);
-
-	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed) ;
+	for (int c = 0; c < _popSize; c++) clFitness[c] = _problem->evaluateFitness(&chainPoints[c*N]);
+	for (int c = 0; c < _popSize; c++) updateDatabase(&_kt->chainPoints[c*N], clFitness[c]);
 
   while(runinfo.p < 1.0 && ++runinfo.Gen < MaxStages) {
  	  auto gt0 = std::chrono::system_clock::now();
+ 		prepareChains();
  	  processChains();
     auto gt1 = std::chrono::system_clock::now();
     printf("[Korali] Gen %d - Elapsed Time: %f, Annealing: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(gt1-gt0).count(), runinfo.p*100);
@@ -106,24 +93,14 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 
 	while(_continueEvaluations)
 	{
-		if (_initChain)
-		{
-			_initChain = false;
-			double candidatePoint[N];
-			upcxx::rget(ccPointsGlobalPtr + _nextChainEval, candidatePoint, N).wait();
-			double candidateFitness = _problem->evaluateFitness(candidatePoint);
-			printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
-			upcxx::rpc_ff(0, [](size_t c, int workerId, double fitness){_kt->clFitness[c] = fitness; _kt->_workers.push(workerId); _kt->finishedChains++;}, _nextChainEval, _rankId, candidateFitness);
-		}
-
 		if (_evaluateChain)
 		{
 			_evaluateChain = false;
 			double candidatePoint[N];
 			upcxx::rget(ccPointsGlobalPtr + _nextChainEval, candidatePoint, N).wait();
 			double candidateFitness = _problem->evaluateFitness(candidatePoint);
-			printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
-			upcxx::rpc_ff(0, [](size_t c, int workerId, double fitness){_kt->ccFitness[c] = fitness; _kt->processChainLink(c); _kt->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness);
+			//printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
+			upcxx::rpc(0, [](size_t c, int workerId, double fitness){_kt->ccFitness[c] = fitness; _kt->processChainLink(c); _kt->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness).wait();
 		}
 		 upcxx::progress();
 	}
@@ -131,8 +108,6 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 
 void Korali::KoraliTMCMC::processChains()
 {
-	prepareChains();
-
 	while (finishedChains < nChains)
 	{
 		for (int c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
@@ -142,6 +117,8 @@ void Korali::KoraliTMCMC::processChains()
 
 			if(ccSuitable[c])
 			{
+				ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
+				acceptanceThreshold[c] = gsl_ran_flat(range, 0.0, 1.0 );
 				while(_workers.empty()) upcxx::progress();
 				int workerId = _workers.front(); _workers.pop();
 				upcxx::rpc_ff(workerId, [](size_t c){_kt->_nextChainEval = c; _kt->_evaluateChain = true;}, c);
@@ -157,12 +134,9 @@ void Korali::KoraliTMCMC::processChainLink(size_t c)
 {
 	if(ccSuitable[c])
 	{
-		ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
-
 		double L = exp((ccLogPrior[c]-clLogPrior[c])+(ccFitness[c]-clFitness[c])*runinfo.p);
-		double P = gsl_ran_flat(range, 0.0, 1.0 );
 
-		if (P < L) {
+		if (acceptanceThreshold[c]  < L) {
 				for (int i = 0; i < N; ++i) clPoints[c*N + i] = ccPoints[c*N + i];
 				clFitness[c]  = ccFitness[c];
 				clLogPrior[c] = ccLogPrior[c];
@@ -256,9 +230,6 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   for (int i = 0; i < N; i++)
   	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 
-  // Creating Worker Queue
-  for (int i = 1; i < _rankCount; i++) _workers.push(i);
-
 	// Initializing Data Variables
   double *LCmem  = (double*) calloc (_popSize*N*N, sizeof(double));
   local_cov = (double**) calloc ( _popSize, sizeof(double*));
@@ -288,21 +259,31 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	clPoints    = (double*) calloc (N*_popSize, sizeof(double));
 	clFitness   = (double*) calloc (_popSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 	clLogPrior  = (double*) calloc (_popSize, sizeof(double));
-	ccSuitable  = (bool*) calloc (_popSize, sizeof(double));
+	ccSuitable  = (bool*) calloc (_popSize, sizeof(bool));
+	acceptanceThreshold = (double*) calloc (_popSize, sizeof(double));
 
 	chainPendingFitness = (bool*) calloc (_popSize, sizeof(double));
 	chainPoints = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
 	chainCurrentStep = (size_t*) calloc (_popSize, sizeof(size_t));
 	chainLength      = (size_t*) calloc (_popSize, sizeof(size_t));
 
+
 	databaseEntries = 0;
 	databasePoints   = (double*) calloc (N*_popSize, sizeof(double));
   databaseFitness  = (double*) calloc (_popSize, sizeof(double));
 
   // First definition of chains and their leaders
+  _isInitialization = true;
   nChains = _popSize;
-  for (int i = 0; i < _popSize; i++) for (int d = 0; d < N; d++)  chainPoints[i*N + d] = _problem->_parameters[d].getRandomNumber();
-  for (int i = 0; i < _popSize; i++) for (int d = 0; d < N; d++)	ccPoints[i*N + d] = chainPoints[i*N + d];
+	finishedChains = 0;
+  for (int c = 0; c < _popSize; c++) for (int d = 0; d < N; d++)  ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
+  for (int c = 0; c < _popSize; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
+  for (int c = 0; c < _popSize; c++) chainCurrentStep[c] = 0;
+  for (int c = 0; c < _popSize; c++) chainLength[c] = 1;
+  for (int c = 0; c < _popSize; c++) chainPendingFitness[c] = false;
+
+  // Creating Worker Queue
+  for (int i = 1; i < _rankCount; i++) _workers.push(i);
 
 	// TODO: Ensure proper memory deallocation
 }

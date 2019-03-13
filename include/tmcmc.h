@@ -57,6 +57,7 @@ class KoraliTMCMC // : public KoraliBase
 
   Problem* _problem;
   bool _continueEvaluations;
+  bool _isInitialization;
 
   upcxx::future<> _bcastFuture;
 
@@ -95,6 +96,7 @@ class KoraliTMCMC // : public KoraliBase
 	double* ccFitness;  // Chain Candidate Fitness
 	double* ccLogPrior; // Chain Candidate Log Prior
 	bool*   ccSuitable;   // Indicates whether the candidate is suitable.
+  double* acceptanceThreshold; // Sets a random threshold to decide whether to accept or reject candidate
 
 	bool*   chainPendingFitness; // Indicates that the fitness result for the chain is pending
 	size_t  finishedChains;
@@ -110,7 +112,6 @@ class KoraliTMCMC // : public KoraliBase
 	std::queue<int> _workers;
 	size_t _nextChainEval;
 	bool   _evaluateChain;
-	bool   _initChain;
 
   // Korali Engine Methods
 	KoraliTMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
