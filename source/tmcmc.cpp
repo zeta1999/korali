@@ -98,9 +98,9 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 		{
 			_evaluateChain = false;
 			double candidatePoint[N];
-			upcxx::rget(ccPointsGlobalPtr + _nextChainEval, candidatePoint, N).wait();
+			upcxx::rget(ccPointsGlobalPtr + _nextChainEval*N, candidatePoint, N).wait();
 			double candidateFitness = _problem->evaluateFitness(candidatePoint);
-			// printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
+			 //printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
 			upcxx::rpc_ff(0, [](size_t c, int workerId, double fitness){_kt->ccFitness[c] = fitness; _kt->processChainLink(c); _kt->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness);
 		}
 		 upcxx::progress();
@@ -119,7 +119,6 @@ void Korali::KoraliTMCMC::processChains()
 
 			if(ccSuitable[c])
 			{
-				ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
 				while(_workers.empty()) upcxx::progress();
 				int workerId = _workers.front(); _workers.pop();
 				upcxx::rpc_ff(workerId, [](size_t c){_kt->_nextChainEval = c; _kt->_evaluateChain = true;}, c);
@@ -136,6 +135,7 @@ void Korali::KoraliTMCMC::processChainLink(size_t c)
 {
 	if(ccSuitable[c])
 	{
+	  ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
 		double L = exp((ccLogPrior[c]-clLogPrior[c])+(ccFitness[c]-clFitness[c])*runinfo.p);
     double P = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0 );
 
