@@ -35,13 +35,18 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 	bbeta   = 0.005;
 	use_local_cov = false;
 
-
 	options.MaxIter    = 1000;
 	options.Tol        = 1e-12;
 	options.Display    = false;
 	options.Step       = 1e-8;
 	options.LowerBound = -10.0;
 	options.UpperBound = 10.0;
+
+	N = _problem->_parameterCount;
+
+  // Initialize Parameter Priors
+  for (int i = 0; i < N; i++)
+  	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 }
 
 void Korali::KoraliTMCMC::run()
@@ -50,8 +55,6 @@ void Korali::KoraliTMCMC::run()
 	upcxx::init();
 	_rankId = upcxx::rank_me();
 	_rankCount = upcxx::rank_n();
-
-	N = _problem->_parameterCount;
 
   // Verifying Parameter correctness.
 	char errorString[500];
@@ -228,10 +231,6 @@ bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
 
 void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 {
-  // Initialize Parameter Priors
-  for (int i = 0; i < N; i++)
-  	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
-
 	// Initializing Data Variables
   double *LCmem  = (double*) calloc (_popSize*N*N, sizeof(double));
   local_cov = (double**) calloc ( _popSize, sizeof(double*));
