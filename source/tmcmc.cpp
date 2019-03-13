@@ -40,9 +40,6 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
 	options.Step       = 1e-8;
 	options.LowerBound = -10.0;
 	options.UpperBound = 10.0;
-
-	range = gsl_rng_alloc (gsl_rng_default);
-	gsl_rng_set(range, _problem->_seed+0xFFF0);
 }
 
 void Korali::KoraliTMCMC::run()
@@ -74,12 +71,13 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
 	for (int c = 0; c < _popSize; c++) clFitness[c] = _problem->evaluateFitness(&chainPoints[c*N]);
 	for (int c = 0; c < _popSize; c++) updateDatabase(&_kt->chainPoints[c*N], clFitness[c]);
 
-  while(runinfo.p < 1.0 && ++runinfo.Gen < MaxStages) {
+  while(runinfo.p < 1.0 && runinfo.Gen < MaxStages) {
  	  auto gt0 = std::chrono::system_clock::now();
  		prepareChains();
  	  processChains();
     auto gt1 = std::chrono::system_clock::now();
     printf("[Korali] Gen %d - Elapsed Time: %f, Annealing: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(gt1-gt0).count(), runinfo.p*100);
+    runinfo.Gen++;
   }
 
   for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_kt->_continueEvaluations = false;});
@@ -100,7 +98,7 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 			upcxx::rget(ccPointsGlobalPtr + _nextChainEval, candidatePoint, N).wait();
 			double candidateFitness = _problem->evaluateFitness(candidatePoint);
 			//printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
-			upcxx::rpc(0, [](size_t c, int workerId, double fitness){_kt->ccFitness[c] = fitness; _kt->processChainLink(c); _kt->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness).wait();
+			upcxx::rpc_ff(0, [](size_t c, int workerId, double fitness){_kt->ccFitness[c] = fitness; _kt->processChainLink(c); _kt->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness);
 		}
 		 upcxx::progress();
 	}
@@ -108,6 +106,7 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 
 void Korali::KoraliTMCMC::processChains()
 {
+
 	while (finishedChains < nChains)
 	{
 		for (int c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
@@ -118,7 +117,6 @@ void Korali::KoraliTMCMC::processChains()
 			if(ccSuitable[c])
 			{
 				ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
-				acceptanceThreshold[c] = gsl_ran_flat(range, 0.0, 1.0 );
 				while(_workers.empty()) upcxx::progress();
 				int workerId = _workers.front(); _workers.pop();
 				upcxx::rpc_ff(workerId, [](size_t c){_kt->_nextChainEval = c; _kt->_evaluateChain = true;}, c);
@@ -128,6 +126,7 @@ void Korali::KoraliTMCMC::processChains()
 
 		upcxx::progress();
 	}
+
 }
 
 void Korali::KoraliTMCMC::processChainLink(size_t c)
@@ -135,8 +134,9 @@ void Korali::KoraliTMCMC::processChainLink(size_t c)
 	if(ccSuitable[c])
 	{
 		double L = exp((ccLogPrior[c]-clLogPrior[c])+(ccFitness[c]-clFitness[c])*runinfo.p);
+    double P = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0 );
 
-		if (acceptanceThreshold[c]  < L) {
+		if (P < L) {
 				for (int i = 0; i < N; ++i) clPoints[c*N + i] = ccPoints[c*N + i];
 				clFitness[c]  = ccFitness[c];
 				clLogPrior[c] = ccLogPrior[c];
@@ -163,7 +163,7 @@ bool Korali::KoraliTMCMC::generateCandidate(int c)
   gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
   gsl_vector_view mean_view 	= gsl_vector_view_array(&clPoints[c*N], N);
   gsl_vector_view out_view  	= gsl_vector_view_array(&ccPoints[c*N], N);
-  gsl_ran_multivariate_gaussian(range, &mean_view.vector, &sigma_view.matrix, &out_view.vector);
+  gsl_ran_multivariate_gaussian(chainGSLRange[c], &mean_view.vector, &sigma_view.matrix, &out_view.vector);
 
 	for (int i = 0; i < N; i++)
 	 if (ccPoints[c*N + i] < _problem->_parameters[i]._lowerBound ||
@@ -260,7 +260,6 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	clFitness   = (double*) calloc (_popSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 	clLogPrior  = (double*) calloc (_popSize, sizeof(double));
 	ccSuitable  = (bool*) calloc (_popSize, sizeof(bool));
-	acceptanceThreshold = (double*) calloc (_popSize, sizeof(double));
 
 	chainPendingFitness = (bool*) calloc (_popSize, sizeof(double));
 	chainPoints = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
@@ -281,6 +280,17 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
   for (int c = 0; c < _popSize; c++) chainCurrentStep[c] = 0;
   for (int c = 0; c < _popSize; c++) chainLength[c] = 1;
   for (int c = 0; c < _popSize; c++) chainPendingFitness[c] = false;
+
+  // Setting Chain-Specific Seeds
+  range = gsl_rng_alloc (gsl_rng_default);
+  gsl_rng_set(range, _problem->_seed+N+0xD00);
+
+  chainGSLRange = (gsl_rng**) calloc (_popSize, sizeof(gsl_rng*));
+  for (int c = 0; c < _popSize; c++)
+  {
+  	chainGSLRange[c] = gsl_rng_alloc (gsl_rng_default);
+  	gsl_rng_set(chainGSLRange[c], _problem->_seed+N+0xF00+c);
+  }
 
   // Creating Worker Queue
   for (int i = 1; i < _rankCount; i++) _workers.push(i);
@@ -874,7 +884,7 @@ int Korali::KoraliTMCMC::fminsearch(double const *fj, int fn, double pj, double 
 }
 
 /* simple min search, check stepwise for x < opt.Tol; if unsuccessfull
- * adjust range and refine steps (DW: could be optimized) */
+ * adjust chainGSLRange[c] and refine steps (DW: could be optimized) */
 int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
 {
     bool display = opt.Display;

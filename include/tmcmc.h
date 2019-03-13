@@ -96,7 +96,7 @@ class KoraliTMCMC // : public KoraliBase
 	double* ccFitness;  // Chain Candidate Fitness
 	double* ccLogPrior; // Chain Candidate Log Prior
 	bool*   ccSuitable;   // Indicates whether the candidate is suitable.
-  double* acceptanceThreshold; // Sets a random threshold to decide whether to accept or reject candidate
+	gsl_rng** chainGSLRange;
 
 	bool*   chainPendingFitness; // Indicates that the fitness result for the chain is pending
 	size_t  finishedChains;
