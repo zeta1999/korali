@@ -56,10 +56,6 @@ void Korali::KoraliTMCMC::run()
 	_rankId = upcxx::rank_me();
 	_rankCount = upcxx::rank_n();
 
-  // Verifying Parameter correctness.
-	char errorString[500];
-  if(Korali_VerifyParameters(errorString)) { if (_rankId == 0) fprintf(stderr, "%s", errorString); exit(-1); }
-
   if (_rankId == 0) Korali_SupervisorThread(); else Korali_WorkerThread();
 
   upcxx::barrier();
@@ -200,34 +196,6 @@ void Korali::KoraliTMCMC::saveResults()
 
 	fclose(fp);
 }
-
-bool Korali::KoraliTMCMC::Korali_VerifyParameters(char* errorString)
-{
-	if (_problem->evaluateSettings(errorString)) return true;
-
-	for (int i = 0; i < N; i++)
-	if (_problem->_parameters[i]._boundsSet == false)
-	{
-		sprintf(errorString, "[Korali] Error: Bounds for parameter \'%s\' have not been set.\n", _problem->_parameters[i]._name.c_str());
-		return true;
-	}
-
-  for (int i = 0; i < N; i++)
-	if (_problem->_parameters[i]._priorSet == false)
-	{
-		sprintf(errorString, "[Korali] Error: Prior for parameter \'%s\' have not been set.\n", _problem->_parameters[i]._name.c_str());
-		return true;
-	}
-
-  if(_popSize < 32 )
-  {
-  	sprintf(errorString, "[Korali] Error: Population Size (%lu) should be higher than 32.\n", _popSize);
-  	return true;
-  }
-
-  return false;
-}
-
 
 void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 {

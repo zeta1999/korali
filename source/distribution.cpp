@@ -24,6 +24,12 @@ double Korali::ExponentialDistribution::getRandomNumber() { return gsl_ran_expon
 
 double Korali::GaussianDistribution::logLikelihood(double sigma, int nData, double* x, double* u)
 {
+	if (nData == 0)
+	{
+		fprintf(stderr, "[Korali] Error: Problem's reference dataset not defined for the Likelihood (use: Problem.setReferenceData()).\n");
+	  return 0.0;
+	}
+
 	double sigma2 = sigma*sigma;
 	double ssn = 0.0;
 

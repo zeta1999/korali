@@ -10,9 +10,9 @@ int main(int argc, char* argv[])
   Korali::Parameter par1("PosX");
   Korali::Parameter par2("PosY");
 
-  par0.setBounds(0.0, 50.0);
-  par1.setBounds(0.0, 1.0);
-  par2.setBounds(0.0, 1.0);
+  par0.setBounds(30.0, 45.0);
+  par1.setBounds(0.1, 0.5);
+  par2.setBounds(0.6, 1.0);
 
 	par0.setPriorDistribution("Uniform", 30.0, 45.0);
 	par1.setPriorDistribution("Uniform", 0.1, 0.5);
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
   problem.setReferenceData(p.nPoints, p.refTemp);
 
   auto Solver = Korali::KoraliTMCMC(&problem);
-	Solver.setPopulationSize(3000);
+	Solver.setPopulationSize(10000);
 	Solver.setCovarianceScaling(0.02);
 	Solver.run();
 

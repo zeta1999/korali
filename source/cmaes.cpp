@@ -44,10 +44,6 @@ void Korali::KoraliCMAES::run()
 	_rankId = upcxx::rank_me();
 	_rankCount = upcxx::rank_n();
 
-	// Checking Problem's settings
-	char errorString[500];
-	if (_problem->evaluateSettings(errorString)) { if (_rankId == 0) fprintf(stderr, "%s", errorString); exit(-1); };
-
   // Checking Lambda's value
   if(_lambda < 1 )  { if (_rankId == 0) fprintf( stderr, "[Korali] Error: Lambda (%lu) should be higher than one.\n", _lambda); exit(-1); }
 

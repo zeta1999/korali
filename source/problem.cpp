@@ -47,7 +47,7 @@ double Korali::DirectEvaluation::evaluateFitness(double* sample)
 
 Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
 {
-	_referenceData = 0;
+	_referenceData = NULL;
 	_nData = 0;
 	_modelFunction = modelFunction;
 	_referenceDataSet = false;
@@ -74,53 +74,9 @@ double Korali::Likelihood::evaluateFitness(double* sample)
 	return -Korali::GaussianDistribution::logLikelihood(sigma, _nData, _referenceData, measuredData);
 }
 
-bool Korali::DirectEvaluation::evaluateSettings(char* errorCode)
-{
-  for (int i = 0; i < _parameterCount; i++)
-  	if (_parameters[i]._boundsSet == false)
-		{
-  		sprintf(errorCode, "[Korali] Error: Bounds for parameter %s have not been set.\n", _parameters[i]._name.c_str());
-  		return true;
-		}
-
-  return false;
-}
-
-bool Korali::Likelihood::evaluateSettings(char* errorCode)
-{
-	if (_referenceDataSet == false)
-	{
-		sprintf(errorCode, "[Korali] Error: Problem's reference dataset not defined (use: setReferenceData()).\n");
-		return true;
-	}
-
-  for (int i = 0; i < _parameterCount; i++)
-	if (_parameters[i]._boundsSet == false)
-	{
-		sprintf(errorCode, "[Korali] Error: Bounds for parameter \'%s\' have not been set.\n", _parameters[i]._name.c_str());
-		return true;
-	}
-
-  return false;
-}
-
 Korali::Posterior::Posterior(double* (*modelFunction) (double*), size_t seed) : Korali::Likelihood::Likelihood(modelFunction, seed)
 {
 	_parameters[0].setPriorDistribution("Uniform", 0.0, 20.0);
-}
-
-bool Korali::Posterior::evaluateSettings(char* errorCode)
-{
-	if (Likelihood::evaluateSettings(errorCode)) return true;
-
-  for (int i = 0; i < _parameterCount; i++)
-	if (_parameters[i]._priorSet == false)
-	{
-		sprintf(errorCode, "[Korali] Error: Prior for parameter \'%s\' have not been set.\n", _parameters[i]._name.c_str());
-		return true;
-	}
-
-  return false;
 }
 
 double Korali::Posterior::evaluateFitness(double* sample)

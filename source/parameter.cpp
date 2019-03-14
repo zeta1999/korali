@@ -2,12 +2,15 @@
 
 Korali::Parameter::Parameter()
 {
-	_priorSet  = false;
-	_boundsSet = false;
 	_name = "";
  _initialX = 0.0;
  _initialStdDev = 0.1;
- _lowerBound = std::numeric_limits<double>::min();
+
+	_lowerBound = -100;
+	_upperBound = +100;
+  _a = -100;
+  _b = +100;
+  _type = "Uniform";
 }
 
 Korali::Parameter::Parameter(std::string name) : Korali::Parameter::Parameter()
@@ -20,23 +23,24 @@ void Korali::Parameter::setPriorDistribution(std::string type, double a, double 
 	_type = type;
 	_a = a;
 	_b = b;
-  _priorSet = true;
 }
 
 // Verify that distribution type is correctly set
 void Korali::Parameter::initializePriorDistribution(int seed)
 {
-  if (_type == "Uniform")     _prior = new UniformDistribution(_a, _b, seed);
-  if (_type == "Gaussian")    _prior = new GaussianDistribution(_a, _b, seed);
-  if (_type == "Exponential") _prior = new ExponentialDistribution(_a, seed);
-  if (_type == "Gamma")       _prior = new GammaDistribution(_a, _b, seed);
+  if (_type == "Uniform")    { _prior = new UniformDistribution(_a, _b, seed);  return; }
+  if (_type == "Gaussian")   { _prior = new GaussianDistribution(_a, _b, seed); return; }
+  if (_type == "Exponential"){ _prior = new ExponentialDistribution(_a, seed);  return; }
+  if (_type == "Gamma")      { _prior = new GammaDistribution(_a, _b, seed);    return; }
+
+  fprintf(stderr, "[Korali] Error: Unrecognized Distribution: %s. Defaulting to Uniform.\n", _type.c_str());
+  _prior = new UniformDistribution(_a, _b, seed);
 }
 
 void Korali::Parameter::setBounds(double lowerBound, double upperBound)
 {
 	_lowerBound = lowerBound;
 	_upperBound = upperBound;
-	_boundsSet = true;
 }
 
 double Korali::Parameter::getRandomNumber()

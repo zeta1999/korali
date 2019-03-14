@@ -13,9 +13,6 @@ class Parameter
 {
  public:
 
- bool _priorSet;
- bool _boundsSet;
-
  std::string _name;
  std::string _type;
  double _a; // First parameter of distribution. Could be mean (gaussian) or min (uniform)

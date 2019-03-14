@@ -117,7 +117,6 @@ class KoraliTMCMC // : public KoraliBase
 	KoraliTMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
 	void run();
 
-	bool Korali_VerifyParameters(char* errorString);
 	void Korali_InitializeInternalVariables();
   void Korali_GetSamplePopulation();
   bool Korali_CheckTermination(){if (runinfo.Gen++ == 0) return false; return true;};

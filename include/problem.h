@@ -14,7 +14,6 @@ class Problem
 
 	void addParameter(Parameter p);
   virtual double evaluateFitness(double* sample) = 0;
-  virtual bool evaluateSettings(char* errorCode) = 0;
 
   size_t _parameterCount;
 	size_t _seed;
@@ -39,7 +38,6 @@ class Likelihood : public Problem
   void setReferenceData(size_t nData, double* referenceData);
 	Likelihood(double* (*modelFunction) (double*), size_t seed = -1);
 	double evaluateFitness(double* sample);
-	bool evaluateSettings(char* errorCode);
 };
 
 class Posterior : public Likelihood
@@ -47,7 +45,6 @@ class Posterior : public Likelihood
   public:
 
 	Posterior(double* (*modelFunction) (double*), size_t seed = -1);
-	bool evaluateSettings(char* errorCode);
 	double evaluateFitness(double* sample);
 };
 
@@ -57,7 +54,6 @@ class DirectEvaluation : public Problem
 	double (*_modelFunction) (double*);
 	DirectEvaluation(double (*modelFunction) (double*), size_t seed = -1);
 	double evaluateFitness(double* sample);
-	bool evaluateSettings(char* errorCode);
 };
 
 
