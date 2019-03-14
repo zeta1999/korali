@@ -113,7 +113,6 @@ class CMAES : public Solver
   // Private CMAES-Specific Methods
   void reSampleSingle(int iindex);
   void adaptC2(int hsig);
-  void testMinStdDevs();
   double function_value_difference();
   void updateEigensystem(int flgforce);
   void eigen( int N,  double **C, double *diag, double **Q);

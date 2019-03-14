@@ -5,7 +5,7 @@ Korali::Parameter::Parameter()
 	_name = "";
  _initialX = 0.0;
  _initialStdDev = 0.1;
-
+ _minStdDevChange = 0.0;
 	_lowerBound = 0.0;
 	_upperBound = 0.0;
   _a = 0.0;
@@ -34,6 +34,7 @@ void Korali::Parameter::initialize(int seed)
   if (_type == "Gaussian")   { _prior = new GaussianDistribution(_a, _b, seed); return; }
   if (_type == "Exponential"){ _prior = new ExponentialDistribution(_a, seed);  return; }
   if (_type == "Gamma")      { _prior = new GammaDistribution(_a, _b, seed);    return; }
+  _type = "Unrecognized";
 }
 
 void Korali::Parameter::setBounds(double lowerBound, double upperBound)
@@ -44,13 +45,13 @@ void Korali::Parameter::setBounds(double lowerBound, double upperBound)
 
 void Korali::Parameter::checkDistribution()
 {
-  if (_type == "Undefined") {
-  	 fprintf(stderr, "[Korali] Warning: Undefined Prior Distribution for %s.\n", _type.c_str());
+  if (_type == "Undefined" || _type == "Unrecognized")
+  {
+  	 fprintf(stderr, "[Korali] Warning: Undefined or Unrecognized Prior Distribution for %s.\n", _name.c_str());
+  	 fprintf(stderr, "[Korali] Defaulting to Uniform[%f,%f], Seed = %lu\n",_lowerBound, _upperBound, _seed);
+  	 setPriorDistribution("Uniform", _lowerBound, _upperBound);
+  	 initialize(_seed);
   }
-  else fprintf(stderr, "[Korali] Warning: Unrecognized Prior Distribution for %s.\n", _type.c_str());
-
-  printf("[Korali] Defaulting to Uniform[0.0,1.0], Seed = %lu\n", _seed);
-  _prior = new UniformDistribution(0.0, 1.0, _seed);
 }
 
 double Korali::Parameter::getRandomNumber()
