@@ -22,6 +22,7 @@ class Parameter
  double _initialX;
  double _initialStdDev;
  double _minStdDevChange;
+ size_t _seed;
 
  Parameter();
  Parameter(std::string name);
@@ -36,7 +37,8 @@ class Parameter
  void setInitialX(double initialX);
  void setInitialStdDev(double initialStdDev);
  void setMinStdDevChange(double minStdDevChange);
- void initializePriorDistribution(int seed);
+ void initialize(int seed);
+ void checkDistribution();
 
  private:
  Distribution* _prior;

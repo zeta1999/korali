@@ -9,9 +9,9 @@ int main(int argc, char* argv[])
   p.setBounds(-32.0, +32.0);
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
-  auto Solver = Korali::KoraliCMAES(&problem);
+  auto Solver = Korali::CMAES(&problem);
 	Solver.setStopMinDeltaX(1e-11);
-	Solver.setLambda(128);
+	Solver.setPopulationSize(128);
 	Solver.run();
 
 	return 0;

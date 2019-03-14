@@ -53,6 +53,7 @@ Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) 
 	_referenceDataSet = false;
 
 	Korali::Parameter sigma("Sigma");
+	sigma.setInitialX(10.0);
 	sigma.setBounds(0, 20.0);
 	sigma.setPriorDistribution("Uniform", 0.0, +20.0);
 	addParameter(sigma);

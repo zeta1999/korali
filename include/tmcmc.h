@@ -86,15 +86,11 @@ class TMCMC : public Solver
 	double* databasePoints;
 	double* databaseFitness;
 
-  // Korali Engine Methods
+  // Korali Methods
 	TMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
 
 	void Korali_InitializeInternalVariables();
-  void Korali_GetSamplePopulation();
-  bool Korali_CheckTermination(){if (runinfo.Gen++ == 0) return false; return true;};
-  void Korali_PrintResults(){};
-  void Korali_UpdateDistribution(const double *fitnessVector){};
-  void supervisorThread2();
+  void runEngine();
 
 	// TMCMC Configuration Methods
 	void setToleranceCOV(double TolCOV) { TolCOV = TolCOV; }
@@ -110,9 +106,8 @@ class TMCMC : public Solver
 	void setBounds(double lower, double upper) { options.LowerBound = lower; options.UpperBound = upper; }
 
   // Internal TMCMC Methods
-	void processChains();
 	void saveResults();
-  void prepareChains();
+  void prepareGeneration();
   void updateDatabase(double* point, double fitness);
   void processSample(size_t c, double fitness);
   void calculate_statistics(double flc[], unsigned int sel[]);

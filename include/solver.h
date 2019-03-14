@@ -18,25 +18,29 @@ class Solver {
   int _rankId;
   int _rankCount;
 
-  int _maxGens;                  // Max number of Solver Generations
-  size_t _sampleSize;
+  size_t _maxGens;                  // Max number of Solver Generations
+  size_t _sampleCount;
   size_t _sampleId;
 	size_t  N; // Parameter Count
   Problem* _problem;
   bool _continueEvaluations;
 	bool   _evaluateSample;
+  bool _verbose;
 
 	std::queue<int> _workers;
 	upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
 
   Solver(Problem* problem, MPI_Comm comm);
-	void setPopulationSize(int size) { _sampleSize = size; }
-	void setMaxGenerations(int _maxGens) { _maxGens = _maxGens; }
+	void setPopulationSize(int size) { _sampleCount = size; }
+	void setVerbose(bool verbose) { _verbose = verbose; }
+	void setMaxGenerations(int maxGens) { _maxGens = maxGens; }
+	void evaluateSample(size_t sampleId);
+	void checkProgress();
 	void run();
 
 	void supervisorThread();
 	void workerThread();
-	virtual void supervisorThread2() = 0;
+	virtual void runEngine() = 0;
 	virtual void processSample(size_t sampleId, double fitness) = 0;
 };
 

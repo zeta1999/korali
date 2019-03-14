@@ -20,9 +20,9 @@ int main(int argc, char* argv[])
 
   problem.setReferenceData(p.nPoints, p.refTemp);
 
-  auto Solver = Korali::KoraliCMAES(&problem, MPI_COMM_WORLD);
+  auto Solver = Korali::CMAES(&problem, MPI_COMM_WORLD);
 	Solver.setStopMinDeltaX(1e-7);
-	Solver.setLambda(32);
+	Solver.setPopulationSize(32);
 
 	Solver.run();
 	MPI_Finalize();

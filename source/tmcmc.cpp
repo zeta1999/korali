@@ -13,8 +13,6 @@
 
 Korali::TMCMC::TMCMC(Problem* problem, MPI_Comm comm) : Korali::Solver::Solver(problem, comm)
 {
-
-
 	MinChainLength = 1;
 	MaxChainLength = 5;
 
@@ -31,48 +29,42 @@ Korali::TMCMC::TMCMC(Problem* problem, MPI_Comm comm) : Korali::Solver::Solver(p
 	options.UpperBound = 10.0;
 }
 
-
-void Korali::TMCMC::supervisorThread2()
+void Korali::TMCMC::runEngine()
 {
-	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed) ;
+	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed);
 
 	Korali_InitializeInternalVariables();
 
-  while(_continueEvaluations) {
- 	  auto gt0 = std::chrono::system_clock::now();
- 	  processChains();
-    auto gt1 = std::chrono::system_clock::now();
+	auto startTime = std::chrono::system_clock::now();
 
-    printf("[Korali] Gen %d - Elapsed Time: %f, Annealing: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(gt1-gt0).count(), runinfo.p*100);
+  while(_continueEvaluations) {
+
+  	auto t0 = std::chrono::system_clock::now();
+
+ 		while (finishedChains < nChains)
+ 		{
+ 			for (int c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
+ 			{
+ 				chainPendingFitness[c] = true;
+ 				if(generateCandidate(c)) evaluateSample(c);
+ 				else                     processSample(c, -DBL_MAX);
+ 			}
+ 			checkProgress();
+ 		}
+
+    auto t1 = std::chrono::system_clock::now();
+
+    printf("[Korali] Gen %d - Generation Time: %fs, Annealing: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(t1-t0).count(), runinfo.p*100);
     runinfo.Gen++;
  	  _continueEvaluations = runinfo.p < 1.0 && runinfo.Gen < _maxGens;
- 	  if (_continueEvaluations) prepareChains();
+ 	  if (_continueEvaluations) prepareGeneration();
   }
 
+  auto endTime = std::chrono::system_clock::now();
+
+  printf("[Korali] Finished - Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
+
 	saveResults();
-}
-
-void Korali::TMCMC::processChains()
-{
-
-	while (finishedChains < nChains)
-	{
-		for (int c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
-		{
-			chainPendingFitness[c] = true;
-
-			if(generateCandidate(c))
-			{
-				while(_workers.empty()) upcxx::progress();
-				int workerId = _workers.front(); _workers.pop();
-				upcxx::rpc_ff(workerId, [](size_t c){_k->_sampleId = c; _k->_evaluateSample = true;}, c);
-			}
-			else processSample(c, -DBL_MAX);
-		}
-
-		upcxx::progress();
-	}
-
 }
 
 void Korali::TMCMC::processSample(size_t c, double fitness)
@@ -146,9 +138,9 @@ void Korali::TMCMC::saveResults()
 void Korali::TMCMC::Korali_InitializeInternalVariables()
 {
 	// Initializing Data Variables
-  double *LCmem  = (double*) calloc (_sampleSize*N*N, sizeof(double));
-  local_cov = (double**) calloc ( _sampleSize, sizeof(double*));
-  for (int pos=0; pos < _sampleSize; ++pos)
+  double *LCmem  = (double*) calloc (_sampleCount*N*N, sizeof(double));
+  local_cov = (double**) calloc ( _sampleCount, sizeof(double*));
+  for (int pos=0; pos < _sampleCount; ++pos)
   {
   	local_cov[pos] = LCmem + pos*N*N;
     for (int i=0; i<N; ++i) local_cov[pos][i*N+i] = 1;
@@ -167,37 +159,37 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 
 	// Initializing TMCMC Leaders
 	ccPoints  = sampleGlobalPtr.local();
-	ccFitness = (double*) calloc (_sampleSize, sizeof(double));
-	ccLogPrior  = (double*) calloc (_sampleSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+	ccFitness = (double*) calloc (_sampleCount, sizeof(double));
+	ccLogPrior  = (double*) calloc (_sampleCount, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 
-	clPoints    = (double*) calloc (N*_sampleSize, sizeof(double));
-	clFitness   = (double*) calloc (_sampleSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
-	clLogPrior  = (double*) calloc (_sampleSize, sizeof(double));
+	clPoints    = (double*) calloc (N*_sampleCount, sizeof(double));
+	clFitness   = (double*) calloc (_sampleCount, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+	clLogPrior  = (double*) calloc (_sampleCount, sizeof(double));
 
-	chainPendingFitness = (bool*) calloc (_sampleSize, sizeof(double));
-	chainPoints = (double*) calloc (N*_sampleSize, sizeof(double)); //chainPointsGlobalPtr.local();
-	chainCurrentStep = (size_t*) calloc (_sampleSize, sizeof(size_t));
-	chainLength      = (size_t*) calloc (_sampleSize, sizeof(size_t));
+	chainPendingFitness = (bool*) calloc (_sampleCount, sizeof(bool));
+	chainPoints = (double*) calloc (N*_sampleCount, sizeof(double)); //chainPointsGlobalPtr.local();
+	chainCurrentStep = (size_t*) calloc (_sampleCount, sizeof(size_t));
+	chainLength      = (size_t*) calloc (_sampleCount, sizeof(size_t));
 
 	databaseEntries = 0;
-	databasePoints   = (double*) calloc (N*_sampleSize, sizeof(double));
-  databaseFitness  = (double*) calloc (_sampleSize, sizeof(double));
+	databasePoints   = (double*) calloc (N*_sampleCount, sizeof(double));
+  databaseFitness  = (double*) calloc (_sampleCount, sizeof(double));
 
   // First definition of chains and their leaders
-  nChains = _sampleSize;
+  nChains = _sampleCount;
 	finishedChains = 0;
-  for (int c = 0; c < _sampleSize; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
-  for (int c = 0; c < _sampleSize; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
-  for (int c = 0; c < _sampleSize; c++) chainCurrentStep[c] = 0;
-  for (int c = 0; c < _sampleSize; c++) chainLength[c] = 1;
-  for (int c = 0; c < _sampleSize; c++) chainPendingFitness[c] = false;
+  for (int c = 0; c < _sampleCount; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
+  for (int c = 0; c < _sampleCount; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
+  for (int c = 0; c < _sampleCount; c++) chainCurrentStep[c] = 0;
+  for (int c = 0; c < _sampleCount; c++) chainLength[c] = 1;
+  for (int c = 0; c < _sampleCount; c++) chainPendingFitness[c] = false;
 
   // Setting Chain-Specific Seeds
   range = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(range, _problem->_seed+N+0xD00);
 
-  chainGSLRange = (gsl_rng**) calloc (_sampleSize, sizeof(gsl_rng*));
-  for (int c = 0; c < _sampleSize; c++)
+  chainGSLRange = (gsl_rng**) calloc (_sampleCount, sizeof(gsl_rng*));
+  for (int c = 0; c < _sampleCount; c++)
   {
   	chainGSLRange[c] = gsl_rng_alloc (gsl_rng_default);
   	gsl_rng_set(chainGSLRange[c], _problem->_seed+N+0xF00+c);
@@ -206,7 +198,7 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 	// TODO: Ensure proper memory deallocation
 }
 
-void Korali::TMCMC::prepareChains()
+void Korali::TMCMC::prepareGeneration()
 {
 	int n = databaseEntries;
 
@@ -253,7 +245,7 @@ void Korali::TMCMC::prepareChains()
 			}
 	}
 	runinfo.currentuniques = un;
-	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_sampleSize; /* check this*/
+	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_sampleCount; /* check this*/
 
 	for (int i = 0; i < n; ++i)
 			fj[i] = databaseFitness[i];    /* separate point from F ?*/
@@ -359,87 +351,78 @@ void Korali::TMCMC::calculate_statistics(double flc[], unsigned int sel[])
 	double *q = (double*) calloc (databaseEntries, sizeof(double));
 	unsigned int *nn = (unsigned int*) calloc (databaseEntries, sizeof(unsigned int));
 
-    int display = options.Display;
-    double coefVar       = runinfo.CoefVar;
-    double logselections = runinfo.logselections;
+	int display = options.Display;
+	double coefVar       = runinfo.CoefVar;
+	double logselections = runinfo.logselections;
 
-    double fmin = 0, xmin = 0;
-    bool conv = 0;
+	double fmin = 0, xmin = 0;
+	bool conv = 0;
 
-    bool useFminCon = false;
-    bool useFminSearch = true;
-    bool useFminZeroFind = false;
+	bool useFminCon = false;
+	bool useFminSearch = true;
+	bool useFminZeroFind = false;
 
-    if (useFminCon)                 conv = fmincon(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
-    if (useFminSearch)   if (!conv) conv = fminsearch(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
-    if (useFminZeroFind) if (!conv) conv = fzerofind(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
+	if (useFminCon)                 conv = fmincon(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
+	if (useFminSearch)   if (!conv) conv = fminsearch(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
+	if (useFminZeroFind) if (!conv) conv = fzerofind(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
 
-    double pPrev = runinfo.p;
+	double pPrev = runinfo.p;
 
-    if ( conv && (xmin > pPrev) ) {
-    	runinfo.p       = xmin;
-        coefVar = pow(fmin, 0.5) + TolCOV;
-    } else {
-    	runinfo.p       = pPrev + MinStep;
-        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries, pPrev, TolCOV), 0.5) + TolCOV;
-    }
+	if ( conv && (xmin > pPrev) ) {
+		runinfo.p       = xmin;
+			coefVar = pow(fmin, 0.5) + TolCOV;
+	} else {
+		runinfo.p       = pPrev + MinStep;
+			coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries, pPrev, TolCOV), 0.5) + TolCOV;
+	}
 
-    if (runinfo.p > 1.0) {
-    	runinfo.p    = 1.0;
-        coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries,  pPrev, TolCOV), 0.5) +   TolCOV;
-    }
+	if (runinfo.p > 1.0) {
+		runinfo.p    = 1.0;
+			coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries,  pPrev, TolCOV), 0.5) +   TolCOV;
+	}
 
-    /* Compute weights and normalize*/
+	/* Compute weights and normalize*/
 
-    for (int i = 0; i < databaseEntries; i++)
-        flcp[i] = flc[i]*(runinfo.p-pPrev);
+	for (int i = 0; i < databaseEntries; i++)
+			flcp[i] = flc[i]*(runinfo.p-pPrev);
 
-    const double fjmax = gsl_stats_max(flcp, 1, databaseEntries);
+	const double fjmax = gsl_stats_max(flcp, 1, databaseEntries);
 
-    for (int i = 0; i < databaseEntries; i++)
-        weight[i] = exp( flcp[i] - fjmax );
-
-
-    double sum_weight = std::accumulate(weight, weight+databaseEntries, 0.0);
-    logselections  = log(sum_weight) + fjmax - log(databaseEntries);
-    if (display) printf("logselections: %f\n", logselections);
+	for (int i = 0; i < databaseEntries; i++)
+			weight[i] = exp( flcp[i] - fjmax );
 
 
-    for (int i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
+	double sum_weight = std::accumulate(weight, weight+databaseEntries, 0.0);
+	logselections  = log(sum_weight) + fjmax - log(databaseEntries);
 
+	for (int i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
+	for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
 
-    if (display) printf("CoefVar: %f\n", coefVar);
+	gsl_ran_multinomial(range, databaseEntries, _sampleCount, q, nn);
+	for (int i = 0; i < databaseEntries; ++i) sel[i]+=nn[i];
 
+	for (int i = 0; i < N; i++)
+	{
+		runinfo.meantheta[i] = 0;
+		for (int j = 0; j < databaseEntries; j++) runinfo.meantheta[i] += databasePoints[j*N+ i]*q[j];
+	}
 
+	double meanv[N];
+	for (int i = 0; i < N; i++)  meanv[i] = runinfo.meantheta[i];
+	for (int i = 0; i < N; i++) for (int j = i; j < N; ++j)
+	{
+		double s = 0.0;
+		for (unsigned int k = 0; k < databaseEntries; ++k) s += q[k]*(databasePoints[k*N+i]-meanv[i])*(databasePoints[k*N+j]-meanv[j]);
+		runinfo.SS[i*N + j] = runinfo.SS[j*N + i] = s*bbeta;
+	}
 
-    for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
+	gsl_matrix_view sigma 	= gsl_matrix_view_array(runinfo.SS, N,N);
+	gsl_linalg_cholesky_decomp( &sigma.matrix );
 
-    gsl_ran_multinomial(range, databaseEntries, _sampleSize, q, nn);
-    for (int i = 0; i < databaseEntries; ++i) sel[i]+=nn[i];
-
-
-    for (int i = 0; i < N; i++)
-    {
-    	runinfo.meantheta[i] = 0;
-      for (int j = 0; j < databaseEntries; j++) runinfo.meantheta[i] += databasePoints[j*N+ i]*q[j];
-    }
-
-    double meanv[N];
-    for (int i = 0; i < N; i++)  meanv[i] = runinfo.meantheta[i];
-    for (int i = 0; i < N; i++) for (int j = i; j < N; ++j)
-    {
-			double s = 0.0;
-			for (unsigned int k = 0; k < databaseEntries; ++k) s += q[k]*(databasePoints[k*N+i]-meanv[i])*(databasePoints[k*N+j]-meanv[j]);
-			runinfo.SS[i*N + j] = runinfo.SS[j*N + i] = s*bbeta;
-    }
-
-    gsl_matrix_view sigma 	= gsl_matrix_view_array(runinfo.SS, N,N);
-    gsl_linalg_cholesky_decomp( &sigma.matrix );
-
-  	free(flcp);
-  	free(weight);
-  	free(q);
-  	free(nn);
+	free(flcp);
+	free(weight);
+	free(q);
+	free(nn);
 }
 
 void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchains)
@@ -458,7 +441,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
     for (int d = 0; d < N; ++d) {
         double d_min = +1e6;
         double d_max = -1e6;
-        for (int pos = 0; pos < _sampleSize; ++pos) {
+        for (int pos = 0; pos < _sampleCount; ++pos) {
             double s = databasePoints[pos*N+d];
             if (d_min > s) d_min = s;
             if (d_max < s) d_max = s;
@@ -471,14 +454,14 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
     int status = 0;
     double ds = 0.05;
     for (double scale = 0.1; scale <= 1.0; scale += ds) {
-        // find neighbors in a rectangle - O(_sampleSize^2)
+        // find neighbors in a rectangle - O(_sampleCount^2)
         for (pos = 0; pos < newchains; ++pos) {
             nn_count[pos] = 0;
             double* curr = &chainPoints[pos*N];
-            for (int i = 0; i < _sampleSize; ++i) {
+            for (int i = 0; i < _sampleCount; ++i) {
                 double* s = &databasePoints[i*N];
                 if (in_rect(curr, s, diam, scale, N)) {
-                    nn_ind[pos*_sampleSize+nn_count[pos]] = i;
+                    nn_ind[pos*_sampleCount+nn_count[pos]] = i;
                     nn_count[pos]++;
                 }
             }
@@ -489,7 +472,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
             for (int d = 0; d < N; ++d) {
                 chain_mean[d] = 0;
                 for (int k = 0; k < nn_count[pos]; ++k) {
-                    idx = nn_ind[pos*_sampleSize+k];
+                    idx = nn_ind[pos*_sampleCount+k];
                     chain_mean[d] += databasePoints[idx*N+d];
                 }
                 chain_mean[d] /= nn_count[pos];
@@ -499,7 +482,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
                 for (int j = 0; j < N; ++j) {
                     double s = 0;
                     for (int k = 0; k < nn_count[pos]; k++) {
-                        idx = nn_ind[pos*_sampleSize+k];
+                        idx = nn_ind[pos*_sampleCount+k];
                         s  += (databasePoints[idx*N+i]-chain_mean[i]) *
                               (databasePoints[idx*N+j]-chain_mean[j]);
                     }
@@ -548,8 +531,6 @@ double Korali::TMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double p
 
     double sum_weight = std::accumulate(weight, weight+fn, 0.0);
 
-
-
     for(int i = 0; i < fn; ++i) {
         q[i] = weight[i]/sum_weight;
     }
@@ -581,7 +562,6 @@ double Korali::TMCMC::tmcmc_objlogp_gsl2(const gsl_vector *v, void *param)
 
 int Korali::TMCMC::fmincon(const double *fj, int fn, double pj, double objTol,  double *xmin, double *fmin, const optim_options& opt)
 {
-
     int status;
     size_t iter     = 0;
     size_t max_iter = opt.MaxIter;
@@ -857,7 +837,6 @@ bool Korali::TMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int
     for (int d = 0; d < D; d++)  if (fabs(v1[d]-v2[d]) > sc*diam[d]) return false;
     return true;
 }
-
 
 int Korali::TMCMC::compar_desc(const void* p1, const void* p2)
 {
