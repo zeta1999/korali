@@ -18,17 +18,26 @@ class Solver {
   int _rankId;
   int _rankCount;
 
+  int _maxGens;                  // Max number of Solver Generations
   size_t _sampleSize;
-
+  size_t _sampleId;
+	size_t  N; // Parameter Count
   Problem* _problem;
   bool _continueEvaluations;
+	bool   _evaluateSample;
+
+	std::queue<int> _workers;
+	upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
 
   Solver(Problem* problem, MPI_Comm comm);
 	void setPopulationSize(int size) { _sampleSize = size; }
+	void setMaxGenerations(int _maxGens) { _maxGens = _maxGens; }
 	void run();
 
-	virtual void supervisorThread() = 0;
-	virtual void workerThread() = 0;
+	void supervisorThread();
+	void workerThread();
+	virtual void supervisorThread2() = 0;
+	virtual void processSample(size_t sampleId, double fitness) = 0;
 };
 
 } // namespace Korali

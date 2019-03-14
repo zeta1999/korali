@@ -47,8 +47,6 @@ class TMCMC : public Solver
   public:
 
   // TMCMC Configuration
-
-  int MaxStages;                  /* Max number of tmcmc generations */
   int nChains;
 
   int MinChainLength;         /* MinChainLength > 0: setting MinChainLength */
@@ -74,27 +72,19 @@ class TMCMC : public Solver
 	double* clFitness;  // Chain Leader Fitness
 	double* clLogPrior; // Chain Leader Log Prior
 
-	upcxx::global_ptr<double> ccPointsGlobalPtr; // Global Pointer for Chain Candidate Parameters
 	double* ccPoints;   // Chain Candidate Parameter Values
 	double* ccFitness;  // Chain Candidate Fitness
 	double* ccLogPrior; // Chain Candidate Log Prior
-	bool*   ccSuitable;   // Indicates whether the candidate is suitable.
 	gsl_rng** chainGSLRange;
 
 	bool*   chainPendingFitness; // Indicates that the fitness result for the chain is pending
 	size_t  finishedChains;
 	size_t* chainCurrentStep;
 	size_t* chainLength;
-	size_t  N; // Parameter Count
 
 	size_t  databaseEntries;
 	double* databasePoints;
 	double* databaseFitness;
-
-	// Worker Parameters
-	std::queue<int> _workers;
-	size_t _nextChainEval;
-	bool   _evaluateChain;
 
   // Korali Engine Methods
 	TMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
@@ -104,11 +94,9 @@ class TMCMC : public Solver
   bool Korali_CheckTermination(){if (runinfo.Gen++ == 0) return false; return true;};
   void Korali_PrintResults(){};
   void Korali_UpdateDistribution(const double *fitnessVector){};
-  void supervisorThread();
-  void workerThread();
+  void supervisorThread2();
 
 	// TMCMC Configuration Methods
-	void setMaxStages(int MaxStages) { MaxStages = MaxStages; }
 	void setToleranceCOV(double TolCOV) { TolCOV = TolCOV; }
 	void setUseLocalCOV(double use_local_cov) { use_local_cov = use_local_cov; }
 	void setCovarianceScaling(double bbeta) { bbeta = bbeta; }
@@ -126,7 +114,7 @@ class TMCMC : public Solver
 	void saveResults();
   void prepareChains();
   void updateDatabase(double* point, double fitness);
-  void processChainLink(size_t c);
+  void processSample(size_t c, double fitness);
   void calculate_statistics(double flc[], unsigned int sel[]);
   bool generateCandidate(int c);
   void precompute_chain_covariances(double** chain_cov, int newchains);
