@@ -10,19 +10,8 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
-Korali::KoraliTMCMC* _kt;
-
-Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::KoraliBase::KoraliBase(problem, comm)
+Korali::TMCMC::TMCMC(Problem* problem, MPI_Comm comm) : Korali::Solver::Solver(problem, comm)
 {
-  _problem = problem;
-	_comm = comm;
-
-	_popSize = 1000;
-	_rankId = 0;
-	_rankCount = 1;
-
-  _bcastFuture = upcxx::make_future();
-  _continueEvaluations = true;
 	_evaluateChain = false;
 
 	MaxStages = 20;
@@ -49,20 +38,8 @@ Korali::KoraliTMCMC::KoraliTMCMC(Problem* problem, MPI_Comm comm) //: Korali::Ko
   	_problem->_parameters[i].initializePriorDistribution(_problem->_seed+i+1);
 }
 
-void Korali::KoraliTMCMC::run()
-{
-	_kt = this;
-	upcxx::init();
-	_rankId = upcxx::rank_me();
-	_rankCount = upcxx::rank_n();
 
-  if (_rankId == 0) Korali_SupervisorThread(); else Korali_WorkerThread();
-
-  upcxx::barrier();
-  upcxx::finalize();
-}
-
-void Korali::KoraliTMCMC::Korali_SupervisorThread()
+void Korali::TMCMC::supervisorThread()
 {
 	printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed) ;
 
@@ -80,11 +57,11 @@ void Korali::KoraliTMCMC::Korali_SupervisorThread()
  	  if (_continueEvaluations) prepareChains();
   }
 
-  for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_kt->_continueEvaluations = false;});
+  for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){((TMCMC*)_k)->_continueEvaluations = false;});
 	saveResults();
 }
 
-void Korali::KoraliTMCMC::Korali_WorkerThread()
+void Korali::TMCMC::workerThread()
 {
 	upcxx::broadcast(&ccPointsGlobalPtr,  1, 0).wait();
 
@@ -97,13 +74,13 @@ void Korali::KoraliTMCMC::Korali_WorkerThread()
 			upcxx::rget(ccPointsGlobalPtr + _nextChainEval*N, candidatePoint, N).wait();
 			double candidateFitness = _problem->evaluateFitness(candidatePoint);
 			 //printf("Worker %d: Evaluated [%f, %f] - Fitness: %f\n", _rankId, candidatePoint[0], candidatePoint[1], candidateFitness);
-			upcxx::rpc_ff(0, [](size_t c, int workerId, double fitness){_kt->ccFitness[c] = fitness; _kt->processChainLink(c); _kt->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness);
+			upcxx::rpc_ff(0, [](size_t c, int workerId, double fitness){((TMCMC*)_k)->ccFitness[c] = fitness; ((TMCMC*)_k)->processChainLink(c); ((TMCMC*)_k)->_workers.push(workerId); }, _nextChainEval, _rankId, candidateFitness);
 		}
 		 upcxx::progress();
 	}
 }
 
-void Korali::KoraliTMCMC::processChains()
+void Korali::TMCMC::processChains()
 {
 
 	while (finishedChains < nChains)
@@ -117,7 +94,7 @@ void Korali::KoraliTMCMC::processChains()
 			{
 				while(_workers.empty()) upcxx::progress();
 				int workerId = _workers.front(); _workers.pop();
-				upcxx::rpc_ff(workerId, [](size_t c){_kt->_nextChainEval = c; _kt->_evaluateChain = true;}, c);
+				upcxx::rpc_ff(workerId, [](size_t c){((TMCMC*)_k)->_nextChainEval = c; ((TMCMC*)_k)->_evaluateChain = true;}, c);
 			}
 			else processChainLink(c);
 		}
@@ -127,7 +104,7 @@ void Korali::KoraliTMCMC::processChains()
 
 }
 
-void Korali::KoraliTMCMC::processChainLink(size_t c)
+void Korali::TMCMC::processChainLink(size_t c)
 {
 	if(ccSuitable[c])
 	{
@@ -148,14 +125,14 @@ void Korali::KoraliTMCMC::processChainLink(size_t c)
 	if (chainCurrentStep[c] == chainLength[c]) finishedChains++;
 }
 
-void Korali::KoraliTMCMC::updateDatabase(double* point, double fitness)
+void Korali::TMCMC::updateDatabase(double* point, double fitness)
 {
 	for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = point[i]; 			// Re-add burn-in
 	databaseFitness[databaseEntries] = fitness;
 	databaseEntries++;
 }
 
-bool Korali::KoraliTMCMC::generateCandidate(int c)
+bool Korali::TMCMC::generateCandidate(int c)
 {
 	if (runinfo.Gen == 0) return true;
 
@@ -173,7 +150,7 @@ bool Korali::KoraliTMCMC::generateCandidate(int c)
 	return true;
 }
 
-void Korali::KoraliTMCMC::saveResults()
+void Korali::TMCMC::saveResults()
 {
 	double checksum = 0.0;
 
@@ -197,12 +174,12 @@ void Korali::KoraliTMCMC::saveResults()
 	fclose(fp);
 }
 
-void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
+void Korali::TMCMC::Korali_InitializeInternalVariables()
 {
 	// Initializing Data Variables
-  double *LCmem  = (double*) calloc (_popSize*N*N, sizeof(double));
-  local_cov = (double**) calloc ( _popSize, sizeof(double*));
-  for (int pos=0; pos < _popSize; ++pos)
+  double *LCmem  = (double*) calloc (_sampleSize*N*N, sizeof(double));
+  local_cov = (double**) calloc ( _sampleSize, sizeof(double*));
+  for (int pos=0; pos < _sampleSize; ++pos)
   {
   	local_cov[pos] = LCmem + pos*N*N;
     for (int i=0; i<N; ++i) local_cov[pos][i*N+i] = 1;
@@ -220,42 +197,41 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	runinfo.meantheta =  (double*) calloc (MaxStages+1, sizeof(double));
 
 	// Initializing TMCMC Leaders
-	ccPointsGlobalPtr  = upcxx::new_array<double>(N*_popSize);
+	ccPointsGlobalPtr  = upcxx::new_array<double>(N*_sampleSize);
 	ccPoints  = ccPointsGlobalPtr.local();
-	ccFitness = (double*) calloc (_popSize, sizeof(double));
-	ccLogPrior  = (double*) calloc (_popSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+	ccFitness = (double*) calloc (_sampleSize, sizeof(double));
+	ccLogPrior  = (double*) calloc (_sampleSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 
-	clPoints    = (double*) calloc (N*_popSize, sizeof(double));
-	clFitness   = (double*) calloc (_popSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
-	clLogPrior  = (double*) calloc (_popSize, sizeof(double));
-	ccSuitable  = (bool*) calloc (_popSize, sizeof(bool));
+	clPoints    = (double*) calloc (N*_sampleSize, sizeof(double));
+	clFitness   = (double*) calloc (_sampleSize, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+	clLogPrior  = (double*) calloc (_sampleSize, sizeof(double));
+	ccSuitable  = (bool*) calloc (_sampleSize, sizeof(bool));
 
-	chainPendingFitness = (bool*) calloc (_popSize, sizeof(double));
-	chainPoints = (double*) calloc (N*_popSize, sizeof(double)); //chainPointsGlobalPtr.local();
-	chainCurrentStep = (size_t*) calloc (_popSize, sizeof(size_t));
-	chainLength      = (size_t*) calloc (_popSize, sizeof(size_t));
+	chainPendingFitness = (bool*) calloc (_sampleSize, sizeof(double));
+	chainPoints = (double*) calloc (N*_sampleSize, sizeof(double)); //chainPointsGlobalPtr.local();
+	chainCurrentStep = (size_t*) calloc (_sampleSize, sizeof(size_t));
+	chainLength      = (size_t*) calloc (_sampleSize, sizeof(size_t));
 
 
 	databaseEntries = 0;
-	databasePoints   = (double*) calloc (N*_popSize, sizeof(double));
-  databaseFitness  = (double*) calloc (_popSize, sizeof(double));
+	databasePoints   = (double*) calloc (N*_sampleSize, sizeof(double));
+  databaseFitness  = (double*) calloc (_sampleSize, sizeof(double));
 
   // First definition of chains and their leaders
-  _isInitialization = true;
-  nChains = _popSize;
+  nChains = _sampleSize;
 	finishedChains = 0;
-  for (int c = 0; c < _popSize; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
-  for (int c = 0; c < _popSize; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
-  for (int c = 0; c < _popSize; c++) chainCurrentStep[c] = 0;
-  for (int c = 0; c < _popSize; c++) chainLength[c] = 1;
-  for (int c = 0; c < _popSize; c++) chainPendingFitness[c] = false;
+  for (int c = 0; c < _sampleSize; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
+  for (int c = 0; c < _sampleSize; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
+  for (int c = 0; c < _sampleSize; c++) chainCurrentStep[c] = 0;
+  for (int c = 0; c < _sampleSize; c++) chainLength[c] = 1;
+  for (int c = 0; c < _sampleSize; c++) chainPendingFitness[c] = false;
 
   // Setting Chain-Specific Seeds
   range = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(range, _problem->_seed+N+0xD00);
 
-  chainGSLRange = (gsl_rng**) calloc (_popSize, sizeof(gsl_rng*));
-  for (int c = 0; c < _popSize; c++)
+  chainGSLRange = (gsl_rng**) calloc (_sampleSize, sizeof(gsl_rng*));
+  for (int c = 0; c < _sampleSize; c++)
   {
   	chainGSLRange[c] = gsl_rng_alloc (gsl_rng_default);
   	gsl_rng_set(chainGSLRange[c], _problem->_seed+N+0xF00+c);
@@ -267,7 +243,7 @@ void Korali::KoraliTMCMC::Korali_InitializeInternalVariables()
 	// TODO: Ensure proper memory deallocation
 }
 
-void Korali::KoraliTMCMC::prepareChains()
+void Korali::TMCMC::prepareChains()
 {
 	int n = databaseEntries;
 
@@ -314,7 +290,7 @@ void Korali::KoraliTMCMC::prepareChains()
 			}
 	}
 	runinfo.currentuniques = un;
-	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_popSize; /* check this*/
+	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_sampleSize; /* check this*/
 
 	for (int i = 0; i < n; ++i)
 			fj[i] = databaseFitness[i];    /* separate point from F ?*/
@@ -329,7 +305,7 @@ void Korali::KoraliTMCMC::prepareChains()
 			if (sel[i] != 0) newchains++;
 	}
 
-	qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
+	qsort(list, n, sizeof(sort_t), Korali::TMCMC::compar_desc);
 
 	/* UPPER THRESHOLD */
 	/* splitting long chains */
@@ -347,7 +323,7 @@ void Korali::KoraliTMCMC::prepareChains()
 							}
 					}
 			}
-			qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
+			qsort(list, n, sizeof(sort_t), Korali::TMCMC::compar_desc);
 	}
 
 	/* LOWER THRESHOLD */
@@ -361,7 +337,7 @@ void Korali::KoraliTMCMC::prepareChains()
 					}
 			}
 
-			qsort(list, n, sizeof(sort_t), Korali::KoraliTMCMC::compar_desc);
+			qsort(list, n, sizeof(sort_t), Korali::TMCMC::compar_desc);
 	}
 
 	int ldi = 0;                    /* leader index */
@@ -412,7 +388,7 @@ void Korali::KoraliTMCMC::prepareChains()
 	free(uf);
 }
 
-void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
+void Korali::TMCMC::calculate_statistics(double flc[], unsigned int sel[])
 {
 
 	double *flcp  = (double*) calloc (databaseEntries, sizeof(double));
@@ -475,7 +451,7 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
 
     for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
 
-    gsl_ran_multinomial(range, databaseEntries, _popSize, q, nn);
+    gsl_ran_multinomial(range, databaseEntries, _sampleSize, q, nn);
     for (int i = 0; i < databaseEntries; ++i) sel[i]+=nn[i];
 
 
@@ -503,7 +479,7 @@ void Korali::KoraliTMCMC::calculate_statistics(double flc[], unsigned int sel[])
   	free(nn);
 }
 
-void Korali::KoraliTMCMC::precompute_chain_covariances(double** chain_cov, int newchains)
+void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchains)
 {
     bool display = options.Display;
     printf("Precomputing chain covariances for the current generation...\n");
@@ -519,7 +495,7 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** chain_cov, int n
     for (int d = 0; d < N; ++d) {
         double d_min = +1e6;
         double d_max = -1e6;
-        for (int pos = 0; pos < _popSize; ++pos) {
+        for (int pos = 0; pos < _sampleSize; ++pos) {
             double s = databasePoints[pos*N+d];
             if (d_min > s) d_min = s;
             if (d_max < s) d_max = s;
@@ -532,14 +508,14 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** chain_cov, int n
     int status = 0;
     double ds = 0.05;
     for (double scale = 0.1; scale <= 1.0; scale += ds) {
-        // find neighbors in a rectangle - O(_popSize^2)
+        // find neighbors in a rectangle - O(_sampleSize^2)
         for (pos = 0; pos < newchains; ++pos) {
             nn_count[pos] = 0;
             double* curr = &chainPoints[pos*N];
-            for (int i = 0; i < _popSize; ++i) {
+            for (int i = 0; i < _sampleSize; ++i) {
                 double* s = &databasePoints[i*N];
                 if (in_rect(curr, s, diam, scale, N)) {
-                    nn_ind[pos*_popSize+nn_count[pos]] = i;
+                    nn_ind[pos*_sampleSize+nn_count[pos]] = i;
                     nn_count[pos]++;
                 }
             }
@@ -550,7 +526,7 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** chain_cov, int n
             for (int d = 0; d < N; ++d) {
                 chain_mean[d] = 0;
                 for (int k = 0; k < nn_count[pos]; ++k) {
-                    idx = nn_ind[pos*_popSize+k];
+                    idx = nn_ind[pos*_sampleSize+k];
                     chain_mean[d] += databasePoints[idx*N+d];
                 }
                 chain_mean[d] /= nn_count[pos];
@@ -560,7 +536,7 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** chain_cov, int n
                 for (int j = 0; j < N; ++j) {
                     double s = 0;
                     for (int k = 0; k < nn_count[pos]; k++) {
-                        idx = nn_ind[pos*_popSize+k];
+                        idx = nn_ind[pos*_sampleSize+k];
                         s  += (databasePoints[idx*N+i]-chain_mean[i]) *
                               (databasePoints[idx*N+j]-chain_mean[j]);
                     }
@@ -596,7 +572,7 @@ void Korali::KoraliTMCMC::precompute_chain_covariances(double** chain_cov, int n
     gsl_matrix_free(work);
 }
 
-double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
+double Korali::TMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
 {
 
   double *weight = (double*) calloc (fn, sizeof(double));
@@ -626,21 +602,21 @@ double Korali::KoraliTMCMC::tmcmc_objlogp(double x, const double *fj, int fn, do
 }
 
 
-double Korali::KoraliTMCMC::tmcmc_objlogp_gsl(double x, void *param)
+double Korali::TMCMC::tmcmc_objlogp_gsl(double x, void *param)
 {
     fparam_t *fp = (fparam_t *) param;
-    return Korali::KoraliTMCMC::tmcmc_objlogp(x, fp->fj, fp->fn, fp->pj, fp->tol);
+    return Korali::TMCMC::tmcmc_objlogp(x, fp->fj, fp->fn, fp->pj, fp->tol);
 }
 
 
-double Korali::KoraliTMCMC::tmcmc_objlogp_gsl2(const gsl_vector *v, void *param)
+double Korali::TMCMC::tmcmc_objlogp_gsl2(const gsl_vector *v, void *param)
 {
     double x = gsl_vector_get(v, 0);
-    return Korali::KoraliTMCMC::tmcmc_objlogp_gsl(x, param);
+    return Korali::TMCMC::tmcmc_objlogp_gsl(x, param);
 }
 
 
-int Korali::KoraliTMCMC::fmincon(const double *fj, int fn, double pj, double objTol,  double *xmin, double *fmin, const optim_options& opt)
+int Korali::TMCMC::fmincon(const double *fj, int fn, double pj, double objTol,  double *xmin, double *fmin, const optim_options& opt)
 {
 
     int status;
@@ -669,7 +645,7 @@ int Korali::KoraliTMCMC::fmincon(const double *fj, int fn, double pj, double obj
     fp.pj = pj;
     fp.tol = objTol;
 
-    F.function = Korali::KoraliTMCMC::tmcmc_objlogp_gsl;
+    F.function = Korali::TMCMC::tmcmc_objlogp_gsl;
     F.params = &fp;
 
     // SELECT ONE MINIMIZER STRATEGY
@@ -763,7 +739,7 @@ int Korali::KoraliTMCMC::fmincon(const double *fj, int fn, double pj, double obj
 }
 
 
-int Korali::KoraliTMCMC::fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
+int Korali::TMCMC::fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
 {
     const gsl_multimin_fminimizer_type *T;
     gsl_multimin_fminimizer *s = NULL;
@@ -854,7 +830,7 @@ int Korali::KoraliTMCMC::fminsearch(double const *fj, int fn, double pj, double 
 
 /* simple min search, check stepwise for x < opt.Tol; if unsuccessfull
  * adjust chainGSLRange[c] and refine steps (DW: could be optimized) */
-int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
+int Korali::TMCMC::fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
 {
     bool display = opt.Display;
     double tol   = opt.Tol;
@@ -913,14 +889,14 @@ int Korali::KoraliTMCMC::fzerofind(double const *fj, int fn, double pj, double o
     return converged;
 }
 
-bool Korali::KoraliTMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int D)
+bool Korali::TMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int D)
 {
     for (int d = 0; d < D; d++)  if (fabs(v1[d]-v2[d]) > sc*diam[d]) return false;
     return true;
 }
 
 
-int Korali::KoraliTMCMC::compar_desc(const void* p1, const void* p2)
+int Korali::TMCMC::compar_desc(const void* p1, const void* p2)
 {
     int dir = +1;   /* -1: ascending order, +1: descending order */
     sort_t *s1 = (sort_t *) p1;

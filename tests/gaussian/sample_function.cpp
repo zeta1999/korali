@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
   p.setPriorDistribution("Uniform", -15.0, +15.0);
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(p);
 
-  auto Solver = Korali::KoraliTMCMC(&problem);
+  auto Solver = Korali::TMCMC(&problem);
 	Solver.setPopulationSize(10000);
 	Solver.setCovarianceScaling(0.05);
 	Solver.run();

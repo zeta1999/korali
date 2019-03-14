@@ -6,7 +6,7 @@ CXXFLAGS += -I../include
 
 all: libkorali.a
 
-libkorali.a: problem.o distribution.o parameter.o cmaes.o tmcmc.o
+libkorali.a: problem.o distribution.o parameter.o cmaes.o tmcmc.o solver.o
 
 base.o: base.cpp
 	upcxx -c $(CXXFLAGS) $<
