@@ -80,7 +80,6 @@ class TMCMC : public Solver
 	size_t  finishedChains;
 	size_t* chainCurrentStep;
 	size_t* chainLength;
-	double* chainStepDirection;
 
 	size_t  databaseEntries;
 	double* databasePoints;

@@ -57,7 +57,12 @@ void Korali::TMCMC::runEngine()
     printf("[Korali] Gen %d - Time: %fs, Annealing: %.2f%%, Acceptance: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(t1-t0).count(), runinfo.p*100, runinfo.acceptance*100);
     runinfo.Gen++;
  	  _continueEvaluations = runinfo.p < 1.0 && runinfo.Gen < _maxGens;
+
+ 	 auto t2 = std::chrono::system_clock::now();
  	  if (_continueEvaluations) prepareGeneration();
+ 	 auto t3 = std::chrono::system_clock::now();
+
+   //printf("[Korali] Gen Time: %fs\n", std::chrono::duration<double>(t3-t2).count());
   }
 
   auto endTime = std::chrono::system_clock::now();
@@ -98,12 +103,14 @@ bool Korali::TMCMC::generateCandidate(int c)
 {
 	if (runinfo.Gen == 0) return true;
 
+	double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
+  gsl_vector_view out_view	= gsl_vector_view_array(&ccPoints[c*N], N);
+  gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
+  gsl_vector_view mean_view 	= gsl_vector_view_array(&clPoints[c*N], N);
+	gsl_ran_multivariate_gaussian(chainGSLRange[c], &mean_view.vector, &sigma_view.matrix, &out_view.vector);
+
 	for (int i = 0; i < N; i++)
-	{
-	 ccPoints[c*N + i] =  ccPoints[c*N + i] + chainStepDirection[(c*MaxChainLength+chainCurrentStep[c])*N + i];
-	 if (ccPoints[c*N + i] < _problem->_parameters[i]._lowerBound ||
-			 ccPoints[c*N + i] > _problem->_parameters[i]._upperBound) { return false; }
-	}
+	  if (ccPoints[c*N + i] < _problem->_parameters[i]._lowerBound || ccPoints[c*N + i] > _problem->_parameters[i]._upperBound) return false;
 
 	return true;
 }
@@ -156,8 +163,8 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 	runinfo.meantheta =  (double*) calloc (N+1, sizeof(double));
 
 	// Initializing TMCMC Leaders
-	ccPoints  = sampleGlobalPtr.local();
-	ccFitness = (double*) calloc (_sampleCount, sizeof(double));
+	ccPoints    = sampleGlobalPtr.local();
+	ccFitness   = (double*) calloc (_sampleCount, sizeof(double));
 	ccLogPrior  = (double*) calloc (_sampleCount, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 
 	clPoints    = (double*) calloc (N*_sampleCount, sizeof(double));
@@ -165,11 +172,10 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 	clLogPrior  = (double*) calloc (_sampleCount, sizeof(double));
 
 	chainPendingFitness = (bool*) calloc (_sampleCount, sizeof(bool));
-	chainCurrentStep = (size_t*) calloc (_sampleCount, sizeof(size_t));
-	chainLength      = (size_t*) calloc (_sampleCount, sizeof(size_t));
-	chainStepDirection = (double*) calloc (N*_sampleCount*MaxChainLength, sizeof(double));
+	chainCurrentStep    = (size_t*) calloc (_sampleCount, sizeof(size_t));
+	chainLength         = (size_t*) calloc (_sampleCount, sizeof(size_t));
 
-	databaseEntries = 0;
+	databaseEntries  = 0;
 	databasePoints   = (double*) calloc (N*_sampleCount, sizeof(double));
   databaseFitness  = (double*) calloc (_sampleCount, sizeof(double));
 
@@ -230,21 +236,6 @@ void Korali::TMCMC::prepareGeneration()
 	finishedChains = 0;
 	for (int c = 0; c < nChains; c++) chainCurrentStep[c] = 0;
 	for (int c = 0; c < nChains; c++) chainPendingFitness[c] = false;
-
-	for (int c = 0; c < nChains; c++)
-	{
-		double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
-		double  zeroMean[N];
-		for (int i = 0; i < N; i++) zeroMean[i] = 0.0;
-	  gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
-	  gsl_vector_view mean_view 	= gsl_vector_view_array(zeroMean, N);
-
-		for (int i = 0; i < chainLength[c]; i++)
-		{
-		  gsl_vector_view out_view	= gsl_vector_view_array(&chainStepDirection[(c*MaxChainLength+i)*N], N);
-		  gsl_ran_multivariate_gaussian(chainGSLRange[c], &mean_view.vector, &sigma_view.matrix, &out_view.vector);
-		}
-	}
 
 	free(sel);
 	free(list);
