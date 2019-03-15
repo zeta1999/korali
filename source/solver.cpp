@@ -34,6 +34,9 @@ void Korali::Solver::run()
 	if (_rankId == 0) sampleGlobalPtr  = upcxx::new_array<double>(N*_sampleCount);
 	upcxx::broadcast(&sampleGlobalPtr,  1, 0).wait();
 
+	// Checking correct parameters for problem
+	for (int i = 0; i < N; i++) _problem->_parameters[i].checkBounds();
+
   if (_rankId == 0) supervisorThread(); else workerThread();
 
   upcxx::barrier();
@@ -69,6 +72,7 @@ void Korali::Solver::workerThread()
 
 void Korali::Solver::evaluateSample(size_t sampleId)
 {
+	if (_rankCount == 1) { _k->processSample(sampleId, _problem->evaluateFitness(sampleGlobalPtr.local() + sampleId*N)); return; }// if Single core run
 	while(_workers.empty()) upcxx::progress();
 	int workerId = _workers.front(); _workers.pop();
 	upcxx::rpc_ff(workerId, [](size_t c){_k->_sampleId = c; _k->_evaluateSample = true;}, sampleId);

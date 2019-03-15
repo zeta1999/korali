@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	heat2DInit(argc, argv);
 
-  auto problem = Korali::Likelihood(heat2DSolver);
+  auto problem = Korali::Likelihood(heat2DSolver, 0xC0FFEE);
   Korali::Parameter par0("Intensity");
   Korali::Parameter par1("PosX");
   Korali::Parameter par2("PosY");

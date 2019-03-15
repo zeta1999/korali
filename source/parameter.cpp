@@ -7,7 +7,7 @@ Korali::Parameter::Parameter()
  _initialStdDev = 0.1;
  _minStdDevChange = 0.0;
 	_lowerBound = 0.0;
-	_upperBound = 0.0;
+	_upperBound = -1.0;
   _a = 0.0;
   _b = 0.0;
   _type = "Undefined";
@@ -43,11 +43,26 @@ void Korali::Parameter::setBounds(double lowerBound, double upperBound)
 	_upperBound = upperBound;
 }
 
+void Korali::Parameter::checkBounds()
+{
+  if (_upperBound <= _lowerBound)
+  {
+  	 fprintf(stderr, "[Korali] Warning: Undefined or invalid lower/upper bounds for %s.\n", _name.c_str());
+  	 fprintf(stderr, "[Korali] Tip: Use parameter.setBounds(lower,upper); to define bounds.\n");
+  	 fprintf(stderr, "[Korali] Defaulting to [-100.0; 100.0]\n");
+  	 _lowerBound = -100.0;
+  	 _upperBound =  100.0;
+  }
+}
+
 void Korali::Parameter::checkDistribution()
 {
+	checkBounds();
+
   if (_type == "Undefined" || _type == "Unrecognized")
   {
   	 fprintf(stderr, "[Korali] Warning: Undefined or Unrecognized Prior Distribution for %s.\n", _name.c_str());
+  	 fprintf(stderr, "[Korali] Tip: Use parameter.setPriorDistribution(); to define prior distribution.\n");
   	 fprintf(stderr, "[Korali] Defaulting to Uniform[%f,%f], Seed = %lu\n",_lowerBound, _upperBound, _seed);
   	 setPriorDistribution("Uniform", _lowerBound, _upperBound);
   	 initialize(_seed);

@@ -43,7 +43,6 @@ void Korali::CMAES::runEngine()
  		{
  			for (int i = 0; i < _sampleCount; i++) if (_initializedSample[i] == false)
  			{
- 				//processSample(i, _problem->evaluateFitness(&_samplePopulation[i*N]));
  				_initializedSample[i] = true;
  				evaluateSample(i);
  			}
@@ -292,7 +291,7 @@ void Korali::CMAES::reSampleSingle(int iindex)
     double *rgx;
     double sum;
 
-    if (iindex < 0 || iindex >= _sampleCount)  fprintf(stderr, "[CMAES] Error: reSampleSingle(): Population member \n");
+    if (iindex < 0 || iindex >= _sampleCount)  fprintf(stderr, "[Korali] Error: reSampleSingle(): Population member \n");
     rgx = &_samplePopulation[iindex*N];
 
     for (i = 0; i < N; ++i)
@@ -314,14 +313,14 @@ void Korali::CMAES::updateDistribution(const double *fitnessVector)
     double psxps;
 
     if(state == 3)
-        fprintf(stderr, "[CMAES] Error: updateDistribution(): You need to call SamplePopulation() before update can take place.");
+        fprintf(stderr, "[Korali] Error: updateDistribution(): You need to call SamplePopulation() before update can take place.");
     if(fitnessVector == NULL)
-        fprintf(stderr, "[CMAES] Error: updateDistribution(): Fitness function value array input is missing.");
+        fprintf(stderr, "[Korali] Error: updateDistribution(): Fitness function value array input is missing.");
 
     if(state == 1)  /* function values are delivered here */
         countevals += _sampleCount;
     else
-        fprintf(stderr, "[CMAES] Error: updateDistribution(): unexpected state");
+        fprintf(stderr, "[Korali] Error: updateDistribution(): unexpected state");
 
     /* assign function values */
     for (i=0; i < _sampleCount; i++)	curBest[i] = rgFuncValue[i] = fitnessVector[i];
@@ -333,7 +332,8 @@ void Korali::CMAES::updateDistribution(const double *fitnessVector)
     if (rgFuncValue[index[0]] ==
             rgFuncValue[index[(int)_sampleCount/2]]) {
         sigma *= exp(0.2+_sigmaCumulationFactor/_dampFactor);
-        fprintf(stderr, "[CMAES] Error: Warning: sigma increased due to equal function values. Reconsider the formulation of the objective function\n");
+        fprintf(stderr, "[Korali] Error: Warning: sigma increased due to equal function values.\n");
+        fprintf(stderr, "[Korali] Reconsider the formulation of the objective function\n");
     }
 
     /* update function value history */

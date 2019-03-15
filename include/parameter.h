@@ -39,6 +39,7 @@ class Parameter
  void setMinStdDevChange(double minStdDevChange);
  void initialize(int seed);
  void checkDistribution();
+ void checkBounds();
 
  private:
  Distribution* _prior;
