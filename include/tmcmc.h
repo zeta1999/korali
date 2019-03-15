@@ -19,7 +19,8 @@ typedef struct runinfo_t {
     int    Gen;
     double CoefVar;
     double p;
-    int    currentuniques;
+    size_t uniqueSelections;
+    size_t uniqueEntries;
     double logselections;
     double acceptance;
     double *SS;            /*[PROBDIM][PROBDIM];*/
@@ -112,16 +113,14 @@ class TMCMC : public Solver
   void prepareGeneration();
   void updateDatabase(double* point, double fitness);
   void processSample(size_t c, double fitness);
-  void calculate_statistics(double flc[], unsigned int sel[]);
+  void resampleLeaders(unsigned int sel[]);
   bool generateCandidate(int c);
   void precompute_chain_covariances(double** chain_cov, int newchains);
-  int fmincon(const double *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
-  int fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
-  int fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt);
+  void fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin);
   static double tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero);
-  static double tmcmc_objlogp_gsl(double x, void *param);
-  static double tmcmc_objlogp_gsl2(const gsl_vector *v, void *param);
-  static int compar_desc(const void *p1, const void *p2);  double compute_sum(double *v, int n);
+  static double tmcmc_objlogp_gsl(const gsl_vector *v, void *param);
+  static int compar_desc(const void *p1, const void *p2);
+  double compute_sum(double *v, int n);
   bool in_rect(double *v1, double *v2, double *diam, double sc, int D);
 };
 

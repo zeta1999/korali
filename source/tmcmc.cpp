@@ -54,7 +54,7 @@ void Korali::TMCMC::runEngine()
 
     auto t1 = std::chrono::system_clock::now();
 
-    printf("[Korali] Gen %d - Generation Time: %fs, Annealing: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(t1-t0).count(), runinfo.p*100);
+    printf("[Korali] Gen %d - Time: %fs, Annealing: %.2f%%, Acceptance: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(t1-t0).count(), runinfo.p*100, runinfo.acceptance*100);
     runinfo.Gen++;
  	  _continueEvaluations = runinfo.p < 1.0 && runinfo.Gen < _maxGens;
  	  if (_continueEvaluations) prepareGeneration();
@@ -62,7 +62,7 @@ void Korali::TMCMC::runEngine()
 
   auto endTime = std::chrono::system_clock::now();
 
-  printf("[Korali] Finished - Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
+  printf("[Korali] Finished - Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
 
 	saveResults();
 }
@@ -75,9 +75,10 @@ void Korali::TMCMC::processSample(size_t c, double fitness)
   double P = chainAcceptanceThreshold[c*MaxChainLength + chainCurrentStep[c]];
 
 	if (P < L) {
-			for (int i = 0; i < N; ++i) clPoints[c*N + i] = ccPoints[c*N + i];
+			for (int i = 0; i < N; i++) clPoints[c*N + i] = ccPoints[c*N + i];
 			clFitness[c]  = ccFitness[c];
 			clLogPrior[c] = ccLogPrior[c];
+			runinfo.uniqueEntries++;
 	}
 
 	updateDatabase(&clPoints[c*N], clFitness[c]);
@@ -139,15 +140,16 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
   for (int pos=0; pos < _sampleCount; ++pos)
   {
   	local_cov[pos] = LCmem + pos*N*N;
-    for (int i=0; i<N; ++i) local_cov[pos][i*N+i] = 1;
+    for (int i=0; i<N; i++) local_cov[pos][i*N+i] = 1;
   }
 
   // Initializing Run Variables
   runinfo.CoefVar        = 0;
 	runinfo.p              = 0;
-	runinfo.currentuniques = 0;
+	runinfo.uniqueSelections = 0;
+	runinfo.uniqueEntries = _sampleCount;
 	runinfo.logselections  = 0;
-	runinfo.acceptance     = 0;
+	runinfo.acceptance     = 1.0;
 	runinfo.Gen = 0;
 	runinfo.CoefVar = std::numeric_limits<double>::infinity();
 	runinfo.SS =  (double*) calloc (N*N, sizeof(double));
@@ -198,75 +200,25 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 
 void Korali::TMCMC::prepareGeneration()
 {
-	int n = databaseEntries;
-
-	sort_t* list = (sort_t*) calloc (n, sizeof(sort_t));
-	unsigned int *sel = (unsigned int*) calloc (n, sizeof(unsigned int));
-	double **u = (double**) calloc (N, sizeof(double*));
-	for (int i = 0; i < N; ++i) u[i] = (double*) calloc (n, sizeof(double));
-	double *fj = (double*) calloc (n, sizeof(double));
-	double *uf = (double*) calloc (n, sizeof(double));
-
-	/* calculate u & acceptance rate */
-	int un = 0, unflag;
-
-	uf[un] = databaseFitness[0];
-	for(int p = 0; p < N; ++p )
-			u[p][un] = databasePoints[0*N + p];
-
-	un++;
-	for (int i = 1; i < n; ++i) {
-			double xi[N];
-			double fi = databaseFitness[i];
-			for (int p = 0; p < N; ++p) xi[p] = databasePoints[i*N + p];
-
-			unflag = 1;                 /* is this point unique? */
-			for (int j = 0; j < un; ++j) {  /* compare with  previous u */
-					for (int p = 0; p < N; ++p) {
-
-							/* do they differ in position? */
-							if (fabs(xi[p]-u[p][j]) > 1e-8) break; /* check next */
-
-							/* do they differ in fun eval? */
-							if (fabs(fi - uf[j]) > 1e-8) break; /* check next */
-
-							unflag = 0;         /* not unique */
-					}
-
-					if (unflag == 0) break; /* not unique - stop comparison */
-			}
-
-			if (unflag) {               /* unique, put it in the table */
-					uf[un] = fi;
-					for (int p = 0; p < N; ++p) u[p][un] = xi[p];
-					un++;
-			}
-	}
-	runinfo.currentuniques = un;
-	runinfo.acceptance     = (1.0*runinfo.currentuniques)/_sampleCount; /* check this*/
-
-	for (int i = 0; i < n; ++i)
-			fj[i] = databaseFitness[i];    /* separate point from F ?*/
-	calculate_statistics(fj, sel);
+	sort_t* list = (sort_t*) calloc (databaseEntries, sizeof(sort_t));
+	unsigned int *sel = (unsigned int*) calloc (databaseEntries, sizeof(unsigned int));
 
 	int newchains = 0;
+	resampleLeaders(sel);
+	for (int i = 0; i < databaseEntries; i++) if (sel[i] != 0) newchains++;
 
-	for (int i = 0; i < n; ++i) {
+	for (int i = 0; i < databaseEntries; i++) {
 			list[i].idx  = i;
 			list[i].nsteps = sel[i];
 			list[i].F    = databaseFitness[i];
-			if (sel[i] != 0) newchains++;
 	}
 
-	qsort(list, n, sizeof(sort_t), Korali::TMCMC::compar_desc);
+	qsort(list, databaseEntries, sizeof(sort_t), Korali::TMCMC::compar_desc);
 
-	/* UPPER THRESHOLD */
-	/* splitting long chains */
-	//TODO: untested feature (DW)
 	if (MaxChainLength > 0) {
 			int initial_newchains = newchains;
 			int h_threshold = MaxChainLength;
-			for (int i = 0; i < initial_newchains; ++i) {
+			for (int i = 0; i < initial_newchains; i++) {
 					if (list[i].nsteps > h_threshold) {
 							while (list[i].nsteps > h_threshold) {
 									list[newchains] = list[i];
@@ -276,57 +228,35 @@ void Korali::TMCMC::prepareGeneration()
 							}
 					}
 			}
-			qsort(list, n, sizeof(sort_t), Korali::TMCMC::compar_desc);
+			qsort(list, databaseEntries, sizeof(sort_t), Korali::TMCMC::compar_desc);
 	}
 
-	/* LOWER THRESHOLD */
-	/* setting min chain length */
-	//TODO: untested feature (DW)
 	if (MinChainLength > 0) {
 			int l_threshold = MinChainLength;
-			for (int i = 0; i < newchains; ++i) {
+			for (int i = 0; i < newchains; i++) {
 					if ((list[i].nsteps > 0)&&(list[i].nsteps < l_threshold)) {
 							list[i].nsteps = l_threshold;
 					}
 			}
 
-			qsort(list, n, sizeof(sort_t), Korali::TMCMC::compar_desc);
+			qsort(list, databaseEntries, sizeof(sort_t), Korali::TMCMC::compar_desc);
 	}
 
-	int ldi = 0;                    /* leader index */
-	for (int i = 0; i < n; ++i) {       /* newleader */
+	int ldi = 0;
+	for (int i = 0; i < databaseEntries; i++) {
 			if (list[i].nsteps != 0) {
 					int idx = list[i].idx;
-					for (int p = 0; p < N ; p++) {
-							chainPoints[ldi*N + p] = databasePoints[idx*N + p];
-					}
+					for (int p = 0; p < N ; p++) chainPoints[ldi*N + p] = databasePoints[idx*N + p];
 					clFitness[ldi] = databaseFitness[idx];
 					chainLength[ldi] = list[i].nsteps;
 					ldi++;
 			}
 	}
 
-			for (int i = 0; i < newchains; ++i) {
-					for (int p = 0; p < N; p++) {
-							u[p][i] = chainPoints[i*N + p];
-					}
-			}
-
-			double meanx[N], stdx[N];
-			for (int p = 0; p < N; p++) {
-					meanx[p] = gsl_stats_mean(u[p], 1, newchains);
-					stdx[p]  = gsl_stats_sd_m(u[p], 1, newchains, meanx[p]);
-			}
-
-			if(options.Display) {
-				printf("prepare_newgen: CURGEN DB (LEADER) %d: [nlead=%d]\n", runinfo.Gen, newchains);
-					//print_matrix("means", meanx, N);
-					//print_matrix("std", stdx, N);
-			}
-
 	if (use_local_cov) precompute_chain_covariances(local_cov, newchains);
 
 	databaseEntries = 0;
+	runinfo.uniqueEntries = 0;
 	nChains = newchains;
 	finishedChains = 0;
 	for (int c = 0; c < nChains; c++) for (int i = 0; i < N; i++) clPoints[c*N + i] = chainPoints[c*N + i];
@@ -350,16 +280,11 @@ void Korali::TMCMC::prepareGeneration()
 		}
 	}
 
-
-	for (int i = 0; i < N; ++i) free(u[i]);
-	free(u);
 	free(sel);
 	free(list);
-	free(fj);
-	free(uf);
 }
 
-void Korali::TMCMC::calculate_statistics(double flc[], unsigned int sel[])
+void Korali::TMCMC::resampleLeaders(unsigned int sel[])
 {
 
 	double *flcp  = (double*) calloc (databaseEntries, sizeof(double));
@@ -367,60 +292,51 @@ void Korali::TMCMC::calculate_statistics(double flc[], unsigned int sel[])
 	double *q = (double*) calloc (databaseEntries, sizeof(double));
 	unsigned int *nn = (unsigned int*) calloc (databaseEntries, sizeof(unsigned int));
 
-	int display = options.Display;
 	double coefVar       = runinfo.CoefVar;
 	double logselections = runinfo.logselections;
 
 	double fmin = 0, xmin = 0;
-	bool conv = 0;
-
-	bool useFminCon = false;
-	bool useFminSearch = true;
-	bool useFminZeroFind = false;
-
-	if (useFminCon)                 conv = fmincon(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
-	if (useFminSearch)   if (!conv) conv = fminsearch(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
-	if (useFminZeroFind) if (!conv) conv = fzerofind(flc, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin, options);
+  fminsearch(databaseFitness, databaseEntries, runinfo.p, TolCOV, &xmin, &fmin);
 
 	double pPrev = runinfo.p;
 
-	if ( conv && (xmin > pPrev) ) {
+	if (xmin > pPrev) {
 		runinfo.p       = xmin;
-			coefVar = pow(fmin, 0.5) + TolCOV;
+		coefVar = sqrt(fmin) + TolCOV;
 	} else {
 		runinfo.p       = pPrev + MinStep;
-			coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries, pPrev, TolCOV), 0.5) + TolCOV;
+		coefVar = sqrt(tmcmc_objlogp(runinfo.p, databaseFitness, databaseEntries, pPrev, TolCOV)) + TolCOV;
 	}
 
 	if (runinfo.p > 1.0) {
 		runinfo.p    = 1.0;
-			coefVar = pow(tmcmc_objlogp(runinfo.p, flc, databaseEntries,  pPrev, TolCOV), 0.5) +   TolCOV;
+		coefVar = sqrt(tmcmc_objlogp(runinfo.p, databaseFitness, databaseEntries,  pPrev, TolCOV)) + TolCOV;
 	}
 
 	/* Compute weights and normalize*/
 
-	for (int i = 0; i < databaseEntries; i++)
-			flcp[i] = flc[i]*(runinfo.p-pPrev);
-
+	for (int i = 0; i < databaseEntries; i++) flcp[i] = databaseFitness[i]*(runinfo.p-pPrev);
 	const double fjmax = gsl_stats_max(flcp, 1, databaseEntries);
-
-	for (int i = 0; i < databaseEntries; i++)
-			weight[i] = exp( flcp[i] - fjmax );
-
+	for (int i = 0; i < databaseEntries; i++)	weight[i] = exp( flcp[i] - fjmax );
 
 	double sum_weight = std::accumulate(weight, weight+databaseEntries, 0.0);
 	logselections  = log(sum_weight) + fjmax - log(databaseEntries);
 
 	for (int i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
-	for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
 
+	for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
 	gsl_ran_multinomial(range, databaseEntries, _sampleCount, q, nn);
-	for (int i = 0; i < databaseEntries; ++i) sel[i]+=nn[i];
+	for (int i = 0; i < databaseEntries; i++) sel[i]+=nn[i];
+
+	int zeroCount = 0;
+	for (int i = 0; i < databaseEntries; i++) if (sel[i] == 0) zeroCount++;
+	runinfo.uniqueSelections = databaseEntries - zeroCount;
+	runinfo.acceptance     = (1.0*runinfo.uniqueSelections)/_sampleCount;
 
 	for (int i = 0; i < N; i++)
 	{
 		runinfo.meantheta[i] = 0;
-		for (int j = 0; j < databaseEntries; j++) runinfo.meantheta[i] += databasePoints[j*N+ i]*q[j];
+		for (int j = 0; j < databaseEntries; j++) runinfo.meantheta[i] += databasePoints[j*N + i]*q[j];
 	}
 
 	double meanv[N];
@@ -443,7 +359,6 @@ void Korali::TMCMC::calculate_statistics(double flc[], unsigned int sel[])
 
 void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchains)
 {
-    bool display = options.Display;
     printf("Precomputing chain covariances for the current generation...\n");
 
     // allocate space
@@ -463,7 +378,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
             if (d_max < s) d_max = s;
         }
         diam[d] = d_max-d_min;
-        if (display) printf("Diameter %d: %.6lf\n", d, diam[d]);
+        if (options.Display) printf("Diameter %d: %.6lf\n", d, diam[d]);
     }
 
     int idx, pos;
@@ -474,7 +389,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
         for (pos = 0; pos < newchains; ++pos) {
             nn_count[pos] = 0;
             double* curr = &chainPoints[pos*N];
-            for (int i = 0; i < _sampleCount; ++i) {
+            for (int i = 0; i < _sampleCount; i++) {
                 double* s = &databasePoints[i*N];
                 if (in_rect(curr, s, diam, scale, N)) {
                     nn_ind[pos*_sampleCount+nn_count[pos]] = i;
@@ -494,7 +409,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
                 chain_mean[d] /= nn_count[pos];
             }
 
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; i++)
                 for (int j = 0; j < N; ++j) {
                     double s = 0;
                     for (int k = 0; k < nn_count[pos]; k++) {
@@ -506,7 +421,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
                 }
 
             // check if the matrix is positive definite
-            for (int i = 0; i < N; ++i)
+            for (int i = 0; i < N; i++)
                 for (int j = 0; j < N; ++j) {
                     double s = chain_cov[pos][i*N+j];
                     gsl_matrix_set(work, i, j, s);
@@ -536,24 +451,20 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
 
 double Korali::TMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
 {
-
   double *weight = (double*) calloc (fn, sizeof(double));
   double *q      = (double*) calloc (fn, sizeof(double));
 
     const double fjmax = gsl_stats_max(fj, 1, fn);
 
-    for(int i = 0; i <fn; ++i)
-        weight[i] = exp((fj[i]-fjmax)*(x-pj));
+    for(int i = 0; i <fn; i++)weight[i] = exp((fj[i]-fjmax)*(x-pj));
 
     double sum_weight = std::accumulate(weight, weight+fn, 0.0);
 
-    for(int i = 0; i < fn; ++i) {
-        q[i] = weight[i]/sum_weight;
-    }
+    for(int i = 0; i < fn; i++)  q[i] = weight[i]/sum_weight;
 
     double mean_q = gsl_stats_mean(q, 1, fn);
     double std_q  = gsl_stats_sd_m(q, 1, fn, mean_q);
-    double cov2   = pow(std_q/mean_q-zero, 2);
+    double cov2   = (std_q/mean_q-zero); cov2 *= cov2;
 
     free(weight);
     free(q);
@@ -561,157 +472,21 @@ double Korali::TMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double p
     return cov2;
 }
 
-
-double Korali::TMCMC::tmcmc_objlogp_gsl(double x, void *param)
+double Korali::TMCMC::tmcmc_objlogp_gsl(const gsl_vector *v, void *param)
 {
+    double x = gsl_vector_get(v, 0);
     fparam_t *fp = (fparam_t *) param;
     return Korali::TMCMC::tmcmc_objlogp(x, fp->fj, fp->fn, fp->pj, fp->tol);
 }
 
-
-double Korali::TMCMC::tmcmc_objlogp_gsl2(const gsl_vector *v, void *param)
-{
-    double x = gsl_vector_get(v, 0);
-    return Korali::TMCMC::tmcmc_objlogp_gsl(x, param);
-}
-
-
-int Korali::TMCMC::fmincon(const double *fj, int fn, double pj, double objTol,  double *xmin, double *fmin, const optim_options& opt)
-{
-    int status;
-    size_t iter     = 0;
-    size_t max_iter = opt.MaxIter;
-    double tol      = opt.Tol;
-    bool display    = opt.Display;
-    double x_lo     = opt.LowerBound;
-    double x_hi     = opt.UpperBound;
-
-    const gsl_min_fminimizer_type *T;
-    gsl_min_fminimizer *s;
-    gsl_function F;
-    gsl_vector *x;
-
-    double m  = 0.5*(x_hi-x_lo);
-    double fm = 0.0;
-
-    bool converged = false;
-
-    x = gsl_vector_alloc (1);
-
-    fparam_t fp;
-    fp.fj = fj;
-    fp.fn = fn;
-    fp.pj = pj;
-    fp.tol = objTol;
-
-    F.function = Korali::TMCMC::tmcmc_objlogp_gsl;
-    F.params = &fp;
-
-    // SELECT ONE MINIMIZER STRATEGY
-    T = gsl_min_fminimizer_brent;
-    /*	T = gsl_min_fminimizer_goldensection;*/
-    /*	T = gsl_min_fminimizer_quad_golden;; */
-    s = gsl_min_fminimizer_alloc (T);
-
-    double f_lo = tmcmc_objlogp_gsl(x_lo, &fp);
-    double f_hi = tmcmc_objlogp_gsl(x_hi, &fp);
-    if (f_lo < f_hi) {
-        m  = x_lo;
-        fm = f_lo;
-    } else {
-        m  = x_hi;
-        fm = f_hi;
-    }
-
-
-    for (int i = 1; i < max_iter; ++i) {
-        double x = x_lo + i*(x_hi-x_lo)/max_iter;
-        double fx = tmcmc_objlogp_gsl(x, &fp);
-        if (fx < fm) {
-            m  = x;
-            fm = fx;
-        }
-    }
-
-    if (fm <= tol) {
-        converged = true;
-        gsl_vector_free(x);
-        gsl_min_fminimizer_free (s);
-        return converged;
-    }
-
-    if ((fm < f_lo) && (fm < f_hi)) {
-    } else {
-        return 0;
-    }
-
-    gsl_min_fminimizer_set (s, &F, m, x_lo, x_hi);
-
-    if (display) {
-        printf ("fmincon: Using %s method\n", gsl_min_fminimizer_name (s));
-        printf ("%5s [%18s, %18s] %18s %18s %18s\n", "iter", "lower", "upper", "min", "fmin", "err(est)");
-        printf ("%5zu [%.16f, %.16f] %.16f %.16f %.16f\n", iter, x_lo, x_hi, m, fm, x_hi - x_lo);
-    }
-
-    do {
-        iter++;
-        status = gsl_min_fminimizer_iterate (s);
-
-        m    = gsl_min_fminimizer_x_minimum (s);
-        x_lo = gsl_min_fminimizer_x_lower (s);
-        x_hi = gsl_min_fminimizer_x_upper (s);
-
-        status = gsl_min_test_interval (x_lo, x_hi, tol, tol);
-        if (status == GSL_SUCCESS) {
-            if (gsl_min_fminimizer_f_minimum(s) <= tol) {
-                if (display) printf ("fmincon: Converged:\n");
-                converged = true;
-            } else {
-                if (display) printf ("fmincon: Converged but did not find minimum:\n");
-            }
-        } else if (gsl_min_fminimizer_f_minimum(s) <= tol) {
-            converged = true;
-            status = GSL_SUCCESS;
-            if (display) printf ("fmincon: Did not converge but found minimum at\n");
-        }
-
-        if (display)
-            printf ("%5zu [%.16f, %.16f] %.16f f()=%.16f %.16f\n",
-                    iter, x_lo, x_hi, m, gsl_min_fminimizer_f_minimum(s), x_hi - x_lo);
-
-    } while (status == GSL_CONTINUE && iter < max_iter);
-
-    if (converged) {
-        converged = 1;
-        gsl_vector_set (x, 0, m);
-        *fmin = tmcmc_objlogp_gsl(m, &fp);
-        *xmin = m;
-    } else {
-        *fmin = 0;
-        *xmin = 0.0;
-    }
-
-    gsl_vector_free(x);
-    gsl_min_fminimizer_free (s);
-
-    return converged;
-}
-
-
-int Korali::TMCMC::fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
+void Korali::TMCMC::fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin)
 {
     const gsl_multimin_fminimizer_type *T;
     gsl_multimin_fminimizer *s = NULL;
     gsl_vector *ss, *x;
     gsl_multimin_function minex_func;
-    bool converged = 0;
 
     size_t iter     = 0;
-    size_t max_iter = opt.MaxIter;
-    double tol      = opt.Tol;
-    bool display    = opt.Display;
-    double step     = opt.Step;
-
     int status;
     double size;
 
@@ -725,10 +500,10 @@ int Korali::TMCMC::fminsearch(double const *fj, int fn, double pj, double objTol
     gsl_vector_set (x, 0, pj);
 
     ss = gsl_vector_alloc (1);
-    gsl_vector_set_all (ss, step);
+    gsl_vector_set_all (ss, options.Step);
 
     minex_func.n      = 1;
-    minex_func.f      = tmcmc_objlogp_gsl2;
+    minex_func.f      = tmcmc_objlogp_gsl;
     minex_func.params = &fp;
 
     // SELECT ONE MINIMIZER STRATEGY
@@ -738,114 +513,24 @@ int Korali::TMCMC::fminsearch(double const *fj, int fn, double pj, double objTol
     s = gsl_multimin_fminimizer_alloc (T, 1);
     gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
 
-    if (display) printf ("fminsearch: Using %s method\n", gsl_multimin_fminimizer_name (s));
+    *fmin = 0;
+    *xmin = 0.0;
 
     do {
         iter++;
         status = gsl_multimin_fminimizer_iterate(s);
-
-        if (status) break;
-
         size   = gsl_multimin_fminimizer_size (s);
-        status = gsl_multimin_test_size (size, tol);
+        status = gsl_multimin_test_size (size, options.Tol);
+    } while (status == GSL_CONTINUE && iter < options.MaxIter);
 
-        if (status == GSL_SUCCESS) {
-            if(s->fval <= tol) {
-                converged = true;
-                if (display) printf ("fminsearch: Converged to minimum at\n");
-            } else {
-                converged = false;
-                if (display) printf ("fminsearch: Converged but did not find minimum.\n");
-            }
-        } else if (s->fval <= tol) {
-            converged = true;
-            status = GSL_SUCCESS;
-            if (display)
-                printf ("fminsearch: NOT converged but found minimum at\n");
-        } else {
-            converged = false;
-            if (display)
-                printf("fminsearch: NOT converged and did not find minimum.\n");
-        }
-        if (display) printf ("%3ld x =  %.16lf f() = %.16f size = %.16f\n",
-                                 iter, gsl_vector_get (s->x, 0), s->fval, size);
-
-    } while (status == GSL_CONTINUE && iter < max_iter);
-
-    if (converged) {
+    if (s->fval <= options.Tol) {
         *fmin = s->fval;
         *xmin = gsl_vector_get(s->x, 0);
-    } else {
-        *fmin = 0;
-        *xmin = 0.0;
     }
 
     gsl_vector_free(x);
     gsl_vector_free(ss);
     gsl_multimin_fminimizer_free (s);
-
-    return converged;
-}
-
-/* simple min search, check stepwise for x < opt.Tol; if unsuccessfull
- * adjust chainGSLRange[c] and refine steps (DW: could be optimized) */
-int Korali::TMCMC::fzerofind(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin, const optim_options& opt)
-{
-    bool display = opt.Display;
-    double tol   = opt.Tol;
-    double step  = opt.Step;
-    double x_lo  = opt.LowerBound;
-    double x_hi  = opt.UpperBound;
-
-    int first_try = true;
-
-    size_t iter;
-    size_t niters;
-
-    double min  = 0;
-    double fm = std::numeric_limits<double>::max();
-
-    bool converged = false;
-
-    while (converged == false && 1e-16 < step) {
-
-        if(display) printf("fzerofind: x_lo %e x_hi %ei step %e\n", x_lo, x_hi, step);
-        niters = (size_t) ((x_hi-x_lo)/step);
-
-        if (first_try)  first_try = false;
-
-        for (iter = 0; iter < niters; ++iter) {
-            double x  = x_lo + iter*step;
-            double fx = tmcmc_objlogp(x, fj, fn, pj, objTol);
-
-            if (fx < fm) {
-                fm  = fx;
-                min = x;
-            }
-            if (fx <= tol) {
-                converged = true;
-                break;
-            }
-        }
-
-        if (converged) {
-            if (display) printf("fzerofind converged: m=%.16f fm=%.16f iter=%ld\n", min, fm, niters);
-        } else {
-            x_lo = min - 10*step;
-            if (x_lo < 0) x_lo = opt.LowerBound;
-            x_hi = min + 10*step;
-            if (x_hi > 4) x_hi = opt.UpperBound;
-            step *= 0.1;
-            if (display) printf("fzerofind (%e): m=%.16f fm=%.16f iter=%ld\n",
-                                    step, min, fm, niters);
-        }
-
-    }
-
-    *xmin = min;
-    *fmin = fm;
-
-    return converged;
 }
 
 bool Korali::TMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int D)
