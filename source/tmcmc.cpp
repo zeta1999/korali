@@ -72,7 +72,7 @@ void Korali::TMCMC::processSample(size_t c, double fitness)
 	ccFitness[c] = fitness;
 	ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
 	double L = exp((ccLogPrior[c]-clLogPrior[c])+(ccFitness[c]-clFitness[c])*runinfo.p);
-	double P = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0 );
+  double P = chainAcceptanceThreshold[c*MaxChainLength + chainCurrentStep[c]];
 
 	if (P < L) {
 			for (int i = 0; i < N; ++i) clPoints[c*N + i] = ccPoints[c*N + i];
@@ -97,16 +97,12 @@ bool Korali::TMCMC::generateCandidate(int c)
 {
 	if (runinfo.Gen == 0) return true;
 
-	double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
-
-  gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
-  gsl_vector_view mean_view 	= gsl_vector_view_array(&clPoints[c*N], N);
-  gsl_vector_view out_view  	= gsl_vector_view_array(&ccPoints[c*N], N);
-  gsl_ran_multivariate_gaussian(chainGSLRange[c], &mean_view.vector, &sigma_view.matrix, &out_view.vector);
-
 	for (int i = 0; i < N; i++)
+	{
+	 ccPoints[c*N + i] =  ccPoints[c*N + i] + chainStepDirection[(c*MaxChainLength+chainCurrentStep[c])*N + i];
 	 if (ccPoints[c*N + i] < _problem->_parameters[i]._lowerBound ||
 			 ccPoints[c*N + i] > _problem->_parameters[i]._upperBound) { return false; }
+	}
 
 	return true;
 }
@@ -170,6 +166,8 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 	chainPoints = (double*) calloc (N*_sampleCount, sizeof(double)); //chainPointsGlobalPtr.local();
 	chainCurrentStep = (size_t*) calloc (_sampleCount, sizeof(size_t));
 	chainLength      = (size_t*) calloc (_sampleCount, sizeof(size_t));
+	chainStepDirection = (double*) calloc (N*_sampleCount*MaxChainLength, sizeof(double));
+	chainAcceptanceThreshold = (double*) calloc (_sampleCount*MaxChainLength, sizeof(double));
 
 	databaseEntries = 0;
 	databasePoints   = (double*) calloc (N*_sampleCount, sizeof(double));
@@ -334,6 +332,24 @@ void Korali::TMCMC::prepareGeneration()
 	for (int c = 0; c < nChains; c++) for (int i = 0; i < N; i++) clPoints[c*N + i] = chainPoints[c*N + i];
 	for (int c = 0; c < nChains; c++) chainCurrentStep[c] = 0;
 	for (int c = 0; c < nChains; c++) chainPendingFitness[c] = false;
+
+	for (int c = 0; c < nChains; c++) for (int i = 0; i < chainLength[c]; i++) chainAcceptanceThreshold[c*MaxChainLength + i] = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0 );
+
+	for (int c = 0; c < nChains; c++)
+	{
+		double* covariance = use_local_cov ? local_cov[c] : runinfo.SS;
+		double  zeroMean[N];
+		for (int i = 0; i < N; i++) zeroMean[i] = 0.0;
+	  gsl_matrix_view sigma_view 	= gsl_matrix_view_array(covariance, N,N);
+	  gsl_vector_view mean_view 	= gsl_vector_view_array(zeroMean, N);
+
+		for (int i = 0; i < chainLength[c]; i++)
+		{
+		  gsl_vector_view out_view	= gsl_vector_view_array(&chainStepDirection[(c*MaxChainLength+i)*N], N);
+		  gsl_ran_multivariate_gaussian(chainGSLRange[c], &mean_view.vector, &sigma_view.matrix, &out_view.vector);
+		}
+	}
+
 
 	for (int i = 0; i < N; ++i) free(u[i]);
 	free(u);
