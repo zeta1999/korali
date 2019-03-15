@@ -119,9 +119,7 @@ class TMCMC : public Solver
   void fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin);
   static double tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero);
   static double tmcmc_objlogp_gsl(const gsl_vector *v, void *param);
-  static int compar_desc(const void *p1, const void *p2);
   double compute_sum(double *v, int n);
-  bool in_rect(double *v1, double *v2, double *diam, double sc, int D);
 };
 
 } // namespace Korali

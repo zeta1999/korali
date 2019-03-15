@@ -14,7 +14,7 @@
 Korali::TMCMC::TMCMC(Problem* problem, MPI_Comm comm) : Korali::Solver::Solver(problem, comm)
 {
 	MinChainLength = 1;
-	MaxChainLength = 5;
+	MaxChainLength = 100;
 
 	TolCOV  = 1;
 	MinStep = 1e-9;
@@ -72,7 +72,7 @@ void Korali::TMCMC::processSample(size_t c, double fitness)
 	ccFitness[c] = fitness;
 	ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
 	double L = exp((ccLogPrior[c]-clLogPrior[c])+(ccFitness[c]-clFitness[c])*runinfo.p);
-  double P = chainAcceptanceThreshold[c*MaxChainLength + chainCurrentStep[c]];
+	double P = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0);
 
 	if (P < L) {
 			for (int i = 0; i < N; i++) clPoints[c*N + i] = ccPoints[c*N + i];
@@ -169,7 +169,6 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 	chainCurrentStep = (size_t*) calloc (_sampleCount, sizeof(size_t));
 	chainLength      = (size_t*) calloc (_sampleCount, sizeof(size_t));
 	chainStepDirection = (double*) calloc (N*_sampleCount*MaxChainLength, sizeof(double));
-	chainAcceptanceThreshold = (double*) calloc (_sampleCount*MaxChainLength, sizeof(double));
 
 	databaseEntries = 0;
 	databasePoints   = (double*) calloc (N*_sampleCount, sizeof(double));
@@ -213,42 +212,13 @@ void Korali::TMCMC::prepareGeneration()
 			list[i].F    = databaseFitness[i];
 	}
 
-	qsort(list, databaseEntries, sizeof(sort_t), Korali::TMCMC::compar_desc);
-
-	if (MaxChainLength > 0) {
-			int initial_newchains = newchains;
-			int h_threshold = MaxChainLength;
-			for (int i = 0; i < initial_newchains; i++) {
-					if (list[i].nsteps > h_threshold) {
-							while (list[i].nsteps > h_threshold) {
-									list[newchains] = list[i];
-									list[newchains].nsteps = h_threshold;
-									list[i].nsteps = list[i].nsteps - h_threshold;
-									newchains++;
-							}
-					}
-			}
-			qsort(list, databaseEntries, sizeof(sort_t), Korali::TMCMC::compar_desc);
-	}
-
-	if (MinChainLength > 0) {
-			int l_threshold = MinChainLength;
-			for (int i = 0; i < newchains; i++) {
-					if ((list[i].nsteps > 0)&&(list[i].nsteps < l_threshold)) {
-							list[i].nsteps = l_threshold;
-					}
-			}
-
-			qsort(list, databaseEntries, sizeof(sort_t), Korali::TMCMC::compar_desc);
-	}
 
 	int ldi = 0;
 	for (int i = 0; i < databaseEntries; i++) {
-			if (list[i].nsteps != 0) {
-					int idx = list[i].idx;
-					for (int p = 0; p < N ; p++) chainPoints[ldi*N + p] = databasePoints[idx*N + p];
-					clFitness[ldi] = databaseFitness[idx];
-					chainLength[ldi] = list[i].nsteps;
+			if (sel[i] != 0) {
+					for (int p = 0; p < N ; p++) chainPoints[ldi*N + p] = databasePoints[i*N + p];
+					clFitness[ldi] = databaseFitness[i];
+					chainLength[ldi] = sel[i];
 					ldi++;
 			}
 	}
@@ -262,8 +232,6 @@ void Korali::TMCMC::prepareGeneration()
 	for (int c = 0; c < nChains; c++) for (int i = 0; i < N; i++) clPoints[c*N + i] = chainPoints[c*N + i];
 	for (int c = 0; c < nChains; c++) chainCurrentStep[c] = 0;
 	for (int c = 0; c < nChains; c++) chainPendingFitness[c] = false;
-
-	for (int c = 0; c < nChains; c++) for (int i = 0; i < chainLength[c]; i++) chainAcceptanceThreshold[c*MaxChainLength + i] = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0 );
 
 	for (int c = 0; c < nChains; c++)
 	{
@@ -391,10 +359,12 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
             double* curr = &chainPoints[pos*N];
             for (int i = 0; i < _sampleCount; i++) {
                 double* s = &databasePoints[i*N];
-                if (in_rect(curr, s, diam, scale, N)) {
-                    nn_ind[pos*_sampleCount+nn_count[pos]] = i;
-                    nn_count[pos]++;
-                }
+                bool isInRectangle = true;
+ 						    for (int d = 0; d < N; d++)  if (fabs(curr[d]-s[d]) > scale*diam[d]) isInRectangle = false;
+                 if (isInRectangle) {
+                     nn_ind[pos*_sampleCount+nn_count[pos]] = i;
+                     nn_count[pos]++;
+                 }
             }
         }
 
@@ -531,22 +501,4 @@ void Korali::TMCMC::fminsearch(double const *fj, int fn, double pj, double objTo
     gsl_vector_free(x);
     gsl_vector_free(ss);
     gsl_multimin_fminimizer_free (s);
-}
-
-bool Korali::TMCMC::in_rect(double *v1, double *v2, double *diam, double sc, int D)
-{
-    for (int d = 0; d < D; d++)  if (fabs(v1[d]-v2[d]) > sc*diam[d]) return false;
-    return true;
-}
-
-int Korali::TMCMC::compar_desc(const void* p1, const void* p2)
-{
-    int dir = +1;   /* -1: ascending order, +1: descending order */
-    sort_t *s1 = (sort_t *) p1;
-    sort_t *s2 = (sort_t *) p2;
-
-    if (s1->nsteps < s2->nsteps) return dir;
-    if (s1->nsteps > s2->nsteps) return -dir;
-
-    return 0;
 }
