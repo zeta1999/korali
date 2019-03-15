@@ -67,8 +67,6 @@ class TMCMC : public Solver
 	// TMCMC Fields
 	gsl_rng  *range;
 
-
-	double* chainPoints;
 	double* clPoints;   // Chain Leader Parameter Values
 	double* clFitness;  // Chain Leader Fitness
 	double* clLogPrior; // Chain Leader Log Prior
@@ -83,7 +81,6 @@ class TMCMC : public Solver
 	size_t* chainCurrentStep;
 	size_t* chainLength;
 	double* chainStepDirection;
-	double* chainAcceptanceThreshold;
 
 	size_t  databaseEntries;
 	double* databasePoints;

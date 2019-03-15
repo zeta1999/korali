@@ -165,7 +165,6 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 	clLogPrior  = (double*) calloc (_sampleCount, sizeof(double));
 
 	chainPendingFitness = (bool*) calloc (_sampleCount, sizeof(bool));
-	chainPoints = (double*) calloc (N*_sampleCount, sizeof(double)); //chainPointsGlobalPtr.local();
 	chainCurrentStep = (size_t*) calloc (_sampleCount, sizeof(size_t));
 	chainLength      = (size_t*) calloc (_sampleCount, sizeof(size_t));
 	chainStepDirection = (double*) calloc (N*_sampleCount*MaxChainLength, sizeof(double));
@@ -177,8 +176,8 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
   // First definition of chains and their leaders
   nChains = _sampleCount;
 	finishedChains = 0;
-  for (int c = 0; c < _sampleCount; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = chainPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
-  for (int c = 0; c < _sampleCount; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&chainPoints[c*N]);
+  for (int c = 0; c < _sampleCount; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
+  for (int c = 0; c < _sampleCount; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&clPoints[c*N]);
   for (int c = 0; c < _sampleCount; c++) chainCurrentStep[c] = 0;
   for (int c = 0; c < _sampleCount; c++) chainLength[c] = 1;
   for (int c = 0; c < _sampleCount; c++) chainPendingFitness[c] = false;
@@ -216,7 +215,7 @@ void Korali::TMCMC::prepareGeneration()
 	int ldi = 0;
 	for (int i = 0; i < databaseEntries; i++) {
 			if (sel[i] != 0) {
-					for (int p = 0; p < N ; p++) chainPoints[ldi*N + p] = databasePoints[i*N + p];
+					for (int p = 0; p < N ; p++) clPoints[ldi*N + p] = databasePoints[i*N + p];
 					clFitness[ldi] = databaseFitness[i];
 					chainLength[ldi] = sel[i];
 					ldi++;
@@ -229,7 +228,6 @@ void Korali::TMCMC::prepareGeneration()
 	runinfo.uniqueEntries = 0;
 	nChains = newchains;
 	finishedChains = 0;
-	for (int c = 0; c < nChains; c++) for (int i = 0; i < N; i++) clPoints[c*N + i] = chainPoints[c*N + i];
 	for (int c = 0; c < nChains; c++) chainCurrentStep[c] = 0;
 	for (int c = 0; c < nChains; c++) chainPendingFitness[c] = false;
 
@@ -356,7 +354,7 @@ void Korali::TMCMC::precompute_chain_covariances(double** chain_cov, int newchai
         // find neighbors in a rectangle - O(_sampleCount^2)
         for (pos = 0; pos < newchains; ++pos) {
             nn_count[pos] = 0;
-            double* curr = &chainPoints[pos*N];
+            double* curr = &clPoints[pos*N];
             for (int i = 0; i < _sampleCount; i++) {
                 double* s = &databasePoints[i*N];
                 bool isInRectangle = true;
