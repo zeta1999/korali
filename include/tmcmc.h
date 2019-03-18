@@ -1,7 +1,7 @@
 #ifndef _TMCMC_H_
 #define _TMCMC_H_
 
-#include "solver.h"
+#include "engines/base.h"
 
 namespace Korali
 {
@@ -13,7 +13,7 @@ typedef struct fparam_s {
     double        tol;
 } fparam_t;
 
-class TMCMC : public Solver
+class TMCMC : public Engine
 {
   public:
 
@@ -63,7 +63,7 @@ class TMCMC : public Solver
 
   // Korali Methods
 
-	TMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
+	TMCMC(Problem* problem);
 
 	void initializeEngine();
   void runEngine();

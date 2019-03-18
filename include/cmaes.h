@@ -1,17 +1,17 @@
 #ifndef _CMAES_H_
 #define _CMAES_H_
 
-#include "solver.h"
+#include "engines/base.h"
 
 namespace Korali
 {
 
-class CMAES : public Solver
+class CMAES : public Engine
 {
   public:
 
   // Public Methods
-	CMAES(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
+	CMAES(Problem* problem);
 
   // Runtime Methods (to be inherited from base class in the future)
   void initializeInternalVariables();

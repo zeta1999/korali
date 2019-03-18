@@ -1,7 +1,7 @@
 #include "cmaes.h"
 #include <chrono>
 
-Korali::CMAES::CMAES(Problem* problem, MPI_Comm comm) : Korali::Solver::Solver(problem, comm)
+Korali::CMAES::CMAES(Problem* problem) : Korali::Engine::Engine(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 
@@ -82,7 +82,7 @@ void Korali::CMAES::initializeInternalVariables()
  double dtest, trace;
 
  // Getting sample vector pointer
- _samplePopulation = sampleGlobalPtr.local();
+ _samplePopulation = getSampleArrayPointer();
 
  // Initialize Parameter Priors
  for (int i = 0; i < _problem->_parameterCount; i++)

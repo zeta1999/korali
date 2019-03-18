@@ -1,16 +1,13 @@
-# source/lib/cames/Makefile
-
 include ../common.mk
 
 CXXFLAGS += -I../include
+SOURCES = $(shell ls *.cpp) $(shell ls engines/*.cpp)
+OBJECTS = $(SOURCES:.cpp=.o)
 
 all: libkorali.a
 
-libkorali.a: problem.o distribution.o parameter.o cmaes.o tmcmc.o solver.o
+libkorali.a: $(OBJECTS)
 
-base.o: base.cpp
-	upcxx -c $(CXXFLAGS) $<
-
-clean:; rm -rf *.o *.a
+clean:; rm -rf *.a $(OBJECTS)
 
 .PHONY: clean all

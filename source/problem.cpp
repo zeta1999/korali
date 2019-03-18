@@ -35,6 +35,15 @@ double Korali::Problem::getPriorsProbabilityDensity(double *x)
   return dp;
 }
 
+void Korali::Problem::initializeParameters()
+{
+  // Initialize Parameter Priors
+  for (int i = 0; i < _parameterCount; i++)	_parameters[i].initialize(_seed+i+1);
+
+	// Checking correct parameters for problem
+	for (int i = 0; i < _parameterCount; i++) _parameters[i].checkBounds();
+}
+
 Korali::DirectEvaluation::DirectEvaluation(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
 {
 	_modelFunction = modelFunction;

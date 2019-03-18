@@ -9,7 +9,7 @@
 #include <math.h>
 #include <limits>
 #include "heat2d.hpp"
-#include "mpi.h"
+//#include "mpi.h"
 #include "string.h"
 
 pointsInfo p;
@@ -214,16 +214,16 @@ void freeGrids(gridLevel* g, int gridCount)
 
 void heat2DInit(int argc, char* argv[])
 {
-	MPI_Init(&argc, &argv);
-  int myRank, rankCount;
-	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  MPI_Comm_size(MPI_COMM_WORLD, &rankCount);
+//	MPI_Init(&argc, &argv);
+//  int myRank, rankCount;
+//	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+//  MPI_Comm_size(MPI_COMM_WORLD, &rankCount);
 
   int problemNumber = 1;
   for (int i = 0; i < argc; i++) if(!strcmp(argv[i], "-p")) problemNumber = atoi(argv[++i]);
   FILE *problemFile;
 
-  if (myRank == 0)
+//  if (myRank == 0)
   {
 		// Read solution from file
 		char pfile[50];
@@ -233,21 +233,22 @@ void heat2DInit(int argc, char* argv[])
 		fscanf(problemFile, "%lu", &p.nPoints);
   }
 
-  MPI_Bcast(&p.nPoints, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+//  MPI_Bcast(&p.nPoints, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
   p.xPos    = (double*) calloc (sizeof(double), p.nPoints);
   p.yPos    = (double*) calloc (sizeof(double), p.nPoints);
   p.refTemp = (double*) calloc (sizeof(double), p.nPoints);
   p.simTemp = (double*) calloc (sizeof(double), p.nPoints);
 
-  if (myRank == 0) for (int i = 0; i < p.nPoints; i++)
+//  if (myRank == 0)
+  for (int i = 0; i < p.nPoints; i++)
   {
   	fscanf(problemFile, "%le ", &p.xPos[i]);
   	fscanf(problemFile, "%le ", &p.yPos[i]);
   	fscanf(problemFile, "%le ", &p.refTemp[i]);
   }
 
-  MPI_Bcast(p.xPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(p.yPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(p.refTemp, p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+//  MPI_Bcast(p.xPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+//  MPI_Bcast(p.yPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+//  MPI_Bcast(p.refTemp, p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }

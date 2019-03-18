@@ -10,7 +10,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
-Korali::TMCMC::TMCMC(Problem* problem, MPI_Comm comm) : Korali::Solver::Solver(problem, comm)
+Korali::TMCMC::TMCMC(Problem* problem) : Korali::Engine::Engine(problem)
 {
  TolCOV  = 1;
  MinStep = 1e-9;
@@ -151,7 +151,7 @@ void Korali::TMCMC::initializeEngine()
  _meanTheta =  (double*) calloc (N+1, sizeof(double));
 
  // Initializing TMCMC Leaders
- ccPoints    = sampleGlobalPtr.local();
+ ccPoints    = getSampleArrayPointer();
  ccFitness   = (double*) calloc (_sampleCount, sizeof(double));
  ccLogPrior  = (double*) calloc (_sampleCount, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 

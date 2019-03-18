@@ -22,6 +22,7 @@ class Problem
 
   double getPriorsLogProbabilityDensity(double *x);
   double getPriorsProbabilityDensity(double *x);
+  void initializeParameters();
 };
 
 class Likelihood : public Problem

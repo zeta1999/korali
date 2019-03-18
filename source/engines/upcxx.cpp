@@ -1,39 +1,28 @@
-#include "solver.h"
+#ifdef _KORALI_UPCXX_ENGINE
+#include "engines/upcxx.h"
 
-Korali::Solver* _k;
-
-Korali::Solver::Solver(Problem* problem, MPI_Comm comm)
+Korali::Engine::Engine(Problem* problem) : Korali::BaseEngine::BaseEngine(problem)
 {
-  _problem = problem;
-	_comm = comm;
-
 	_rankId = 0;
 	_rankCount = 1;
   _continueEvaluations = true;
 	_evaluateSample = false;
-  _verbose = false;
-  _sampleCount = 1000;
-	_maxGens = 200;
-
-	N = _problem->_parameterCount;
-
-  // Initialize Parameter Priors
-  for (int i = 0; i < N; i++)	_problem->_parameters[i].initialize(_problem->_seed+i+1);
 }
 
-void Korali::Solver::run()
+void Korali::Engine::run()
 {
 	_k = this;
+	this->Korali::BaseEngine::run();
+
 	upcxx::init();
 	_rankId = upcxx::rank_me();
 	_rankCount = upcxx::rank_n();
 
+	if (_rankCount < 2) { fprintf(stderr, "[Korali] Error: Running Korali's UPCxx Engine with less than 2 ranks is not allowed.\n"); exit(-1); }
+
   // Allocating Global Pointer for Samples
 	if (_rankId == 0) sampleGlobalPtr  = upcxx::new_array<double>(N*_sampleCount);
 	upcxx::broadcast(&sampleGlobalPtr,  1, 0).wait();
-
-	// Checking correct parameters for problem
-	for (int i = 0; i < N; i++) _problem->_parameters[i].checkBounds();
 
   if (_rankId == 0) supervisorThread(); else workerThread();
 
@@ -41,7 +30,7 @@ void Korali::Solver::run()
   upcxx::finalize();
 }
 
-void Korali::Solver::supervisorThread()
+void Korali::Engine::supervisorThread()
 {
   // Creating Worker Queue
   for (int i = 1; i < _rankCount; i++) _workers.push(i);
@@ -51,7 +40,12 @@ void Korali::Solver::supervisorThread()
   for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_k->_continueEvaluations = false;});
 }
 
-void Korali::Solver::workerThread()
+double* Korali::Engine::getSampleArrayPointer()
+{
+  return sampleGlobalPtr.local();
+}
+
+void Korali::Engine::workerThread()
 {
 	while(_continueEvaluations)
 	{
@@ -68,7 +62,7 @@ void Korali::Solver::workerThread()
 	}
 }
 
-void Korali::Solver::evaluateSample(size_t sampleId)
+void Korali::Engine::evaluateSample(size_t sampleId)
 {
 	if (_rankCount == 1) { _k->processSample(sampleId, _problem->evaluateFitness(sampleGlobalPtr.local() + sampleId*N)); return; }// if Single core run
 	while(_workers.empty()) upcxx::progress();
@@ -76,7 +70,8 @@ void Korali::Solver::evaluateSample(size_t sampleId)
 	upcxx::rpc_ff(workerId, [](size_t c){_k->_sampleId = c; _k->_evaluateSample = true;}, sampleId);
 }
 
-void Korali::Solver::checkProgress()
+void Korali::Engine::checkProgress()
 {
 	upcxx::progress();
 }
+#endif
