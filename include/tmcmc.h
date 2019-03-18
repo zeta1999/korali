@@ -9,24 +9,11 @@ namespace Korali
 struct optim_options {
     size_t MaxIter;             /* Max number of search iterations */
     double Tol;                 /* Tolerance for root finding */
-    bool    Display;             /* Print output */
+    bool   Display;             /* Print output */
     double Step;                /* Search stepsize */
     double LowerBound;          /* Lower bound for root finding (fmincon & fzerosearch)*/
     double UpperBound;          /* Upper bound for root finding (fmincon & fzerosearch)*/
 };
-
-typedef struct runinfo_t {
-    int    Gen;
-    double CoefVar;
-    double p;
-    size_t uniqueSelections;
-    size_t uniqueEntries;
-    double logselections;
-    double acceptanceRate;
-    double *SS;            /*[PROBDIM][PROBDIM];*/
-    double *meantheta;     /*[PROBDIM]*/
-} runinfo_t;
-
 
 typedef struct fparam_s {
     const double *fj;
@@ -34,14 +21,6 @@ typedef struct fparam_s {
     double        pj;
     double        tol;
 } fparam_t;
-
-
-typedef struct sort_s {
-    int idx;
-    int nsteps;
-    double F;
-} sort_t;
-
 
 class TMCMC : public Solver
 {
@@ -62,7 +41,17 @@ class TMCMC : public Solver
   double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
   bool use_local_cov;
 
-  runinfo_t runinfo;
+  // TMCMC Runtime Variables
+
+  int     _currentGen;
+  double  _varianceCoefficient;
+  double  _annealingRatio;
+  size_t  _uniqueSelections;
+  size_t  _uniqueEntries;
+  double  _logSelections;
+  double  _acceptanceRate;
+  double* _covarianceMatrix;            /*[PROBDIM][PROBDIM];*/
+  double* _meanTheta;     /*[PROBDIM]*/
 
 	// TMCMC Fields
 	gsl_rng  *range;
@@ -86,9 +75,10 @@ class TMCMC : public Solver
 	double* databaseFitness;
 
   // Korali Methods
+
 	TMCMC(Problem* problem, MPI_Comm comm = MPI_COMM_WORLD);
 
-	void Korali_InitializeInternalVariables();
+	void initializeEngine();
   void runEngine();
 
 	// TMCMC Configuration Methods
@@ -106,16 +96,14 @@ class TMCMC : public Solver
 
   // Internal TMCMC Methods
 	void saveResults();
-  void prepareGeneration();
+  void resampleGeneration();
   void updateDatabase(double* point, double fitness);
   void processSample(size_t c, double fitness);
-  void resampleLeaders(unsigned int sel[]);
   bool generateCandidate(int c);
-  void precompute_chain_covariances(double** chain_cov, int newchains);
-  void fminsearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin);
+  void computeChainCovariances(double** chain_cov, int newchains);
+  void minSearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin);
   static double tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero);
-  static double tmcmc_objlogp_gsl(const gsl_vector *v, void *param);
-  double compute_sum(double *v, int n);
+  static double objLog(const gsl_vector *v, void *param);
 };
 
 } // namespace Korali
