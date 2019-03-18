@@ -1,8 +1,8 @@
-#include "engines/base.h"
+#include "conduits/base.h"
 
-Korali::Engine* _k;
+Korali::Conduit* _k;
 
-Korali::BaseEngine::BaseEngine(Problem* problem)
+Korali::BaseConduit::BaseConduit(Problem* problem)
 {
   _problem = problem;
   _verbose = false;
@@ -12,7 +12,7 @@ Korali::BaseEngine::BaseEngine(Problem* problem)
 	N = _problem->_parameterCount;
 }
 
-void Korali::BaseEngine::run()
+void Korali::BaseConduit::run()
 {
   _problem->initializeParameters();
 }

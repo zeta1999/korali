@@ -1,7 +1,7 @@
 #include "cmaes.h"
 #include <chrono>
 
-Korali::CMAES::CMAES(Problem* problem) : Korali::Engine::Engine(problem)
+Korali::CMAES::CMAES(Problem* problem) : Korali::Conduit::Conduit(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 
@@ -25,7 +25,7 @@ Korali::CMAES::CMAES(Problem* problem) : Korali::Engine::Engine(problem)
  _gaussianGenerator = new GaussianDistribution(0.0, 1.0, problem->_seed + _problem->_parameterCount + 1);
 }
 
-void Korali::CMAES::runEngine()
+void Korali::CMAES::runSolver()
 {
  printf("[Korali] CMAES - Parameters: %ld, Seed: %ld\n", N, _problem->_seed);
 

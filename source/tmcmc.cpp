@@ -10,7 +10,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
-Korali::TMCMC::TMCMC(Problem* problem) : Korali::Engine::Engine(problem)
+Korali::TMCMC::TMCMC(Problem* problem) : Korali::Conduit::Conduit(problem)
 {
  TolCOV  = 1;
  MinStep = 1e-9;
@@ -19,7 +19,7 @@ Korali::TMCMC::TMCMC(Problem* problem) : Korali::Engine::Engine(problem)
  _verbose = false;
 }
 
-void Korali::TMCMC::runEngine()
+void Korali::TMCMC::runSolver()
 {
  printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed);
  double samplingTime = 0.0;

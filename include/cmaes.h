@@ -1,12 +1,12 @@
 #ifndef _CMAES_H_
 #define _CMAES_H_
 
-#include "engines/base.h"
+#include "conduits/base.h"
 
 namespace Korali
 {
 
-class CMAES : public Engine
+class CMAES : public Conduit
 {
   public:
 
@@ -19,7 +19,7 @@ class CMAES : public Engine
   bool checkTermination();
   void printResults();
   void updateDistribution(const double *fitnessVector);
-  void runEngine();
+  void runSolver();
 
   void processSample(size_t sampleId, double fitness);
 

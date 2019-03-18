@@ -1,26 +1,26 @@
-#ifndef _ENGINE_H_
-#define _ENGINE_H_
+#ifndef _CONDUIT_H_
+#define _CONDUIT_H_
 
 #include "base.h"
 
 namespace Korali
 {
 
-class Engine : public BaseEngine {
+class Conduit : public BaseConduit {
   public:
 
 	double* sampleArrayPointer;
 
-  Engine(Problem* problem);
+  Conduit(Problem* problem);
 	void evaluateSample(size_t sampleId);
 	double* getSampleArrayPointer();
 	void checkProgress();
 	void run();
 
-	virtual void runEngine() = 0;
+	virtual void runSolver() = 0;
 	virtual void processSample(size_t sampleId, double fitness) = 0;
 };
 
 } // namespace Korali
 
-#endif // _ENGINE_H_
+#endif // _CONDUIT_H_

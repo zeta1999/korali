@@ -1,7 +1,7 @@
 #ifndef _TMCMC_H_
 #define _TMCMC_H_
 
-#include "engines/base.h"
+#include "conduits/base.h"
 
 namespace Korali
 {
@@ -13,7 +13,7 @@ typedef struct fparam_s {
     double        tol;
 } fparam_t;
 
-class TMCMC : public Engine
+class TMCMC : public Conduit
 {
   public:
 
@@ -66,7 +66,7 @@ class TMCMC : public Engine
 	TMCMC(Problem* problem);
 
 	void initializeEngine();
-  void runEngine();
+  void runSolver();
 
 	// TMCMC Configuration Methods
 	void setToleranceCOV(double TolCOV) { TolCOV = TolCOV; }
