@@ -38,11 +38,11 @@ class Engine;
 extern Korali::Engine* _k;
 
 
-// Choosing correct engine from compilation defines
+// Choosing correct engine from compilation defined values
 
-#ifdef   _KORALI_UPCXX_ENGINE
+#if defined (_KORALI_UPCXX_ENGINE)
 #include "upcxx.h"
-#elif _KORALI_MPI_ENGINE
+#elif defined (_KORALI_MPI_ENGINE)
 #include "mpi.h"
 #else
 #include "single.h"
