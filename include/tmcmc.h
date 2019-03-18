@@ -22,7 +22,7 @@ typedef struct runinfo_t {
     size_t uniqueSelections;
     size_t uniqueEntries;
     double logselections;
-    double acceptance;
+    double acceptanceRate;
     double *SS;            /*[PROBDIM][PROBDIM];*/
     double *meantheta;     /*[PROBDIM]*/
 } runinfo_t;

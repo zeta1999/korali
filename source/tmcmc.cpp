@@ -21,7 +21,7 @@ Korali::TMCMC::TMCMC(Problem* problem, MPI_Comm comm) : Korali::Solver::Solver(p
 	bbeta   = 0.005;
 	use_local_cov = false;
 
-	options.MaxIter    = 1000;
+	options.MaxIter    = 100;
 	options.Tol        = 1e-12;
 	options.Display    = false;
 	options.Step       = 1e-8;
@@ -54,7 +54,7 @@ void Korali::TMCMC::runEngine()
 
     auto t1 = std::chrono::system_clock::now();
 
-    printf("[Korali] Gen %d - Time: %fs, Annealing: %.2f%%, Acceptance: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(t1-t0).count(), runinfo.p*100, runinfo.acceptance*100);
+    printf("[Korali] Gen %d - Time: %fs, Annealing: %.2f%%, Acceptance: %.2f%%\n", runinfo.Gen, std::chrono::duration<double>(t1-t0).count(), runinfo.p*100, runinfo.acceptanceRate*100);
     runinfo.Gen++;
  	  _continueEvaluations = runinfo.p < 1.0 && runinfo.Gen < _maxGens;
 
@@ -62,7 +62,7 @@ void Korali::TMCMC::runEngine()
  	  if (_continueEvaluations) prepareGeneration();
  	 auto t3 = std::chrono::system_clock::now();
 
-   //printf("[Korali] Gen Time: %fs\n", std::chrono::duration<double>(t3-t2).count());
+   printf("[Korali] Gen Time: %fs\n", std::chrono::duration<double>(t3-t2).count());
   }
 
   auto endTime = std::chrono::system_clock::now();
@@ -156,7 +156,7 @@ void Korali::TMCMC::Korali_InitializeInternalVariables()
 	runinfo.uniqueSelections = 0;
 	runinfo.uniqueEntries = _sampleCount;
 	runinfo.logselections  = 0;
-	runinfo.acceptance     = 1.0;
+	runinfo.acceptanceRate     = 1.0;
 	runinfo.Gen = 0;
 	runinfo.CoefVar = std::numeric_limits<double>::infinity();
 	runinfo.SS =  (double*) calloc (N*N, sizeof(double));
@@ -288,7 +288,7 @@ void Korali::TMCMC::resampleLeaders(unsigned int sel[])
 	int zeroCount = 0;
 	for (int i = 0; i < databaseEntries; i++) if (sel[i] == 0) zeroCount++;
 	runinfo.uniqueSelections = databaseEntries - zeroCount;
-	runinfo.acceptance     = (1.0*runinfo.uniqueSelections)/_sampleCount;
+	runinfo.acceptanceRate     = (1.0*runinfo.uniqueSelections)/_sampleCount;
 
 	for (int i = 0; i < N; i++)
 	{
