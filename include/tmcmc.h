@@ -6,15 +6,6 @@
 namespace Korali
 {
 
-struct optim_options {
-    size_t MaxIter;             /* Max number of search iterations */
-    double Tol;                 /* Tolerance for root finding */
-    bool   Display;             /* Print output */
-    double Step;                /* Search stepsize */
-    double LowerBound;          /* Lower bound for root finding (fmincon & fzerosearch)*/
-    double UpperBound;          /* Upper bound for root finding (fmincon & fzerosearch)*/
-};
-
 typedef struct fparam_s {
     const double *fj;
     int           fn;
@@ -29,21 +20,16 @@ class TMCMC : public Solver
   // TMCMC Configuration
   int nChains;
 
-  int MinChainLength;         /* MinChainLength > 0: setting MinChainLength */
-  int MaxChainLength;         /* MaxChainLength > 0: splitting long chains */
-
   double TolCOV;              /* Target coefficient of variation of weights */
   double MinStep;             /* Min update of rho */
   double bbeta;               /* Covariance scaling parameter */
 
-  optim_options options;      /* Optimization options (see above) */
-
   double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
-  bool use_local_cov;
+  bool _useLocalCov;
 
   // TMCMC Runtime Variables
 
-  int     _currentGen;
+  int     _currentGeneration;
   double  _varianceCoefficient;
   double  _annealingRatio;
   size_t  _uniqueSelections;
@@ -52,6 +38,7 @@ class TMCMC : public Solver
   double  _acceptanceRate;
   double* _covarianceMatrix;            /*[PROBDIM][PROBDIM];*/
   double* _meanTheta;     /*[PROBDIM]*/
+  bool    _verbose;
 
 	// TMCMC Fields
 	gsl_rng  *range;
@@ -83,16 +70,8 @@ class TMCMC : public Solver
 
 	// TMCMC Configuration Methods
 	void setToleranceCOV(double TolCOV) { TolCOV = TolCOV; }
-	void setUseLocalCOV(double use_local_cov) { use_local_cov = use_local_cov; }
+	void setUseLocalCOV(bool useLocalCov) { _useLocalCov = useLocalCov; }
 	void setCovarianceScaling(double bbeta) { bbeta = bbeta; }
-	void setChainLength(size_t min, size_t max) { MinChainLength = min; MaxChainLength = max; }
-
-	// Optimization Contiguration Methods
-	void setMaxIterations(size_t MaxIter) { options.MaxIter = MaxIter; }
-	void setTolerance(double Tol) { options.Tol = Tol; }
-	void setDisplay(bool Display) { options.Display = Display; }
-	void setStepSize(double Step) { options.Step = Step; }
-	void setBounds(double lower, double upper) { options.LowerBound = lower; options.UpperBound = upper; }
 
   // Internal TMCMC Methods
 	void saveResults();
