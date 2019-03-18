@@ -12,15 +12,13 @@ Korali::Solver::Solver(Problem* problem, MPI_Comm comm)
   _continueEvaluations = true;
 	_evaluateSample = false;
   _verbose = false;
-
   _sampleCount = 1000;
 	_maxGens = 200;
 
 	N = _problem->_parameterCount;
 
   // Initialize Parameter Priors
-  for (int i = 0; i < N; i++)
-  	_problem->_parameters[i].initialize(_problem->_seed+i+1);
+  for (int i = 0; i < N; i++)	_problem->_parameters[i].initialize(_problem->_seed+i+1);
 }
 
 void Korali::Solver::run()
@@ -63,7 +61,7 @@ void Korali::Solver::workerThread()
 			double candidatePoint[N];
 			upcxx::rget(sampleGlobalPtr + _sampleId*N, candidatePoint, N).wait();
 			double candidateFitness = _problem->evaluateFitness(candidatePoint);
-//			 printf("Worker %d: Evaluated %ld:[%f, %f] - Fitness: %f\n", _rankId, _sampleId, candidatePoint[0], candidatePoint[1], candidateFitness);
+			//printf("Worker %d: Evaluated %ld:[%f, %f] - Fitness: %f\n", _rankId, _sampleId, candidatePoint[0], candidatePoint[1], candidateFitness);
 			upcxx::rpc_ff(0, [](size_t c, double fitness, int workerId){_k->processSample(c, fitness); _k->_workers.push(workerId); }, _sampleId, candidateFitness, _rankId);
 		}
 		 upcxx::progress();

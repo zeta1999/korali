@@ -24,7 +24,7 @@ class Solver {
 	size_t  N; // Parameter Count
   Problem* _problem;
   bool _continueEvaluations;
-	bool   _evaluateSample;
+	bool _evaluateSample;
   bool _verbose;
 
 	std::queue<int> _workers;
