@@ -1,7 +1,8 @@
-#ifndef _CMAES_H_
-#define _CMAES_H_
+#ifndef _KORALI_CMAES_H_
+#define _KORALI_CMAES_H_
 
 #include "conduits/base.h"
+#include "distributions/gaussian.h"
 
 namespace Korali
 {
@@ -76,7 +77,7 @@ class CMAES : public Conduit
 
   // Private CMAES-Specific Variables
   double sigma;  /* step size */
-  Distribution* _gaussianGenerator;
+  Gaussian* _gaussianGenerator;
 
   double *rgxmean;  /* mean x vector, "parent" */
   double *rgxbestever;
@@ -126,4 +127,4 @@ class CMAES : public Conduit
 
 } // namespace Korali
 
-#endif // _CMAES_H_
+#endif // _KORALI_CMAES_H_

@@ -1,5 +1,5 @@
-#ifndef _LIKELIHOOD_H_
-#define _LIKELIHOOD_H_
+#ifndef _KORALI_LIKELIHOOD_H_
+#define _KORALI_LIKELIHOOD_H_
 
 #include "problems/base.h"
 
@@ -25,4 +25,4 @@ class Likelihood : public BaseProblem
 } // namespace Korali
 
 
-#endif // _LIKELIHOOD_H_
+#endif // _KORALI_LIKELIHOOD_H_

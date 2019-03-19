@@ -1,5 +1,5 @@
-#ifndef _POSTERIOR_H
-#define _POSTERIOR_H
+#ifndef _KORALI_POSTERIOR_H
+#define _KORALI_POSTERIOR_H
 
 #include "problems/likelihood.h"
 
@@ -17,4 +17,4 @@ class Posterior : public Likelihood
 } // namespace Korali
 
 
-#endif // _POSTERIOR_H
+#endif // _KORALI_POSTERIOR_H

@@ -1,5 +1,4 @@
 #include "problems/base.h"
-#include <stdlib.h>
 #include <chrono>
 
 Korali::BaseProblem::BaseProblem(size_t seed)

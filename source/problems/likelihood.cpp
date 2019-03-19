@@ -1,6 +1,5 @@
 #include "problems/likelihood.h"
-#include <stdlib.h>
-#include <chrono>
+#include "distributions/gaussian.h"
 
 Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::BaseProblem::BaseProblem(seed)
 {
@@ -29,5 +28,5 @@ double Korali::Likelihood::evaluateFitness(double* sample)
 	double* parameters = &sample[1];
   double* measuredData = _modelFunction(parameters);
 
-	return -Korali::GaussianDistribution::logLikelihood(sigma, _nData, _referenceData, measuredData);
+	return -Korali::Gaussian::logLikelihood(sigma, _nData, _referenceData, measuredData);
 }

@@ -1,5 +1,5 @@
-#ifndef _TMCMC_H_
-#define _TMCMC_H_
+#ifndef _KORALI_TMCMC_H_
+#define _KORALI_TMCMC_H_
 
 #include "conduits/base.h"
 
@@ -87,4 +87,4 @@ class TMCMC : public Conduit
 
 } // namespace Korali
 
-#endif // _TMCMC_H_
+#endif // _KORALI_TMCMC_H_

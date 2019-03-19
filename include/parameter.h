@@ -1,10 +1,10 @@
-#ifndef _PARAMETER_H_
-#define _PARAMETER_H_
+#ifndef _KORALI_PARAMETER_H_
+#define _KORALI_PARAMETER_H_
 
 #include <vector>
 #include <limits>
 #include <string>
-#include "distribution.h"
+#include "distributions/base.h"
 
 namespace Korali
 {
@@ -42,11 +42,11 @@ class Parameter
  void checkBounds();
 
  private:
- Distribution* _prior;
+ BaseDistribution* _prior;
 
 };
 
 
 } // Namespace Korali
 
-#endif // _PARAMETER_H_
+#endif // _KORALI_PARAMETER_H_

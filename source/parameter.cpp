@@ -1,4 +1,8 @@
 #include "parameter.h"
+#include "distributions/uniform.h"
+#include "distributions/gamma.h"
+#include "distributions/gaussian.h"
+#include "distributions/exponential.h"
 
 Korali::Parameter::Parameter()
 {
@@ -30,10 +34,10 @@ void Korali::Parameter::setPriorDistribution(std::string type, double a, double 
 void Korali::Parameter::initialize(int seed)
 {
 	_seed = seed;
-  if (_type == "Uniform")    { _prior = new UniformDistribution(_a, _b, seed);  return; }
-  if (_type == "Gaussian")   { _prior = new GaussianDistribution(_a, _b, seed); return; }
-  if (_type == "Exponential"){ _prior = new ExponentialDistribution(_a, seed);  return; }
-  if (_type == "Gamma")      { _prior = new GammaDistribution(_a, _b, seed);    return; }
+  if (_type == "Uniform")    { _prior = new Uniform(_a, _b, seed);  return; }
+  if (_type == "Gaussian")   { _prior = new Gaussian(_a, _b, seed); return; }
+  if (_type == "Exponential"){ _prior = new Exponential(_a, seed);  return; }
+  if (_type == "Gamma")      { _prior = new Gamma(_a, _b, seed);    return; }
   _type = "Unrecognized";
 }
 
