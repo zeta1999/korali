@@ -1,6 +1,6 @@
 #include "problems/likelihood.h"
-#include "distributions/gaussian.h"
-#include "distributions/uniform.h"
+#include "parameters/gaussian.h"
+#include "parameters/uniform.h"
 
 Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::BaseProblem::BaseProblem(seed)
 {
@@ -9,7 +9,7 @@ Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) 
 	_modelFunction = modelFunction;
 	_referenceDataSet = false;
 
-	Korali::Uniform* sigma = new Korali::Uniform(0.0, +20.0);
+	auto sigma = new Korali::Parameter::Uniform(0.0, +20.0);
 	sigma->setName("Sigma");
 	sigma->setInitialX(+10.0);
 	sigma->setBounds(0, +20.0);
@@ -29,5 +29,5 @@ double Korali::Likelihood::evaluateFitness(double* sample)
 	double* parameters = &sample[1];
   double* measuredData = _modelFunction(parameters);
 
-	return -Korali::Gaussian::logLikelihood(sigma, _nData, _referenceData, measuredData);
+	return -Korali::Parameter::Gaussian::logLikelihood(sigma, _nData, _referenceData, measuredData);
 }

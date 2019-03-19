@@ -7,9 +7,9 @@ int main(int argc, char* argv[])
 
   auto problem = Korali::Posterior(heat2DSolver, 0xC0FFEE);
 
-  Korali::Uniform par0(10.0, 60.0);
-  Korali::Uniform par1(0.0,  0.5);
-  Korali::Uniform par2(0.6,  1.0);
+  Korali::Parameter::Uniform par0(10.0, 60.0);
+  Korali::Parameter::Uniform par1(0.0,  0.5);
+  Korali::Parameter::Uniform par2(0.6,  1.0);
 
   par0.setName("Intensity");
   par1.setName("PosX");

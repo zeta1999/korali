@@ -1,7 +1,7 @@
 #ifndef _KORALI_BASEPROBLEM_H_
 #define _KORALI_BASEPROBLEM_H_
 
-#include "distributions/base.h"
+#include "parameters/base.h"
 #include <vector>
 #include "stdlib.h"
 
@@ -14,13 +14,13 @@ class BaseProblem
 
 	BaseProblem(size_t seed = 0);
 
-	void addParameter(BaseDistribution* p);
+	void addParameter(Parameter::BaseDistribution* p);
   virtual double evaluateFitness(double* sample) = 0;
 
   size_t _parameterCount;
 	size_t _seed;
 
-  std::vector<BaseDistribution*> _parameters;
+  std::vector<Parameter::BaseDistribution*> _parameters;
 
   double getPriorsLogProbabilityDensity(double *x);
   double getPriorsProbabilityDensity(double *x);

@@ -7,7 +7,7 @@ int main(int argc, char* argv[])
 
   auto problem = Korali::Direct(gaussian);
 
-  Korali::Uniform p(-32.0, +32.0);
+  Korali::Parameter::Uniform p(-32.0, +32.0);
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(&p);
 
   auto Solver = Korali::TMCMC(&problem);

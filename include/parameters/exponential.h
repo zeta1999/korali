@@ -1,9 +1,9 @@
 #ifndef _KORALI_EXPONENTIAL_H_
 #define _KORALI_EXPONENTIAL_H_
 
-#include "distributions/base.h"
+#include "parameters/base.h"
 
-namespace Korali
+namespace Korali::Parameter
 {
 
 class Exponential : public BaseDistribution

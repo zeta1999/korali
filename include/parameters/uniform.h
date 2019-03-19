@@ -1,9 +1,9 @@
 #ifndef _KORALI_UNIFORM_H_
 #define _KORALI_UNIFORM_H_
 
-#include "distributions/base.h"
+#include "parameters/base.h"
 
-namespace Korali
+namespace Korali::Parameter
 {
 
 class Uniform : public BaseDistribution

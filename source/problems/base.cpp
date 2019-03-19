@@ -13,7 +13,7 @@ Korali::BaseProblem::BaseProblem(size_t seed)
   gsl_rng_env_setup();
 }
 
-void Korali::BaseProblem::addParameter(BaseDistribution* p)
+void Korali::BaseProblem::addParameter(Korali::Parameter::BaseDistribution* p)
 {
 	if(p->_name == "") p->setName("Parameter" + std::to_string(_parameterCount));
 	_parameters.push_back(p);

@@ -1,9 +1,9 @@
 #ifndef _KORALI_GAUSSIAN_H_
 #define _KORALI_GAUSSIAN_H_
 
-#include "distributions/base.h"
+#include "parameters/base.h"
 
-namespace Korali
+namespace Korali::Parameter
 {
 
 class Gaussian : public BaseDistribution

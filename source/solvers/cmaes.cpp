@@ -22,7 +22,7 @@ Korali::CMAES::CMAES(BaseProblem* problem) : Korali::Conduit::Conduit(problem)
  _cumulativeCovariance = -1;
  _covarianceMatrixLearningRate = -1;
 
- _gaussianGenerator = new Gaussian(0.0, 1.0);
+ _gaussianGenerator = new Parameter::Gaussian(0.0, 1.0);
  _gaussianGenerator->initializeDistribution(problem->_seed + _problem->_parameterCount + 0xF0);
 }
 

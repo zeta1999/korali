@@ -1,6 +1,6 @@
-#include "distributions/base.h"
+#include "parameters/base.h"
 
-Korali::BaseDistribution::BaseDistribution()
+Korali::Parameter::BaseDistribution::BaseDistribution()
 {
  _name = "NoName";
  _initialX = 0.0;
@@ -10,13 +10,13 @@ Korali::BaseDistribution::BaseDistribution()
  _upperBound = -1.0;
 }
 
-void Korali::BaseDistribution::initializeDistribution(int seed)
+void Korali::Parameter::BaseDistribution::initializeDistribution(int seed)
 {
   _range = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(_range, seed);
 }
 
-void Korali::BaseDistribution::checkBounds()
+void Korali::Parameter::BaseDistribution::checkBounds()
 {
   if (_upperBound <= _lowerBound)
   {

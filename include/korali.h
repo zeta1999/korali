@@ -5,10 +5,10 @@
 #include "problems/likelihood.h"
 #include "problems/posterior.h"
 
-#include "distributions/exponential.h"
-#include "distributions/gamma.h"
-#include "distributions/gaussian.h"
-#include "distributions/uniform.h"
+#include "parameters/exponential.h"
+#include "parameters/gamma.h"
+#include "parameters/gaussian.h"
+#include "parameters/uniform.h"
 
 #include "solvers/cmaes.h"
 #include "solvers/tmcmc.h"

@@ -7,7 +7,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf.h>
 
-namespace Korali
+namespace Korali::Parameter
 {
 
 class BaseDistribution
