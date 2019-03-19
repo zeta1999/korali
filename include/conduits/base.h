@@ -41,13 +41,18 @@ extern Korali::Conduit* _k;
 
 #ifdef KORALI_UPCXX_CONDUIT
 #include "upcxx.h"
-#elif KORALI_MPI_CONDUIT
+#endif
+
+#ifdef KORALI_MPI_CONDUIT
 #include "mpi.h"
-#elif KORALI_SINGLE_CONDUIT
+#endif
+
+#ifdef KORALI_SINGLE_CONDUIT
 #include "single.h"
-#else
+#endif
 
 // In case no conduit is selected, exit with error
+#ifdef KORALI_NO_CONDUIT
 namespace Korali
 {
 class Conduit : public BaseConduit {

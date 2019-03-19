@@ -164,38 +164,38 @@ void Korali::CMAES::initializeInternalVariables()
  for (dtest = 1.; dtest && dtest < 1.1 * dtest; dtest *= 2.)
   if (dtest == dtest + 1.)
    break;
- dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
+  dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
 
- gen = 0;
- countevals = 0;
- state = 0;
+  gen = 0;
+  countevals = 0;
+  state = 0;
 
- rgpc = (double*) calloc (sizeof(double), N);
- rgps = (double*) calloc (sizeof(double), N);
- rgdTmp = (double*) calloc (sizeof(double), N+1);
- rgBDz = (double*) calloc (sizeof(double), N);
- rgxmean = (double*) calloc (sizeof(double), N+2); rgxmean[0] = N; ++rgxmean;
- rgxold = (double*) calloc (sizeof(double), N+2); rgxold[0] = N; ++rgxold;
- rgxbestever = (double*) calloc (sizeof(double), N+3); rgxbestever[0] = N; ++rgxbestever;
- rgout = (double*) calloc (sizeof(double), N+2); rgout[0] = N; ++rgout;
- rgD = (double*) calloc (sizeof(double), N);
- C = (double**) calloc (sizeof(double*), N);
- B = (double**)calloc (sizeof(double*), N);
- rgFuncValue = (double*) calloc (sizeof(double), _sampleCount+1);
- rgFuncValue[0]=_sampleCount; ++rgFuncValue;
- arFuncValueHist = (double*) calloc (sizeof(double), 10+(int)ceil(3.*10.*N/_sampleCount)+1);
- arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/_sampleCount));
- arFuncValueHist++;
+  rgpc = (double*) calloc (sizeof(double), N);
+  rgps = (double*) calloc (sizeof(double), N);
+  rgdTmp = (double*) calloc (sizeof(double), N+1);
+  rgBDz = (double*) calloc (sizeof(double), N);
+  rgxmean = (double*) calloc (sizeof(double), N+2); rgxmean[0] = N; ++rgxmean;
+  rgxold = (double*) calloc (sizeof(double), N+2); rgxold[0] = N; ++rgxold;
+  rgxbestever = (double*) calloc (sizeof(double), N+3); rgxbestever[0] = N; ++rgxbestever;
+  rgout = (double*) calloc (sizeof(double), N+2); rgout[0] = N; ++rgout;
+  rgD = (double*) calloc (sizeof(double), N);
+  C = (double**) calloc (sizeof(double*), N);
+  B = (double**)calloc (sizeof(double*), N);
+  rgFuncValue = (double*) calloc (sizeof(double), _sampleCount+1);
+  rgFuncValue[0]=_sampleCount; ++rgFuncValue;
+  arFuncValueHist = (double*) calloc (sizeof(double), 10+(int)ceil(3.*10.*N/_sampleCount)+1);
+  arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/_sampleCount));
+  arFuncValueHist++;
 
- for (i = 0; i < N; ++i) {
-  C[i] = (double*) calloc (sizeof(double), i+1);
-  B[i] = (double*) calloc (sizeof(double), N);
- }
- index = (int *) calloc (sizeof(int*), _sampleCount);
- for (i = 0; i < _sampleCount; ++i)  index[i] = i; /* should not be necessary */
- curBest = (double *) calloc (sizeof(double), _sampleCount);
+  for (i = 0; i < N; ++i) {
+   C[i] = (double*) calloc (sizeof(double), i+1);
+   B[i] = (double*) calloc (sizeof(double), N);
+  }
+  index = (int *) calloc (sizeof(int*), _sampleCount);
+  for (i = 0; i < _sampleCount; ++i)  index[i] = i; /* should not be necessary */
+  curBest = (double *) calloc (sizeof(double), _sampleCount);
 
- /* Initialize newed space  */
+  /* Initialize newed space  */
 
  for (i = 0; i < N; ++i)
   for (j = 0; j < i; ++j)
@@ -229,7 +229,7 @@ void Korali::CMAES::initializeInternalVariables()
  }
 
  _initializedSample = (bool*) calloc (_sampleCount, sizeof(bool));
-   _fitnessVector = (double*) calloc (sizeof(double), _sampleCount);
+ _fitnessVector = (double*) calloc (sizeof(double), _sampleCount);
 }
 
 void Korali::CMAES::prepareGeneration()
