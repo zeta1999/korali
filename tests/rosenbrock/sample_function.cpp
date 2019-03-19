@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::DirectEvaluation([](double *x) {return -rosenbrock(x);}, 8500);
+  auto problem = Korali::Direct([](double *x) {return -rosenbrock(x);}, 8500);
 
   Korali::Parameter p;
   p.setBounds(-3.0, +3.0);

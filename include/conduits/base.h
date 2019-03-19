@@ -2,7 +2,7 @@
 #define _BASECONDUIT_H_
 
 #include <stdlib.h>
-#include "problems/problem.h"
+#include "problems/base.h"
 
 namespace Korali
 {

@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	gaussian_init();
 
-  auto problem = Korali::DirectEvaluation(gaussian);
+  auto problem = Korali::Direct(gaussian);
 
   Korali::Parameter p;
   p.setBounds(-15.0, +15.0);
