@@ -4,10 +4,10 @@
 #include "solvers/base.h"
 #include "parameters/gaussian.h"
 
-namespace Korali
+namespace Korali::Solver
 {
 
-class CMAES : public BaseSolver
+class CMAES : public Korali::Solver::Base
 {
   public:
 
@@ -21,7 +21,6 @@ class CMAES : public BaseSolver
   void printResults();
   void updateDistribution(const double *fitnessVector);
   void runSolver();
-
   void processSample(size_t sampleId, double fitness);
 
 	// Configuration Methods

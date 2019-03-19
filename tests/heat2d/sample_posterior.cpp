@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 
   problem.setReferenceData(p.nPoints, p.refTemp);
 
-  auto Solver = Korali::TMCMC(&problem);
+  auto Solver = Korali::Solver::TMCMC(&problem);
 	Solver.setPopulationSize(10000);
 	Solver.setCovarianceScaling(0.02);
 	Solver.run();

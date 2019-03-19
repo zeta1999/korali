@@ -1,17 +1,17 @@
-#ifndef _CONDUIT_H_
-#define _CONDUIT_H_
+#ifndef _KORALI_SINGLE_H_
+#define _KORALI_SINGLE_H_
 
 #include "conduits/base.h"
 
-namespace Korali
+namespace Korali::Conduit
 {
 
-class Conduit : public BaseConduit {
+class Single : public Base {
   public:
 
 	double* sampleArrayPointer;
 
-  Conduit(BaseSolver* solver);
+	Single(Korali::Solver::Base* solver);
   void initialize();
 	void evaluateSample(size_t sampleId);
 	double* getSampleArrayPointer();
@@ -20,4 +20,4 @@ class Conduit : public BaseConduit {
 
 } // namespace Korali
 
-#endif // _CONDUIT_H_
+#endif // _KORALI_SINGLE_H_

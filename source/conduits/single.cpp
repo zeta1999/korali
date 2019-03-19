@@ -2,9 +2,9 @@
 #include "conduits/single.h"
 #include "solvers/base.h"
 
-Korali::Conduit::Conduit(BaseSolver* solver) : Korali::BaseConduit::BaseConduit (solver) {}
+Korali::Conduit::Single(Korali::Solver::Base* solver) : Korali::Conduit::Base::Base(solver) {}
 
-void Korali::Conduit::initialize()
+void Korali::Conduit::Single::initialize()
 {
 	_k = this;
 
@@ -14,18 +14,18 @@ void Korali::Conduit::initialize()
 	_solver->runSolver();
 }
 
-double* Korali::Conduit::getSampleArrayPointer()
+double* Korali::Conduit::Single::getSampleArrayPointer()
 {
   return sampleArrayPointer;
 }
 
-void Korali::Conduit::evaluateSample(size_t sampleId)
+void Korali::Conduit::Single::evaluateSample(size_t sampleId)
 {
 	double fitness = _solver->_problem->evaluateFitness(&sampleArrayPointer[_solver->N*sampleId]);
 	_solver->processSample(sampleId, fitness);
 }
 
-void Korali::Conduit::checkProgress()
+void Korali::Conduit::Single::checkProgress()
 {
 
 }

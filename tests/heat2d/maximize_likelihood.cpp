@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 
   problem.setReferenceData(p.nPoints, p.refTemp);
 
-  auto Solver = Korali::CMAES(&problem);
+  auto Solver = Korali::Solver::CMAES(&problem);
 	Solver.setStopMinDeltaX(1e-7);
 	Solver.setPopulationSize(32);
 	Solver.run();

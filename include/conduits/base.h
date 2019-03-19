@@ -4,28 +4,28 @@
 #include <stdlib.h>
 #include "problems/base.h"
 
-namespace Korali
+namespace Korali::Solver {
+    class Base;
+}
+
+namespace Korali::Conduit
 {
 
-class BaseSolver;
-
-class BaseConduit {
+class Base {
   public:
 
-  BaseSolver* _solver;
+	Korali::Solver::Base* _solver;
 
-  BaseConduit(BaseSolver* solver);
+  Base(Korali::Solver::Base* solver);
   virtual void initialize() = 0;
-	virtual void evaluateSample(size_t sampleId) = 0; // To be satisfied by the conduit
-	virtual double* getSampleArrayPointer()  = 0;     // To be satisfied by the conduit
-	virtual void checkProgress() = 0;                 // To be satisfied by the conduit
+	virtual void evaluateSample(size_t sampleId) = 0;
+	virtual double* getSampleArrayPointer()  = 0;
+	virtual void checkProgress() = 0;
 };
 
 class Conduit;
 
 } // namespace Korali
-
-extern Korali::Conduit* _k;
 
 // Choosing correct conduit from compilation defined values
 
@@ -39,26 +39,6 @@ extern Korali::Conduit* _k;
 
 #ifdef KORALI_SINGLE_CONDUIT
 #include "single.h"
-#endif
-
-// In case no conduit is selected, exit with error
-#ifdef KORALI_NO_CONDUIT
-namespace Korali
-{
-class Conduit : public BaseConduit {
-	public:
-	Conduit(BaseSolver* solver) : BaseConduit(solver)
-	{
-		fprintf(stderr, "[Korali] Error: No Korali communication conduit was set.\n");
-		fprintf(stderr, "[Korali] Use: $export KORALI_CONDUIT={mpi, upcxx, single}, and recompile.\n");
-		exit(-1);
-	}
-	double* getSampleArrayPointer(){return 0;}
-	void initialize(){};
-	void evaluateSample(size_t sampleId){}
-	void checkProgress(){}
-	};
-}
 #endif
 
 

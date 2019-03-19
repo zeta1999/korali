@@ -2,7 +2,7 @@
 #include "conduits/base.h"
 #include <chrono>
 
-Korali::CMAES::CMAES(BaseProblem* problem) : Korali::BaseSolver::BaseSolver(problem)
+Korali::Solver::CMAES::CMAES(BaseProblem* problem) : Korali::Solver::Base::Base(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 
@@ -27,7 +27,7 @@ Korali::CMAES::CMAES(BaseProblem* problem) : Korali::BaseSolver::BaseSolver(prob
  _gaussianGenerator->initializeDistribution(problem->_seed + _problem->_parameterCount + 0xF0);
 }
 
-void Korali::CMAES::runSolver()
+void Korali::Solver::CMAES::runSolver()
 {
  printf("[Korali] CMAES - Parameters: %ld, Seed: %ld\n", N, _problem->_seed);
 
@@ -63,14 +63,14 @@ void Korali::CMAES::runSolver()
  printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
 }
 
-void Korali::CMAES::processSample(size_t sampleId, double fitness)
+void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)
 {
  _fitnessVector[sampleId] = -fitness;
  _finishedSamples++;
 }
 
 
-bool Korali::CMAES::isFeasible(double *pop)
+bool Korali::Solver::CMAES::isFeasible(double *pop)
 {
  for (int i = 0; i < _problem->_parameterCount; i++)
   if (pop[i] < _problem->_parameters[i]->_lowerBound || pop[i] > _problem->_parameters[i]->_upperBound)  return false;
@@ -78,7 +78,7 @@ bool Korali::CMAES::isFeasible(double *pop)
 }
 
 
-void Korali::CMAES::initializeInternalVariables()
+void Korali::Solver::CMAES::initializeInternalVariables()
 {
  int i, j;
  double dtest, trace;
@@ -230,7 +230,7 @@ void Korali::CMAES::initializeInternalVariables()
  _fitnessVector = (double*) calloc (sizeof(double), _sampleCount);
 }
 
-void Korali::CMAES::prepareGeneration()
+void Korali::Solver::CMAES::prepareGeneration()
 {
  int iNk, i, j;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -282,7 +282,7 @@ void Korali::CMAES::prepareGeneration()
 } /* SamplePopulation() */
 
 
-void Korali::CMAES::reSampleSingle(int iindex)
+void Korali::Solver::CMAES::reSampleSingle(int iindex)
 {
  int i, j;
  double *rgx;
@@ -302,7 +302,7 @@ void Korali::CMAES::reSampleSingle(int iindex)
 }
 
 
-void Korali::CMAES::updateDistribution(const double *fitnessVector)
+void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 {
  int i, j, iNk, hsig;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -399,7 +399,7 @@ void Korali::CMAES::updateDistribution(const double *fitnessVector)
 }
 
 
-void Korali::CMAES::adaptC2(int hsig)
+void Korali::Solver::CMAES::adaptC2(int hsig)
 {
  int i, j, k;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
@@ -439,7 +439,7 @@ void Korali::CMAES::adaptC2(int hsig)
 }
 
 
-void Korali::CMAES::printResults()
+void Korali::Solver::CMAES::printResults()
 {
 
  for (int i = 0; i < N; i++)
@@ -476,7 +476,7 @@ void Korali::CMAES::printResults()
  }
 }
 
-double Korali::CMAES::function_value_difference()
+double Korali::Solver::CMAES::function_value_difference()
 {
  return std::max(doubleRangeMax(arFuncValueHist, (int)std::min((double)gen,*(arFuncValueHist-1))),
    doubleRangeMax(rgFuncValue, _sampleCount)) -
@@ -484,7 +484,7 @@ double Korali::CMAES::function_value_difference()
       doubleRangeMin(rgFuncValue, _sampleCount));
 }
 
-bool Korali::CMAES::checkTermination()
+bool Korali::Solver::CMAES::checkTermination()
 {
  double range, fac;
  int iAchse, iKoo;
@@ -590,7 +590,7 @@ bool Korali::CMAES::checkTermination()
  return terminate;
 }
 
-void Korali::CMAES::updateEigensystem(int flgforce)
+void Korali::Solver::CMAES::updateEigensystem(int flgforce)
 {
  if(flgforce == 0) if (flgEigensysIsUptodate == 1) return;
 
@@ -605,7 +605,7 @@ void Korali::CMAES::updateEigensystem(int flgforce)
  flgEigensysIsUptodate = 1;
 }
 
-void Korali::CMAES::eigen( int size,  double **C, double *diag, double **Q)
+void Korali::Solver::CMAES::eigen( int size,  double **C, double *diag, double **Q)
 {
  double* data = (double*) malloc (sizeof(double) * size * size);
 
@@ -638,7 +638,7 @@ void Korali::CMAES::eigen( int size,  double **C, double *diag, double **Q)
  free(data);
 }
 
-int Korali::CMAES::maxIdx(const double *rgd, int len)
+int Korali::Solver::CMAES::maxIdx(const double *rgd, int len)
 {
  int i, res;
  for(i=1, res=0; i<len; ++i)
@@ -647,7 +647,7 @@ int Korali::CMAES::maxIdx(const double *rgd, int len)
  return res;
 }
 
-int Korali::CMAES::minIdx(const double *rgd, int len)
+int Korali::Solver::CMAES::minIdx(const double *rgd, int len)
 {
  int i, res;
  for(i=1, res=0; i<len; ++i)
@@ -657,7 +657,7 @@ int Korali::CMAES::minIdx(const double *rgd, int len)
 }
 
 /* dirty index sort */
-void Korali::CMAES::sorted_index(const double *fitnessVector, int *iindex, int n)
+void Korali::Solver::CMAES::sorted_index(const double *fitnessVector, int *iindex, int n)
 {
  int i, j;
  for (i=1, iindex[0]=0; i<n; ++i) {
@@ -671,7 +671,7 @@ void Korali::CMAES::sorted_index(const double *fitnessVector, int *iindex, int n
 }
 
 
-double Korali::CMAES::doubleRangeMax(const double *rgd, int len)
+double Korali::Solver::CMAES::doubleRangeMax(const double *rgd, int len)
 {
  int i;
  double max = rgd[0];
@@ -680,7 +680,7 @@ double Korali::CMAES::doubleRangeMax(const double *rgd, int len)
  return max;
 }
 
-double Korali::CMAES::doubleRangeMin(const double *rgd, int len)
+double Korali::Solver::CMAES::doubleRangeMin(const double *rgd, int len)
 {
  int i;
  double min = rgd[0];

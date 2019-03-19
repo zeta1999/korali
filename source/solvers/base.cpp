@@ -1,7 +1,7 @@
 #include "solvers/base.h"
 #include "conduits/base.h"
 
-Korali::BaseSolver::BaseSolver(BaseProblem* problem)
+Korali::Solver::Base::Base(BaseProblem* problem)
 {
   _problem = problem;
   _verbose = false;
@@ -11,9 +11,9 @@ Korali::BaseSolver::BaseSolver(BaseProblem* problem)
 	N = _problem->_parameterCount;
 }
 
-void Korali::BaseSolver::run()
+void Korali::Solver::Base::run()
 {
   _problem->initializeParameters();
-	_conduit = new Conduit(this);
+	_conduit = new Korali::Conduit::UPCXX(this);
   _conduit->initialize();
 }

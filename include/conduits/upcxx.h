@@ -1,14 +1,14 @@
-#ifndef _CONDUIT_H_
-#define _CONDUIT_H_
+#ifndef _KORALI_UPCXX_H_
+#define _KORALI_UPCXX_H_
 
 #include "conduits/base.h"
 #include <upcxx/upcxx.hpp>
 #include <queue>
 
-namespace Korali
+namespace Korali::Conduit
 {
 
-class Conduit : public BaseConduit
+class UPCXX : public Base
 {
   public:
   int _rankId;
@@ -21,7 +21,7 @@ class Conduit : public BaseConduit
 	std::queue<int> _workers;
 	upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
 
-  Conduit(BaseSolver* solver);
+  UPCXX(Korali::Solver::Base* solver);
   void initialize();
 	void evaluateSample(size_t sampleId);
 	double* getSampleArrayPointer();
@@ -32,4 +32,6 @@ class Conduit : public BaseConduit
 
 } // namespace Korali
 
-#endif // _CONDUIT_H_
+extern Korali::Conduit::UPCXX* _k;
+
+#endif // _KORALI_UPCXX_H_

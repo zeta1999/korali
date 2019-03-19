@@ -3,7 +3,7 @@
 
 #include "solvers/base.h"
 
-namespace Korali
+namespace Korali::Solver
 {
 
 typedef struct fparam_s {
@@ -13,7 +13,7 @@ typedef struct fparam_s {
     double        tol;
 } fparam_t;
 
-class TMCMC : public BaseSolver
+class TMCMC : public Korali::Solver::Base
 {
   public:
 

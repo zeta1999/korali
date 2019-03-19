@@ -11,7 +11,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
-Korali::TMCMC::TMCMC(BaseProblem* problem) : Korali::BaseSolver::BaseSolver(problem)
+Korali::Solver::TMCMC::TMCMC(BaseProblem* problem) : Korali::Solver::Base::Base(problem)
 {
  TolCOV  = 1;
  MinStep = 1e-9;
@@ -20,7 +20,7 @@ Korali::TMCMC::TMCMC(BaseProblem* problem) : Korali::BaseSolver::BaseSolver(prob
  _verbose = false;
 }
 
-void Korali::TMCMC::runSolver()
+void Korali::Solver::TMCMC::runSolver()
 {
  printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed);
  double samplingTime = 0.0;
@@ -62,7 +62,7 @@ void Korali::TMCMC::runSolver()
  saveResults();
 }
 
-void Korali::TMCMC::processSample(size_t c, double fitness)
+void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
 {
  ccFitness[c] = fitness;
  ccLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&ccPoints[c*N]);
@@ -82,14 +82,14 @@ void Korali::TMCMC::processSample(size_t c, double fitness)
  if (chainCurrentStep[c] == chainLength[c]) finishedChains++;
 }
 
-void Korali::TMCMC::updateDatabase(double* point, double fitness)
+void Korali::Solver::TMCMC::updateDatabase(double* point, double fitness)
 {
  for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = point[i];    // Re-add burn-in
  databaseFitness[databaseEntries] = fitness;
  databaseEntries++;
 }
 
-bool Korali::TMCMC::generateCandidate(int c)
+bool Korali::Solver::TMCMC::generateCandidate(int c)
 {
  if (_currentGeneration == 0) return true;
 
@@ -104,7 +104,7 @@ bool Korali::TMCMC::generateCandidate(int c)
  return true;
 }
 
-void Korali::TMCMC::saveResults()
+void Korali::Solver::TMCMC::saveResults()
 {
  double checksum = 0.0;
 
@@ -128,7 +128,7 @@ void Korali::TMCMC::saveResults()
  fclose(fp);
 }
 
-void Korali::TMCMC::initializeEngine()
+void Korali::Solver::TMCMC::initializeEngine()
 {
  // Initializing Data Variables
  double *LCmem  = (double*) calloc (_sampleCount*N*N, sizeof(double));
@@ -191,7 +191,7 @@ void Korali::TMCMC::initializeEngine()
  // TODO: Ensure proper memory deallocation
 }
 
-void Korali::TMCMC::resampleGeneration()
+void Korali::Solver::TMCMC::resampleGeneration()
 {
  double* flcp  = (double*) calloc (databaseEntries, sizeof(double));
  double* weight     = (double*) calloc (databaseEntries, sizeof(double));
@@ -284,7 +284,7 @@ void Korali::TMCMC::resampleGeneration()
  free(sel);
 }
 
-void Korali::TMCMC::computeChainCovariances(double** chain_cov, int newchains)
+void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newchains)
 {
  if (_verbose) printf("Precomputing chain covariances for the current generation...\n");
 
@@ -378,7 +378,7 @@ void Korali::TMCMC::computeChainCovariances(double** chain_cov, int newchains)
  gsl_matrix_free(work);
 }
 
-double Korali::TMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
+double Korali::Solver::TMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero)
 {
  double *weight = (double*) calloc (fn, sizeof(double));
  double *q      = (double*) calloc (fn, sizeof(double));
@@ -398,14 +398,14 @@ double Korali::TMCMC::tmcmc_objlogp(double x, const double *fj, int fn, double p
  return cov2;
 }
 
-double Korali::TMCMC::objLog(const gsl_vector *v, void *param)
+double Korali::Solver::TMCMC::objLog(const gsl_vector *v, void *param)
 {
  double x = gsl_vector_get(v, 0);
  fparam_t *fp = (fparam_t *) param;
- return Korali::TMCMC::tmcmc_objlogp(x, fp->fj, fp->fn, fp->pj, fp->tol);
+ return Korali::Solver::TMCMC::tmcmc_objlogp(x, fp->fj, fp->fn, fp->pj, fp->tol);
 }
 
-void Korali::TMCMC::minSearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin)
+void Korali::Solver::TMCMC::minSearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin)
 {
  // Minimizer Options
  size_t MaxIter     = 100;    /* Max number of search iterations */

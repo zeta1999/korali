@@ -2,7 +2,9 @@
 #include "conduits/upcxx.h"
 #include "solvers/base.h"
 
-Korali::Conduit::Conduit(BaseSolver* solver) : Korali::BaseConduit::BaseConduit(solver)
+Korali::Conduit::UPCXX* _k;
+
+Korali::Conduit::UPCXX::UPCXX(Korali::Solver::Base* solver) : Korali::Conduit::Base::Base(solver)
 {
 	_rankId = 0;
 	_rankCount = 1;
@@ -10,7 +12,7 @@ Korali::Conduit::Conduit(BaseSolver* solver) : Korali::BaseConduit::BaseConduit(
 	_evaluateSample = false;
 }
 
-void Korali::Conduit::initialize()
+void Korali::Conduit::UPCXX::initialize()
 {
 	_k = this;
 
@@ -30,7 +32,7 @@ void Korali::Conduit::initialize()
   upcxx::finalize();
 }
 
-void Korali::Conduit::supervisorThread()
+void Korali::Conduit::UPCXX::supervisorThread()
 {
   // Creating Worker Queue
   for (int i = 1; i < _rankCount; i++) _workers.push(i);
@@ -40,12 +42,12 @@ void Korali::Conduit::supervisorThread()
   for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_k->_continueEvaluations = false;});
 }
 
-double* Korali::Conduit::getSampleArrayPointer()
+double* Korali::Conduit::UPCXX::getSampleArrayPointer()
 {
   return sampleGlobalPtr.local();
 }
 
-void Korali::Conduit::workerThread()
+void Korali::Conduit::UPCXX::workerThread()
 {
 	while(_continueEvaluations)
 	{
@@ -62,14 +64,14 @@ void Korali::Conduit::workerThread()
 	}
 }
 
-void Korali::Conduit::evaluateSample(size_t sampleId)
+void Korali::Conduit::UPCXX::evaluateSample(size_t sampleId)
 {
 	while(_workers.empty()) upcxx::progress();
 	int workerId = _workers.front(); _workers.pop();
 	upcxx::rpc_ff(workerId, [](size_t c){_k->_sampleId = c; _k->_evaluateSample = true;}, sampleId);
 }
 
-void Korali::Conduit::checkProgress()
+void Korali::Conduit::UPCXX::checkProgress()
 {
 	upcxx::progress();
 }
