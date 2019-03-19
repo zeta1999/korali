@@ -1,7 +1,7 @@
 #ifndef _KORALI_BASEDISTRIBUTION_H_
 #define _KORALI_BASEDISTRIBUTION_H_
 
-#include <vector>
+#include <string>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_math.h>
@@ -12,13 +12,26 @@ namespace Korali
 
 class BaseDistribution
 {
- protected:
-
- gsl_rng* _range;
- size_t _seed;
-
  public:
- BaseDistribution(size_t seed);
+ BaseDistribution();
+ gsl_rng* _range;
+
+ std::string _name;
+ double _lowerBound;
+ double _upperBound;
+ double _initialX;
+ double _initialStdDev;
+ double _minStdDevChange;
+
+ void setBounds(double lowerBound, double upperBound) { _lowerBound = lowerBound;	_upperBound = upperBound; }
+ void setName(std::string name)    { _name = name; }
+ void setInitialX(double initialX) { _initialX = initialX; }
+ void setInitialStdDev(double initialStdDev) { _initialStdDev = initialStdDev; }
+ void setMinStdDevChange(double minStdDevChange) { _minStdDevChange = minStdDevChange; }
+
+ void initializeDistribution(int seed);
+ void checkBounds();
+
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
  virtual double getRandomNumber() = 0;

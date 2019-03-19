@@ -98,7 +98,7 @@ bool Korali::TMCMC::generateCandidate(int c)
  gsl_vector_view mean_view  = gsl_vector_view_array(&clPoints[c*N], N);
  gsl_ran_multivariate_gaussian(chainGSLRange[c], &mean_view.vector, &sigma_view.matrix, &out_view.vector);
 
- for (int i = 0; i < N; i++) if (ccPoints[c*N + i] < _problem->_parameters[i]._lowerBound || ccPoints[c*N + i] > _problem->_parameters[i]._upperBound) return false;
+ for (int i = 0; i < N; i++) if (ccPoints[c*N + i] < _problem->_parameters[i]->_lowerBound || ccPoints[c*N + i] > _problem->_parameters[i]->_upperBound) return false;
 
  return true;
 }
@@ -170,7 +170,7 @@ void Korali::TMCMC::initializeEngine()
  // First definition of chains and their leaders
  nChains = _sampleCount;
  finishedChains = 0;
- for (int c = 0; c < _sampleCount; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = _problem->_parameters[d].getRandomNumber();
+ for (int c = 0; c < _sampleCount; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = _problem->_parameters[d]->getRandomNumber();
  for (int c = 0; c < _sampleCount; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&clPoints[c*N]);
  for (int c = 0; c < _sampleCount; c++) chainCurrentStep[c] = 0;
  for (int c = 0; c < _sampleCount; c++) chainLength[c] = 1;
