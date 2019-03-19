@@ -2,7 +2,7 @@
 
 Korali::Conduit* _k;
 
-Korali::BaseConduit::BaseConduit(Problem* problem)
+Korali::BaseConduit::BaseConduit(BaseProblem* problem)
 {
   _problem = problem;
   _verbose = false;

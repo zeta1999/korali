@@ -1,7 +1,7 @@
 #ifdef _KORALI_SINGLE_CONDUIT
 #include "conduits/single.h"
 
-Korali::Conduit::Conduit(Problem* problem) : Korali::BaseConduit::BaseConduit (problem) {}
+Korali::Conduit::Conduit(BaseProblem* problem) : Korali::BaseConduit::BaseConduit (problem) {}
 
 void Korali::Conduit::run()
 {

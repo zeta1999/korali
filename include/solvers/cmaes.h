@@ -11,7 +11,7 @@ class CMAES : public Conduit
   public:
 
   // Public Methods
-	CMAES(Problem* problem);
+	CMAES(BaseProblem* problem);
 
   // Runtime Methods (to be inherited from base class in the future)
   void initializeInternalVariables();

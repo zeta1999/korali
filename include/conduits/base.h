@@ -2,7 +2,7 @@
 #define _BASECONDUIT_H_
 
 #include <stdlib.h>
-#include "problem.h"
+#include "problems/problem.h"
 
 namespace Korali
 {
@@ -14,10 +14,10 @@ class BaseConduit {
   size_t _maxGens;                  // Max number of Conduit Generations
   size_t _sampleCount;
 	size_t  N; // Parameter Count
-  Problem* _problem;
+  BaseProblem* _problem;
   bool _verbose;
 
-  BaseConduit(Problem* problem);
+  BaseConduit(BaseProblem* problem);
 	void setPopulationSize(int size) { _sampleCount = size; }
 	void setVerbose(bool verbose) { _verbose = verbose; }
 	void setMaxGenerations(int maxGens) { _maxGens = maxGens; }
@@ -57,7 +57,7 @@ namespace Korali
 {
 class Conduit : public BaseConduit {
 	public:
-	Conduit(Problem* problem) : BaseConduit(problem) {}
+	Conduit(BaseProblem* problem) : BaseConduit(problem) {}
 	void run()
 	{
 		fprintf(stderr, "[Korali] Error: No Korali communication conduit was set.\n");

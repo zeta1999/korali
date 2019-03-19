@@ -21,7 +21,7 @@ class Conduit : public BaseConduit
 	std::queue<int> _workers;
 	upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
 
-  Conduit(Problem* problem);
+  Conduit(BaseProblem* problem);
 	void evaluateSample(size_t sampleId);
 	double* getSampleArrayPointer();
 	void checkProgress();

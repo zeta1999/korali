@@ -1,7 +1,7 @@
-#include "cmaes.h"
+#include "solvers/cmaes.h"
 #include <chrono>
 
-Korali::CMAES::CMAES(Problem* problem) : Korali::Conduit::Conduit(problem)
+Korali::CMAES::CMAES(BaseProblem* problem) : Korali::Conduit::Conduit(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 

@@ -1,4 +1,4 @@
-#include "tmcmc.h"
+#include "solvers/tmcmc.h"
 #include <numeric>
 #include <limits>
 #include <chrono>
@@ -10,7 +10,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
-Korali::TMCMC::TMCMC(Problem* problem) : Korali::Conduit::Conduit(problem)
+Korali::TMCMC::TMCMC(BaseProblem* problem) : Korali::Conduit::Conduit(problem)
 {
  TolCOV  = 1;
  MinStep = 1e-9;

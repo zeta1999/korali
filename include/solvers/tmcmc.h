@@ -63,7 +63,7 @@ class TMCMC : public Conduit
 
   // Korali Methods
 
-	TMCMC(Problem* problem);
+	TMCMC(BaseProblem* problem);
 
 	void initializeEngine();
   void runSolver();

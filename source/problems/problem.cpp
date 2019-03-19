@@ -1,8 +1,8 @@
-#include "problem.h"
+#include "problems/problem.h"
 #include <stdlib.h>
 #include <chrono>
 
-Korali::Problem::Problem(size_t seed)
+Korali::BaseProblem::BaseProblem(size_t seed)
 {
 	_seed = seed;
 	if (_seed == -1)
@@ -14,28 +14,28 @@ Korali::Problem::Problem(size_t seed)
   gsl_rng_env_setup();
 }
 
-void Korali::Problem::addParameter(Parameter p)
+void Korali::BaseProblem::addParameter(Parameter p)
 {
 	if(p._name == "") p._name = "Parameter" + std::to_string(_parameterCount);
 	_parameters.push_back(p);
 	_parameterCount = _parameters.size();
 }
 
-double Korali::Problem::getPriorsLogProbabilityDensity(double *x)
+double Korali::BaseProblem::getPriorsLogProbabilityDensity(double *x)
 {
   double logp = 0.0;
   for (int i = 0; i < _parameterCount; i++) logp += _parameters[i].getDensityLog(x[i]);
   return logp;
 }
 
-double Korali::Problem::getPriorsProbabilityDensity(double *x)
+double Korali::BaseProblem::getPriorsProbabilityDensity(double *x)
 {
   double dp = 1.0;
   for (int i = 0; i < _parameterCount; i++) dp *= _parameters[i].getDensity(x[i]);
   return dp;
 }
 
-void Korali::Problem::initializeParameters()
+void Korali::BaseProblem::initializeParameters()
 {
   // Initialize Parameter Priors
   for (int i = 0; i < _parameterCount; i++)	_parameters[i].initialize(_seed+i+1);
@@ -44,7 +44,7 @@ void Korali::Problem::initializeParameters()
 	for (int i = 0; i < _parameterCount; i++) _parameters[i].checkBounds();
 }
 
-Korali::DirectEvaluation::DirectEvaluation(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
+Korali::DirectEvaluation::DirectEvaluation(double (*modelFunction) (double*), size_t seed) : Korali::BaseProblem::BaseProblem(seed)
 {
 	_modelFunction = modelFunction;
 }
@@ -54,7 +54,7 @@ double Korali::DirectEvaluation::evaluateFitness(double* sample)
   return _modelFunction(sample);
 }
 
-Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::Problem::Problem(seed)
+Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::BaseProblem::BaseProblem(seed)
 {
 	_referenceData = NULL;
 	_nData = 0;

@@ -1,7 +1,7 @@
 #ifdef KORALI_UPCXX_CONDUIT
 #include "conduits/upcxx.h"
 
-Korali::Conduit::Conduit(Problem* problem) : Korali::BaseConduit::BaseConduit(problem)
+Korali::Conduit::Conduit(BaseProblem* problem) : Korali::BaseConduit::BaseConduit(problem)
 {
 	_rankId = 0;
 	_rankCount = 1;

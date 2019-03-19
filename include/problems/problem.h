@@ -6,11 +6,11 @@
 namespace Korali
 {
 
-class Problem
+class BaseProblem
 {
   public:
 
-	Problem(size_t seed = 0);
+	BaseProblem(size_t seed = 0);
 
 	void addParameter(Parameter p);
   virtual double evaluateFitness(double* sample) = 0;
@@ -25,7 +25,7 @@ class Problem
   void initializeParameters();
 };
 
-class Likelihood : public Problem
+class Likelihood : public BaseProblem
 {
   public:
 
@@ -49,7 +49,7 @@ class Posterior : public Likelihood
 	double evaluateFitness(double* sample);
 };
 
-class DirectEvaluation : public Problem
+class DirectEvaluation : public BaseProblem
 {
   public:
 	double (*_modelFunction) (double*);

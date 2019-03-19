@@ -11,7 +11,7 @@ class Conduit : public BaseConduit {
 
 	double* sampleArrayPointer;
 
-  Conduit(Problem* problem);
+  Conduit(BaseProblem* problem);
 	void evaluateSample(size_t sampleId);
 	double* getSampleArrayPointer();
 	void checkProgress();
