@@ -11,7 +11,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
-Korali::Solver::TMCMC::TMCMC(BaseProblem* problem) : Korali::Solver::Base::Base(problem)
+Korali::Solver::TMCMC::TMCMC(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
 {
  TolCOV  = 1;
  MinStep = 1e-9;

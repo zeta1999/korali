@@ -6,7 +6,7 @@
 namespace Korali::Parameter
 {
 
-class Gaussian : public BaseDistribution
+class Gaussian : public Korali::Parameter::Base
 {
  private:
   double _mean;

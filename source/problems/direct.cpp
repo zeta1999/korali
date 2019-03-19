@@ -1,11 +1,11 @@
 #include "problems/direct.h"
 
-Korali::Direct::Direct(double (*modelFunction) (double*), size_t seed) : Korali::BaseProblem::BaseProblem(seed)
+Korali::Problem::Direct::Direct(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Base::Base(seed)
 {
 	_modelFunction = modelFunction;
 }
 
-double Korali::Direct::evaluateFitness(double* sample)
+double Korali::Problem::Direct::evaluateFitness(double* sample)
 {
   return _modelFunction(sample);
 }

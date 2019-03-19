@@ -6,7 +6,7 @@
 namespace Korali::Parameter
 {
 
-class Uniform : public BaseDistribution
+class Uniform : public Korali::Parameter::Base
 {
  private:
   double _min;

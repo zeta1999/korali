@@ -63,7 +63,7 @@ class TMCMC : public Korali::Solver::Base
 
   // Korali Methods
 
-	TMCMC(BaseProblem* problem);
+	TMCMC(Korali::Problem::Base* problem);
 
 	void initializeEngine();
   void runSolver();

@@ -12,7 +12,7 @@ class CMAES : public Korali::Solver::Base
   public:
 
   // Public Methods
-	CMAES(BaseProblem* problem);
+	CMAES(Korali::Problem::Base* problem);
 
   // Runtime Methods (to be inherited from base class in the future)
   void initializeInternalVariables();

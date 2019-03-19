@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	heat2DInit(argc, argv);
 
-  auto problem = Korali::Likelihood(heat2DSolver);
+  auto problem = Korali::Problem::Likelihood(heat2DSolver);
 
   Korali::Parameter::Uniform par0(10.0, 60.0);
   Korali::Parameter::Uniform par1(0.0,  0.5);

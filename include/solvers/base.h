@@ -18,11 +18,12 @@ class Base {
   size_t _maxGens;                  // Max number of Conduit Generations
   size_t _sampleCount;
 	size_t  N; // Parameter Count
-  BaseProblem* _problem;
   bool _verbose;
-  Korali::Conduit::Base* _conduit;
 
-  Base(BaseProblem* problem);
+  Korali::Conduit::Base* _conduit;
+	Korali::Problem::Base* _problem;
+
+	Base(Korali::Problem::Base* problem);
 	void setPopulationSize(int size) { _sampleCount = size; }
 	void setVerbose(bool verbose) { _verbose = verbose; }
 	void setMaxGenerations(int maxGens) { _maxGens = maxGens; }

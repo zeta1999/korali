@@ -1,5 +1,5 @@
-#ifndef _BASECONDUIT_H_
-#define _BASECONDUIT_H_
+#ifndef _KORALI_BASECONDUIT_H_
+#define _KORALI_BASECONDUIT_H_
 
 #include <stdlib.h>
 #include "problems/base.h"
@@ -42,4 +42,4 @@ class Conduit;
 #endif
 
 
-#endif // _BASECONDUIT_H_
+#endif // _KORALI_BASECONDUIT_H_

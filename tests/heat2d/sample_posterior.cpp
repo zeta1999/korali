@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	heat2DInit(argc, argv);
 
-  auto problem = Korali::Posterior(heat2DSolver, 0xC0FFEE);
+  auto problem = Korali::Problem::Posterior(heat2DSolver, 0xC0FFEE);
 
   Korali::Parameter::Uniform par0(10.0, 60.0);
   Korali::Parameter::Uniform par1(0.0,  0.5);

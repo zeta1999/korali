@@ -2,7 +2,7 @@
 #include "parameters/gaussian.h"
 #include "parameters/uniform.h"
 
-Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::BaseProblem::BaseProblem(seed)
+Korali::Problem::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::Problem::Base::Base(seed)
 {
 	_referenceData = NULL;
 	_nData = 0;
@@ -16,14 +16,14 @@ Korali::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) 
 	addParameter(sigma);
 }
 
-void Korali::Likelihood::setReferenceData(size_t nData, double* referenceData)
+void Korali::Problem::Likelihood::setReferenceData(size_t nData, double* referenceData)
 {
 	_nData = nData;
 	_referenceData = referenceData;
 	_referenceDataSet = true;
 }
 
-double Korali::Likelihood::evaluateFitness(double* sample)
+double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 {
 	double sigma = sample[0];
 	double* parameters = &sample[1];

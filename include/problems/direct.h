@@ -3,10 +3,10 @@
 
 #include "problems/base.h"
 
-namespace Korali
+namespace Korali::Problem
 {
 
-class Direct : public BaseProblem
+class Direct : public Korali::Problem::Base
 {
   public:
 	double (*_modelFunction) (double*);

@@ -1,5 +1,5 @@
-#ifndef _KORALI_BASEDISTRIBUTION_H_
-#define _KORALI_BASEDISTRIBUTION_H_
+#ifndef _KORALI_BASEPARAMETER_H_
+#define _KORALI_BASEPARAMETER_H_
 
 #include <string>
 #include <gsl/gsl_rng.h>
@@ -10,10 +10,10 @@
 namespace Korali::Parameter
 {
 
-class BaseDistribution
+class Base
 {
  public:
- BaseDistribution();
+ Base();
  gsl_rng* _range;
 
  std::string _name;
@@ -39,4 +39,4 @@ class BaseDistribution
 
 } // namespace Korali
 
-#endif // _KORALI_BASEDISTRIBUTION_H_
+#endif // _KORALI_BASEPARAMETER_H_

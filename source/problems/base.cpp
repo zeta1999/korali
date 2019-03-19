@@ -1,7 +1,7 @@
 #include "problems/base.h"
 #include <chrono>
 
-Korali::BaseProblem::BaseProblem(size_t seed)
+Korali::Problem::Base::Base(size_t seed)
 {
 	_seed = seed;
 	if (_seed == -1)
@@ -13,28 +13,28 @@ Korali::BaseProblem::BaseProblem(size_t seed)
   gsl_rng_env_setup();
 }
 
-void Korali::BaseProblem::addParameter(Korali::Parameter::BaseDistribution* p)
+void Korali::Problem::Base::addParameter(Korali::Parameter::Base* p)
 {
 	if(p->_name == "") p->setName("Parameter" + std::to_string(_parameterCount));
 	_parameters.push_back(p);
 	_parameterCount = _parameters.size();
 }
 
-double Korali::BaseProblem::getPriorsLogProbabilityDensity(double *x)
+double Korali::Problem::Base::getPriorsLogProbabilityDensity(double *x)
 {
   double logp = 0.0;
   for (int i = 0; i < _parameterCount; i++) logp += _parameters[i]->getDensityLog(x[i]);
   return logp;
 }
 
-double Korali::BaseProblem::getPriorsProbabilityDensity(double *x)
+double Korali::Problem::Base::getPriorsProbabilityDensity(double *x)
 {
   double dp = 1.0;
   for (int i = 0; i < _parameterCount; i++) dp *= _parameters[i]->getDensity(x[i]);
   return dp;
 }
 
-void Korali::BaseProblem::initializeParameters()
+void Korali::Problem::Base::initializeParameters()
 {
   // Initialize Parameter Priors
   for (int i = 0; i < _parameterCount; i++)	_parameters[i]->initializeDistribution(_seed+i);

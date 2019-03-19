@@ -3,10 +3,10 @@
 
 #include "problems/base.h"
 
-namespace Korali
+namespace Korali::Problem
 {
 
-class Likelihood : public BaseProblem
+class Likelihood : public Korali::Problem::Base
 {
   public:
 

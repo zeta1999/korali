@@ -6,7 +6,7 @@
 namespace Korali::Parameter
 {
 
-class Exponential : public BaseDistribution
+class Exponential : public Korali::Parameter::Base
 {
  private:
   double _mean;

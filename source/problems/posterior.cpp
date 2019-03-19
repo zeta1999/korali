@@ -1,11 +1,11 @@
 #include "problems/posterior.h"
 #include "parameters/gaussian.h"
 
-Korali::Posterior::Posterior(double* (*modelFunction) (double*), size_t seed) : Korali::Likelihood::Likelihood(modelFunction, seed)
+Korali::Problem::Posterior::Posterior(double* (*modelFunction) (double*), size_t seed) : Korali::Problem::Likelihood::Likelihood(modelFunction, seed)
 {
 }
 
-double Korali::Posterior::evaluateFitness(double* sample)
+double Korali::Problem::Posterior::evaluateFitness(double* sample)
 {
 	double sigma = sample[0];
 	double* parameters = &sample[1];

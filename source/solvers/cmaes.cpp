@@ -2,7 +2,7 @@
 #include "conduits/base.h"
 #include <chrono>
 
-Korali::Solver::CMAES::CMAES(BaseProblem* problem) : Korali::Solver::Base::Base(problem)
+Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 

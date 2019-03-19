@@ -5,22 +5,22 @@
 #include <vector>
 #include "stdlib.h"
 
-namespace Korali
+namespace Korali::Problem
 {
 
-class BaseProblem
+class Base
 {
   public:
 
-	BaseProblem(size_t seed = 0);
+	Base(size_t seed = 0);
 
-	void addParameter(Parameter::BaseDistribution* p);
+	void addParameter(Korali::Parameter::Base* p);
   virtual double evaluateFitness(double* sample) = 0;
 
   size_t _parameterCount;
 	size_t _seed;
 
-  std::vector<Parameter::BaseDistribution*> _parameters;
+  std::vector<Korali::Parameter::Base*> _parameters;
 
   double getPriorsLogProbabilityDensity(double *x);
   double getPriorsProbabilityDensity(double *x);

@@ -1,7 +1,7 @@
 #include "solvers/base.h"
 #include "conduits/base.h"
 
-Korali::Solver::Base::Base(BaseProblem* problem)
+Korali::Solver::Base::Base(Korali::Problem::Base* problem)
 {
   _problem = problem;
   _verbose = false;

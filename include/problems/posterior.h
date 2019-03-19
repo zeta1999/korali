@@ -3,10 +3,10 @@
 
 #include "problems/likelihood.h"
 
-namespace Korali
+namespace Korali::Problem
 {
 
-class Posterior : public Likelihood
+class Posterior : public Korali::Problem::Likelihood
 {
   public:
 

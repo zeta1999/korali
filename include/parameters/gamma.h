@@ -6,7 +6,7 @@
 namespace Korali::Parameter
 {
 
-class Gamma : public BaseDistribution
+class Gamma : public Korali::Parameter::Base
 {
  private:
   double _shape;
