@@ -1,7 +1,8 @@
 #include "solvers/cmaes.h"
+#include "conduits/base.h"
 #include <chrono>
 
-Korali::CMAES::CMAES(BaseProblem* problem) : Korali::Conduit::Conduit(problem)
+Korali::CMAES::CMAES(BaseProblem* problem) : Korali::BaseSolver::BaseSolver(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 
@@ -45,9 +46,9 @@ void Korali::CMAES::runSolver()
     for (int i = 0; i < _sampleCount; i++) if (_initializedSample[i] == false)
     {
      _initializedSample[i] = true;
-     evaluateSample(i);
+     _conduit->evaluateSample(i);
     }
-    checkProgress();
+    _conduit->checkProgress();
    }
   updateDistribution(_fitnessVector);
 
@@ -83,7 +84,7 @@ void Korali::CMAES::initializeInternalVariables()
  double dtest, trace;
 
  // Getting sample vector pointer
- _samplePopulation = getSampleArrayPointer();
+ _samplePopulation = _conduit->getSampleArrayPointer();
 
  // Initializing MU and its weights
 

@@ -1,4 +1,5 @@
 #include "solvers/tmcmc.h"
+#include "conduits/base.h"
 #include <numeric>
 #include <limits>
 #include <chrono>
@@ -10,7 +11,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
-Korali::TMCMC::TMCMC(BaseProblem* problem) : Korali::Conduit::Conduit(problem)
+Korali::TMCMC::TMCMC(BaseProblem* problem) : Korali::BaseSolver::BaseSolver(problem)
 {
  TolCOV  = 1;
  MinStep = 1e-9;
@@ -37,9 +38,9 @@ void Korali::TMCMC::runSolver()
    for (int c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
    {
     chainPendingFitness[c] = true;
-    if(generateCandidate(c)) evaluateSample(c);  else processSample(c, -DBL_MAX);
+    if(generateCandidate(c)) _conduit->evaluateSample(c);  else processSample(c, -DBL_MAX);
    }
-   checkProgress();
+   _conduit->checkProgress();
   }
 
   auto t1 = std::chrono::system_clock::now();
@@ -151,7 +152,7 @@ void Korali::TMCMC::initializeEngine()
  _meanTheta =  (double*) calloc (N+1, sizeof(double));
 
  // Initializing TMCMC Leaders
- ccPoints    = getSampleArrayPointer();
+ ccPoints    = _conduit->getSampleArrayPointer();
  ccFitness   = (double*) calloc (_sampleCount, sizeof(double));
  ccLogPrior  = (double*) calloc (_sampleCount, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 

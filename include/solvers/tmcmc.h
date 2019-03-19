@@ -1,7 +1,7 @@
 #ifndef _KORALI_TMCMC_H_
 #define _KORALI_TMCMC_H_
 
-#include "conduits/base.h"
+#include "solvers/base.h"
 
 namespace Korali
 {
@@ -13,7 +13,7 @@ typedef struct fparam_s {
     double        tol;
 } fparam_t;
 
-class TMCMC : public Conduit
+class TMCMC : public BaseSolver
 {
   public:
 

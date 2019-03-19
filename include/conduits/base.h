@@ -7,28 +7,18 @@
 namespace Korali
 {
 
+class BaseSolver;
+
 class BaseConduit {
   public:
 
-	// Korali Runtime Variables
-  size_t _maxGens;                  // Max number of Conduit Generations
-  size_t _sampleCount;
-	size_t  N; // Parameter Count
-  BaseProblem* _problem;
-  bool _verbose;
+  BaseSolver* _solver;
 
-  BaseConduit(BaseProblem* problem);
-	void setPopulationSize(int size) { _sampleCount = size; }
-	void setVerbose(bool verbose) { _verbose = verbose; }
-	void setMaxGenerations(int maxGens) { _maxGens = maxGens; }
-
+  BaseConduit(BaseSolver* solver);
+  virtual void initialize() = 0;
 	virtual void evaluateSample(size_t sampleId) = 0; // To be satisfied by the conduit
 	virtual double* getSampleArrayPointer()  = 0;     // To be satisfied by the conduit
 	virtual void checkProgress() = 0;                 // To be satisfied by the conduit
-	virtual void run();                               // To be satisfied by the conduit
-
-	virtual void runSolver() = 0;                                    // To be satisfied by the sampler/optimizer
-	virtual void processSample(size_t sampleId, double fitness) = 0; // To be satisfied by the sampler/optimizer
 };
 
 class Conduit;
@@ -57,14 +47,14 @@ namespace Korali
 {
 class Conduit : public BaseConduit {
 	public:
-	Conduit(BaseProblem* problem) : BaseConduit(problem) {}
-	void run()
+	Conduit(BaseSolver* solver) : BaseConduit(solver)
 	{
 		fprintf(stderr, "[Korali] Error: No Korali communication conduit was set.\n");
 		fprintf(stderr, "[Korali] Use: $export KORALI_CONDUIT={mpi, upcxx, single}, and recompile.\n");
 		exit(-1);
 	}
 	double* getSampleArrayPointer(){return 0;}
+	void initialize(){};
 	void evaluateSample(size_t sampleId){}
 	void checkProgress(){}
 	};

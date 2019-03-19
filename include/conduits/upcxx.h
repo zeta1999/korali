@@ -1,7 +1,7 @@
 #ifndef _CONDUIT_H_
 #define _CONDUIT_H_
 
-#include "base.h"
+#include "conduits/base.h"
 #include <upcxx/upcxx.hpp>
 #include <queue>
 
@@ -21,15 +21,13 @@ class Conduit : public BaseConduit
 	std::queue<int> _workers;
 	upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
 
-  Conduit(BaseProblem* problem);
+  Conduit(BaseSolver* solver);
+  void initialize();
 	void evaluateSample(size_t sampleId);
 	double* getSampleArrayPointer();
 	void checkProgress();
-	void run();
 	void supervisorThread();
 	void workerThread();
-	virtual void runSolver() = 0;                                      // To be satisfied by the sampler/optimizer
-	virtual void processSample(size_t sampleId, double fitness) = 0;   // To be satisfied by the sampler/optimizer
 };
 
 } // namespace Korali

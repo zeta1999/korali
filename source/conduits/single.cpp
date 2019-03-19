@@ -1,24 +1,17 @@
 #ifdef _KORALI_SINGLE_CONDUIT
 #include "conduits/single.h"
+#include "solvers/base.h"
 
-Korali::Conduit::Conduit(BaseProblem* problem) : Korali::BaseConduit::BaseConduit (problem) {}
+Korali::Conduit::Conduit(BaseSolver* solver) : Korali::BaseConduit::BaseConduit (solver) {}
 
-void Korali::Conduit::run()
+void Korali::Conduit::initialize()
 {
 	_k = this;
-	_k->Korali::BaseConduit::run();
-
-  #ifndef _KORALI_SINGLE_CONDUIT
-		fprintf(stderr, "[Korali] Warning: No Korali communication conduit was set.\n");
-		fprintf(stderr, "[Korali] Use: $export KORALI_CONDUIT=conduit.\n");
-		fprintf(stderr, "[Korali] Where conduit = {mpi, upcxx, single}, and recompile.\n");
-		fprintf(stderr, "[Korali] Defaulting to: single\n");
-  #endif
 
   // Allocating Global Pointer for Samples
-	sampleArrayPointer  = (double*) calloc (N*_sampleCount, sizeof(double));
+	sampleArrayPointer  = (double*) calloc (_solver->N*_solver->_sampleCount, sizeof(double));
 
-	runSolver();
+	_solver->runSolver();
 }
 
 double* Korali::Conduit::getSampleArrayPointer()
@@ -28,8 +21,8 @@ double* Korali::Conduit::getSampleArrayPointer()
 
 void Korali::Conduit::evaluateSample(size_t sampleId)
 {
-	double fitness = _problem->evaluateFitness(&sampleArrayPointer[N*sampleId]);
-	processSample(sampleId, fitness);
+	double fitness = _solver->_problem->evaluateFitness(&sampleArrayPointer[_solver->N*sampleId]);
+	_solver->processSample(sampleId, fitness);
 }
 
 void Korali::Conduit::checkProgress()

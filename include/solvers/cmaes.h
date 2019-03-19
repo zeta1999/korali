@@ -1,13 +1,13 @@
 #ifndef _KORALI_CMAES_H_
 #define _KORALI_CMAES_H_
 
-#include "conduits/base.h"
+#include "solvers/base.h"
 #include "parameters/gaussian.h"
 
 namespace Korali
 {
 
-class CMAES : public Conduit
+class CMAES : public BaseSolver
 {
   public:
 
