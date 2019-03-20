@@ -10,7 +10,7 @@ class Posterior : public Korali::Problem::Likelihood
 {
   public:
 
-	Posterior(double* (*modelFunction) (double*), size_t seed = -1);
+	Posterior(void (*modelFunction) (double*, double*), size_t seed = -1);
 	double evaluateFitness(double* sample);
 };
 

@@ -53,5 +53,6 @@ void Korali::Solver::Base::run()
 			exit(-1);
   }
 
+  _problem->_conduit = _conduit;
   _conduit->initialize();
 }

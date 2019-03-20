@@ -14,7 +14,7 @@
 
 pointsInfo p;
 
-double* heat2DSolver(double* pars)
+void heat2DSolver(double* pars, double* output)
 {
   double tolerance = 1e-8; // L2 Difference Tolerance before reaching convergence.
   size_t N0 = 7; // 2^N0 + 1 elements per side
@@ -52,12 +52,10 @@ double* heat2DSolver(double* pars)
 	for(int i = 0; i < p.nPoints; i++)
 	{
 		int k = ceil(p.xPos[i]/h);	int l = ceil(p.yPos[i]/h);
-		p.simTemp[i] = g[0].U[k][l];
+		output[i] = g[0].U[k][l];
 	}
 
   freeGrids(g, gridCount);
-
-  return p.simTemp;
 }
 
 void applyGaussSeidel(gridLevel* g, int l, int relaxations)
@@ -238,7 +236,6 @@ void heat2DInit(int argc, char* argv[])
   p.xPos    = (double*) calloc (sizeof(double), p.nPoints);
   p.yPos    = (double*) calloc (sizeof(double), p.nPoints);
   p.refTemp = (double*) calloc (sizeof(double), p.nPoints);
-  p.simTemp = (double*) calloc (sizeof(double), p.nPoints);
 
 //  if (myRank == 0)
   for (int i = 0; i < p.nPoints; i++)

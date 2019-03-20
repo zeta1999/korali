@@ -88,6 +88,7 @@ void Korali::Solver::TMCMC::updateDatabase(double* point, double fitness)
  for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = point[i];    // Re-add burn-in
  databaseFitness[databaseEntries] = fitness;
  databaseEntries++;
+ //printf("Database Entries: %ld\n", databaseEntries);
 }
 
 void Korali::Solver::TMCMC::generateCandidate(int c)

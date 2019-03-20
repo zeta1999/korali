@@ -19,13 +19,7 @@ void Korali::Conduit::OpenMP::initialize()
 
 	// Allocating Global Pointer for Samples
 	sampleArrayPointer  = (double*) calloc (_solver->N*_solver->_sampleCount, sizeof(double));
-
-	// Allocating sampleId array for workers
-	_evaluateSampleId = (size_t*) calloc (_threadCount, sizeof(size_t));
-
-	// Allocating evaluation flag array for workers
-	_evaluateSampleFlag = (bool*) calloc (_threadCount, sizeof(bool));
-	for (int i = 1; i < _threadCount; i++) _evaluateSampleFlag[i] = false;
+	fitnessArrayPointer = (double*) calloc (_solver->_problem->_referenceDataSize*_threadCount, sizeof(double));
 
   #pragma omp parallel
 	{
@@ -37,9 +31,6 @@ void Korali::Conduit::OpenMP::initialize()
 
 void Korali::Conduit::OpenMP::supervisorThread()
 {
-  // Creating Worker Queue
-  for (int i = 1; i < _threadCount; i++) _workers.push(i);
-
 	_solver->runSolver();
 
 	_continueEvaluations = false;
@@ -50,37 +41,53 @@ double* Korali::Conduit::OpenMP::getSampleArrayPointer()
   return sampleArrayPointer;
 }
 
+double* Korali::Conduit::OpenMP::getFitnessArrayPointer()
+{
+	int threadId = omp_get_thread_num();
+  return &fitnessArrayPointer[_solver->_problem->_referenceDataSize*threadId];
+}
+
 void Korali::Conduit::OpenMP::workerThread()
 {
 	int threadId = omp_get_thread_num();
 
 	while(_continueEvaluations)
 	{
-		if (_evaluateSampleFlag[threadId])
+		bool foundSample = false;
+	  size_t sampleId = 0;
+
+	  if (_queueLock.trylock())
+	  {
+		  if (!_sampleQueue.empty())
+		  {
+		   sampleId = _sampleQueue.front();
+		   _sampleQueue.pop();
+		   foundSample = true;
+		  }
+		  _queueLock.unlock();
+	  }
+
+		if (foundSample)
 		{
-			_evaluateSampleFlag[threadId] = false;
-			double candidateFitness = _solver->_problem->evaluateFitness(&sampleArrayPointer[_solver->N*_evaluateSampleId[threadId]]);
-			//printf("Thread %d/%d: Sample: %ld, Fitness: %f\n", threadId, _threadCount, _evaluateSampleId, candidateFitness);
+			double candidateFitness = _solver->_problem->evaluateFitness(&sampleArrayPointer[_solver->N*sampleId]);
+			//printf("Thread %d/%d: Sample: %ld, Fitness: %f\n", threadId, _threadCount, sampleId, candidateFitness);
 
-			#pragma omp critical (DatabaseUpdate)
-			 _solver->processSample(_evaluateSampleId[threadId], candidateFitness);
+			_queueLock.lock();
+			 _solver->processSample(sampleId, candidateFitness);
+			_queueLock.unlock();
 
-			 #pragma omp critical (QueueUpdate)
-			 _workers.push(threadId);
+			//printf("Thread %d/%d: Updated\n", threadId, _threadCount);
 		}
 	}
 }
 
 void Korali::Conduit::OpenMP::evaluateSample(size_t sampleId)
 {
-	while(_workers.empty());
+	//printf("SampleId: %ld\n", sampleId);
 
-  #pragma omp critical (QueueUpdate)
-	{
-	 int workerId = _workers.front();
-	 _workers.pop();
-	 _evaluateSampleId[workerId] = sampleId; _evaluateSampleFlag[workerId] = true;
-	}
+	_queueLock.lock();
+	 _sampleQueue.push(sampleId);
+	_queueLock.unlock();
 }
 
 void Korali::Conduit::OpenMP::checkProgress()

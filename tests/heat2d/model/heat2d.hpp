@@ -8,7 +8,6 @@ typedef struct pointsInfoStruct {
     double* xPos;
     double* yPos;
     double* refTemp;
-    double* simTemp;
 } pointsInfo;
 
 typedef struct gridLevelStruct {
@@ -23,7 +22,7 @@ typedef struct gridLevelStruct {
 } gridLevel;
 
 // Main solver
-double* heat2DSolver(double* pars);
+void heat2DSolver(double* pars, double* output);
 
 // Helper Functions
 gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars);

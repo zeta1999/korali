@@ -10,15 +10,14 @@ class Likelihood : public Korali::Problem::Base
 {
   public:
 
-	size_t _nData;
 	double* _referenceData;
-	double* (*_modelFunction) (double*);
+	void (*_modelFunction) (double*, double*);
 
 	bool _modelDataSet;
 	bool _referenceDataSet;
 
   void setReferenceData(size_t nData, double* referenceData);
-	Likelihood(double* (*modelFunction) (double*), size_t seed = -1);
+	Likelihood(void (*modelFunction) (double*, double*), size_t seed = -1);
 	double evaluateFitness(double* sample);
 };
 

@@ -23,11 +23,11 @@ void Korali::Conduit::UPCXX::initialize()
 	if (_rankCount < 2)
 	{
 		fprintf(stderr, "[Korali] Error: Running Korali's UPCxx Conduit with less than 2 ranks is not allowed.\n");
-		fprintf(stderr, "[Korali] Try defining $export OMP_NUM_THREADS=n, where n > 1.\n");
 		exit(-1);
 	}
 
   // Allocating Global Pointer for Samples
+	fitnessArrayPointer = (double*) calloc (_solver->_problem->_referenceDataSize, sizeof(double));
 	if (_rankId == 0) sampleGlobalPtr  = upcxx::new_array<double>(_solver->N*_solver->_sampleCount);
 	upcxx::broadcast(&sampleGlobalPtr,  1, 0).wait();
 
@@ -50,6 +50,11 @@ void Korali::Conduit::UPCXX::supervisorThread()
 double* Korali::Conduit::UPCXX::getSampleArrayPointer()
 {
   return sampleGlobalPtr.local();
+}
+
+double* Korali::Conduit::UPCXX::getFitnessArrayPointer()
+{
+  return fitnessArrayPointer;
 }
 
 void Korali::Conduit::UPCXX::workerThread()

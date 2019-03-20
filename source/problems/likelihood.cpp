@@ -1,11 +1,12 @@
 #include "problems/likelihood.h"
 #include "parameters/gaussian.h"
 #include "parameters/uniform.h"
+#include "conduits/base.h"
 
-Korali::Problem::Likelihood::Likelihood(double* (*modelFunction) (double*), size_t seed) : Korali::Problem::Base::Base(seed)
+Korali::Problem::Likelihood::Likelihood(void (*modelFunction) (double*, double*), size_t seed) : Korali::Problem::Base::Base(seed)
 {
 	_referenceData = NULL;
-	_nData = 0;
+	_referenceDataSize = 0;
 	_modelFunction = modelFunction;
 	_referenceDataSet = false;
 
@@ -17,7 +18,7 @@ Korali::Problem::Likelihood::Likelihood(double* (*modelFunction) (double*), size
 
 void Korali::Problem::Likelihood::setReferenceData(size_t nData, double* referenceData)
 {
-	_nData = nData;
+	_referenceDataSize = nData;
 	_referenceData = referenceData;
 	_referenceDataSet = true;
 }
@@ -28,7 +29,9 @@ double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 
 	double sigma = sample[0];
 	double* parameters = &sample[1];
-  double* measuredData = _modelFunction(parameters);
+	double* fitnessData = _conduit->getFitnessArrayPointer();
 
-	return -Korali::Parameter::Gaussian::logLikelihood(sigma, _nData, _referenceData, measuredData);
+	_modelFunction(parameters, fitnessData);
+
+	return -Korali::Parameter::Gaussian::logLikelihood(sigma, _referenceDataSize, _referenceData, fitnessData);
 }

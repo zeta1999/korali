@@ -10,6 +10,7 @@ Korali::Problem::Base::Base(size_t seed)
 		_seed  = std::chrono::nanoseconds(now_c).count();
 	}
 	_parameterCount = 0;
+	_referenceDataSize = 1;
   gsl_rng_env_setup();
 }
 
