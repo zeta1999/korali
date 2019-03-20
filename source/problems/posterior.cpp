@@ -7,6 +7,8 @@ Korali::Problem::Posterior::Posterior(double* (*modelFunction) (double*), size_t
 
 double Korali::Problem::Posterior::evaluateFitness(double* sample)
 {
+	if (isSampleOutsideBounds(sample)) return -DBL_MAX;
+
 	double sigma = sample[0];
 	double* parameters = &sample[1];
   double* measuredData = _modelFunction(parameters);

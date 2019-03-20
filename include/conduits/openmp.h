@@ -11,10 +11,11 @@ class OpenMP : public Base
 {
   public:
   int _threadCount;
-
   bool _continueEvaluations;
 
-	std::queue<size_t> _pendingSamples;
+	std::queue<int> _workers;
+	bool* _evaluateSampleFlag;
+	size_t* _evaluateSampleId;
 	double* sampleArrayPointer;
 
 	OpenMP(Korali::Solver::Base* solver);

@@ -22,6 +22,7 @@ class Base
 
   std::vector<Korali::Parameter::Base*> _parameters;
 
+  bool isSampleOutsideBounds(double* sample);
   double getPriorsLogProbabilityDensity(double *x);
   double getPriorsProbabilityDensity(double *x);
   void initializeParameters();

@@ -10,13 +10,13 @@ OBJECTS = model/gaussian.o
 all: $(BINARIES)
 
 $(BINARIES) : % : %.o $(OBJECTS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 model/%.o: 
 	$(MAKE) -C model all 
 
 %.o: %.cpp
-	$(CC) -c $(CXXFLAGS) $<
+	$(CXX) -c $(CXXFLAGS) $<
 
 .PHONY: clean
 clean:

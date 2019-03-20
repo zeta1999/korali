@@ -34,7 +34,7 @@ void Korali::Solver::Base::run()
 
   if (conduitString == "upcxx")
    {
-    #ifdef UPCXX_VERSION
+    #ifdef _KORALI_USE_UPCXX
   	 _conduit = new Korali::Conduit::UPCXX(this);  recognized = true;
     #else
 		 fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");

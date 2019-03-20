@@ -24,6 +24,8 @@ void Korali::Problem::Likelihood::setReferenceData(size_t nData, double* referen
 
 double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 {
+	if (isSampleOutsideBounds(sample)) return -DBL_MAX;
+
 	double sigma = sample[0];
 	double* parameters = &sample[1];
   double* measuredData = _modelFunction(parameters);

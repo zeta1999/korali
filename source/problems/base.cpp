@@ -43,3 +43,8 @@ void Korali::Problem::Base::initializeParameters()
 	for (int i = 0; i < _parameterCount; i++) _parameters[i]->checkBounds();
 }
 
+bool Korali::Problem::Base::isSampleOutsideBounds(double* sample)
+{
+  for (int i = 0; i < _parameterCount; i++) if (sample[i] < _parameters[i]->_lowerBound || sample[i] > _parameters[i]->_upperBound) return true;
+  return false;
+}

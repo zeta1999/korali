@@ -78,7 +78,7 @@ class TMCMC : public Korali::Solver::Base
   void resampleGeneration();
   void updateDatabase(double* point, double fitness);
   void processSample(size_t c, double fitness);
-  bool generateCandidate(int c);
+  void generateCandidate(int c);
   void computeChainCovariances(double** chain_cov, int newchains);
   void minSearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin);
   static double tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero);

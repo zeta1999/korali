@@ -1,8 +1,7 @@
-#CXX = upcxx
-CXX = icc
-CXXFLAGS += -O3 -g -std=c++17
-#CXXFLAGS += -O0 -pg -std=c++17
-CXXFLAGS += -Wall -Wfatal-errors `gsl-config --cflags` -fopenmp
+CXX = upcxx
+CXXFLAGS += -O3 -g 
+#CXXFLAGS += -O0 -g 
+CXXFLAGS += -std=c++17 -Wall -Wfatal-errors `gsl-config --cflags` -fopenmp -D_KORALI_USE_UPCXX
 LDFLAGS += `gsl-config --libs` -lm -fopenmp
 
 COMPILE.cxx = $(CXX) $(CXXFLAGS) -c -o $@

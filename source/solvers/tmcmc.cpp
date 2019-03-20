@@ -38,7 +38,8 @@ void Korali::Solver::TMCMC::runSolver()
    for (int c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
    {
     chainPendingFitness[c] = true;
-    if(generateCandidate(c)) _conduit->evaluateSample(c);  else processSample(c, -DBL_MAX);
+    generateCandidate(c);
+    _conduit->evaluateSample(c);
    }
    _conduit->checkProgress();
   }
@@ -89,19 +90,15 @@ void Korali::Solver::TMCMC::updateDatabase(double* point, double fitness)
  databaseEntries++;
 }
 
-bool Korali::Solver::TMCMC::generateCandidate(int c)
+void Korali::Solver::TMCMC::generateCandidate(int c)
 {
- if (_currentGeneration == 0) return true;
+ if (_currentGeneration == 0) return;
 
  double* covariance = _useLocalCov ? local_cov[c] : _covarianceMatrix;
  gsl_vector_view out_view = gsl_vector_view_array(&ccPoints[c*N], N);
  gsl_matrix_view sigma_view  = gsl_matrix_view_array(covariance, N,N);
  gsl_vector_view mean_view  = gsl_vector_view_array(&clPoints[c*N], N);
  gsl_ran_multivariate_gaussian(chainGSLRange[c], &mean_view.vector, &sigma_view.matrix, &out_view.vector);
-
- for (int i = 0; i < N; i++) if (ccPoints[c*N + i] < _problem->_parameters[i]->_lowerBound || ccPoints[c*N + i] > _problem->_parameters[i]->_upperBound) return false;
-
- return true;
 }
 
 void Korali::Solver::TMCMC::saveResults()
