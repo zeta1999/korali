@@ -4,7 +4,6 @@ LDFLAGS  += -L../../source -lkorali
 CXXFLAGS += -I../../include
 BINARIES = minimize_function sample_function
 OBJECTS = model/ackley.o
-CC = upcxx
 
 .SECONDARY:
 .PHONY: all

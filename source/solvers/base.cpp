@@ -1,7 +1,7 @@
 #include "solvers/base.h"
-#include "conduits/base.h"
 #include "conduits/upcxx.h"
 #include "conduits/single.h"
+#include "conduits/openmp.h"
 
 Korali::Solver::Base::Base(Korali::Problem::Base* problem)
 {
@@ -20,7 +20,7 @@ void Korali::Solver::Base::run()
   std::string conduitString = getenv("KORALI_CONDUIT");
 
   bool recognized = false;
-  auto printSyntax = [](){fprintf(stderr, "[Korali] Use $export KORALI_CONDUIT={single,smp,upcxx,mpi} to select a conduit.\n");};
+  auto printSyntax = [](){fprintf(stderr, "[Korali] Use $export KORALI_CONDUIT={single,openmp,upcxx,mpi} to select a conduit.\n");};
 
   if (conduitString == "")
   {
@@ -31,7 +31,20 @@ void Korali::Solver::Base::run()
   }
 
   if (conduitString == "single") { _conduit = new Korali::Conduit::Single(this); recognized = true; }
-  if (conduitString == "upcxx")  { _conduit = new Korali::Conduit::UPCXX(this);  recognized = true; }
+
+  if (conduitString == "upcxx")
+   {
+    #ifdef UPCXX_VERSION
+  	 _conduit = new Korali::Conduit::UPCXX(this);  recognized = true;
+    #else
+		 fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");
+		 printSyntax();
+		 fprintf(stderr, "[Korali] Or reinstall Korali with the proper configuration to support UPC++.\n");
+		 exit(-1);
+    #endif
+   }
+
+  if (conduitString == "openmp") { _conduit = new Korali::Conduit::OpenMP(this); recognized = true; }
 
   if (recognized == false)
   {

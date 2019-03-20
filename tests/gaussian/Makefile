@@ -4,7 +4,6 @@ LDFLAGS  += -L../../source -lkorali
 CXXFLAGS += -I../../include
 BINARIES = maximize_function sample_function
 OBJECTS = model/gaussian.o
-CC = upcxx
 
 .SECONDARY:
 .PHONY: all

@@ -1,5 +1,6 @@
 #include "conduits/upcxx.h"
 #include "solvers/base.h"
+#ifdef UPCXX_VERSION
 
 Korali::Conduit::UPCXX* _k;
 
@@ -19,7 +20,12 @@ void Korali::Conduit::UPCXX::initialize()
 	_rankId = upcxx::rank_me();
 	_rankCount = upcxx::rank_n();
 
-	if (_rankCount < 2) { fprintf(stderr, "[Korali] Error: Running Korali's UPCxx Conduit with less than 2 ranks is not allowed.\n"); exit(-1); }
+	if (_rankCount < 2)
+	{
+		fprintf(stderr, "[Korali] Error: Running Korali's UPCxx Conduit with less than 2 ranks is not allowed.\n");
+		fprintf(stderr, "[Korali] Try defining $export OMP_NUM_THREADS=n, where n > 1.\n");
+		exit(-1);
+	}
 
   // Allocating Global Pointer for Samples
 	if (_rankId == 0) sampleGlobalPtr  = upcxx::new_array<double>(_solver->N*_solver->_sampleCount);
@@ -74,3 +80,5 @@ void Korali::Conduit::UPCXX::checkProgress()
 {
 	upcxx::progress();
 }
+
+#endif // #ifdef UPCXX_VERSION
