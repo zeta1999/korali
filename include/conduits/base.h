@@ -27,19 +27,4 @@ class Conduit;
 
 } // namespace Korali
 
-// Choosing correct conduit from compilation defined values
-
-#ifdef KORALI_UPCXX_CONDUIT
-#include "upcxx.h"
-#endif
-
-#ifdef KORALI_MPI_CONDUIT
-#include "mpi.h"
-#endif
-
-#ifdef KORALI_SINGLE_CONDUIT
-#include "single.h"
-#endif
-
-
 #endif // _KORALI_BASECONDUIT_H_

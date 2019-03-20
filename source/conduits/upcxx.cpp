@@ -1,4 +1,3 @@
-#ifdef KORALI_UPCXX_CONDUIT
 #include "conduits/upcxx.h"
 #include "solvers/base.h"
 
@@ -75,4 +74,3 @@ void Korali::Conduit::UPCXX::checkProgress()
 {
 	upcxx::progress();
 }
-#endif
