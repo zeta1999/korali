@@ -2,6 +2,13 @@
 #include "conduits/base.h"
 #include <chrono>
 
+Korali::Solver::CMAESParameter::CMAESParameter()
+{
+	 _initialValue = 0.0;
+	 _initialStdDev = 0.1;
+	 _minStdDevChange = 0.0;
+}
+
 Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
@@ -25,11 +32,18 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
 
  _gaussianGenerator = new Parameter::Gaussian(0.0, 1.0);
  _gaussianGenerator->initializeDistribution(problem->_seed + _problem->_parameterCount + 0xF0);
+
+ for (int i = 0; i < N; i++)
+ {
+	_CMAESParameters.push_back(new CMAESParameter());
+	_CMAESParameters[i]->setInitialValue((_problem->_parameters[i]->_lowerBound + _problem->_parameters[i]->_upperBound)*0.5);
+	_CMAESParameterMap[_problem->_parameters[i]->_name] = _CMAESParameters[i];
+ }
 }
 
 void Korali::Solver::CMAES::runSolver()
 {
- printf("[Korali] CMAES - Parameters: %ld, Seed: %ld\n", N, _problem->_seed);
+ printf("[Korali] Starting CMAES. Parameters: %ld, Seed: 0x%lX\n", N, _problem->_seed);
 
  initializeInternalVariables();
 
@@ -152,7 +166,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  // Setting eigensystem evaluation Frequency
    _covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_problem->_parameterCount)/10.0);
 
- for (i = 0, trace = 0.; i < N; ++i)   trace += _problem->_parameters[i]->_initialStdDev*_problem->_parameters[i]->_initialStdDev;
+ for (i = 0, trace = 0.; i < N; ++i)   trace += _CMAESParameters[i]->_initialStdDev*_CMAESParameters[i]->_initialStdDev;
  //printf("Trace: %f\n", trace);
  sigma = sqrt(trace/N); /* _muEffective/(0.2*_muEffective+sqrt(N)) * sqrt(trace/N); */
 
@@ -202,7 +216,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  for (i = 0; i < N; ++i)
  {
   B[i][i] = 1.;
-  C[i][i] = rgD[i] = _problem->_parameters[i]->_initialStdDev * sqrt(N / trace);
+  C[i][i] = rgD[i] = _CMAESParameters[i]->_initialStdDev * sqrt(N / trace);
   C[i][i] *= C[i][i];
   rgpc[i] = rgps[i] = 0.;
  }
@@ -216,14 +230,14 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  /* set rgxmean */
  for (i = 0; i < N; ++i)
  {
-   if(_problem->_parameters[i]->_initialX < _problem->_parameters[i]->_lowerBound || _problem->_parameters[i]->_initialX > _problem->_parameters[i]->_upperBound)
+   if(_CMAESParameters[i]->_initialValue < _problem->_parameters[i]->_lowerBound || _CMAESParameters[i]->_initialValue > _problem->_parameters[i]->_upperBound)
     {
-    fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _problem->_parameters[i]->_initialX, _problem->_parameters[i]->_name.c_str(), _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
+    fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _CMAESParameters[i]->_initialValue, _problem->_parameters[i]->_name.c_str(), _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
     fprintf(stderr,"[Korali] This may cause the engine to deadlock trying to find a good candidate.\n");
-    fprintf(stderr,"[Korali] Use e.g., parameter.setInitialX(%.4f) to set a new initial value.\n", (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5);
+    fprintf(stderr,"[Korali] Use e.g., parameter.setInitialValue(%.4f) to set a new initial value.\n", (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5);
     }
 
-   rgxmean[i] = rgxold[i] = _problem->_parameters[i]->_initialX;
+   rgxmean[i] = rgxold[i] = _CMAESParameters[i]->_initialValue;
  }
 
  _initializedSample = (bool*) calloc (_sampleCount, sizeof(bool));
@@ -251,7 +265,7 @@ void Korali::Solver::CMAES::prepareGeneration()
 
  /* treat minimal standard deviations and numeric problems */
  for (int i = 0; i < N; ++i)
-  while (sigma * sqrt(C[i][i]) < _problem->_parameters[i]->_minStdDevChange)
+  while (sigma * sqrt(C[i][i]) < _CMAESParameters[i]->_minStdDevChange)
    sigma *= exp(0.05+_sigmaCumulationFactor/_dampFactor);
 
  for (iNk = 0; iNk < _sampleCount; ++iNk)
@@ -496,7 +510,7 @@ bool Korali::Solver::CMAES::checkTermination()
  if ((gen > 1 || state > 1) &&   rgFuncValue[index[0]] <= _stopMinFitness)
  {
   terminate = true;
-  sprintf(_terminationReason, "Fitness Value (%7.2e) < Minimum Fitness (%7.2e)",  rgFuncValue[index[0]], _stopMinFitness);
+  sprintf(_terminationReason, "Fitness Value (%7.2e) < (%7.2e)",  rgFuncValue[index[0]], _stopMinFitness);
  }
 
  /* TolFun */
@@ -504,7 +518,7 @@ bool Korali::Solver::CMAES::checkTermination()
 
  if (gen > 0 && range <= _stopFitnessDiffThreshold) {
   terminate = true;
-  sprintf(_terminationReason, "Function value differences (%7.2e) < Difference Threshold (%7.2e)",  range, _stopFitnessDiffThreshold);
+  sprintf(_terminationReason, "Function value differences (%7.2e) < (%7.2e)",  range, _stopFitnessDiffThreshold);
  }
 
  /* TolFunHist */
@@ -514,7 +528,7 @@ bool Korali::Solver::CMAES::checkTermination()
   if (range <= _stopFitnessDiffHistoryThreshold)
   {
    terminate = true;
-   sprintf(_terminationReason, "Function value changes (%7.2e) < Threshold (%7.2e)", range, _stopFitnessDiffHistoryThreshold);
+   sprintf(_terminationReason, "Function value changes (%7.2e) < (%7.2e)", range, _stopFitnessDiffHistoryThreshold);
   }
  }
 
@@ -524,18 +538,18 @@ bool Korali::Solver::CMAES::checkTermination()
  }
  if (cTemp == 2*N) {
   terminate = true;
-  sprintf(_terminationReason, "Object variable changes below: %7.2e", _stopMinDeltaX);
+  sprintf(_terminationReason, "Object variable changes < %7.2e", _stopMinDeltaX);
  }
 
  /* TolUpX */
  for(i=0; i<N; ++i) {
-  if (sigma * sqrt(C[i][i]) > _stopMaxStdDevXFactor * _problem->_parameters[i]->_initialStdDev)
+  if (sigma * sqrt(C[i][i]) > _stopMaxStdDevXFactor * _CMAESParameters[i]->_initialStdDev)
    break;
  }
 
  if (i < N) {
   terminate = true;
-  sprintf(_terminationReason, "Standard deviation increased by more than %7.2e, larger initial standard deviation recommended.", _stopMaxStdDevXFactor);
+  sprintf(_terminationReason, "Standard deviation increased by > %7.2e. Try a larger initial stddev.", _stopMaxStdDevXFactor);
  }
 
  /* Condition of C greater than dMaxSignifKond */
@@ -579,7 +593,7 @@ bool Korali::Solver::CMAES::checkTermination()
  if(countevals >= _maxFitnessEvaluations)
  {
   terminate = true;
-  sprintf(_terminationReason, "Conducted %.0f function evaluations >= Maximum (%lu).", countevals, _maxFitnessEvaluations); }
+  sprintf(_terminationReason, "Conducted %.0f function evaluations >= (%lu).", countevals, _maxFitnessEvaluations); }
 
  if(gen >= _maxGens)
  {

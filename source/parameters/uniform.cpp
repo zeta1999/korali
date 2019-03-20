@@ -1,6 +1,7 @@
 #include "parameters/uniform.h"
 
-Korali::Parameter::Uniform::Uniform(double min, double max) : Korali::Parameter::Base::Base()
+Korali::Parameter::Uniform::Uniform(double min, double max) : Korali::Parameter::Uniform::Uniform("NoNameUniform", min, max) {}
+Korali::Parameter::Uniform::Uniform(std::string name, double min, double max) : Korali::Parameter::Base::Base(name)
 {
 	_min = min;
 	_max = max;

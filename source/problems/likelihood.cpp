@@ -11,7 +11,6 @@ Korali::Problem::Likelihood::Likelihood(double* (*modelFunction) (double*), size
 
 	auto sigma = new Korali::Parameter::Uniform(0.0, +20.0);
 	sigma->setName("Sigma");
-	sigma->setInitialX(+10.0);
 	sigma->setBounds(0, +20.0);
 	addParameter(sigma);
 }

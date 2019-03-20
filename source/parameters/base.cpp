@@ -1,11 +1,8 @@
 #include "parameters/base.h"
 
-Korali::Parameter::Base::Base()
+Korali::Parameter::Base::Base(std::string name)
 {
- _name = "NoName";
- _initialX = 0.0;
- _initialStdDev = 0.1;
- _minStdDevChange = 0.0;
+ _name = name;
  _lowerBound = 0.0;
  _upperBound = -1.0;
 }

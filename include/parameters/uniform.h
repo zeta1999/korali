@@ -14,6 +14,7 @@ class Uniform : public Korali::Parameter::Base
 
  public:
   Uniform(double min, double max);
+  Uniform(std::string name, double min, double max);
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();

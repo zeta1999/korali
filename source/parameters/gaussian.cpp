@@ -1,6 +1,7 @@
 #include "parameters/gaussian.h"
 
-Korali::Parameter::Gaussian::Gaussian(double mean, double sigma) : Korali::Parameter::Base::Base()
+Korali::Parameter::Gaussian::Gaussian(double mean, double sigma) : Korali::Parameter::Gaussian::Gaussian("NoNameGaussian", mean, sigma){}
+Korali::Parameter::Gaussian::Gaussian(std::string name, double mean, double sigma) : Korali::Parameter::Base::Base(name)
 {
 	_mean = mean;
 	_sigma = sigma;

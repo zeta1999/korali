@@ -14,6 +14,7 @@ class Gaussian : public Korali::Parameter::Base
 
  public:
   Gaussian(double mean, double sigma);
+  Gaussian(std::string name, double mean, double sigma);
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();

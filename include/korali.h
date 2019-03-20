@@ -13,4 +13,7 @@
 #include "solvers/cmaes.h"
 #include "solvers/tmcmc.h"
 
+#include "conduits/single.h"
+#include "conduits/upcxx.h"
+
 #endif // _KORALI_H_

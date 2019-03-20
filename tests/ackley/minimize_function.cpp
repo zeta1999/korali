@@ -8,10 +8,11 @@ int main(int argc, char* argv[])
   Korali::Parameter::Uniform p(-32.0, +32.0);
 	for (int i = 0; i < NDIMS; i++) problem.addParameter(&p);
 
-  auto Solver = Korali::Solver::CMAES(&problem);
-	Solver.setStopMinDeltaX(1e-11);
-	Solver.setPopulationSize(128);
-	Solver.run();
+  auto solver = Korali::Solver::CMAES(&problem);
+
+  solver.setStopMinDeltaX(1e-11);
+	solver.setPopulationSize(128);
+	solver.run();
 
 	return 0;
 }

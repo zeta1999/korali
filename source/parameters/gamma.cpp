@@ -1,6 +1,7 @@
 #include "parameters/gamma.h"
 
-Korali::Parameter::Gamma::Gamma(double shape, double rate) : Korali::Parameter::Base::Base()
+Korali::Parameter::Gamma::Gamma(double shape, double rate) : Korali::Parameter::Gamma::Gamma("NoNameGamma", shape, rate) {}
+Korali::Parameter::Gamma::Gamma(std::string name, double shape, double rate) : Korali::Parameter::Base::Base(name)
 {
 	_shape = shape;
 	_rate = rate;

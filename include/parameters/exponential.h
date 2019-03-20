@@ -13,6 +13,7 @@ class Exponential : public Korali::Parameter::Base
 
  public:
   Exponential(double mean);
+  Exponential(std::string name, double mean);
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();

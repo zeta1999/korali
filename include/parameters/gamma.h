@@ -14,6 +14,7 @@ class Gamma : public Korali::Parameter::Base
 
  public:
   Gamma(double shape, double rate);
+  Gamma(std::string name, double shape, double rate);
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();

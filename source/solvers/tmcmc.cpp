@@ -22,7 +22,7 @@ Korali::Solver::TMCMC::TMCMC(Korali::Problem::Base* problem) : Korali::Solver::B
 
 void Korali::Solver::TMCMC::runSolver()
 {
- printf("[Korali] TMCMC - Parameters: %ld, Seed: %ld\n", N, _problem->_seed);
+ printf("[Korali] Starting TMCMC. Parameters: %ld, Seed: 0x%lX\n", N, _problem->_seed);
  double samplingTime = 0.0;
  double engineTime = 0.0;
  initializeEngine();

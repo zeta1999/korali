@@ -1,6 +1,7 @@
 #include "parameters/exponential.h"
 
-Korali::Parameter::Exponential::Exponential(double mean) : Korali::Parameter::Base::Base()
+Korali::Parameter::Exponential::Exponential(double mean) : Korali::Parameter::Exponential::Exponential("NoNameExponential", mean){}
+Korali::Parameter::Exponential::Exponential(std::string name, double mean) : Korali::Parameter::Base::Base(name)
 {
 	_mean = mean;
 }
