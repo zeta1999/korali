@@ -16,43 +16,43 @@ Korali::Solver::Base::Base(Korali::Problem::Base* problem)
 void Korali::Solver::Base::run()
 {
   _problem->initializeParameters();
-
-  std::string conduitString = getenv("KORALI_CONDUIT");
-
-  bool recognized = false;
   auto printSyntax = [](){fprintf(stderr, "[Korali] Use $export KORALI_CONDUIT={single,openmp,upcxx,mpi} to select a conduit.\n");};
 
-  if (conduitString == "")
+  const char* env_conduit = std::getenv("KORALI_CONDUIT");
+  if(env_conduit == NULL)
   {
-			fprintf(stderr, "[Korali] Error: No sampling conduit was selected.\n");
-			printSyntax();
-			fprintf(stderr, "[Korali] Defaulting to 'single'.\n");
-			conduitString = "single";
+  	fprintf(stderr, "[Korali] Error: No sampling conduit was selected.\n");
+  	printSyntax();
+  	exit(-1);
   }
 
-  if (conduitString == "single") { _conduit = new Korali::Conduit::Single(this); recognized = true; }
+	std::string conduitString = env_conduit;
 
-  if (conduitString == "upcxx")
-   {
-    #ifdef _KORALI_USE_UPCXX
-  	 _conduit = new Korali::Conduit::UPCXX(this);  recognized = true;
-    #else
+	bool recognized = false;
+
+	if (conduitString == "single") { _conduit = new Korali::Conduit::Single(this); recognized = true; }
+
+	if (conduitString == "upcxx")
+	 {
+		#ifdef _KORALI_USE_UPCXX
+		 _conduit = new Korali::Conduit::UPCXX(this);  recognized = true;
+		#else
 		 fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");
 		 printSyntax();
 		 fprintf(stderr, "[Korali] Or reinstall Korali with the proper configuration to support UPC++.\n");
 		 exit(-1);
-    #endif
-   }
+		#endif
+	 }
 
-  if (conduitString == "openmp") { _conduit = new Korali::Conduit::OpenMP(this); recognized = true; }
+	if (conduitString == "openmp") { _conduit = new Korali::Conduit::OpenMP(this); recognized = true; }
 
-  if (recognized == false)
-  {
+	if (recognized == false)
+	{
 			fprintf(stderr, "[Korali] Error: Unrecognized conduit '%s' selected.\n", conduitString.c_str());
 			printSyntax();
 			exit(-1);
-  }
+	}
 
-  _problem->_conduit = _conduit;
-  _conduit->initialize();
+	_problem->_conduit = _conduit;
+	_conduit->initialize();
 }
