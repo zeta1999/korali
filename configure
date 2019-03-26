@@ -1,0 +1,167 @@
+# This file is subject to the license agreement located in the file LICENSE
+# and cannot be distributed without it. This notice cannot be removed or modified. 
+#!/bin/bash
+
+# Help display function
+function print_help ()
+{
+ echo ""
+ echo "---------------------------------------------------------------------"
+ echo "| Korali - High-performance framework for optimization, sampling    |"
+ echo "|          and Bayesian uncertainty quantification of large scale   |"
+ echo "|          computational models.                                    |"
+ echo "| Authors: Georgios Arampatzis, Daniel Waelchli, Sergio Martin      |"
+ echo "|          CSELab - ETH Zurich - Prof. Koumoutsakos                 |"
+ echo "---------------------------------------------------------------------"
+ echo ""
+ echo "Configuration syntax:"
+ echo "./configure"
+ echo "   [--use-mpicxx=MPICXX]"
+ echo "   [--use-upcxx=UPCXX]"
+ echo "   [--disable-pthreads]"
+ echo "   [--disable-openmp]"
+ echo "   [--prefix=INSTALL_DIR]"
+ echo ""
+ echo "Where:"
+ echo "      MPICXX is the MPI C++ compiler command to use."
+ echo "       UPCXX is the UPC++ compiler command to use."
+ echo " INSTALL_DIR is the path where to install Korali."
+ echo "      --help Displays this help message."
+}
+
+
+USE_MPICXX=0
+USE_UPCXX=0
+USE_PTHREADS=1
+USE_OPENMP=1
+DETECTED_MPI=0
+DETECTED_UPCXX=0
+MPICXX=
+UPCXX=
+
+for i in "$@"
+do
+case $i in
+    --prefix=*)
+    PREFIX="${i#*=}"
+    shift 
+    ;;
+    --build-dir=*)
+    BUILD_DIR="${i#*=}"
+    shift 
+    ;;
+    --use-mpicxx=*)
+    MPICXX="${i#*=}"
+    shift 
+    ;;
+    --use-upcxx=*)
+    UPCXX="${i#*=}"
+    shift 
+    ;;
+    --disable-pthreads)
+    USE_PTHREADS=0
+    shift 
+    ;;
+    --disable-openMP)
+    USE_OPENMP=0
+    shift 
+    ;;
+    --help)
+    print_help
+    exit 0 
+    shift 
+    ;;
+    *)
+    print_help
+    echo ""
+    echo "[Korali] Error: Unknown option $i."       
+    exit 1
+    ;;
+esac
+done
+
+echo "[Korali] Checking for GNU Scientific Library (GSL)..."
+gsl-config --version > /dev/null 2>&1
+if [ ! $? -eq 0 ]
+then
+    echo "[Korali] Error: gsl-config could not be found."
+    echo "[Korali] Install GSL or add its path to the PATH environment variable."       
+    exit -1
+fi
+echo "[Korali] Success: gsl-config found."
+
+if [ "$UPCXX" != "" ]; then
+ echo "[Korali] Checking for UPCXX with $UPCXX command..."
+ $UPCXX --version > /dev/null 2>&1
+ if [ $? -eq 0 ]; then DETECTED_UPCXX=1;
+ else 
+   echo "[Korali] Error: The provided $UPCXX command could not be found."
+   exit -1
+ fi
+fi
+
+if [ "$MPICXX" != "" ]; then
+ echo "[Korali] Checking for MPI with $MPICXX command..."
+ $MPICXX --version > /dev/null 2>&1
+ if [ $? -eq 0 ]; then DETECTED_MPICXX=1;
+ else 
+   echo "[Korali] Error: The provided $MPICXX command could not be found."
+   exit -1
+ fi
+fi
+
+compiler=""
+
+if [ $DETECTED_MPI -eq 1 ]; then
+  echo "[Korali] Configuring with support for MPI Conduit/Applications using $MPICXX.";
+  compiler="CXX=$MPICXX"
+  mpiFlags=-D_KORALI_USE_MPI
+else
+  echo "[Korali] Configuring without support for MPI Conduit/Applications."
+  mpiFlags=
+fi
+
+if [ $DETECTED_UPCXX -eq 1 ]; then
+  echo "[Korali] Configuring with support for UPC++ Conduit/Applications using $UPCXX.";
+  compiler="CXX=$UPCXX"
+  upcxxFlags=-D_KORALI_USE_UPCXX
+else
+  echo "[Korali] Configuring without support for UPC++ Conduit/Applications."
+  upcxxFlags=
+fi
+
+if [ $USE_PTHREADS -eq 1 ]; then
+  echo "[Korali] Configuring with support for the Pthreads Conduit.";
+  pthreadFlags=-pthread
+else
+  echo "[Korali] Configuring without support for the Pthreads Conduit.";
+  pthreadFlags=
+fi
+
+if [ $USE_OPENMP -eq 1 ]; then
+  echo "[Korali] Configuring with support for the OpenMP Conduit.";
+  openMPFlags=-fopenmp
+else
+  echo "[Korali] Configuring without support for the OpenMP Conduit.";
+  openMPFlags
+fi
+
+if [ $USE_UPCXX  -eq 1 ]; then compiler=$UPCXX;  fi
+
+echo "[Korali] Creating common.mk..."
+ 
+echo "$compiler" > common.mk 
+echo "CXXFLAGS = -O3 -g" >> common.mk
+echo "#CXXFLAGS = -O0 -g" >> common.mk 
+echo "CXXFLAGS += -std=c++17 -Wall -Wfatal-errors \`gsl-config --cflags\` $pthreadFlags $openMPFlags $upcxxFlags $mpiFlags" >> common.mk
+echo "LDFLAGS = `gsl-config --libs` -lm $openMPFlags $pthreadFlags" >> common.mk
+echo "COMPILE.cxx = \$(CXX) \$(CXXFLAGS) -c -o \$@" >> common.mk
+echo "LINK.o      = \$(CXX) \$(LDFLAGS)  -o \$@" >> common.mk
+echo "%.o: %.cpp" >> common.mk
+echo "	\$(COMPILE.cxx) $<" >> common.mk
+echo "%.a:" >> common.mk
+echo "	ar rcs \$@ \$^" >> common.mk
+echo "	ranlib \$@" >> common.mk
+
+echo "[Korali] Configuration was successful."
+echo "[Korali] Run 'make' to build Korali."
