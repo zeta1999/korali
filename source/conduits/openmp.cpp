@@ -1,3 +1,5 @@
+#ifdef _KORALI_USE_OPENMP
+
 #include "conduits/openmp.h"
 #include "solvers/base.h"
 #include "omp.h"
@@ -93,3 +95,5 @@ void Korali::Conduit::OpenMP::evaluateSample(size_t sampleId)
 void Korali::Conduit::OpenMP::checkProgress()
 {
 }
+
+#endif // _KORALI_USE_OPENMP

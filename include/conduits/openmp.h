@@ -1,3 +1,5 @@
+#ifdef _KORALI_USE_OPENMP
+
 #ifndef _KORALI_OPENMP_H_
 #define _KORALI_OPENMP_H_
 
@@ -44,3 +46,5 @@ class OpenMP : public Base
 } // namespace Korali
 
 #endif // _KORALI_OPENMP_H_
+
+#endif // _KORALI_USE_OPENMP

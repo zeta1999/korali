@@ -39,12 +39,22 @@ void Korali::Solver::Base::run()
 		#else
 		 fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");
 		 printSyntax();
-		 fprintf(stderr, "[Korali] Or reinstall Korali with the proper configuration to support UPC++.\n");
+		 fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support UPC++.\n");
 		 exit(-1);
 		#endif
 	 }
 
-	if (conduitString == "openmp") { _conduit = new Korali::Conduit::OpenMP(this); recognized = true; }
+	if (conduitString == "openmp")
+	{
+    #ifdef _KORALI_USE_OPENMP
+		 _conduit = new Korali::Conduit::OpenMP(this); recognized = true;
+    #else
+		 fprintf(stderr, "[Korali] Error: OpenMP conduit is not properly configured.\n");
+		 printSyntax();
+		 fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support openMP.\n");
+		 exit(-1);
+    #endif
+	}
 
 	if (recognized == false)
 	{

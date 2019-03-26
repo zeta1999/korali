@@ -1,6 +1,7 @@
+#ifdef _KORALI_USE_UPCXX
+
 #ifndef _KORALI_UPCXX_H_
 #define _KORALI_UPCXX_H_
-#ifdef _KORALI_USE_UPCXX
 
 #include "conduits/base.h"
 #include <upcxx/upcxx.hpp>
@@ -37,5 +38,6 @@ class UPCXX : public Base
 
 extern Korali::Conduit::UPCXX* _k;
 
-#endif // _KORALI_USE_UPCXX
 #endif // _KORALI_UPCXX_H_
+
+#endif // _KORALI_USE_UPCXX

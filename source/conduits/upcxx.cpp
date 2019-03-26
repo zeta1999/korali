@@ -1,6 +1,7 @@
+#ifdef _KORALI_USE_UPCXX
+
 #include "conduits/upcxx.h"
 #include "solvers/base.h"
-#ifdef UPCXX_VERSION
 
 Korali::Conduit::UPCXX* _k;
 
@@ -86,4 +87,4 @@ void Korali::Conduit::UPCXX::checkProgress()
 	upcxx::progress();
 }
 
-#endif // #ifdef UPCXX_VERSION
+#endif // #ifdef _KORALI_USE_UPCXX

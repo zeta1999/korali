@@ -62,7 +62,7 @@ case $i in
     USE_PTHREADS=0
     shift 
     ;;
-    --disable-openMP)
+    --disable-openmp)
     USE_OPENMP=0
     shift 
     ;;
@@ -132,7 +132,7 @@ fi
 
 if [ $USE_PTHREADS -eq 1 ]; then
   echo "[Korali] Configuring with support for the Pthreads Conduit.";
-  pthreadFlags=-pthread
+  pthreadFlags="-pthread -D_KORALI_USE_PTHREADS"
 else
   echo "[Korali] Configuring without support for the Pthreads Conduit.";
   pthreadFlags=
@@ -140,10 +140,10 @@ fi
 
 if [ $USE_OPENMP -eq 1 ]; then
   echo "[Korali] Configuring with support for the OpenMP Conduit.";
-  openMPFlags=-fopenmp
+  openMPFlags="-fopenmp -D_KORALI_USE_OPENMP"
 else
   echo "[Korali] Configuring without support for the OpenMP Conduit.";
-  openMPFlags
+  openMPFlags=
 fi
 
 if [ $USE_UPCXX  -eq 1 ]; then compiler=$UPCXX;  fi
