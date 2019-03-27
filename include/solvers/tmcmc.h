@@ -20,9 +20,9 @@ class TMCMC : public Korali::Solver::Base
   // TMCMC Configuration
 	size_t nChains;
 
-  double TolCOV;              /* Target coefficient of variation of weights */
-  double MinStep;             /* Min update of rho */
-  double bbeta;               /* Covariance scaling parameter */
+  double _tolCOV;              /* Target coefficient of variation of weights */
+  double _minStep;             /* Min update of rho */
+  double _bbeta;               /* Covariance scaling parameter */
 
   double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
   bool _useLocalCov;
@@ -69,9 +69,10 @@ class TMCMC : public Korali::Solver::Base
   void runSolver();
 
 	// TMCMC Configuration Methods
-	void setToleranceCOV(double TolCOV) { TolCOV = TolCOV; }
+	void setToleranceCOV(double TolCOV) { _tolCOV = TolCOV; }
+	void setMinRhoUpdate(double minStep) { _minStep = minStep; }
 	void setUseLocalCOV(bool useLocalCov) { _useLocalCov = useLocalCov; }
-	void setCovarianceScaling(double bbeta) { bbeta = bbeta; }
+	void setCovarianceScaling(double bbeta) { _bbeta = bbeta; }
 
   // Internal TMCMC Methods
 	void saveResults();

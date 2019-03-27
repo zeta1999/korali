@@ -13,9 +13,9 @@
 
 Korali::Solver::TMCMC::TMCMC(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
 {
- TolCOV  = 1;
- MinStep = 1e-9;
- bbeta   = 0.005;
+ _tolCOV  = 1;
+ _minStep = 1e-9;
+ _bbeta   = 0.005;
  _useLocalCov = false;
  _verbose = false;
 }
@@ -198,19 +198,19 @@ void Korali::Solver::TMCMC::resampleGeneration()
  size_t* sel = (size_t*) calloc (databaseEntries, sizeof(size_t));
 
  double fmin = 0, xmin = 0;
- minSearch(databaseFitness, databaseEntries, _annealingRatio, TolCOV, &xmin, &fmin);
+ minSearch(databaseFitness, databaseEntries, _annealingRatio, _tolCOV, &xmin, &fmin);
 
  double _prevAnnealingRatio = _annealingRatio;
 
  if (xmin > _prevAnnealingRatio)
  {
   _annealingRatio       = xmin;
-  _varianceCoefficient = sqrt(fmin) + TolCOV;
+  _varianceCoefficient = sqrt(fmin) + _tolCOV;
  }
  else
  {
-  _annealingRatio       = _prevAnnealingRatio + MinStep;
-  _varianceCoefficient = sqrt(tmcmc_objlogp(_annealingRatio, databaseFitness, databaseEntries, _prevAnnealingRatio, TolCOV)) + TolCOV;
+  _annealingRatio       = _prevAnnealingRatio + _minStep;
+  _varianceCoefficient = sqrt(tmcmc_objlogp(_annealingRatio, databaseFitness, databaseEntries, _prevAnnealingRatio, _tolCOV)) + _tolCOV;
  }
 
  if (_annealingRatio >= 1.0) { printf("[Korali] Finished (Annealing Ratio = 100%%).\n"); return; }
@@ -247,7 +247,7 @@ void Korali::Solver::TMCMC::resampleGeneration()
  {
   double s = 0.0;
   for (size_t k = 0; k < databaseEntries; ++k) s += q[k]*(databasePoints[k*N+i]-meanv[i])*(databasePoints[k*N+j]-meanv[j]);
-  _covarianceMatrix[i*N + j] = _covarianceMatrix[j*N + i] = s*bbeta;
+  _covarianceMatrix[i*N + j] = _covarianceMatrix[j*N + i] = s*_bbeta;
  }
 
  gsl_matrix_view sigma  = gsl_matrix_view_array(_covarianceMatrix, N,N);
