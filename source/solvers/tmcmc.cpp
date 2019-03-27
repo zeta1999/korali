@@ -35,7 +35,7 @@ void Korali::Solver::TMCMC::runSolver()
 
   while (finishedChains < nChains)
   {
-   for (int c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
+   for (size_t c = 0; c < nChains; c++) if (chainCurrentStep[c] < chainLength[c]) if (chainPendingFitness[c] == false)
    {
     chainPendingFitness[c] = true;
     generateCandidate(c);
@@ -47,7 +47,7 @@ void Korali::Solver::TMCMC::runSolver()
   auto t1 = std::chrono::system_clock::now();
   samplingTime += std::chrono::duration<double>(t1-t0).count();
 
-  printf("[Korali] Generation %d - Time: %fs, Annealing: %.2f%%, Acceptance: %.2f%%\n", _currentGeneration, std::chrono::duration<double>(t1-t0).count(), _annealingRatio*100, _acceptanceRate*100);
+  printf("[Korali] Generation %ld - Time: %fs, Annealing: %.2f%%, Acceptance: %.2f%%\n", _currentGeneration, std::chrono::duration<double>(t1-t0).count(), _annealingRatio*100, _acceptanceRate*100);
 
   auto t2 = std::chrono::system_clock::now();
   resampleGeneration();
@@ -71,7 +71,7 @@ void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
  double P = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0);
 
  if (P < L) {
-   for (int i = 0; i < N; i++) clPoints[c*N + i] = ccPoints[c*N + i];
+   for (size_t i = 0; i < N; i++) clPoints[c*N + i] = ccPoints[c*N + i];
    clFitness[c]  = ccFitness[c];
    clLogPrior[c] = ccLogPrior[c];
    _uniqueEntries++;
@@ -85,7 +85,7 @@ void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
 
 void Korali::Solver::TMCMC::updateDatabase(double* point, double fitness)
 {
- for (int i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = point[i];    // Re-add burn-in
+ for (size_t i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = point[i];    // Re-add burn-in
  databaseFitness[databaseEntries] = fitness;
  databaseEntries++;
  //printf("Database Entries: %ld\n", databaseEntries);
@@ -106,20 +106,20 @@ void Korali::Solver::TMCMC::saveResults()
 {
  double checksum = 0.0;
 
- for (int pos = 0; pos < databaseEntries; pos++)
+ for (size_t pos = 0; pos < databaseEntries; pos++)
   {
-   for (int i = 0; i < N; i++) checksum += databasePoints[pos*N + i];
+   for (size_t i = 0; i < N; i++) checksum += databasePoints[pos*N + i];
    checksum += databaseFitness[pos];
   }
 
  printf("[Korali] Checksum: %.20f\n", checksum);
 
- char* outputName = "tmcmc.txt";
- printf("[Korali] Saving results to file: %s.\n", outputName);
- FILE *fp = fopen(outputName, "w");
- for (int pos = 0; pos < databaseEntries; pos++)
+ std::string outputName = "tmcmc.txt";
+ printf("[Korali] Saving results to file: %s.\n", outputName.c_str());
+ FILE *fp = fopen(outputName.c_str(), "w");
+ for (size_t pos = 0; pos < databaseEntries; pos++)
  {
-  for (int i = 0; i < N; i++) fprintf(fp, "%3.12lf, ", databasePoints[pos*N + i]);
+  for (size_t i = 0; i < N; i++) fprintf(fp, "%3.12lf, ", databasePoints[pos*N + i]);
   fprintf(fp, "%3.12lf\n", databaseFitness[pos]);
  }
 
@@ -131,10 +131,10 @@ void Korali::Solver::TMCMC::initializeEngine()
  // Initializing Data Variables
  double *LCmem  = (double*) calloc (_sampleCount*N*N, sizeof(double));
  local_cov = (double**) calloc ( _sampleCount, sizeof(double*));
- for (int pos=0; pos < _sampleCount; ++pos)
+ for (size_t pos = 0; pos < _sampleCount; ++pos)
  {
   local_cov[pos] = LCmem + pos*N*N;
-  for (int i=0; i<N; i++) local_cov[pos][i*N+i] = 1;
+  for (size_t i = 0; i < N; i++) local_cov[pos][i*N+i] = 1;
  }
 
  // Initializing Run Variables
@@ -169,18 +169,18 @@ void Korali::Solver::TMCMC::initializeEngine()
  // First definition of chains and their leaders
  nChains = _sampleCount;
  finishedChains = 0;
- for (int c = 0; c < _sampleCount; c++) for (int d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = _problem->_parameters[d]->getRandomNumber();
- for (int c = 0; c < _sampleCount; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&clPoints[c*N]);
- for (int c = 0; c < _sampleCount; c++) chainCurrentStep[c] = 0;
- for (int c = 0; c < _sampleCount; c++) chainLength[c] = 1;
- for (int c = 0; c < _sampleCount; c++) chainPendingFitness[c] = false;
+ for (size_t c = 0; c < _sampleCount; c++) for (size_t d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = _problem->_parameters[d]->getRandomNumber();
+ for (size_t c = 0; c < _sampleCount; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&clPoints[c*N]);
+ for (size_t c = 0; c < _sampleCount; c++) chainCurrentStep[c] = 0;
+ for (size_t c = 0; c < _sampleCount; c++) chainLength[c] = 1;
+ for (size_t c = 0; c < _sampleCount; c++) chainPendingFitness[c] = false;
 
  // Setting Chain-Specific Seeds
  range = gsl_rng_alloc (gsl_rng_default);
  gsl_rng_set(range, _problem->_seed+N+0xD00);
 
  chainGSLRange = (gsl_rng**) calloc (_sampleCount, sizeof(gsl_rng*));
- for (int c = 0; c < _sampleCount; c++)
+ for (size_t c = 0; c < _sampleCount; c++)
  {
   chainGSLRange[c] = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(chainGSLRange[c], _problem->_seed+N+0xF00+c);
@@ -213,37 +213,37 @@ void Korali::Solver::TMCMC::resampleGeneration()
   _varianceCoefficient = sqrt(tmcmc_objlogp(_annealingRatio, databaseFitness, databaseEntries, _prevAnnealingRatio, TolCOV)) + TolCOV;
  }
 
- if (_annealingRatio >= 1.0) { printf("[Korali] Finished (Annealing Ratio = 100%).\n"); return; }
+ if (_annealingRatio >= 1.0) { printf("[Korali] Finished (Annealing Ratio = 100%%).\n"); return; }
 
  /* Compute weights and normalize*/
 
- for (int i = 0; i < databaseEntries; i++) flcp[i] = databaseFitness[i]*(_annealingRatio-_prevAnnealingRatio);
+ for (size_t i = 0; i < databaseEntries; i++) flcp[i] = databaseFitness[i]*(_annealingRatio-_prevAnnealingRatio);
  const double fjmax = gsl_stats_max(flcp, 1, databaseEntries);
- for (int i = 0; i < databaseEntries; i++) weight[i] = exp( flcp[i] - fjmax );
+ for (size_t i = 0; i < databaseEntries; i++) weight[i] = exp( flcp[i] - fjmax );
 
  double sum_weight = std::accumulate(weight, weight+databaseEntries, 0.0);
  _logSelections  = log(sum_weight) + fjmax - log(databaseEntries);
 
- for (int i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
+ for (size_t i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
 
- for (int i = 0; i < databaseEntries; i++) sel[i] = 0;
+ for (size_t i = 0; i < databaseEntries; i++) sel[i] = 0;
  gsl_ran_multinomial(range, databaseEntries, _sampleCount, q, nn);
- for (int i = 0; i < databaseEntries; i++) sel[i] += nn[i];
+ for (size_t i = 0; i < databaseEntries; i++) sel[i] += nn[i];
 
  int zeroCount = 0;
- for (int i = 0; i < databaseEntries; i++) if (sel[i] == 0) zeroCount++;
+ for (size_t i = 0; i < databaseEntries; i++) if (sel[i] == 0) zeroCount++;
  _uniqueSelections = databaseEntries - zeroCount;
  _acceptanceRate     = (1.0*_uniqueSelections)/_sampleCount;
 
- for (int i = 0; i < N; i++)
+ for (size_t i = 0; i < N; i++)
  {
   _meanTheta[i] = 0;
-  for (int j = 0; j < databaseEntries; j++) _meanTheta[i] += databasePoints[j*N + i]*q[j];
+  for (size_t j = 0; j < databaseEntries; j++) _meanTheta[i] += databasePoints[j*N + i]*q[j];
  }
 
  double meanv[N];
- for (int i = 0; i < N; i++)  meanv[i] = _meanTheta[i];
- for (int i = 0; i < N; i++) for (int j = i; j < N; ++j)
+ for (size_t i = 0; i < N; i++)  meanv[i] = _meanTheta[i];
+ for (size_t i = 0; i < N; i++) for (size_t j = i; j < N; ++j)
  {
   double s = 0.0;
   for (size_t k = 0; k < databaseEntries; ++k) s += q[k]*(databasePoints[k*N+i]-meanv[i])*(databasePoints[k*N+j]-meanv[j]);
@@ -254,12 +254,12 @@ void Korali::Solver::TMCMC::resampleGeneration()
  gsl_linalg_cholesky_decomp( &sigma.matrix );
 
  int newchains = 0;
- for (int i = 0; i < databaseEntries; i++) if (sel[i] != 0) newchains++;
+ for (size_t i = 0; i < databaseEntries; i++) if (sel[i] != 0) newchains++;
 
  int ldi = 0;
- for (int i = 0; i < databaseEntries; i++) {
+ for (size_t i = 0; i < databaseEntries; i++) {
    if (sel[i] != 0) {
-     for (int _annealingRatio = 0; _annealingRatio < N ; _annealingRatio++) clPoints[ldi*N + _annealingRatio] = databasePoints[i*N + _annealingRatio];
+     for (size_t j = 0; j < N ; j++) clPoints[ldi*N + j] = databasePoints[i*N + j];
      clFitness[ldi] = databaseFitness[i];
      chainLength[ldi] = sel[i];
      ldi++;
@@ -272,8 +272,8 @@ void Korali::Solver::TMCMC::resampleGeneration()
  _uniqueEntries = 0;
  nChains = newchains;
  finishedChains = 0;
- for (int c = 0; c < nChains; c++) chainCurrentStep[c] = 0;
- for (int c = 0; c < nChains; c++) chainPendingFitness[c] = false;
+ for (size_t c = 0; c < nChains; c++) chainCurrentStep[c] = 0;
+ for (size_t c = 0; c < nChains; c++) chainPendingFitness[c] = false;
 
  free(flcp);
  free(weight);
@@ -288,22 +288,22 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
 
  // allocate space
  int* nn_ind  = (int*) calloc (newchains, sizeof(int));
- int* nn_count   = (int*) calloc (newchains, sizeof(int));
+ size_t* nn_count   = (size_t*) calloc (newchains, sizeof(size_t));
  double* diam    = (double*) calloc (N, sizeof(double));
  double* chain_mean = (double*) calloc (N, sizeof(double));
  gsl_matrix* work   = gsl_matrix_alloc(N, N);
 
  // find diameters
- for (int d = 0; d < N; ++d) {
+ for (size_t d = 0; d < N; ++d) {
   double d_min = +1e6;
   double d_max = -1e6;
-  for (int pos = 0; pos < _sampleCount; ++pos) {
+  for (size_t pos = 0; pos < _sampleCount; ++pos) {
    double s = databasePoints[pos*N+d];
    if (d_min > s) d_min = s;
    if (d_max < s) d_max = s;
   }
   diam[d] = d_max-d_min;
-  if (_verbose) printf("Diameter %d: %.6lf\n", d, diam[d]);
+  if (_verbose) printf("Diameter %ld: %.6lf\n", d, diam[d]);
  }
 
  int idx, pos;
@@ -314,10 +314,10 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
   for (pos = 0; pos < newchains; ++pos) {
    nn_count[pos] = 0;
    double* curr = &clPoints[pos*N];
-   for (int i = 0; i < _sampleCount; i++) {
+   for (size_t i = 0; i < _sampleCount; i++) {
     double* s = &databasePoints[i*N];
     bool isInRectangle = true;
-     for (int d = 0; d < N; d++)  if (fabs(curr[d]-s[d]) > scale*diam[d]) isInRectangle = false;
+     for (size_t d = 0; d < N; d++)  if (fabs(curr[d]-s[d]) > scale*diam[d]) isInRectangle = false;
      if (isInRectangle) {
       nn_ind[pos*_sampleCount+nn_count[pos]] = i;
       nn_count[pos]++;
@@ -327,19 +327,19 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
 
   // compute the covariances
   for (pos = 0; pos < newchains; ++pos) {
-   for (int d = 0; d < N; ++d) {
+   for (size_t d = 0; d < N; ++d) {
     chain_mean[d] = 0;
-    for (int k = 0; k < nn_count[pos]; ++k) {
+    for (size_t k = 0; k < nn_count[pos]; ++k) {
      idx = nn_ind[pos*_sampleCount+k];
      chain_mean[d] += databasePoints[idx*N+d];
     }
     chain_mean[d] /= nn_count[pos];
    }
 
-   for (int i = 0; i < N; i++)
-    for (int j = 0; j < N; ++j) {
+   for (size_t i = 0; i < N; i++)
+    for (size_t j = 0; j < N; ++j) {
      double s = 0;
-     for (int k = 0; k < nn_count[pos]; k++) {
+     for (size_t k = 0; k < nn_count[pos]; k++) {
       idx = nn_ind[pos*_sampleCount+k];
       s  += (databasePoints[idx*N+i]-chain_mean[i]) *
          (databasePoints[idx*N+j]-chain_mean[j]);
@@ -348,8 +348,8 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
     }
 
    // check if the matrix is positive definite
-   for (int i = 0; i < N; i++)
-    for (int j = 0; j < N; ++j) {
+   for (size_t i = 0; i < N; i++)
+    for (size_t j = 0; j < N; ++j) {
      double s = chain_cov[pos][i*N+j];
      gsl_matrix_set(work, i, j, s);
     }
@@ -408,7 +408,6 @@ void Korali::Solver::TMCMC::minSearch(double const *fj, int fn, double pj, doubl
  // Minimizer Options
  size_t MaxIter     = 100;    /* Max number of search iterations */
  double Tol         = 1e-12;  /* Tolerance for root finding */
- bool   Display     = false;  /* Print output */
  double Step        = 1e-8;   /* Search stepsize */
 
  const gsl_multimin_fminimizer_type *T;

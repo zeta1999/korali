@@ -130,7 +130,7 @@ class CMAES : public Korali::Solver::Base
   double dMaxSignifKond;
 
   // Private CMAES-Specific Methods
-  void reSampleSingle(int iindex);
+  void reSampleSingle(size_t idx);
   void adaptC2(int hsig);
   double function_value_difference();
   void updateEigensystem(int flgforce);

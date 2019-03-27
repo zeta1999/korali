@@ -18,7 +18,7 @@ class TMCMC : public Korali::Solver::Base
   public:
 
   // TMCMC Configuration
-  int nChains;
+	size_t nChains;
 
   double TolCOV;              /* Target coefficient of variation of weights */
   double MinStep;             /* Min update of rho */
@@ -29,7 +29,7 @@ class TMCMC : public Korali::Solver::Base
 
   // TMCMC Runtime Variables
 
-  int     _currentGeneration;
+  size_t  _currentGeneration;
   double  _varianceCoefficient;
   double  _annealingRatio;
   size_t  _uniqueSelections;

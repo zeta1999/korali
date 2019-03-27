@@ -21,10 +21,10 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
  _stopMaxTimePerEigendecomposition = 1.0;
  _stopMinFitness = -std::numeric_limits<double>::max();
 
- _mu = -1;
+ _mu = 0;
  _muType = "Logarithmic";
  _muCovariance = -1;
- _diagonalCovarianceMatrixEvalFrequency = -1;
+ _diagonalCovarianceMatrixEvalFrequency = 0;
  _sigmaCumulationFactor = -1;
  _dampFactor = -1;
  _cumulativeCovariance = -1;
@@ -33,7 +33,7 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
  _gaussianGenerator = new Parameter::Gaussian(0.0, 1.0);
  _gaussianGenerator->initializeDistribution(problem->_seed + _problem->_parameterCount + 0xF0);
 
- for (int i = 0; i < N; i++)
+ for (size_t i = 0; i < N; i++)
  {
 	_CMAESParameters.push_back(new CMAESParameter());
 	_CMAESParameters[i]->setInitialValue((_problem->_parameters[i]->_lowerBound + _problem->_parameters[i]->_upperBound)*0.5);
@@ -57,7 +57,7 @@ void Korali::Solver::CMAES::runSolver()
 
    while (_finishedSamples < _sampleCount)
    {
-    for (int i = 0; i < _sampleCount; i++) if (_initializedSample[i] == false)
+    for (size_t i = 0; i < _sampleCount; i++) if (_initializedSample[i] == false)
     {
      _initializedSample[i] = true;
      _conduit->evaluateSample(i);
@@ -86,7 +86,7 @@ void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)
 
 bool Korali::Solver::CMAES::isFeasible(double *pop)
 {
- for (int i = 0; i < _problem->_parameterCount; i++)
+ for (size_t i = 0; i < _problem->_parameterCount; i++)
   if (pop[i] < _problem->_parameters[i]->_lowerBound || pop[i] > _problem->_parameters[i]->_upperBound)  return false;
  return true;
 }
@@ -94,26 +94,23 @@ bool Korali::Solver::CMAES::isFeasible(double *pop)
 
 void Korali::Solver::CMAES::initializeInternalVariables()
 {
- int i, j;
- double dtest, trace;
-
  // Getting sample vector pointer
  _samplePopulation = _conduit->getSampleArrayPointer();
 
  // Initializing MU and its weights
 
- if (_mu == -1) _mu = _sampleCount;
+ if (_mu == 0) _mu = _sampleCount;
    _muWeights = new double[_mu];
 
- if (_muType == "LinearDecreasing") for (int i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;
- if (_muType == "Equal")  for (int i = 0; i < _mu; i++)   _muWeights[i] = 1;
- if (_muType == "Logarithmic") for (int i = 0; i < _mu; i++)  _muWeights[i] = log(_mu+1.)-log(i+1.);
+ if (_muType == "LinearDecreasing") for (size_t i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;
+ if (_muType == "Equal")            for (size_t i = 0; i < _mu; i++)  _muWeights[i] = 1;
+ if (_muType == "Logarithmic")      for (size_t i = 0; i < _mu; i++)  _muWeights[i] = log(_mu+1.)-log(i+1.);
 
  /* normalize weights vector and set mueff */
  double s1 = 0.0;
  double s2 = 0.0;
 
- for (int i=0; i < _mu; i++)
+ for (size_t  i = 0; i < _mu; i++)
  {
   s1 += _muWeights[i];
   s2 += _muWeights[i]*_muWeights[i];
@@ -121,7 +118,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
 
  _muEffective = s1*s1/s2;
 
- for (int i = 0; i < _mu; i++) _muWeights[i] /= s1;
+ for (size_t i = 0; i < _mu; i++) _muWeights[i] /= s1;
 
  if(_mu < 1 || _mu > _sampleCount || (_mu == _sampleCount && _muWeights[0] == _muWeights[_mu-1]))
  { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%lu) and/or Lambda (%lu)\n", _mu, _sampleCount); exit(-1); }
@@ -131,7 +128,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
 
  // Checking Covariance Matrix Evaluation Frequency
 
- if  (_diagonalCovarianceMatrixEvalFrequency == -1)  _diagonalCovarianceMatrixEvalFrequency = 2 + 100. * _problem->_parameterCount / sqrt((double)_sampleCount);
+ if (_diagonalCovarianceMatrixEvalFrequency == 0)  _diagonalCovarianceMatrixEvalFrequency = 2 + 100. * _problem->_parameterCount / sqrt((double)_sampleCount);
  if (_diagonalCovarianceMatrixEvalFrequency < 1)
  { fprintf( stderr, "[Korali] Error: Matrix covariance evaluation frequency is less than 1 (%lu)\n", _diagonalCovarianceMatrixEvalFrequency); exit(-1); }
 
@@ -166,16 +163,16 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  // Setting eigensystem evaluation Frequency
    _covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_problem->_parameterCount)/10.0);
 
- for (i = 0, trace = 0.; i < N; ++i)   trace += _CMAESParameters[i]->_initialStdDev*_CMAESParameters[i]->_initialStdDev;
+ double trace = 0.0;
+ for (size_t i = 0; i < N; ++i)   trace += _CMAESParameters[i]->_initialStdDev*_CMAESParameters[i]->_initialStdDev;
  //printf("Trace: %f\n", trace);
  sigma = sqrt(trace/N); /* _muEffective/(0.2*_muEffective+sqrt(N)) * sqrt(trace/N); */
 
  chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
  flgEigensysIsUptodate = 1;
 
- for (dtest = 1.; dtest && dtest < 1.1 * dtest; dtest *= 2.)
-  if (dtest == dtest + 1.)
-   break;
+ double dtest = 1.0;
+ for (; dtest && dtest < 1.1 * dtest; dtest *= 2.)  if (dtest == dtest + 1.)   break;
   dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
 
   gen = 0;
@@ -199,21 +196,21 @@ void Korali::Solver::CMAES::initializeInternalVariables()
   arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/_sampleCount));
   arFuncValueHist++;
 
-  for (i = 0; i < N; ++i) {
+  for (size_t i = 0; i < N; ++i) {
    C[i] = (double*) calloc (sizeof(double), i+1);
    B[i] = (double*) calloc (sizeof(double), N);
   }
   index = (int *) calloc (sizeof(int*), _sampleCount);
-  for (i = 0; i < _sampleCount; ++i)  index[i] = i; /* should not be necessary */
+  for (size_t i = 0; i < _sampleCount; ++i)  index[i] = i; /* should not be necessary */
   curBest = (double *) calloc (sizeof(double), _sampleCount);
 
   /* Initialize newed space  */
 
- for (i = 0; i < N; ++i)
-  for (j = 0; j < i; ++j)
+ for (size_t i = 0; i < N; ++i)
+  for (size_t j = 0; j < i; ++j)
    C[i][j] = B[i][j] = B[j][i] = 0.;
 
- for (i = 0; i < N; ++i)
+ for (size_t i = 0; i < N; ++i)
  {
   B[i][i] = 1.;
   C[i][i] = rgD[i] = _CMAESParameters[i]->_initialStdDev * sqrt(N / trace);
@@ -224,11 +221,11 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  minEW = doubleRangeMin(rgD, N); minEW = minEW * minEW;
  maxEW = doubleRangeMax(rgD, N); maxEW = maxEW * maxEW;
 
- maxdiagC=C[0][0]; for(i=1;i<N;++i) if(maxdiagC<C[i][i]) maxdiagC=C[i][i];
- mindiagC=C[0][0]; for(i=1;i<N;++i) if(mindiagC>C[i][i]) mindiagC=C[i][i];
+ maxdiagC=C[0][0]; for(size_t i=1;i<N;++i) if(maxdiagC<C[i][i]) maxdiagC=C[i][i];
+ mindiagC=C[0][0]; for(size_t i=1;i<N;++i) if(mindiagC>C[i][i]) mindiagC=C[i][i];
 
  /* set rgxmean */
- for (i = 0; i < N; ++i)
+ for (size_t i = 0; i < N; ++i)
  {
    if(_CMAESParameters[i]->_initialValue < _problem->_parameters[i]->_lowerBound || _CMAESParameters[i]->_initialValue > _problem->_parameters[i]->_upperBound)
     {
@@ -246,41 +243,38 @@ void Korali::Solver::CMAES::initializeInternalVariables()
 
 void Korali::Solver::CMAES::prepareGeneration()
 {
- int iNk, i, j;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
- double sum;
 
  /* calculate eigensystem  */
  if (!flgEigensysIsUptodate) {
   if (!flgdiag)
    updateEigensystem(0);
   else {
-   for (i = 0; i < N; ++i)
+   for (size_t i = 0; i < N; ++i)
     rgD[i] = sqrt(C[i][i]);
-   minEW = doubleRangeMin(rgD, N) * doubleRangeMin(rgD, N);
-   maxEW = doubleRangeMax(rgD, N) * doubleRangeMin(rgD, N);
-   flgEigensysIsUptodate = 1;
+		 minEW = doubleRangeMin(rgD, N) * doubleRangeMin(rgD, N);
+		 maxEW = doubleRangeMax(rgD, N) * doubleRangeMin(rgD, N);
+		 flgEigensysIsUptodate = 1;
   }
  }
 
  /* treat minimal standard deviations and numeric problems */
- for (int i = 0; i < N; ++i)
+ for (size_t i = 0; i < N; ++i)
   while (sigma * sqrt(C[i][i]) < _CMAESParameters[i]->_minStdDevChange)
    sigma *= exp(0.05+_sigmaCumulationFactor/_dampFactor);
 
- for (iNk = 0; iNk < _sampleCount; ++iNk)
+ for (size_t iNk = 0; iNk < _sampleCount; ++iNk)
  { /* generate scaled random vector (D * z) */
-  for (i = 0; i < N; ++i)
+  for (size_t i = 0; i < N; ++i)
   {
-   if (flgdiag)
-    _samplePopulation[iNk * N + i] = rgxmean[i] + sigma * rgD[i] * _gaussianGenerator->getRandomNumber();
-   else
-    rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
+   if (flgdiag) _samplePopulation[iNk * N + i] = rgxmean[i] + sigma * rgD[i] * _gaussianGenerator->getRandomNumber();
+   else rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
   }
 
   if (!flgdiag)
-   for (i = 0; i < N; ++i) {
-    for (j = 0, sum = 0.; j < N; ++j)
+   for (size_t i = 0; i < N; ++i) {
+  	double sum = 0.0;
+    for (size_t j = 0; j < N; ++j)
      sum += B[i][j] * rgdTmp[j];
     _samplePopulation[iNk * N + i] = rgxmean[i] + sigma * sum;
    }
@@ -289,27 +283,26 @@ void Korali::Solver::CMAES::prepareGeneration()
  if(state == 3 || gen == 0)   ++gen;
  state = 1;
 
- for(int i = 0; i < _sampleCount; ++i) while( !isFeasible(&_samplePopulation[i*N] )) reSampleSingle(i );
+ for(size_t i = 0; i < _sampleCount; ++i) while( !isFeasible(&_samplePopulation[i*N] )) reSampleSingle(i);
 
  _finishedSamples = 0;
- for (int i = 0; i < _sampleCount; i++) _initializedSample[i] = false;
-} /* SamplePopulation() */
+ for (size_t i = 0; i < _sampleCount; i++) _initializedSample[i] = false;
+}
 
 
-void Korali::Solver::CMAES::reSampleSingle(int iindex)
+void Korali::Solver::CMAES::reSampleSingle(size_t idx)
 {
- int i, j;
  double *rgx;
- double sum;
 
- if (iindex < 0 || iindex >= _sampleCount)  fprintf(stderr, "[Korali] Error: reSampleSingle(): Population member \n");
- rgx = &_samplePopulation[iindex*N];
+ if (idx < 0 || idx >= _sampleCount)  fprintf(stderr, "[Korali] Error: reSampleSingle(): Population member \n");
+ rgx = &_samplePopulation[idx*N];
 
- for (i = 0; i < N; ++i)
-  rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
+ for (size_t i = 0; i < N; ++i)  rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
+
  /* add mutation (sigma * B * (D*z)) */
- for (i = 0; i < N; ++i) {
-  for (j = 0, sum = 0.; j < N; ++j)
+ for (size_t i = 0; i < N; ++i) {
+	double sum = 0.0;
+  for (size_t j = 0; j < N; ++j)
    sum += B[i][j] * rgdTmp[j];
   rgx[i] = rgxmean[i] + sigma * sum;
  }
@@ -318,10 +311,7 @@ void Korali::Solver::CMAES::reSampleSingle(int iindex)
 
 void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 {
- int i, j, iNk, hsig;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
- double sum;
- double psxps;
 
  if(state == 3)
   fprintf(stderr, "[Korali] Error: updateDistribution(): You need to call SamplePopulation() before update can take place.");
@@ -334,7 +324,7 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
   fprintf(stderr, "[Korali] Error: updateDistribution(): unexpected state");
 
  /* assign function values */
- for (i=0; i < _sampleCount; i++) curBest[i] = rgFuncValue[i] = fitnessVector[i];
+ for (size_t i = 0; i < _sampleCount; i++) curBest[i] = rgFuncValue[i] = fitnessVector[i];
 
  /* Generate index */
  sorted_index(fitnessVector, index, _sampleCount);
@@ -348,31 +338,32 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  }
 
  /* update function value history */
-   for(i = (int)*(arFuncValueHist-1)-1; i > 0; --i)
+   for(size_t i = (size_t)*(arFuncValueHist-1)-1; i > 0; --i)
      arFuncValueHist[i] = arFuncValueHist[i-1];
    arFuncValueHist[0] = fitnessVector[index[0]];
 
  /* update xbestever */
  if ((rgxbestever[N] > curBest[index[0]] || gen == 1))
  {
-  for (i = 0; i < N; ++i) rgxbestever[i] = _samplePopulation[index[0]*N + i];
+  for (size_t i = 0; i < N; ++i) rgxbestever[i] = _samplePopulation[index[0]*N + i];
   rgxbestever[N] = curBest[index[0]];
   rgxbestever[N+1] = countevals;
  }
 
  /* calculate rgxmean and rgBDz~N(0,C) */
- for (i = 0; i < N; ++i) {
+ for (size_t i = 0; i < N; ++i) {
   rgxold[i] = rgxmean[i];
   rgxmean[i] = 0.;
-  for (iNk = 0; iNk < _mu; ++iNk)
+  for (size_t iNk = 0; iNk < _mu; ++iNk)
    rgxmean[i] += _muWeights[iNk] * _samplePopulation[index[iNk]*N + i];
   rgBDz[i] = sqrt(_muEffective)*(rgxmean[i] - rgxold[i])/sigma;
  }
 
+ double sum = 0.0;
  /* calculate z := D^(-1) * B^(-1) * rgBDz into rgdTmp */
- for (i = 0; i < N; ++i) {
+ for (size_t i = 0; i < N; ++i) {
   if (!flgdiag)
-   for (j = 0, sum = 0.; j < N; ++j)
+   for (size_t j = 0, sum = 0.; j < N; ++j)
     sum += B[j][i] * rgBDz[j];
   else
    sum = rgBDz[i];
@@ -380,9 +371,9 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  }
 
  /* cumulation for sigma (ps) using B*z */
- for (i = 0; i < N; ++i) {
+ for (size_t i = 0; i < N; ++i) {
   if (!flgdiag)
-   for (j = 0, sum = 0.; j < N; ++j)
+   for (size_t j = 0, sum = 0.; j < N; ++j)
     sum += B[i][j] * rgdTmp[j];
   else
    sum = rgdTmp[i];
@@ -391,19 +382,16 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  }
 
  /* calculate norm(ps)^2 */
- for (i = 0, psxps = 0.; i < N; ++i)
-  psxps += rgps[i] * rgps[i];
+ double psxps = 0.0;
+ for (size_t i = 0; i < N; ++i)  psxps += rgps[i] * rgps[i];
 
  /* cumulation for covariance matrix (pc) using B*D*z~N(0,C) */
- hsig = sqrt(psxps) / sqrt(1. - pow(1.-_sigmaCumulationFactor, 2*gen)) / chiN
-  < 1.4 + 2./(N+1);
- for (i = 0; i < N; ++i) {
-  rgpc[i] = (1. - _cumulativeCovariance) * rgpc[i] +
-   hsig * sqrt(_cumulativeCovariance * (2. - _cumulativeCovariance)) * rgBDz[i];
- }
+ int hsig = sqrt(psxps) / sqrt(1. - pow(1.-_sigmaCumulationFactor, 2*gen)) / chiN  < 1.4 + 2./(N+1);
+
+ for (size_t i = 0; i < N; ++i)
+  rgpc[i] = (1. - _cumulativeCovariance) * rgpc[i] +  hsig * sqrt(_cumulativeCovariance * (2. - _cumulativeCovariance)) * rgBDz[i];
 
  /* update of C  */
-
  adaptC2(hsig);
 
  /* update of sigma */
@@ -415,7 +403,6 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 
 void Korali::Solver::CMAES::adaptC2(int hsig)
 {
- int i, j, k;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
 
  if (_covarianceMatrixLearningRate != 0.0)
@@ -428,26 +415,17 @@ void Korali::Solver::CMAES::adaptC2(int hsig)
   flgEigensysIsUptodate = 0;
 
   /* update covariance matrix */
-  for (i = 0; i < N; ++i)
-   for (j = flgdiag ? i : 0; j <= i; ++j) {
- C[i][j] = (1 - ccov1 - ccovmu) * C[i][j]
-  + ccov1
-  * (rgpc[i] * rgpc[j]
-    + (1-hsig)*_cumulativeCovariance*(2.-_cumulativeCovariance) * C[i][j]);
- for (k = 0; k < _mu; ++k) { /* additional rank mu update */
-  C[i][j] += ccovmu * _muWeights[k]
-   * (_samplePopulation[index[k]*N + i] - rgxold[i])
-   * (_samplePopulation[index[k]*N + j] - rgxold[j])
-   / sigmasquare;
- }
+  for (size_t i = 0; i < N; ++i)
+   for (size_t j = flgdiag ? i : 0; j <= i; ++j) {
+		 C[i][j] = (1 - ccov1 - ccovmu) * C[i][j] + ccov1	* (rgpc[i] * rgpc[j]	+ (1-hsig)*_cumulativeCovariance*(2.-_cumulativeCovariance) * C[i][j]);
+		 for (size_t k = 0; k < _mu; ++k)	C[i][j] += ccovmu * _muWeights[k] * (_samplePopulation[index[k]*N + i] - rgxold[i]) * (_samplePopulation[index[k]*N + j] - rgxold[j]) / sigmasquare;
    }
+
   /* update maximal and minimal diagonal value */
   maxdiagC = mindiagC = C[0][0];
-  for (i = 1; i < N; ++i) {
-   if (maxdiagC < C[i][i])
- maxdiagC = C[i][i];
-   else if (mindiagC > C[i][i])
- mindiagC = C[i][i];
+  for (size_t i = 1; i < N; ++i) {
+	 if (maxdiagC < C[i][i]) maxdiagC = C[i][i];
+	 else if (mindiagC > C[i][i])  mindiagC = C[i][i];
   }
  } /* if ccov... */
 }
@@ -456,7 +434,7 @@ void Korali::Solver::CMAES::adaptC2(int hsig)
 void Korali::Solver::CMAES::printResults()
 {
 
- for (int i = 0; i < N; i++)
+ for (size_t i = 0; i < N; i++)
  {
   printf("[Korali] Parameter \'%s\' Value: %f\n", _problem->_parameters[i]->_name.c_str(), rgxbestever[i]);
  }
@@ -473,20 +451,20 @@ void Korali::Solver::CMAES::printResults()
   printf("sigma %g\n", sigma);
   printf("axisratio %g\n", doubleRangeMax(rgD, N)/doubleRangeMin(rgD, N));
   printf("xbestever found after %.0f evaluations, function value %.10g\n", rgxbestever[N+1], rgxbestever[N]);
-  for(int i=0; i<N; ++i) printf(" %.12g%c", rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
+  for(size_t i=0; i<N; ++i) printf(" %.12g%c", rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
   printf("xbest (of last generation, function value %g)\n", curBest[index[0]]);
-  for(int i=0; i<N; ++i) printf(" %12g%c", _samplePopulation[index[0]*N + i],(i%5==4||i==N-1)?'\n':' ');
+  for(size_t i=0; i<N; ++i) printf(" %12g%c", _samplePopulation[index[0]*N + i],(i%5==4||i==N-1)?'\n':' ');
   printf("rgxmean \n");
-  for(int i=0; i<N; ++i) printf(" %12g%c", rgxmean[i], (i%5==4||i==N-1)?'\n':' ');
+  for(size_t i=0; i<N; ++i) printf(" %12g%c", rgxmean[i], (i%5==4||i==N-1)?'\n':' ');
   printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
-  for(int i=0; i<N; ++i) printf(" %12g%c", sigma*sqrt(C[i][i]), (i%5==4||i==N-1)?'\n':' ');
+  for(size_t i=0; i<N; ++i) printf(" %12g%c", sigma*sqrt(C[i][i]), (i%5==4||i==N-1)?'\n':' ');
   printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
-  for (int i = 0; i < N; ++i) rgdTmp[i] = rgD[i];
-  for(int i=0; i<N; ++i) printf(" %12g%c", sigma*rgdTmp[N-1-i],(i%5==4||i==N-1)?'\n':' ');
+  for(size_t i = 0; i < N; ++i) rgdTmp[i] = rgD[i];
+  for(size_t i=0; i<N; ++i) printf(" %12g%c", sigma*rgdTmp[N-1-i],(i%5==4||i==N-1)?'\n':' ');
   printf("Longest axis (b_i where d_ii=max(diag(D))\n");
-  for(int i=0; i<N; ++i) printf(" %12g%c", B[i][maxIdx(rgD, N)], (i%5==4||i==N-1)?'\n':' ');
+  for(size_t i=0; i<N; ++i) printf(" %12g%c", B[i][maxIdx(rgD, N)], (i%5==4||i==N-1)?'\n':' ');
   printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
-  for(int i=0; i<N; ++i) printf(" %12g%c", B[i][minIdx(rgD, N)], (i%5==4||i==N-1)?'\n':' ');
+  for(size_t i=0; i<N; ++i) printf(" %12g%c", B[i][minIdx(rgD, N)], (i%5==4||i==N-1)?'\n':' ');
  }
 }
 
@@ -501,9 +479,7 @@ double Korali::Solver::CMAES::function_value_difference()
 bool Korali::Solver::CMAES::checkTermination()
 {
  double range, fac;
- int iAchse, iKoo;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
- int i, cTemp;
  bool terminate = false;
 
  /* function value reached */
@@ -532,22 +508,25 @@ bool Korali::Solver::CMAES::checkTermination()
   }
  }
 
- for(i=0, cTemp=0; i<N; ++i) {
+ size_t cTemp = 0;
+ for(size_t i=0; i<N; ++i) {
   cTemp += (sigma * sqrt(C[i][i]) < _stopMinDeltaX) ? 1 : 0;
   cTemp += (sigma * rgpc[i] < _stopMinDeltaX) ? 1 : 0;
  }
+
  if (cTemp == 2*N) {
   terminate = true;
   sprintf(_terminationReason, "Object variable changes < %7.2e", _stopMinDeltaX);
  }
 
  /* TolUpX */
- for(i=0; i<N; ++i) {
-  if (sigma * sqrt(C[i][i]) > _stopMaxStdDevXFactor * _CMAESParameters[i]->_initialStdDev)
+ size_t tolPos;
+ for(tolPos = 0; tolPos < N; tolPos++) {
+  if (sigma * sqrt(C[tolPos][tolPos]) > _stopMaxStdDevXFactor * _CMAESParameters[tolPos]->_initialStdDev)
    break;
  }
 
- if (i < N) {
+ if (tolPos < N) {
   terminate = true;
   sprintf(_terminationReason, "Standard deviation increased by > %7.2e. Try a larger initial stddev.", _stopMaxStdDevXFactor);
  }
@@ -558,7 +537,9 @@ bool Korali::Solver::CMAES::checkTermination()
   sprintf(_terminationReason, "Maximal condition number %7.2e reached.", dMaxSignifKond);
  } /* if */
 
- if (!flgdiag) {
+  size_t iAchse = 0;
+  size_t iKoo = 0;
+  if (!flgdiag) {
   for (iAchse = 0; iAchse < N; ++iAchse)
   {
    fac = 0.1 * sigma * rgD[iAchse];
@@ -569,7 +550,7 @@ bool Korali::Solver::CMAES::checkTermination()
    if (iKoo == N)
    {
     terminate = true;
-    if(_verbose) sprintf(_terminationReason, "Standard deviation 0.1*%7.2e in principal axis %d without effect.", fac/0.1, iAchse);
+    if(_verbose) sprintf(_terminationReason, "Standard deviation 0.1*%7.2e in principal axis %ld without effect.", fac/0.1, iAchse);
     break;
    } /* if (iKoo == N) */
   } /* for iAchse    */
@@ -584,7 +565,7 @@ bool Korali::Solver::CMAES::checkTermination()
    /* C[iKoo][iKoo] *= (1 + _covarianceMatrixLearningRate); */
    /* flg = 1; */
    terminate = true;
-   if(_verbose) sprintf(_terminationReason, "Standard deviation 0.2*%7.2e in coordinate %d without effect.", sigma*sqrt(C[iKoo][iKoo]), iKoo);
+   if(_verbose) sprintf(_terminationReason, "Standard deviation 0.2*%7.2e in coordinate %ld without effect.", sigma*sqrt(C[iKoo][iKoo]), iKoo);
    break;
   }
 
@@ -614,7 +595,7 @@ void Korali::Solver::CMAES::updateEigensystem(int flgforce)
  minEW = doubleRangeMin(rgD, N);
  maxEW = doubleRangeMax(rgD, N);
 
- for (int i = 0; i < N; ++i)  rgD[i] = sqrt(rgD[i]);
+ for (size_t i = 0; i < N; ++i)  rgD[i] = sqrt(rgD[i]);
 
  flgEigensysIsUptodate = 1;
 }
@@ -640,7 +621,6 @@ void Korali::Solver::CMAES::eigen( int size,  double **C, double *diag, double *
 
  for (int i = 0; i < size; i++)
  {
-  double eval_i = gsl_vector_get (eval, i);
   gsl_vector_view evec_i = gsl_matrix_column (evec, i);
   for (int j = 0; j < size; j++) Q[j][i] =  -gsl_vector_get (&evec_i.vector, j);
  }

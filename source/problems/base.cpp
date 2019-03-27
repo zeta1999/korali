@@ -4,7 +4,7 @@
 Korali::Problem::Base::Base(size_t seed)
 {
 	_seed = seed;
-	if (_seed == -1)
+	if (_seed == 0)
 	{
     std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
 		_seed  = std::chrono::nanoseconds(now_c).count();
@@ -24,28 +24,28 @@ void Korali::Problem::Base::addParameter(Korali::Parameter::Base* p)
 double Korali::Problem::Base::getPriorsLogProbabilityDensity(double *x)
 {
   double logp = 0.0;
-  for (int i = 0; i < _parameterCount; i++) logp += _parameters[i]->getDensityLog(x[i]);
+  for (size_t i = 0; i < _parameterCount; i++) logp += _parameters[i]->getDensityLog(x[i]);
   return logp;
 }
 
 double Korali::Problem::Base::getPriorsProbabilityDensity(double *x)
 {
   double dp = 1.0;
-  for (int i = 0; i < _parameterCount; i++) dp *= _parameters[i]->getDensity(x[i]);
+  for (size_t i = 0; i < _parameterCount; i++) dp *= _parameters[i]->getDensity(x[i]);
   return dp;
 }
 
 void Korali::Problem::Base::initializeParameters()
 {
   // Initialize Parameter Priors
-  for (int i = 0; i < _parameterCount; i++)	_parameters[i]->initializeDistribution(_seed+i);
+  for (size_t i = 0; i < _parameterCount; i++)	_parameters[i]->initializeDistribution(_seed+i);
 
 	// Checking correct parameters for problem
-	for (int i = 0; i < _parameterCount; i++) _parameters[i]->checkBounds();
+	for (size_t i = 0; i < _parameterCount; i++) _parameters[i]->checkBounds();
 }
 
 bool Korali::Problem::Base::isSampleOutsideBounds(double* sample)
 {
-  for (int i = 0; i < _parameterCount; i++) if (sample[i] < _parameters[i]->_lowerBound || sample[i] > _parameters[i]->_upperBound) return true;
+  for (size_t i = 0; i < _parameterCount; i++) if (sample[i] < _parameters[i]->_lowerBound || sample[i] > _parameters[i]->_upperBound) return true;
   return false;
 }

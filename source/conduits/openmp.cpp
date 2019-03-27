@@ -12,8 +12,6 @@ Korali::Conduit::OpenMP::OpenMP(Korali::Solver::Base* solver) : Korali::Conduit:
 
 void Korali::Conduit::OpenMP::initialize()
 {
-	int threadId;
-
 	#pragma omp parallel
 	 _threadCount = omp_get_num_threads();
 
@@ -51,8 +49,6 @@ double* Korali::Conduit::OpenMP::getFitnessArrayPointer()
 
 void Korali::Conduit::OpenMP::workerThread()
 {
-	int threadId = omp_get_thread_num();
-
 	while(_continueEvaluations)
 	{
 		bool foundSample = false;

@@ -49,7 +49,7 @@ void heat2DSolver(double* pars, double* output)
 
 	// Saving the value of temperatures at specified points
 	double h = 1.0/(g[0].N-1);
-	for(int i = 0; i < p.nPoints; i++)
+	for(size_t i = 0; i < p.nPoints; i++)
 	{
 		int k = ceil(p.xPos[i]/h);	int l = ceil(p.yPos[i]/h);
 		output[i] = g[0].U[k][l];
@@ -63,10 +63,8 @@ void applyGaussSeidel(gridLevel* g, int l, int relaxations)
  double h2 = g[l].h*g[l].h;
  for (int r = 0; r < relaxations; r++)
  {
-   for (int j = 1; j < g[l].N - 1; j++) // Gauss-Seidel Iteration -- Credit: Claudio Cannizzaro
-   #pragma ivdep
-   #pragma vector aligned
-    for (int i = 1; i < g[l].N - 1; i++)
+   for (size_t j = 1; j < g[l].N - 1; j++) // Gauss-Seidel Iteration -- Credit: Claudio Cannizzaro
+    for (size_t i = 1; i < g[l].N - 1; i++)
      g[l].U[i][j] = ((g[l].U[i - 1][j] + g[l].U[i + 1][j] + g[l].U[i][j - 1] + g[l].U[i][j + 1]) +  g[l].f[i][j] * h2 ) * 0.25;
  }
 }
@@ -75,10 +73,8 @@ void calculateResidual(gridLevel* g, int l)
 {
 	double h2 = 1.0 / pow(g[l].h,2);
 
- #pragma vector aligned
- for (int i = 1; i < g[l].N-1; i++)
-	#pragma ivdep
-	for (int j = 1; j < g[l].N-1; j++)
+ for (size_t i = 1; i < g[l].N-1; i++)
+	for (size_t j = 1; j < g[l].N-1; j++)
 	g[l].Res[i][j] = g[l].f[i][j] + (g[l].U[i-1][j] + g[l].U[i+1][j] - 4*g[l].U[i][j] + g[l].U[i][j-1] + g[l].U[i][j+1]) * h2;
 }
 
@@ -86,16 +82,12 @@ void calculateL2Norm(gridLevel* g, int l)
 {
   double tmp = 0.0;
 
-	for (int i = 0; i < g[l].N; i++)
-	 #pragma ivdep
-	 #pragma vector aligned
-	 for (int j = 0; j < g[l].N; j++)
+	for (size_t i = 0; i < g[l].N; i++)
+	 for (size_t j = 0; j < g[l].N; j++)
 		 g[l].Res[i][j] = g[l].Res[i][j]*g[l].Res[i][j];
 
-	for (int i = 0; i < g[l].N; i++)
-	 #pragma ivdep
-	 #pragma vector aligned
-	 for (int j = 0; j < g[l].N; j++)
+	for (size_t i = 0; i < g[l].N; i++)
+	 for (size_t j = 0; j < g[l].N; j++)
 		 tmp += g[l].Res[i][j];
 
 	g[l].L2Norm = sqrt(tmp);
@@ -105,44 +97,33 @@ void calculateL2Norm(gridLevel* g, int l)
 
 void applyRestriction(gridLevel* g, int l)
 {
-	for (int i = 1; i < g[l].N-1; i++)
-   #pragma ivdep
-   #pragma vector aligned
-	 for (int j = 1; j < g[l].N-1; j++)
+	for (size_t i = 1; i < g[l].N-1; i++)
+	 for (size_t j = 1; j < g[l].N-1; j++)
 				 g[l].f[i][j] = ( 1.0*( g[l-1].Res[2*i-1][2*j-1] + g[l-1].Res[2*i-1][2*j+1] + g[l-1].Res[2*i+1][2*j-1]   + g[l-1].Res[2*i+1][2*j+1] )   +
 													2.0*( g[l-1].Res[2*i-1][2*j]   + g[l-1].Res[2*i][2*j-1]   + g[l-1].Res[2*i+1][2*j]     + g[l-1].Res[2*i][2*j+1] ) +
 													4.0*( g[l-1].Res[2*i][2*j] ) ) * 0.0625;
 
-	for (int i = 0; i < g[l].N; i++)
-   #pragma ivdep
-   #pragma vector aligned
-	 for (int j = 0; j < g[l].N; j++) // Resetting U vector for the coarser level before smoothing -- Find out if this is really necessary.
+	for (size_t i = 0; i < g[l].N; i++)
+	 for (size_t j = 0; j < g[l].N; j++) // Resetting U vector for the coarser level before smoothing -- Find out if this is really necessary.
 		g[l].U[i][j] = 0;
 }
 
 void applyProlongation(gridLevel* g, int l)
 {
-	for (int i = 1; i < g[l].N-1; i++)
-   #pragma ivdep
-	 for (int j = 1; j < g[l].N-1; j++)
+	for (size_t i = 1; i < g[l].N-1; i++)
+	 for (size_t j = 1; j < g[l].N-1; j++)
 			g[l-1].U[2*i][2*j] += g[l].U[i][j];
 
-  #pragma vector aligned
-	for (int i = 1; i < g[l].N; i++)
-   #pragma ivdep
-	 for (int j = 1; j < g[l].N-1; j++)
+	for (size_t i = 1; i < g[l].N; i++)
+	 for (size_t j = 1; j < g[l].N-1; j++)
 			g[l-1].U[2*i-1][2*j] += ( g[l].U[i-1][j] + g[l].U[i][j] ) *0.5;
 
-  #pragma vector aligned
-	for (int i = 1; i < g[l].N-1; i++)
-   #pragma ivdep
-	 for (int j = 1; j < g[l].N; j++)
+	for (size_t i = 1; i < g[l].N-1; i++)
+	 for (size_t j = 1; j < g[l].N; j++)
 			g[l-1].U[2*i][2*j-1] += ( g[l].U[i][j-1] + g[l].U[i][j] ) *0.5;
 
-  #pragma vector aligned
-	for (int i = 1; i < g[l].N; i++)
-   #pragma ivdep
-	 for (int j = 1; j < g[l].N; j++)
+	for (size_t i = 1; i < g[l].N; i++)
+	 for (size_t j = 1; j < g[l].N; j++)
 			g[l-1].U[2*i-1][2*j-1] += ( g[l].U[i-1][j-1] + g[l].U[i-1][j] + g[l].U[i][j-1] + g[l].U[i][j] ) *0.25;
 }
 
@@ -155,15 +136,15 @@ gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars)
 	double width = 0.05;
 
 	// Allocating Grids
-	gridLevel* g = (gridLevel*) _mm_malloc(sizeof(gridLevel) * gridCount, 16);
+	gridLevel* g = (gridLevel*) calloc(sizeof(gridLevel), gridCount);
 	for (int i = 0; i < gridCount; i++)
 	{
 		g[i].N = pow(2, N0-i) + 1;
 		g[i].h = 1.0/(g[i].N-1);
 
-		g[i].U   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].U[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
-		g[i].Res = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].Res[j] = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
-		g[i].f   = (double**) _mm_malloc(sizeof(double*) * g[i].N, 16); for (int j = 0; j < g[i].N ; j++)	g[i].f[j]   = (double*) _mm_malloc(sizeof(double) * g[i].N, 16);
+		g[i].U   = (double**) calloc(sizeof(double*), g[i].N); for (size_t j = 0; j < g[i].N ; j++)	g[i].U[j]   = (double*) calloc(sizeof(double), g[i].N);
+		g[i].Res = (double**) calloc(sizeof(double*), g[i].N); for (size_t j = 0; j < g[i].N ; j++)	g[i].Res[j] = (double*) calloc(sizeof(double), g[i].N);
+		g[i].f   = (double**) calloc(sizeof(double*), g[i].N); for (size_t j = 0; j < g[i].N ; j++)	g[i].f[j]   = (double*) calloc(sizeof(double), g[i].N);
 
 		g[i].L2Norm = 0.0;
 		g[i].L2NormPrev = std::numeric_limits<double>::max();
@@ -171,17 +152,17 @@ gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars)
 	}
 
 	// Initial Guess
-	for (int i = 0; i < g[0].N; i++) for (int j = 0; j < g[0].N; j++) g[0].U[i][j] = 1.0;
+	for (size_t i = 0; i < g[0].N; i++) for (size_t j = 0; j < g[0].N; j++) g[0].U[i][j] = 1.0;
 
 	// Boundary Conditions
-	for (int i = 0; i < g[0].N; i++) g[0].U[0][i]        = 0.0;
-	for (int i = 0; i < g[0].N; i++) g[0].U[g[0].N-1][i] = 0.0;
-	for (int i = 0; i < g[0].N; i++) g[0].U[i][0]        = 0.0;
-	for (int i = 0; i < g[0].N; i++) g[0].U[i][g[0].N-1] = 0.0;
+	for (size_t i = 0; i < g[0].N; i++) g[0].U[0][i]        = 0.0;
+	for (size_t i = 0; i < g[0].N; i++) g[0].U[g[0].N-1][i] = 0.0;
+	for (size_t i = 0; i < g[0].N; i++) g[0].U[i][0]        = 0.0;
+	for (size_t i = 0; i < g[0].N; i++) g[0].U[i][g[0].N-1] = 0.0;
 
 	// F
-	for (int i = 0; i < g[0].N; i++)
-	for (int j = 0; j < g[0].N; j++)
+	for (size_t i = 0; i < g[0].N; i++)
+	for (size_t j = 0; j < g[0].N; j++)
 	{
 		double h = 1.0/(g[0].N-1);
 		double x = i*h;
@@ -200,14 +181,14 @@ void freeGrids(gridLevel* g, int gridCount)
 {
 	for (int i = 0; i < gridCount; i++)
 	{
-		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].U[j]);
-		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].f[j]);
-		for (int j = 0; j < g[i].N ; j++) _mm_free(g[i].Res[j]);
-		_mm_free(g[i].U);
-		_mm_free(g[i].f);
-		_mm_free(g[i].Res);
+		for (size_t j = 0; j < g[i].N ; j++) free(g[i].U[j]);
+		for (size_t j = 0; j < g[i].N ; j++) free(g[i].f[j]);
+		for (size_t j = 0; j < g[i].N ; j++) free(g[i].Res[j]);
+		free(g[i].U);
+		free(g[i].f);
+		free(g[i].Res);
 	}
-	_mm_free(g);
+	free(g);
 }
 
 void heat2DInit(int argc, char* argv[])
@@ -238,7 +219,7 @@ void heat2DInit(int argc, char* argv[])
   p.refTemp = (double*) calloc (sizeof(double), p.nPoints);
 
 //  if (myRank == 0)
-  for (int i = 0; i < p.nPoints; i++)
+  for (size_t i = 0; i < p.nPoints; i++)
   {
   	fscanf(problemFile, "%le ", &p.xPos[i]);
   	fscanf(problemFile, "%le ", &p.yPos[i]);
