@@ -5,7 +5,7 @@
 Korali::Solver::CMAESParameter::CMAESParameter()
 {
 	 _initialValue = 0.0;
-	 _initialStdDev = 0.1;
+	 _initialStdDev = 0.001;
 	 _minStdDevChange = 0.0;
 }
 
@@ -229,9 +229,10 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  {
    if(_CMAESParameters[i]->_initialValue < _problem->_parameters[i]->_lowerBound || _CMAESParameters[i]->_initialValue > _problem->_parameters[i]->_upperBound)
     {
-    fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _CMAESParameters[i]->_initialValue, _problem->_parameters[i]->_name.c_str(), _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
-    fprintf(stderr,"[Korali] This may cause the engine to deadlock trying to find a good candidate.\n");
-    fprintf(stderr,"[Korali] Use e.g., parameter.setInitialValue(%.4f) to set a new initial value.\n", (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5);
+  	 _CMAESParameters[i]->_initialValue = (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5;
+    //fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _CMAESParameters[i]->_initialValue, _problem->_parameters[i]->_name.c_str(), _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
+    //fprintf(stderr,"[Korali] This may cause the engine to deadlock trying to find a good candidate.\n");
+    //fprintf(stderr,"[Korali] Use e.g., parameter.setInitialValue(%.4f) to set a new initial value.\n", (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5);
     }
 
    rgxmean[i] = rgxold[i] = _CMAESParameters[i]->_initialValue;
@@ -520,16 +521,17 @@ bool Korali::Solver::CMAES::checkTermination()
  }
 
  /* TolUpX */
- size_t tolPos;
- for(tolPos = 0; tolPos < N; tolPos++) {
-  if (sigma * sqrt(C[tolPos][tolPos]) > _stopMaxStdDevXFactor * _CMAESParameters[tolPos]->_initialStdDev)
-   break;
- }
-
- if (tolPos < N) {
-  terminate = true;
-  sprintf(_terminationReason, "Standard deviation increased by > %7.2e. Try a larger initial stddev.", _stopMaxStdDevXFactor);
- }
+ // Re Check this
+// size_t tolPos;
+// for(tolPos = 0; tolPos < N; tolPos++) {
+//  if (sigma * sqrt(C[tolPos][tolPos]) > _stopMaxStdDevXFactor * _CMAESParameters[tolPos]->_initialStdDev)
+//   break;
+// }
+//
+// if (tolPos < N) {
+//  terminate = true;
+//  sprintf(_terminationReason, "Standard deviation increased by > %7.2e. Try a larger initial stddev.", _stopMaxStdDevXFactor);
+// }
 
  /* Condition of C greater than dMaxSignifKond */
  if (maxEW >= minEW * dMaxSignifKond) {
