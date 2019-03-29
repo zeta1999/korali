@@ -34,7 +34,7 @@ class TMCMC : public Korali::Solver::Base
   double  _annealingRatio;
   size_t  _uniqueSelections;
   size_t  _uniqueEntries;
-  double  _logSelections;
+  double  _logEvidence;
   double  _acceptanceRate;
   double* _covarianceMatrix;            /*[PROBDIM][PROBDIM];*/
   double* _meanTheta;     /*[PROBDIM]*/

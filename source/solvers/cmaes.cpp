@@ -67,7 +67,7 @@ void Korali::Solver::CMAES::runSolver()
   updateDistribution(_fitnessVector);
 
   auto t1 = std::chrono::system_clock::now();
-  printf("[Korali] Gen %ld - Elapsed Time: %f, Convergence Rate: %7.2e\n", gen, std::chrono::duration<double>(t1-t0).count(), function_value_difference());
+  printf("[Korali] Gen %ld - Elapsed Time: %f, Objective Function Change: %7.2e\n", gen, std::chrono::duration<double>(t1-t0).count(), function_value_difference());
  }
 
  auto endTime = std::chrono::system_clock::now();

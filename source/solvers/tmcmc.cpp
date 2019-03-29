@@ -112,7 +112,7 @@ void Korali::Solver::TMCMC::saveResults()
    checksum += databaseFitness[pos];
   }
 
- printf("[Korali] Checksum: %.20f\n", checksum);
+ printf("[Korali] LogEvidence: %.4f\n", _logEvidence);
 
  std::string outputName = "tmcmc.txt";
  printf("[Korali] Saving results to file: %s.\n", outputName.c_str());
@@ -142,7 +142,7 @@ void Korali::Solver::TMCMC::initializeEngine()
  _annealingRatio              = 0;
  _uniqueSelections = 0;
  _uniqueEntries = _sampleCount;
- _logSelections  = 0;
+ _logEvidence  = 0;
  _acceptanceRate     = 1.0;
  _currentGeneration = 0;
  _varianceCoefficient = std::numeric_limits<double>::infinity();
@@ -222,7 +222,7 @@ void Korali::Solver::TMCMC::resampleGeneration()
  for (size_t i = 0; i < databaseEntries; i++) weight[i] = exp( flcp[i] - fjmax );
 
  double sum_weight = std::accumulate(weight, weight+databaseEntries, 0.0);
- _logSelections  = log(sum_weight) + fjmax - log(databaseEntries);
+ _logEvidence  += log(sum_weight) + fjmax - log(databaseEntries);
 
  for (size_t i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
 

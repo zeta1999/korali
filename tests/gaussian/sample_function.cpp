@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 
   auto solver = Korali::Solver::TMCMC(&problem);
 
-  solver.setPopulationSize(50000);
+  solver.setPopulationSize(5000);
 	solver.setCovarianceScaling(0.02);
 	solver.run();
 
