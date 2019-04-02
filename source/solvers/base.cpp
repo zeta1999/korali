@@ -9,7 +9,7 @@ Korali::Solver::Base::Base(Korali::Problem::Base* problem)
  _currentGeneration = 0;
  _sampleCount = 1000;
  _maxGens = 200;
- _verbosity = korali_normal;
+ _verbosity = KORALI_NORMAL;
  _reportFrequency = 1;
  N = _problem->_parameterCount;
 }

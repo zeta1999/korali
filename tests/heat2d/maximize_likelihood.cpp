@@ -18,10 +18,6 @@ int main(int argc, char* argv[])
  problem.setReferenceData(p.nPoints, p.refTemp);
 
  auto solver = Korali::Solver::CMAES(&problem);
-
- solver["Intensity"]->setInitialValue(30.0);
- solver["PosX"]->setInitialValue(0.25);
- solver["PosY"]->setInitialValue(0.8);
  solver.setStopMinDeltaX(1e-7);
  solver.setPopulationSize(32);
  solver.run();

@@ -5,6 +5,9 @@ Korali::Parameter::Base::Base(std::string name)
  _name = name;
  _lowerBound = 0.0;
  _upperBound = -1.0;
+ _initialValue = 0.5;
+ _initialStdDev = 0.001;
+ _minStdDevChange = 0.0;
 }
 
 void Korali::Parameter::Base::initializeDistribution(int seed)
@@ -23,4 +26,14 @@ void Korali::Parameter::Base::checkBounds()
   _lowerBound = -100.0;
   _upperBound =  100.0;
  }
+
+ if(_initialValue < _lowerBound || _initialValue > _upperBound)
+  fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _initialValue, _name.c_str(), _lowerBound, _upperBound);
+}
+
+void Korali::Parameter::Base::setBounds(double lowerBound, double upperBound)
+{
+ _lowerBound = lowerBound;
+ _upperBound = upperBound;
+ _initialValue = (lowerBound+upperBound)*0.5;
 }

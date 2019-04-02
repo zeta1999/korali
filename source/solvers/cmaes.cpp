@@ -2,13 +2,6 @@
 #include "conduits/base.h"
 #include <chrono>
 
-Korali::Solver::CMAESParameter::CMAESParameter()
-{
-  _initialValue = 0.0;
-  _initialStdDev = 0.001;
-  _minStdDevChange = 0.0;
-}
-
 Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
@@ -32,20 +25,13 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
 
  _gaussianGenerator = new Parameter::Gaussian(0.0, 1.0);
  _gaussianGenerator->initializeDistribution(problem->_seed + _problem->_parameterCount + 0xF0);
-
- for (size_t i = 0; i < N; i++)
- {
- _CMAESParameters.push_back(new CMAESParameter());
- _CMAESParameters[i]->setInitialValue((_problem->_parameters[i]->_lowerBound + _problem->_parameters[i]->_upperBound)*0.5);
- _CMAESParameterMap[_problem->_parameters[i]->_name] = _CMAESParameters[i];
- }
 }
 
 void Korali::Solver::CMAES::reportConfiguration()
 {
- if (_verbosity >= korali_minimal) printf("[Korali] Starting CMAES.\n");
+ if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Starting CMAES.\n");
 
- if (_verbosity >= korali_normal)
+ if (_verbosity >= KORALI_NORMAL)
  {
   printf("[Korali] Seed: 0x%lX\n", _problem->_seed);
   printf("[Korali] Sample Count (lambda): %ld\n", _sampleCount);
@@ -67,13 +53,13 @@ void Korali::Solver::CMAES::reportGeneration()
 {
  if (_currentGeneration % _reportFrequency != 0) return;
  t1 = std::chrono::system_clock::now();
- if (_verbosity >= korali_normal) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
- if (_verbosity >= korali_normal) reportResults();
+ if (_verbosity >= KORALI_NORMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
+ if (_verbosity >= KORALI_NORMAL) reportResults();
 }
 
 void Korali::Solver::CMAES::reportResults()
 {
- if (_verbosity >= korali_detailed)
+ if (_verbosity >= KORALI_DETAILED)
  {
   printf("[Korali] Function Evaluations: %lu\n", countevals);
   printf("[Korali] Function Value f(x) = %g\n", curBest[index[0]]);
@@ -91,9 +77,9 @@ void Korali::Solver::CMAES::reportResults()
   printf("[Korali] Shortest Axis: (%.3g", B[0][minIdx(rgD, N)]); for(size_t i = 1; i < N; i++) printf(", %.3g", B[i][minIdx(rgD, N)]); printf(")\n");
  }
 
- if (_verbosity >= korali_minimal) for (size_t i = 0; i < N; i++)  printf("[Korali] Best Value For \'%s\' = %g\n", _problem->_parameters[i]->_name.c_str(), rgxbestever[i]);
+ if (_verbosity >= KORALI_MINIMAL) for (size_t i = 0; i < N; i++)  printf("[Korali] Best Value For \'%s\' = %g\n", _problem->_parameters[i]->_name.c_str(), rgxbestever[i]);
 
- if (_verbosity >= korali_normal) printf("---------------------------------------------------------------------------\n");
+ if (_verbosity >= KORALI_NORMAL) printf("---------------------------------------------------------------------------\n");
 }
 
 void Korali::Solver::CMAES::runSolver()
@@ -124,9 +110,9 @@ void Korali::Solver::CMAES::runSolver()
 
  endTime = std::chrono::system_clock::now();
 
- if (_verbosity >= korali_minimal) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
+ if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
  reportResults(); // Printing Solver results
- if (_verbosity >= korali_minimal) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
+ if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
 }
 
 void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)
@@ -216,7 +202,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
    _covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_problem->_parameterCount)/10.0);
 
  double trace = 0.0;
- for (size_t i = 0; i < N; ++i)   trace += _CMAESParameters[i]->_initialStdDev*_CMAESParameters[i]->_initialStdDev;
+ for (size_t i = 0; i < N; ++i)   trace += _problem->_parameters[i]->_initialStdDev*_problem->_parameters[i]->_initialStdDev;
  //if (!_silent) printf("Trace: %f\n", trace);
  sigma = sqrt(trace/N); /* _muEffective/(0.2*_muEffective+sqrt(N)) * sqrt(trace/N); */
 
@@ -264,7 +250,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  for (size_t i = 0; i < N; ++i)
  {
   B[i][i] = 1.;
-  C[i][i] = rgD[i] = _CMAESParameters[i]->_initialStdDev * sqrt(N / trace);
+  C[i][i] = rgD[i] = _problem->_parameters[i]->_initialStdDev * sqrt(N / trace);
   C[i][i] *= C[i][i];
   rgpc[i] = rgps[i] = 0.;
  }
@@ -278,15 +264,9 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  /* set rgxmean */
  for (size_t i = 0; i < N; ++i)
  {
-   if(_CMAESParameters[i]->_initialValue < _problem->_parameters[i]->_lowerBound || _CMAESParameters[i]->_initialValue > _problem->_parameters[i]->_upperBound)
-    {
-    _CMAESParameters[i]->_initialValue = (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5;
-    //fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _CMAESParameters[i]->_initialValue, _problem->_parameters[i]->_name.c_str(), _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
-    //fprintf(stderr,"[Korali] This may cause the engine to deadlock trying to find a good candidate.\n");
-    //fprintf(stderr,"[Korali] Use e.g., parameter.setInitialValue(%.4f) to set a new initial value.\n", (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5);
-    }
-
-   rgxmean[i] = rgxold[i] = _CMAESParameters[i]->_initialValue;
+   if(_problem->_parameters[i]->_initialValue < _problem->_parameters[i]->_lowerBound || _problem->_parameters[i]->_initialValue > _problem->_parameters[i]->_upperBound)
+    fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _problem->_parameters[i]->_initialValue, _problem->_parameters[i]->_name.c_str(), _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
+   rgxmean[i] = rgxold[i] = _problem->_parameters[i]->_initialValue;
  }
 
  _initializedSample = (bool*) calloc (_sampleCount, sizeof(bool));
@@ -312,7 +292,7 @@ void Korali::Solver::CMAES::prepareGeneration()
 
  /* treat minimal standard deviations and numeric problems */
  for (size_t i = 0; i < N; ++i)
-  while (sigma * sqrt(C[i][i]) < _CMAESParameters[i]->_minStdDevChange)
+  while (sigma * sqrt(C[i][i]) < _problem->_parameters[i]->_minStdDevChange)
    sigma *= exp(0.05+_sigmaCumulationFactor/_dampFactor);
 
  for (size_t iNk = 0; iNk < _sampleCount; ++iNk)
@@ -537,7 +517,7 @@ bool Korali::Solver::CMAES::checkTermination()
  // Re Check this
 // size_t tolPos;
 // for(tolPos = 0; tolPos < N; tolPos++) {
-//  if (sigma * sqrt(C[tolPos][tolPos]) > _stopMaxStdDevXFactor * _CMAESParameters[tolPos]->_initialStdDev)
+//  if (sigma * sqrt(C[tolPos][tolPos]) > _stopMaxStdDevXFactor * _problem->_parameters[tolPos]->_initialStdDev)
 //   break;
 // }
 //

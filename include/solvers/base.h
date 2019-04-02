@@ -5,7 +5,7 @@
 #include "problems/base.h"
 #include <chrono>
 
-enum verbosity { korali_minimal = 0, korali_normal = 1, korali_detailed = 2 };
+enum verbosity { KORALI_MINIMAL = 0, KORALI_NORMAL = 1, KORALI_DETAILED = 2 };
 
 namespace Korali::Conduit {
     class Base;

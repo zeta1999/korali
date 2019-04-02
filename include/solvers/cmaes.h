@@ -9,19 +9,6 @@
 namespace Korali::Solver
 {
 
-class CMAESParameter
-{
- public:
- double _initialValue;
- double _initialStdDev;
- double _minStdDevChange;
-
- CMAESParameter();
- void setInitialValue(double initialX) { _initialValue = initialX; }
- void setInitialStdDev(double initialStdDev) { _initialStdDev = initialStdDev; }
- void setMinStdDevChange(double minStdDevChange) { _minStdDevChange = minStdDevChange; }
-};
-
 class CMAES : public Korali::Solver::Base
 {
  public:
@@ -58,9 +45,6 @@ class CMAES : public Korali::Solver::Base
  void setCumulativeCovariance(double cumulativeCovariance) { _cumulativeCovariance = cumulativeCovariance; }
  void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate) { _covarianceMatrixLearningRate = covarianceMatrixLearningRate; }
 
- CMAESParameter* operator[](int parameterId) { return _CMAESParameters[parameterId]; }
- CMAESParameter* operator[](std::string parameterName) { return _CMAESParameterMap[parameterName]; }
-
  private:
 
  // Korali Runtime Variables
@@ -68,8 +52,6 @@ class CMAES : public Korali::Solver::Base
  double* _samplePopulation;
  bool* _initializedSample;
  char _terminationReason[500];
- std::vector<CMAESParameter*> _CMAESParameters;
- std::map<std::string, CMAESParameter*> _CMAESParameterMap;
 
  size_t _finishedSamples;
  size_t _mu;

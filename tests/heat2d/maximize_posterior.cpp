@@ -19,13 +19,10 @@ int main(int argc, char* argv[])
 
  auto solver = Korali::Solver::CMAES(&problem);
 
- solver["Intensity"]->setInitialValue(30.0);
- solver["PosX"]->setInitialValue(0.25);
- solver["PosY"]->setInitialValue(0.8);
  solver.setStopMinDeltaX(1e-7);
  solver.setPopulationSize(32);
- solver.setReportFrequency(5);
- solver.setReportVerbosity(korali_detailed);
+ solver.setReportFrequency(10);
+ solver.setReportVerbosity(KORALI_DETAILED);
 
  solver.run();
  return 0;

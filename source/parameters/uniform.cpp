@@ -5,8 +5,7 @@ Korali::Parameter::Uniform::Uniform(std::string name, double min, double max) : 
 {
  _min = min;
  _max = max;
- _lowerBound = min;
- _upperBound = max;
+ setBounds(min, max);
 }
 
 double Korali::Parameter::Uniform::getDensity(double x)
