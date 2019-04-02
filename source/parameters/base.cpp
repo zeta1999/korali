@@ -9,18 +9,18 @@ Korali::Parameter::Base::Base(std::string name)
 
 void Korali::Parameter::Base::initializeDistribution(int seed)
 {
-  _range = gsl_rng_alloc (gsl_rng_default);
-  gsl_rng_set(_range, seed);
+ _range = gsl_rng_alloc (gsl_rng_default);
+ gsl_rng_set(_range, seed);
 }
 
 void Korali::Parameter::Base::checkBounds()
 {
-  if (_upperBound <= _lowerBound)
-  {
-  	 fprintf(stderr, "[Korali] Warning: Undefined or invalid lower/upper bounds for %s.\n", _name.c_str());
-  	 fprintf(stderr, "[Korali] Tip: Use parameter.setBounds(lower,upper); to define bounds.\n");
-  	 fprintf(stderr, "[Korali] Defaulting to [-100.0; 100.0]\n");
-  	 _lowerBound = -100.0;
-  	 _upperBound =  100.0;
-  }
+ if (_upperBound <= _lowerBound)
+ {
+  fprintf(stderr, "[Korali] Warning: Undefined or invalid lower/upper bounds for %s.\n", _name.c_str());
+  fprintf(stderr, "[Korali] Tip: Use parameter.setBounds(lower,upper); to define bounds.\n");
+  fprintf(stderr, "[Korali] Defaulting to [-100.0; 100.0]\n");
+  _lowerBound = -100.0;
+  _upperBound =  100.0;
+ }
 }

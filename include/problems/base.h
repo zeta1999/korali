@@ -6,7 +6,7 @@
 #include "stdlib.h"
 
 namespace Korali::Conduit {
-		class Base;
+  class Base;
 }
 
 namespace Korali::Problem
@@ -14,24 +14,24 @@ namespace Korali::Problem
 
 class Base
 {
-  public:
+ public:
 
-	Base(size_t seed = 0);
+ Base(size_t seed = 0);
 
-	void addParameter(Korali::Parameter::Base* p);
-  virtual double evaluateFitness(double* sample) = 0;
+ void addParameter(Korali::Parameter::Base* p);
+ virtual double evaluateFitness(double* sample) = 0;
 
-  size_t _parameterCount;
-  size_t _referenceDataSize;
-	size_t _seed;
+ size_t _parameterCount;
+ size_t _referenceDataSize;
+ size_t _seed;
 
-	Korali::Conduit::Base* _conduit;
-  std::vector<Korali::Parameter::Base*> _parameters;
+ Korali::Conduit::Base* _conduit;
+ std::vector<Korali::Parameter::Base*> _parameters;
 
-  bool isSampleOutsideBounds(double* sample);
-  double getPriorsLogProbabilityDensity(double *x);
-  double getPriorsProbabilityDensity(double *x);
-  void initializeParameters();
+ bool isSampleOutsideBounds(double* sample);
+ double getPriorsLogProbabilityDensity(double *x);
+ double getPriorsProbabilityDensity(double *x);
+ void initializeParameters();
 };
 
 } // namespace Korali

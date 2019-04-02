@@ -3,25 +3,25 @@
 Korali::Parameter::Uniform::Uniform(double min, double max) : Korali::Parameter::Uniform::Uniform("NoNameUniform", min, max) {}
 Korali::Parameter::Uniform::Uniform(std::string name, double min, double max) : Korali::Parameter::Base::Base(name)
 {
-	_min = min;
-	_max = max;
-	 _lowerBound = min;
-	 _upperBound = max;
+ _min = min;
+ _max = max;
+ _lowerBound = min;
+ _upperBound = max;
 }
 
 double Korali::Parameter::Uniform::getDensity(double x)
 {
-	return gsl_ran_flat_pdf(x, _min, _max);
+ return gsl_ran_flat_pdf(x, _min, _max);
 }
 
 double Korali::Parameter::Uniform::getDensityLog(double x)
 {
-	if (x >= _min && x <= _max)
-		return -log(_max-_min);
-	return -INFINITY;
+ if (x >= _min && x <= _max)
+  return -log(_max-_min);
+ return -INFINITY;
 }
 
 double Korali::Parameter::Uniform::getRandomNumber()
 {
-	return gsl_ran_flat(_range, _min, _max);
+ return gsl_ran_flat(_range, _min, _max);
 }

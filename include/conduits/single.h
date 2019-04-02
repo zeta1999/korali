@@ -7,17 +7,17 @@ namespace Korali::Conduit
 {
 
 class Single : public Base {
-  public:
+ public:
 
-	double* sampleArrayPointer;
-	double* fitnessArrayPointer;
+ double* sampleArrayPointer;
+ double* fitnessArrayPointer;
 
-	Single(Korali::Solver::Base* solver);
-  void initialize();
-	void evaluateSample(size_t sampleId);
-	double* getSampleArrayPointer();
-	double* getFitnessArrayPointer();
-	void checkProgress();
+ Single(Korali::Solver::Base* solver);
+ void initialize();
+ void evaluateSample(size_t sampleId);
+ double* getSampleArrayPointer();
+ double* getFitnessArrayPointer();
+ void checkProgress();
 };
 
 } // namespace Korali

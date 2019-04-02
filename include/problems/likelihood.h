@@ -8,17 +8,17 @@ namespace Korali::Problem
 
 class Likelihood : public Korali::Problem::Base
 {
-  public:
+ public:
 
-	double* _referenceData;
-	void (*_modelFunction) (double*, double*);
+ double* _referenceData;
+ void (*_modelFunction) (double*, double*);
 
-	bool _modelDataSet;
-	bool _referenceDataSet;
+ bool _modelDataSet;
+ bool _referenceDataSet;
 
-  void setReferenceData(size_t nData, double* referenceData);
-	Likelihood(void (*modelFunction) (double*, double*), size_t seed = -1);
-	double evaluateFitness(double* sample);
+ void setReferenceData(size_t nData, double* referenceData);
+ Likelihood(void (*modelFunction) (double*, double*), size_t seed = -1);
+ double evaluateFitness(double* sample);
 };
 
 } // namespace Korali

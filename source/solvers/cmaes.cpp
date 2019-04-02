@@ -4,9 +4,9 @@
 
 Korali::Solver::CMAESParameter::CMAESParameter()
 {
-	 _initialValue = 0.0;
-	 _initialStdDev = 0.001;
-	 _minStdDevChange = 0.0;
+  _initialValue = 0.0;
+  _initialStdDev = 0.001;
+  _minStdDevChange = 0.0;
 }
 
 Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
@@ -35,9 +35,9 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
 
  for (size_t i = 0; i < N; i++)
  {
-	_CMAESParameters.push_back(new CMAESParameter());
-	_CMAESParameters[i]->setInitialValue((_problem->_parameters[i]->_lowerBound + _problem->_parameters[i]->_upperBound)*0.5);
-	_CMAESParameterMap[_problem->_parameters[i]->_name] = _CMAESParameters[i];
+ _CMAESParameters.push_back(new CMAESParameter());
+ _CMAESParameters[i]->setInitialValue((_problem->_parameters[i]->_lowerBound + _problem->_parameters[i]->_upperBound)*0.5);
+ _CMAESParameterMap[_problem->_parameters[i]->_name] = _CMAESParameters[i];
  }
 }
 
@@ -229,7 +229,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  {
    if(_CMAESParameters[i]->_initialValue < _problem->_parameters[i]->_lowerBound || _CMAESParameters[i]->_initialValue > _problem->_parameters[i]->_upperBound)
     {
-  	 _CMAESParameters[i]->_initialValue = (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5;
+    _CMAESParameters[i]->_initialValue = (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5;
     //fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _CMAESParameters[i]->_initialValue, _problem->_parameters[i]->_name.c_str(), _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
     //fprintf(stderr,"[Korali] This may cause the engine to deadlock trying to find a good candidate.\n");
     //fprintf(stderr,"[Korali] Use e.g., parameter.setInitialValue(%.4f) to set a new initial value.\n", (_problem->_parameters[i]->_upperBound+_problem->_parameters[i]->_lowerBound)*0.5);
@@ -253,9 +253,9 @@ void Korali::Solver::CMAES::prepareGeneration()
   else {
    for (size_t i = 0; i < N; ++i)
     rgD[i] = sqrt(C[i][i]);
-		 minEW = doubleRangeMin(rgD, N) * doubleRangeMin(rgD, N);
-		 maxEW = doubleRangeMax(rgD, N) * doubleRangeMin(rgD, N);
-		 flgEigensysIsUptodate = 1;
+   minEW = doubleRangeMin(rgD, N) * doubleRangeMin(rgD, N);
+   maxEW = doubleRangeMax(rgD, N) * doubleRangeMin(rgD, N);
+   flgEigensysIsUptodate = 1;
   }
  }
 
@@ -274,7 +274,7 @@ void Korali::Solver::CMAES::prepareGeneration()
 
   if (!flgdiag)
    for (size_t i = 0; i < N; ++i) {
-  	double sum = 0.0;
+   double sum = 0.0;
     for (size_t j = 0; j < N; ++j)
      sum += B[i][j] * rgdTmp[j];
     _samplePopulation[iNk * N + i] = rgxmean[i] + sigma * sum;
@@ -302,7 +302,7 @@ void Korali::Solver::CMAES::reSampleSingle(size_t idx)
 
  /* add mutation (sigma * B * (D*z)) */
  for (size_t i = 0; i < N; ++i) {
-	double sum = 0.0;
+ double sum = 0.0;
   for (size_t j = 0; j < N; ++j)
    sum += B[i][j] * rgdTmp[j];
   rgx[i] = rgxmean[i] + sigma * sum;
@@ -418,15 +418,15 @@ void Korali::Solver::CMAES::adaptC2(int hsig)
   /* update covariance matrix */
   for (size_t i = 0; i < N; ++i)
    for (size_t j = flgdiag ? i : 0; j <= i; ++j) {
-		 C[i][j] = (1 - ccov1 - ccovmu) * C[i][j] + ccov1	* (rgpc[i] * rgpc[j]	+ (1-hsig)*_cumulativeCovariance*(2.-_cumulativeCovariance) * C[i][j]);
-		 for (size_t k = 0; k < _mu; ++k)	C[i][j] += ccovmu * _muWeights[k] * (_samplePopulation[index[k]*N + i] - rgxold[i]) * (_samplePopulation[index[k]*N + j] - rgxold[j]) / sigmasquare;
+   C[i][j] = (1 - ccov1 - ccovmu) * C[i][j] + ccov1 * (rgpc[i] * rgpc[j] + (1-hsig)*_cumulativeCovariance*(2.-_cumulativeCovariance) * C[i][j]);
+   for (size_t k = 0; k < _mu; ++k) C[i][j] += ccovmu * _muWeights[k] * (_samplePopulation[index[k]*N + i] - rgxold[i]) * (_samplePopulation[index[k]*N + j] - rgxold[j]) / sigmasquare;
    }
 
   /* update maximal and minimal diagonal value */
   maxdiagC = mindiagC = C[0][0];
   for (size_t i = 1; i < N; ++i) {
-	 if (maxdiagC < C[i][i]) maxdiagC = C[i][i];
-	 else if (mindiagC > C[i][i])  mindiagC = C[i][i];
+  if (maxdiagC < C[i][i]) maxdiagC = C[i][i];
+  else if (mindiagC > C[i][i])  mindiagC = C[i][i];
   }
  } /* if ccov... */
 }

@@ -2,5 +2,5 @@
 
 Korali::Conduit::Base::Base(Korali::Solver::Base* solver)
 {
-	_solver = solver;
+ _solver = solver;
 }

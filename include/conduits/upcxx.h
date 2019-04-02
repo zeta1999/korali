@@ -12,26 +12,26 @@ namespace Korali::Conduit
 
 class UPCXX : public Base
 {
-  public:
-  int _rankId;
-  int _rankCount;
+ public:
+ int _rankId;
+ int _rankCount;
 
-  size_t _sampleId;
-  bool _continueEvaluations;
-	bool _evaluateSample;
+ size_t _sampleId;
+ bool _continueEvaluations;
+ bool _evaluateSample;
 
-	std::queue<int> _workers;
-	upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
-	double* fitnessArrayPointer;
+ std::queue<int> _workers;
+ upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
+ double* fitnessArrayPointer;
 
-  UPCXX(Korali::Solver::Base* solver);
-  void initialize();
-	void evaluateSample(size_t sampleId);
-	double* getSampleArrayPointer();
-	double* getFitnessArrayPointer();
-	void checkProgress();
-	void supervisorThread();
-	void workerThread();
+ UPCXX(Korali::Solver::Base* solver);
+ void initialize();
+ void evaluateSample(size_t sampleId);
+ double* getSampleArrayPointer();
+ double* getFitnessArrayPointer();
+ void checkProgress();
+ void supervisorThread();
+ void workerThread();
 };
 
 } // namespace Korali

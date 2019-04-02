@@ -5,33 +5,33 @@
 
 Korali::Problem::Likelihood::Likelihood(void (*modelFunction) (double*, double*), size_t seed) : Korali::Problem::Base::Base(seed)
 {
-	_referenceData = NULL;
-	_referenceDataSize = 0;
-	_modelFunction = modelFunction;
-	_referenceDataSet = false;
+ _referenceData = NULL;
+ _referenceDataSize = 0;
+ _modelFunction = modelFunction;
+ _referenceDataSet = false;
 
-	auto sigma = new Korali::Parameter::Uniform(0.0, +20.0);
-	sigma->setName("Sigma");
-	sigma->setBounds(0, +20.0);
-	addParameter(sigma);
+ auto sigma = new Korali::Parameter::Uniform(0.0, +20.0);
+ sigma->setName("Sigma");
+ sigma->setBounds(0, +20.0);
+ addParameter(sigma);
 }
 
 void Korali::Problem::Likelihood::setReferenceData(size_t nData, double* referenceData)
 {
-	_referenceDataSize = nData;
-	_referenceData = referenceData;
-	_referenceDataSet = true;
+ _referenceDataSize = nData;
+ _referenceData = referenceData;
+ _referenceDataSet = true;
 }
 
 double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 {
-	if (isSampleOutsideBounds(sample)) return -DBL_MAX;
+ if (isSampleOutsideBounds(sample)) return -DBL_MAX;
 
-	double sigma = sample[0];
-	double* parameters = &sample[1];
-	double* fitnessData = _conduit->getFitnessArrayPointer();
+ double sigma = sample[0];
+ double* parameters = &sample[1];
+ double* fitnessData = _conduit->getFitnessArrayPointer();
 
-	_modelFunction(parameters, fitnessData);
+ _modelFunction(parameters, fitnessData);
 
-	return -Korali::Parameter::Gaussian::logLikelihood(sigma, _referenceDataSize, _referenceData, fitnessData);
+ return -Korali::Parameter::Gaussian::logLikelihood(sigma, _referenceDataSize, _referenceData, fitnessData);
 }

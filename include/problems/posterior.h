@@ -8,10 +8,9 @@ namespace Korali::Problem
 
 class Posterior : public Korali::Problem::Likelihood
 {
-  public:
-
-	Posterior(void (*modelFunction) (double*, double*), size_t seed = -1);
-	double evaluateFitness(double* sample);
+ public:
+ Posterior(void (*modelFunction) (double*, double*), size_t seed = -1);
+ double evaluateFitness(double* sample);
 };
 
 } // namespace Korali

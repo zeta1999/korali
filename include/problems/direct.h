@@ -8,10 +8,10 @@ namespace Korali::Problem
 
 class Direct : public Korali::Problem::Base
 {
-  public:
-	double (*_modelFunction) (double*);
-	Direct(double (*modelFunction) (double*), size_t seed = -1);
-	double evaluateFitness(double* sample);
+ public:
+ double (*_modelFunction) (double*);
+ Direct(double (*modelFunction) (double*), size_t seed = -1);
+ double evaluateFitness(double* sample);
 };
 
 } // namespace Korali
