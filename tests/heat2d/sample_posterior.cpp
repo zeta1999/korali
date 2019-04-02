@@ -3,26 +3,26 @@
 
 int main(int argc, char* argv[])
 {
-	heat2DInit(argc, argv);
+ heat2DInit(argc, argv);
 
-  auto problem = Korali::Problem::Posterior(heat2DSolver, 0xC0FFEE);
+ auto problem = Korali::Problem::Posterior(heat2DSolver, 0xC0FFEE);
 
-  Korali::Parameter::Uniform par0("Intensity", 10.0, 60.0);
-  Korali::Parameter::Uniform par1("PosX",      0.0,  0.5);
-  Korali::Parameter::Uniform par2("PosY",      0.6,  1.0);
+ Korali::Parameter::Uniform par0("Intensity", 10.0, 60.0);
+ Korali::Parameter::Uniform par1("PosX",      0.0,  0.5);
+ Korali::Parameter::Uniform par2("PosY",      0.6,  1.0);
 
-  problem.addParameter(&par0);
-  problem.addParameter(&par1);
-  problem.addParameter(&par2);
+ problem.addParameter(&par0);
+ problem.addParameter(&par1);
+ problem.addParameter(&par2);
 
-  problem.setReferenceData(p.nPoints, p.refTemp);
+ problem.setReferenceData(p.nPoints, p.refTemp);
 
-  auto solver = Korali::Solver::TMCMC(&problem);
+ auto solver = Korali::Solver::TMCMC(&problem);
 
-	solver.setPopulationSize(10000);
-	solver.setCovarianceScaling(0.02);
-	solver.setBurnIn(0);
-	solver.run();
+ solver.setPopulationSize(10000);
+ solver.setCovarianceScaling(0.02);
+ solver.setBurnIn(0);
+ solver.run();
 
-	return 0;
+ return 0;
 }

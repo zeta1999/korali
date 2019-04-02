@@ -3,16 +3,16 @@
 
 int main(int argc, char* argv[])
 {
-  auto problem = Korali::Problem::Direct([](double *x) {return -rosenbrock(x);});
+ auto problem = Korali::Problem::Direct([](double *x) {return -rosenbrock(x);});
 
-  Korali::Parameter::Uniform p(-3.0, +3.0);
-	for (int i = 0; i < NDIMS; i++) problem.addParameter(&p);
+ Korali::Parameter::Uniform p(-3.0, +3.0);
+ for (int i = 0; i < NDIMS; i++) problem.addParameter(&p);
 
-  auto solver = Korali::Solver::CMAES(&problem);
+ auto solver = Korali::Solver::CMAES(&problem);
 
-  solver.setStopMinDeltaX(1e-11);
-	solver.setPopulationSize(128);
-	solver.run();
+ solver.setStopMinDeltaX(1e-11);
+ solver.setPopulationSize(128);
+ solver.run();
 
-	return 0;
+ return 0;
 }
