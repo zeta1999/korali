@@ -5,11 +5,12 @@
 
 Korali::Solver::Base::Base(Korali::Problem::Base* problem)
 {
-  _problem = problem;
-  _verbose = false;
-  _sampleCount = 1000;
+ _problem = problem;
+ _currentGeneration = 0;
+ _sampleCount = 1000;
  _maxGens = 200;
-
+ _verbosity = korali_normal;
+ _reportFrequency = 1;
  N = _problem->_parameterCount;
 }
 
@@ -66,3 +67,4 @@ void Korali::Solver::Base::run()
  _problem->_conduit = _conduit;
  _conduit->initialize();
 }
+

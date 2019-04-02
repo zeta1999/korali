@@ -41,18 +41,70 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
  }
 }
 
+void Korali::Solver::CMAES::reportConfiguration()
+{
+ if (_verbosity >= korali_minimal) printf("[Korali] Starting CMAES.\n");
+
+ if (_verbosity >= korali_normal)
+ {
+  printf("[Korali] Seed: 0x%lX\n", _problem->_seed);
+  printf("[Korali] Sample Count (lambda): %ld\n", _sampleCount);
+  printf("[Korali] Best Sample Selection Count (Mu): %ld\n", _mu);
+  printf("[Korali] Mu (Effective): %.3f\n", _muEffective);
+  printf("[Korali] Covariance Matrix Update Frequency: %lu\n", _diagonalCovarianceMatrixEvalFrequency);
+  printf("[Korali] Parameters: %ld\n", N);
+  for (size_t i = 0; i < N; i++)
+  {
+   printf("[Korali] Parameter \'%s\' - ", _problem->_parameters[i]->_name.c_str());
+   _problem->_parameters[i]->printDetails();
+   printf(" - Bounds: [%.3g; %.3g]\n", _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
+  }
+ }
+
+}
+
+void Korali::Solver::CMAES::reportGeneration()
+{
+ t1 = std::chrono::system_clock::now();
+ if (_verbosity >= korali_normal) printf("[Korali] Generation %ld - Elapsed Time: %f\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
+ if (_verbosity >= korali_normal) reportResults();
+}
+
+void Korali::Solver::CMAES::reportResults()
+{
+ if (_verbosity >= korali_detailed)
+ {
+  printf("[Korali] Function Evaluations: %lu\n", countevals);
+  printf("[Korali] Function Value f(x) = %g\n", curBest[index[0]]);
+  printf("[Korali] Function Value Difference = %g\n", function_value_difference());
+  printf("[Korali] Maximal Standard Deviation %g\n", sigma*sqrt(maxdiagC));
+  printf("[Korali] Minimal Standard Deviation %g\n", sigma*sqrt(mindiagC));
+  printf("[Korali] Sigma %g\n", sigma);
+  printf("[Korali] Axis Ratio %g\n", doubleRangeMax(rgD, N)/doubleRangeMin(rgD, N));
+  printf("[Korali] Means: (%.3g", rgxmean[0]); for(size_t i = 1; i < N; i++) printf(", %.3g", rgxmean[i]); printf(")\n");
+  printf("[Korali] StdDevs: (%.3g", sigma*sqrt(C[0][0])); for(size_t i = 1; i < N; i++) printf(", %.3g", sigma*sqrt(C[i][i])); printf(")\n");
+
+  for(size_t i = 0; i < N; ++i) rgdTmp[i] = rgD[i];
+  printf("[Korali] Ellipsoid Length: (%.3g", sigma*rgdTmp[N-1]); for(size_t i = 1; i < N; i++) printf(", %.3g", sigma*rgdTmp[N-1-i]); printf(")\n");
+  printf("[Korali] Longest Axis: (%.3g", B[0][maxIdx(rgD, N)]); for(size_t i = 1; i < N; i++) printf(", %.3g", B[i][maxIdx(rgD, N)]); printf(")\n");
+  printf("[Korali] Shortest Axis: (%.3g", B[0][minIdx(rgD, N)]); for(size_t i = 1; i < N; i++) printf(", %.3g", B[i][minIdx(rgD, N)]); printf(")\n");
+ }
+
+ if (_verbosity >= korali_minimal) for (size_t i = 0; i < N; i++)  printf("[Korali] Best Value For \'%s\' = %g\n", _problem->_parameters[i]->_name.c_str(), rgxbestever[i]);
+
+ if (_verbosity >= korali_normal) printf("---------------------------------------------------------------------------\n");
+}
+
 void Korali::Solver::CMAES::runSolver()
 {
- printf("[Korali] Starting CMAES. Parameters: %ld, Seed: 0x%lX\n", N, _problem->_seed);
-
  initializeInternalVariables();
 
- auto startTime = std::chrono::system_clock::now();
+ reportConfiguration();
+
+ startTime = std::chrono::system_clock::now();
 
  while( !checkTermination() )
  {
-  auto t0 = std::chrono::system_clock::now();
-
   prepareGeneration();
 
    while (_finishedSamples < _sampleCount)
@@ -66,15 +118,14 @@ void Korali::Solver::CMAES::runSolver()
    }
   updateDistribution(_fitnessVector);
 
-  auto t1 = std::chrono::system_clock::now();
-  printf("[Korali] Gen %ld - Elapsed Time: %f, Objective Function Change: %7.2e\n", gen, std::chrono::duration<double>(t1-t0).count(), function_value_difference());
+  if (_currentGeneration % _reportFrequency == 0) reportGeneration();
  }
 
- auto endTime = std::chrono::system_clock::now();
+ endTime = std::chrono::system_clock::now();
 
- printf("[Korali] Finished - Reason: %s\n", _terminationReason);
- printResults(); // Printing Solver results
- printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
+ if (_verbosity >= korali_minimal) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
+ reportResults(); // Printing Solver results
+ if (_verbosity >= korali_minimal) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
 }
 
 void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)
@@ -165,7 +216,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
 
  double trace = 0.0;
  for (size_t i = 0; i < N; ++i)   trace += _CMAESParameters[i]->_initialStdDev*_CMAESParameters[i]->_initialStdDev;
- //printf("Trace: %f\n", trace);
+ //if (!_silent) printf("Trace: %f\n", trace);
  sigma = sqrt(trace/N); /* _muEffective/(0.2*_muEffective+sqrt(N)) * sqrt(trace/N); */
 
  chiN = sqrt((double) N) * (1. - 1./(4.*N) + 1./(21.*N*N));
@@ -175,7 +226,6 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  for (; dtest && dtest < 1.1 * dtest; dtest *= 2.)  if (dtest == dtest + 1.)   break;
   dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
 
-  gen = 0;
   countevals = 0;
   state = 0;
 
@@ -244,7 +294,7 @@ void Korali::Solver::CMAES::initializeInternalVariables()
 
 void Korali::Solver::CMAES::prepareGeneration()
 {
- int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
+ int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
 
  /* calculate eigensystem  */
  if (!flgEigensysIsUptodate) {
@@ -281,7 +331,7 @@ void Korali::Solver::CMAES::prepareGeneration()
    }
  }
 
- if(state == 3 || gen == 0)   ++gen;
+ if(state == 3 || _currentGeneration == 0)   ++_currentGeneration;
  state = 1;
 
  for(size_t i = 0; i < _sampleCount; ++i) while( !isFeasible(&_samplePopulation[i*N] )) reSampleSingle(i);
@@ -312,7 +362,7 @@ void Korali::Solver::CMAES::reSampleSingle(size_t idx)
 
 void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 {
- int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
+ int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
 
  if(state == 3)
   fprintf(stderr, "[Korali] Error: updateDistribution(): You need to call SamplePopulation() before update can take place.");
@@ -344,7 +394,7 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
    arFuncValueHist[0] = fitnessVector[index[0]];
 
  /* update xbestever */
- if ((rgxbestever[N] > curBest[index[0]] || gen == 1))
+ if ((rgxbestever[N] > curBest[index[0]] || _currentGeneration == 1))
  {
   for (size_t i = 0; i < N; ++i) rgxbestever[i] = _samplePopulation[index[0]*N + i];
   rgxbestever[N] = curBest[index[0]];
@@ -387,7 +437,7 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  for (size_t i = 0; i < N; ++i)  psxps += rgps[i] * rgps[i];
 
  /* cumulation for covariance matrix (pc) using B*D*z~N(0,C) */
- int hsig = sqrt(psxps) / sqrt(1. - pow(1.-_sigmaCumulationFactor, 2*gen)) / chiN  < 1.4 + 2./(N+1);
+ int hsig = sqrt(psxps) / sqrt(1. - pow(1.-_sigmaCumulationFactor, 2*_currentGeneration)) / chiN  < 1.4 + 2./(N+1);
 
  for (size_t i = 0; i < N; ++i)
   rgpc[i] = (1. - _cumulativeCovariance) * rgpc[i] +  hsig * sqrt(_cumulativeCovariance * (2. - _cumulativeCovariance)) * rgBDz[i];
@@ -404,7 +454,7 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 
 void Korali::Solver::CMAES::adaptC2(int hsig)
 {
- int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
+ int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
 
  if (_covarianceMatrixLearningRate != 0.0)
  {
@@ -431,60 +481,22 @@ void Korali::Solver::CMAES::adaptC2(int hsig)
  } /* if ccov... */
 }
 
-
-void Korali::Solver::CMAES::printResults()
-{
-
- for (size_t i = 0; i < N; i++)
- {
-  printf("[Korali] Parameter \'%s\' Value: %f\n", _problem->_parameters[i]->_name.c_str(), rgxbestever[i]);
- }
-
- if(_verbose)
- {
-  printf("(%lu,%lu)-CMA-ES(mu_eff=%.1f), dimension=%lu, diagonalIterations=%lu, randomSeed=%lu\n", _mu, _sampleCount, _muEffective,  _problem->_parameterCount, _diagonalCovarianceMatrixEvalFrequency,  _problem->_seed);
-  printf(" N %ld\n", N);
-  printf(" seed %lu\n", _problem->_seed);
-  printf("function evaluations %.0f\n", countevals);
-  printf("function value f(x)=%g\n", curBest[index[0]]);
-  printf("maximal standard deviation %g\n", sigma*sqrt(maxdiagC));
-  printf("minimal standard deviation %g\n", sigma*sqrt(mindiagC));
-  printf("sigma %g\n", sigma);
-  printf("axisratio %g\n", doubleRangeMax(rgD, N)/doubleRangeMin(rgD, N));
-  printf("xbestever found after %.0f evaluations, function value %.10g\n", rgxbestever[N+1], rgxbestever[N]);
-  for(size_t i=0; i<N; ++i) printf(" %.12g%c", rgxbestever[i], (i%5==4||i==N-1)?'\n':' ');
-  printf("xbest (of last generation, function value %g)\n", curBest[index[0]]);
-  for(size_t i=0; i<N; ++i) printf(" %12g%c", _samplePopulation[index[0]*N + i],(i%5==4||i==N-1)?'\n':' ');
-  printf("rgxmean \n");
-  for(size_t i=0; i<N; ++i) printf(" %12g%c", rgxmean[i], (i%5==4||i==N-1)?'\n':' ');
-  printf("Standard deviation of coordinate axes (sigma*sqrt(diag(C)))\n");
-  for(size_t i=0; i<N; ++i) printf(" %12g%c", sigma*sqrt(C[i][i]), (i%5==4||i==N-1)?'\n':' ');
-  printf("Main axis lengths of mutation ellipsoid (sigma*diag(D))\n");
-  for(size_t i = 0; i < N; ++i) rgdTmp[i] = rgD[i];
-  for(size_t i=0; i<N; ++i) printf(" %12g%c", sigma*rgdTmp[N-1-i],(i%5==4||i==N-1)?'\n':' ');
-  printf("Longest axis (b_i where d_ii=max(diag(D))\n");
-  for(size_t i=0; i<N; ++i) printf(" %12g%c", B[i][maxIdx(rgD, N)], (i%5==4||i==N-1)?'\n':' ');
-  printf("Shortest axis (b_i where d_ii=max(diag(D))\n");
-  for(size_t i=0; i<N; ++i) printf(" %12g%c", B[i][minIdx(rgD, N)], (i%5==4||i==N-1)?'\n':' ');
- }
-}
-
 double Korali::Solver::CMAES::function_value_difference()
 {
- return std::max(doubleRangeMax(arFuncValueHist, (int)std::min((double)gen,*(arFuncValueHist-1))),
+ return std::max(doubleRangeMax(arFuncValueHist, (int)std::min((double)_currentGeneration,*(arFuncValueHist-1))),
    doubleRangeMax(rgFuncValue, _sampleCount)) -
-  std::min(doubleRangeMin(arFuncValueHist, (int)std::min((double)gen, *(arFuncValueHist-1))),
+  std::min(doubleRangeMin(arFuncValueHist, (int)std::min((double)_currentGeneration, *(arFuncValueHist-1))),
       doubleRangeMin(rgFuncValue, _sampleCount));
 }
 
 bool Korali::Solver::CMAES::checkTermination()
 {
  double range, fac;
- int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= gen));
+ int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
  bool terminate = false;
 
  /* function value reached */
- if ((gen > 1 || state > 1) &&   rgFuncValue[index[0]] <= _stopMinFitness)
+ if ((_currentGeneration > 1 || state > 1) &&   rgFuncValue[index[0]] <= _stopMinFitness)
  {
   terminate = true;
   sprintf(_terminationReason, "Fitness Value (%7.2e) < (%7.2e)",  rgFuncValue[index[0]], _stopMinFitness);
@@ -493,13 +505,13 @@ bool Korali::Solver::CMAES::checkTermination()
  /* TolFun */
  range = function_value_difference();
 
- if (gen > 0 && range <= _stopFitnessDiffThreshold) {
+ if (_currentGeneration > 0 && range <= _stopFitnessDiffThreshold) {
   terminate = true;
   sprintf(_terminationReason, "Function value differences (%7.2e) < (%7.2e)",  range, _stopFitnessDiffThreshold);
  }
 
  /* TolFunHist */
- if (gen > *(arFuncValueHist-1)) {
+ if (_currentGeneration > *(arFuncValueHist-1)) {
   range = doubleRangeMax(arFuncValueHist, (int)*(arFuncValueHist-1))
    - doubleRangeMin(arFuncValueHist, (int)*(arFuncValueHist-1));
   if (range <= _stopFitnessDiffHistoryThreshold)
@@ -552,7 +564,7 @@ bool Korali::Solver::CMAES::checkTermination()
    if (iKoo == N)
    {
     terminate = true;
-    if(_verbose) sprintf(_terminationReason, "Standard deviation 0.1*%7.2e in principal axis %ld without effect.", fac/0.1, iAchse);
+    sprintf(_terminationReason, "Standard deviation 0.1*%7.2e in principal axis %ld without effect.", fac/0.1, iAchse);
     break;
    } /* if (iKoo == N) */
   } /* for iAchse    */
@@ -567,7 +579,7 @@ bool Korali::Solver::CMAES::checkTermination()
    /* C[iKoo][iKoo] *= (1 + _covarianceMatrixLearningRate); */
    /* flg = 1; */
    terminate = true;
-   if(_verbose) sprintf(_terminationReason, "Standard deviation 0.2*%7.2e in coordinate %ld without effect.", sigma*sqrt(C[iKoo][iKoo]), iKoo);
+   sprintf(_terminationReason, "Standard deviation 0.2*%7.2e in coordinate %ld without effect.", sigma*sqrt(C[iKoo][iKoo]), iKoo);
    break;
   }
 
@@ -576,9 +588,9 @@ bool Korali::Solver::CMAES::checkTermination()
  if(countevals >= _maxFitnessEvaluations)
  {
   terminate = true;
-  sprintf(_terminationReason, "Conducted %.0f function evaluations >= (%lu).", countevals, _maxFitnessEvaluations); }
+  sprintf(_terminationReason, "Conducted %lu function evaluations >= (%lu).", countevals, _maxFitnessEvaluations); }
 
- if(gen >= _maxGens)
+ if(_currentGeneration >= _maxGens)
  {
   terminate = true;
   sprintf(_terminationReason, "Maximum number of Generations reached (%lu).", _maxGens);

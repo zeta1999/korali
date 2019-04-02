@@ -22,3 +22,8 @@ double Korali::Parameter::Gamma::getRandomNumber()
 {
  return gsl_ran_gamma(_range, _shape, _rate);
 }
+
+void Korali::Parameter::Gamma::printDetails()
+{
+ printf("Gamma(%.3g, %.3g)", _shape, _rate);
+}

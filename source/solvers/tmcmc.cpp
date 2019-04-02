@@ -144,7 +144,6 @@ void Korali::Solver::TMCMC::initializeEngine()
  _uniqueEntries = _sampleCount;
  _logEvidence  = 0;
  _acceptanceRate     = 1.0;
- _currentGeneration = 0;
  _varianceCoefficient = std::numeric_limits<double>::infinity();
  _covarianceMatrix =  (double*) calloc (N*N, sizeof(double));
  _meanTheta =  (double*) calloc (N+1, sizeof(double));

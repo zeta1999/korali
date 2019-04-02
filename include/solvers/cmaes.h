@@ -3,6 +3,7 @@
 
 #include "solvers/base.h"
 #include "parameters/gaussian.h"
+#include <chrono>
 #include <map>
 
 namespace Korali::Solver
@@ -26,13 +27,15 @@ class CMAES : public Korali::Solver::Base
  public:
 
  // Public Methods
-CMAES(Korali::Problem::Base* problem);
+ CMAES(Korali::Problem::Base* problem);
 
  // Runtime Methods (to be inherited from base class in the future)
  void initializeInternalVariables();
  void prepareGeneration();
  bool checkTermination();
- void printResults();
+ void reportResults();
+ void reportConfiguration();
+ void reportGeneration();
  void updateDistribution(const double *fitnessVector);
  void runSolver();
  void processSample(size_t sampleId, double fitness);
@@ -67,6 +70,8 @@ CMAES(Korali::Problem::Base* problem);
  char _terminationReason[500];
  std::vector<CMAESParameter*> _CMAESParameters;
  std::map<std::string, CMAESParameter*> _CMAESParameterMap;
+ std::chrono::time_point<std::chrono::system_clock> startTime, t0;
+ std::chrono::time_point<std::chrono::system_clock> endTime, t1;
 
  size_t _finishedSamples;
  size_t _mu;
@@ -116,8 +121,7 @@ CMAES(Korali::Problem::Base* problem);
  double *rgdTmp;  /* temporary (random) vector used in different places */
  double *rgFuncValue;
 
- size_t gen; /* Generation number */
- double countevals;
+ size_t countevals;
  double state; /* 1 == sampled, 2 == not in use anymore, 3 == updated */
 
  double maxdiagC; /* repeatedly used for output */

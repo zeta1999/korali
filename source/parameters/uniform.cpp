@@ -25,3 +25,8 @@ double Korali::Parameter::Uniform::getRandomNumber()
 {
  return gsl_ran_flat(_range, _min, _max);
 }
+
+void Korali::Parameter::Uniform::printDetails()
+{
+ printf("Uniform(%.3g, %.3g)", _min, _max);
+}

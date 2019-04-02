@@ -19,6 +19,7 @@ class Gaussian : public Korali::Parameter::Base
   double getDensityLog(double x);
   double getRandomNumber();
   static double logLikelihood(double sigma, int nData, double* x, double* u);
+  void printDetails();
 };
 
 } // namespace Korali

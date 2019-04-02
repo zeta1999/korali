@@ -46,3 +46,8 @@ double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, doubl
 
  return res;
 }
+
+void Korali::Parameter::Gaussian::printDetails()
+{
+ printf("Gaussian(%.3g, %.3g)", _mean, _sigma);
+}

@@ -24,6 +24,8 @@ int main(int argc, char* argv[])
  solver["PosY"]->setInitialValue(0.8);
  solver.setStopMinDeltaX(1e-7);
  solver.setPopulationSize(32);
+ solver.setReportFrequency(5);
+ solver.setReportVerbosity(korali_minimal);
 
  solver.run();
  return 0;

@@ -21,3 +21,8 @@ double Korali::Parameter::Exponential::getRandomNumber()
 {
  return gsl_ran_exponential(_range, _mean);
 }
+
+void Korali::Parameter::Exponential::printDetails()
+{
+ printf("Exponential(%.3g)", _mean);
+}
