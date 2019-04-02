@@ -18,6 +18,7 @@ Korali::Solver::TMCMC::TMCMC(Korali::Problem::Base* problem) : Korali::Solver::B
  _bbeta   = 0.005;
  _useLocalCov = false;
  _verbose = false;
+ _burnIn = 0;
 }
 
 void Korali::Solver::TMCMC::runSolver()
@@ -77,8 +78,8 @@ void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
    _uniqueEntries++;
  }
 
- updateDatabase(&clPoints[c*N], clFitness[c]);
  chainCurrentStep[c]++;
+ if (chainCurrentStep[c] > _burnIn) updateDatabase(&clPoints[c*N], clFitness[c]);
  chainPendingFitness[c] = false;
  if (chainCurrentStep[c] == chainLength[c]) finishedChains++;
 }
@@ -88,7 +89,6 @@ void Korali::Solver::TMCMC::updateDatabase(double* point, double fitness)
  for (size_t i = 0; i < N; i++) databasePoints[databaseEntries*N + i] = point[i];    // Re-add burn-in
  databaseFitness[databaseEntries] = fitness;
  databaseEntries++;
- //printf("Database Entries: %ld\n", databaseEntries);
 }
 
 void Korali::Solver::TMCMC::generateCandidate(int c)
@@ -172,7 +172,7 @@ void Korali::Solver::TMCMC::initializeEngine()
  for (size_t c = 0; c < _sampleCount; c++) for (size_t d = 0; d < N; d++)  clPoints[c*N + d] = ccPoints[c*N + d] = _problem->_parameters[d]->getRandomNumber();
  for (size_t c = 0; c < _sampleCount; c++) clLogPrior[c] = _problem->getPriorsLogProbabilityDensity(&clPoints[c*N]);
  for (size_t c = 0; c < _sampleCount; c++) chainCurrentStep[c] = 0;
- for (size_t c = 0; c < _sampleCount; c++) chainLength[c] = 1;
+ for (size_t c = 0; c < _sampleCount; c++) chainLength[c] = 1 + _burnIn;
  for (size_t c = 0; c < _sampleCount; c++) chainPendingFitness[c] = false;
 
  // Setting Chain-Specific Seeds
@@ -261,7 +261,7 @@ void Korali::Solver::TMCMC::resampleGeneration()
    if (sel[i] != 0) {
      for (size_t j = 0; j < N ; j++) clPoints[ldi*N + j] = databasePoints[i*N + j];
      clFitness[ldi] = databaseFitness[i];
-     chainLength[ldi] = sel[i];
+     chainLength[ldi] = sel[i] + _burnIn;
      ldi++;
    }
  }

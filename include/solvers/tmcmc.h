@@ -30,6 +30,7 @@ class TMCMC : public Korali::Solver::Base
   // TMCMC Runtime Variables
 
   size_t  _currentGeneration;
+  size_t  _burnIn;
   double  _varianceCoefficient;
   double  _annealingRatio;
   size_t  _uniqueSelections;
@@ -73,6 +74,7 @@ class TMCMC : public Korali::Solver::Base
 	void setMinRhoUpdate(double minStep) { _minStep = minStep; }
 	void setUseLocalCOV(bool useLocalCov) { _useLocalCov = useLocalCov; }
 	void setCovarianceScaling(double bbeta) { _bbeta = bbeta; }
+  void setBurnIn(size_t burnIn) { _burnIn = burnIn; }
 
   // Internal TMCMC Methods
 	void saveResults();

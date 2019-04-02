@@ -12,6 +12,7 @@ int main(int argc, char* argv[])
 
   solver.setPopulationSize(20000);
 	solver.setCovarianceScaling(0.2);
+	solver.setBurnIn(5);
 	solver.run();
 
 	return 0;

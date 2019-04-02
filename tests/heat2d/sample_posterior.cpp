@@ -21,6 +21,7 @@ int main(int argc, char* argv[])
 
 	solver.setPopulationSize(10000);
 	solver.setCovarianceScaling(0.02);
+	solver.setBurnIn(0);
 	solver.run();
 
 	return 0;
