@@ -36,7 +36,6 @@ void Korali::Solver::TMCMC::reportConfiguration()
    printf(" - Bounds: [%.3g; %.3g]\n", _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
   }
  }
-
 }
 
 void Korali::Solver::TMCMC::reportGeneration()
