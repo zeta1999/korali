@@ -18,8 +18,8 @@ function print_help ()
  echo "./configure"
  echo "   [--use-mpicxx=MPICXX]"
  echo "   [--use-upcxx=UPCXX]"
- echo "   [--disable-pthreads]"
- echo "   [--disable-openmp]"
+ echo "   [--enable-pthreads]"
+ echo "   [--enable-openmp]"
  echo "   [--prefix=INSTALL_DIR]"
  echo ""
  echo "Where:"
@@ -32,8 +32,8 @@ function print_help ()
 
 USE_MPICXX=0
 USE_UPCXX=0
-USE_PTHREADS=1
-USE_OPENMP=1
+USE_PTHREADS=0
+USE_OPENMP=0
 DETECTED_MPI=0
 DETECTED_UPCXX=0
 MPICXX=
@@ -58,12 +58,12 @@ case $i in
     UPCXX="${i#*=}"
     shift 
     ;;
-    --disable-pthreads)
-    USE_PTHREADS=0
+    --enable-pthreads)
+    USE_PTHREADS=1
     shift 
     ;;
-    --disable-openmp)
-    USE_OPENMP=0
+    --enable-openmp)
+    USE_OPENMP=1
     shift 
     ;;
     --help)

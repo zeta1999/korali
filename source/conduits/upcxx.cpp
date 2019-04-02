@@ -71,7 +71,7 @@ void Korali::Conduit::UPCXX::workerThread()
    //printf("Worker %d: Evaluated %ld:[%f, %f] - Fitness: %f\n", _rankId, _sampleId, candidatePoint[0], candidatePoint[1], candidateFitness);
    upcxx::rpc_ff(0, [](size_t c, double fitness, int workerId){_k->_solver->processSample(c, fitness); _k->_workers.push(workerId); }, _sampleId, candidateFitness, _rankId);
   }
-   upcxx::progress();
+  upcxx::progress();
  }
 }
 
