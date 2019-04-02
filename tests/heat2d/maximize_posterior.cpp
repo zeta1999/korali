@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
  solver.setStopMinDeltaX(1e-7);
  solver.setPopulationSize(32);
  solver.setReportFrequency(5);
- solver.setReportVerbosity(korali_minimal);
+ solver.setReportVerbosity(korali_detailed);
 
  solver.run();
  return 0;

@@ -65,8 +65,9 @@ void Korali::Solver::CMAES::reportConfiguration()
 
 void Korali::Solver::CMAES::reportGeneration()
 {
+ if (_currentGeneration % _reportFrequency != 0) return;
  t1 = std::chrono::system_clock::now();
- if (_verbosity >= korali_normal) printf("[Korali] Generation %ld - Elapsed Time: %f\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
+ if (_verbosity >= korali_normal) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
  if (_verbosity >= korali_normal) reportResults();
 }
 
@@ -118,7 +119,7 @@ void Korali::Solver::CMAES::runSolver()
    }
   updateDistribution(_fitnessVector);
 
-  if (_currentGeneration % _reportFrequency == 0) reportGeneration();
+  reportGeneration();
  }
 
  endTime = std::chrono::system_clock::now();

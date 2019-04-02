@@ -65,9 +65,11 @@ class TMCMC : public Korali::Solver::Base
   // Korali Methods
 
  TMCMC(Korali::Problem::Base* problem);
-
  void initializeEngine();
  void runSolver();
+ void reportResults();
+ void reportConfiguration();
+ void reportGeneration();
 
  // TMCMC Configuration Methods
  void setToleranceCOV(double TolCOV) { _tolCOV = TolCOV; }

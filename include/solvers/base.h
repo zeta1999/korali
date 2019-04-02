@@ -3,8 +3,7 @@
 
 #include <stdlib.h>
 #include "problems/base.h"
-#include <functional>
-#include <map>
+#include <chrono>
 
 enum verbosity { korali_minimal = 0, korali_normal = 1, korali_detailed = 2 };
 
@@ -26,9 +25,11 @@ class Base {
  Korali::Conduit::Base* _conduit;
  Korali::Problem::Base* _problem;
 
- // Verbosity Settings
+ // Reporting Settings
  size_t _reportFrequency;
  int _verbosity;
+ std::chrono::time_point<std::chrono::system_clock> startTime, endTime;
+ std::chrono::time_point<std::chrono::system_clock> t0, t1, t2, t3;
 
  Base(Korali::Problem::Base* problem);
  void setPopulationSize(int size) { _sampleCount = size; }
@@ -36,6 +37,12 @@ class Base {
  void setReportFrequency(size_t reportFrequency) { _reportFrequency = reportFrequency; }
  void setReportVerbosity(int verbosity) { _verbosity = verbosity; }
 
+ // Reporting Methods
+ virtual void reportResults() = 0;
+ virtual void reportConfiguration() = 0;
+ virtual void reportGeneration() = 0;
+
+ // Running Methods
  void run();
  virtual void runSolver() = 0;
  virtual void processSample(size_t sampleId, double fitness) = 0;

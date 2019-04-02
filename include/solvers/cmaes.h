@@ -70,8 +70,6 @@ class CMAES : public Korali::Solver::Base
  char _terminationReason[500];
  std::vector<CMAESParameter*> _CMAESParameters;
  std::map<std::string, CMAESParameter*> _CMAESParameterMap;
- std::chrono::time_point<std::chrono::system_clock> startTime, t0;
- std::chrono::time_point<std::chrono::system_clock> endTime, t1;
 
  size_t _finishedSamples;
  size_t _mu;

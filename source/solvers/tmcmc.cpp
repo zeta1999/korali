@@ -21,14 +21,51 @@ Korali::Solver::TMCMC::TMCMC(Korali::Problem::Base* problem) : Korali::Solver::B
  _burnIn = 0;
 }
 
+void Korali::Solver::TMCMC::reportConfiguration()
+{
+ if (_verbosity >= korali_minimal) printf("[Korali] Starting TMCMC.\n");
+ if (_verbosity >= korali_normal)
+ {
+  printf("[Korali] Seed: 0x%lX\n", _problem->_seed);
+  printf("[Korali] Population Size: %ld\n", _sampleCount);
+  printf("[Korali] Parameters: %ld\n", N);
+  for (size_t i = 0; i < N; i++)
+  {
+   printf("[Korali] Parameter \'%s\' - ", _problem->_parameters[i]->_name.c_str());
+   _problem->_parameters[i]->printDetails();
+   printf(" - Bounds: [%.3g; %.3g]\n", _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
+  }
+ }
+
+}
+
+void Korali::Solver::TMCMC::reportGeneration()
+{
+ if (_currentGeneration % _reportFrequency != 0) return;
+ if (_verbosity >= korali_normal) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
+ if (_verbosity >= korali_normal) reportResults();
+}
+
+void Korali::Solver::TMCMC::reportResults()
+{
+ if (_verbosity >= korali_detailed)
+  {
+   printf("[Korali] Annealing Ratio:  %.2f%%\n",  _annealingRatio*100);
+   printf("[Korali] Acceptance Ratio: %.2f%%\n", _acceptanceRate*100);
+   printf("[Korali] LogEvidence: %g\n", _logEvidence);
+  }
+
+  if (_verbosity >= korali_normal) printf("---------------------------------------------------------------------------\n");
+}
+
 void Korali::Solver::TMCMC::runSolver()
 {
- printf("[Korali] Starting TMCMC. Parameters: %ld, Seed: 0x%lX\n", N, _problem->_seed);
  double samplingTime = 0.0;
  double engineTime = 0.0;
  initializeEngine();
+ reportConfiguration();
 
- auto startTime = std::chrono::system_clock::now();
+ startTime = std::chrono::system_clock::now();
 
  for(_currentGeneration = 0; _annealingRatio < 1.0 && _currentGeneration < _maxGens; _currentGeneration++)
  {
@@ -45,14 +82,14 @@ void Korali::Solver::TMCMC::runSolver()
    _conduit->checkProgress();
   }
 
-  auto t1 = std::chrono::system_clock::now();
+  t1 = std::chrono::system_clock::now();
   samplingTime += std::chrono::duration<double>(t1-t0).count();
 
-  printf("[Korali] Generation %ld - Time: %fs, Annealing: %.2f%%, Acceptance: %.2f%%\n", _currentGeneration, std::chrono::duration<double>(t1-t0).count(), _annealingRatio*100, _acceptanceRate*100);
+  reportGeneration();
 
-  auto t2 = std::chrono::system_clock::now();
+  t2 = std::chrono::system_clock::now();
   resampleGeneration();
-  auto t3 = std::chrono::system_clock::now();
+  t3 = std::chrono::system_clock::now();
   engineTime += std::chrono::duration<double>(t3-t2).count();
  }
 
@@ -111,8 +148,6 @@ void Korali::Solver::TMCMC::saveResults()
    for (size_t i = 0; i < N; i++) checksum += databasePoints[pos*N + i];
    checksum += databaseFitness[pos];
   }
-
- printf("[Korali] LogEvidence: %.4f\n", _logEvidence);
 
  std::string outputName = "tmcmc.txt";
  printf("[Korali] Saving results to file: %s.\n", outputName.c_str());
