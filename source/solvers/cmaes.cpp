@@ -103,7 +103,7 @@ void Korali::Solver::CMAES::runSolver()
 
  startTime = std::chrono::system_clock::now();
 
- while( !checkTermination() )
+ while(!checkTermination())
  {
   prepareGeneration();
 
