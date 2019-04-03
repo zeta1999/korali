@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 
  solver.setStopMinDeltaX(1e-11);
  solver.setPopulationSize(128);
- solver.setReportVerbosity(KORALI_MINIMAL);
+ solver.setReportVerbosity(KORALI_DETAILED);
  solver.run();
 
  return 0;

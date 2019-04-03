@@ -92,7 +92,6 @@ class CMAES : public Korali::Solver::Base
  double currentFunctionValue;
  double prevFunctionValue;
 
- double chiN;
  double **C;  /* lower triangular matrix: i>=j for C[i][j] */
  double **B;  /* matrix with normalize eigenvectors in columns */
  double *rgD; /* axis lengths */
@@ -113,7 +112,7 @@ class CMAES : public Korali::Solver::Base
  double maxEW;
  double minEW;
 
- short flgEigensysIsUptodate;
+ bool flgEigensysIsUptodate;
  double genOfEigensysUpdate;
  double dMaxSignifKond;
 
