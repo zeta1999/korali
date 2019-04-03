@@ -11,7 +11,6 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
  _stopFitnessEvalThreshold = std::numeric_limits<double>::min();
  _stopFitnessDiffThreshold = 1e-12;
  _stopMinDeltaX = 0.0;
- _stopMaxStdDevXFactor = 1e+03;
  _stopMinFitness = -std::numeric_limits<double>::max();
 
  _mu = 0;
@@ -42,6 +41,8 @@ json Korali::Solver::CMAES::serialize()
   js["State"]["MinDiagonalCovariance"] = mindiagC;
   js["State"]["MaxEigenvalue"] = maxEW;
   js["State"]["MinEigenvalue"] = minEW;
+  js["State"]["EigenSystemUpToDate"] = flgEigensysIsUptodate;
+
   for (int i = 0; i < N; i++) js["State"]["CurrentMeanVector"] += rgxmean[i];
   for (int i = 0; i < N; i++) js["State"]["PreviousMeanVector"] += rgxold[i];
   for (int i = 0; i < N; i++) js["State"]["BestEverVector"] += rgxbestever[i];
@@ -67,7 +68,6 @@ json Korali::Solver::CMAES::serialize()
   js["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
   js["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
   js["Configuration"]["TerminationCriteria"]["stopMinDeltaX"] = _stopMinDeltaX;
-  js["Configuration"]["TerminationCriteria"]["stopMaxStdDevXFactor"] = _stopMaxStdDevXFactor;
   js["Configuration"]["TerminationCriteria"]["stopMinFitness"] = _stopMinFitness;
 
 //  auto p = _problem->serialize();
@@ -262,10 +262,6 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  sigma = sqrt(trace/N); /* _muEffective/(0.2*_muEffective+sqrt(N)) * sqrt(trace/N); */
 
  flgEigensysIsUptodate = true;
-
- double dtest = 1.0;
- for (; dtest && dtest < 1.1 * dtest; dtest *= 2.)  if (dtest == dtest + 1.)   break;
-  dMaxSignifKond = dtest / 1000.; /* not sure whether this is really save, 100 does not work well enough */
 
   countevals = 0;
   state = 0;
@@ -534,25 +530,6 @@ bool Korali::Solver::CMAES::checkTermination()
   terminate = true;
   sprintf(_terminationReason, "Object variable changes < %7.2e", _stopMinDeltaX);
  }
-
- /* TolUpX */
- // Re Check this
-// size_t tolPos;
-// for(tolPos = 0; tolPos < N; tolPos++) {
-//  if (sigma * sqrt(C[tolPos][tolPos]) > _stopMaxStdDevXFactor * _problem->_parameters[tolPos]->_initialStdDev)
-//   break;
-// }
-//
-// if (tolPos < N) {
-//  terminate = true;
-//  sprintf(_terminationReason, "Standard deviation increased by > %7.2e. Try a larger initial stddev.", _stopMaxStdDevXFactor);
-// }
-
- /* Condition of C greater than dMaxSignifKond */
- if (maxEW >= minEW * dMaxSignifKond) {
-  terminate = true;
-  sprintf(_terminationReason, "Maximal condition number %7.2e reached.", dMaxSignifKond);
- } /* if */
 
   size_t iAchse = 0;
   size_t iKoo = 0;

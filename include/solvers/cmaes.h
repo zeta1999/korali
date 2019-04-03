@@ -113,8 +113,6 @@ class CMAES : public Korali::Solver::Base
  double minEW;
 
  bool flgEigensysIsUptodate;
- double genOfEigensysUpdate;
- double dMaxSignifKond;
 
  // Private CMAES-Specific Methods
  void reSampleSingle(size_t idx);
