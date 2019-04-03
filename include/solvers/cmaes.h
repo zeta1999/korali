@@ -39,7 +39,6 @@ class CMAES : public Korali::Solver::Base
  void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
  void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
  void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
- void setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
  void setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
  void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
  void setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
@@ -77,7 +76,6 @@ class CMAES : public Korali::Solver::Base
  size_t _maxFitnessEvaluations;   // Defines maximum number of fitness evaluations
  double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
  double _stopFitnessDiffThreshold; // Defines minimum function value differences before stopping
- double _stopFitnessDiffHistoryThreshold; // Defines minimum function value differences among best values before stopping
  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
  double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
  double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
@@ -91,8 +89,8 @@ class CMAES : public Korali::Solver::Base
  double *rgxbestever;
  double *curBest;
  int *index;       /* sorting index of sample pop. */
- size_t arFuncValueHistSize;
- double *arFuncValueHist;
+ double currentFunctionValue;
+ double prevFunctionValue;
 
  double chiN;
  double **C;  /* lower triangular matrix: i>=j for C[i][j] */

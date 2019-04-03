@@ -10,7 +10,6 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
 
  _stopFitnessEvalThreshold = std::numeric_limits<double>::min();
  _stopFitnessDiffThreshold = 1e-12;
- _stopFitnessDiffHistoryThreshold = 1e-13;
  _stopMinDeltaX = 0.0;
  _stopMaxStdDevXFactor = 1e+03;
  _stopMinFitness = -std::numeric_limits<double>::max();
@@ -54,7 +53,6 @@ json Korali::Solver::CMAES::serialize()
 
   j["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
   j["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
-  j["Configuration"]["TerminationCriteria"]["stopFitnessDiffHistoryThreshold"] = _stopFitnessDiffHistoryThreshold ;
   j["Configuration"]["TerminationCriteria"]["stopMinDeltaX"] = _stopMinDeltaX;
   j["Configuration"]["TerminationCriteria"]["stopMaxStdDevXFactor"] = _stopMaxStdDevXFactor;
   j["Configuration"]["TerminationCriteria"]["stopMinFitness"] = _stopMinFitness;
@@ -106,7 +104,7 @@ void Korali::Solver::CMAES::reportResults()
  {
   printf("[Korali] Function Evaluations: %lu\n", countevals);
   printf("[Korali] Function Value f(x) = %g\n", curBest[index[0]]);
-  printf("[Korali] Function Value Difference = %g\n", function_value_difference());
+  printf("[Korali] Function Value Difference = %g\n", fabs(currentFunctionValue - prevFunctionValue));
   printf("[Korali] Maximal Standard Deviation %g\n", sigma*sqrt(maxdiagC));
   printf("[Korali] Minimal Standard Deviation %g\n", sigma*sqrt(mindiagC));
   printf("[Korali] Sigma %g\n", sigma);
@@ -276,11 +274,8 @@ void Korali::Solver::CMAES::initializeInternalVariables()
   B = (double**)calloc (sizeof(double*), N);
   rgFuncValue = (double*) calloc (sizeof(double), _sampleCount);
 
-  arFuncValueHistSize = 10+(int)ceil(3.*10.*N/_sampleCount)+1;
-  arFuncValueHist = (double*) calloc (sizeof(double), arFuncValueHistSize);
-
   for (size_t i = 0; i < N; ++i) {
-   C[i] = (double*) calloc (sizeof(double), i+1);
+   C[i] = (double*) calloc (sizeof(double), N);
    B[i] = (double*) calloc (sizeof(double), N);
   }
   index = (int *) calloc (sizeof(int*), _sampleCount);
@@ -408,9 +403,8 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  }
 
  /* update function value history */
-   for(size_t i = arFuncValueHistSize-1; i > 0; i--)
-     arFuncValueHist[i] = arFuncValueHist[i-1];
-   arFuncValueHist[0] = fitnessVector[index[0]];
+ prevFunctionValue = currentFunctionValue;
+ currentFunctionValue = fitnessVector[index[0]];
 
  /* update xbestever */
  if (currentBest > curBest[index[0]] || _currentGeneration == 1)
@@ -499,17 +493,9 @@ void Korali::Solver::CMAES::adaptC2(int hsig)
  } /* if ccov... */
 }
 
-double Korali::Solver::CMAES::function_value_difference()
-{
- return std::max(doubleRangeMax(arFuncValueHist, std::min(_currentGeneration,arFuncValueHistSize)),
-   doubleRangeMax(rgFuncValue, _sampleCount)) -
-  std::min(doubleRangeMin(arFuncValueHist, std::min(_currentGeneration, arFuncValueHistSize)),
-      doubleRangeMin(rgFuncValue, _sampleCount));
-}
-
 bool Korali::Solver::CMAES::checkTermination()
 {
- double range, fac;
+ double fac;
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
  bool terminate = false;
 
@@ -521,22 +507,10 @@ bool Korali::Solver::CMAES::checkTermination()
  }
 
  /* TolFun */
- range = function_value_difference();
-
- if (_currentGeneration > 0 && range <= _stopFitnessDiffThreshold) {
+  double range = fabs(currentFunctionValue - prevFunctionValue);
+  if (_currentGeneration > 0 && range <= _stopFitnessDiffThreshold) {
   terminate = true;
   sprintf(_terminationReason, "Function value differences (%7.2e) < (%7.2e)",  range, _stopFitnessDiffThreshold);
- }
-
- /* TolFunHist */
- if (_currentGeneration > arFuncValueHistSize) {
-  range = doubleRangeMax(arFuncValueHist, arFuncValueHistSize)
-   - doubleRangeMin(arFuncValueHist, arFuncValueHistSize);
-  if (range <= _stopFitnessDiffHistoryThreshold)
-  {
-   terminate = true;
-   sprintf(_terminationReason, "Function value changes (%7.2e) < (%7.2e)", range, _stopFitnessDiffHistoryThreshold);
-  }
  }
 
  size_t cTemp = 0;
