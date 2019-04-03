@@ -4,6 +4,7 @@
 #include "parameters/base.h"
 #include <vector>
 #include "stdlib.h"
+#include "json.hpp"
 
 namespace Korali::Conduit {
   class Base;
@@ -32,6 +33,8 @@ class Base
  double getPriorsLogProbabilityDensity(double *x);
  double getPriorsProbabilityDensity(double *x);
  void initializeParameters();
+
+ virtual nlohmann::json serialize();
 };
 
 } // namespace Korali

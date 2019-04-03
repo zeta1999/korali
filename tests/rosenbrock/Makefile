@@ -2,6 +2,7 @@ include ../../common.mk
 
 LDFLAGS  += -L../../source -lkorali
 CXXFLAGS += -I../../include
+CXXFLAGS += -I../../libs/json
 BINARIES = minimize_function sample_function
 OBJECTS = model/rosenbrock.o
 

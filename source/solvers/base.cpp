@@ -3,6 +3,8 @@
 #include "conduits/single.h"
 #include "conduits/openmp.h"
 
+using json = nlohmann::json;
+
 Korali::Solver::Base::Base(Korali::Problem::Base* problem)
 {
  _problem = problem;
@@ -68,3 +70,11 @@ void Korali::Solver::Base::run()
  _conduit->initialize();
 }
 
+json Korali::Solver::Base::serialize()
+{
+ auto j = json();
+ j["Solver"]["currentGeneration"] = _currentGeneration;
+ j["Solver"]["maxGens"] = _maxGens;
+ j["Solver"]["sampleCount"] = _sampleCount;
+ return j;
+}

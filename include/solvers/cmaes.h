@@ -20,12 +20,18 @@ class CMAES : public Korali::Solver::Base
  void initializeInternalVariables();
  void prepareGeneration();
  bool checkTermination();
- void reportResults();
- void reportConfiguration();
- void reportGeneration();
  void updateDistribution(const double *fitnessVector);
  void runSolver();
  void processSample(size_t sampleId, double fitness);
+
+ // Reporting Methods
+ void reportResults();
+ void reportConfiguration();
+ void reportGeneration();
+ void saveInitialConfiguration();
+
+ // Serialization Method
+ nlohmann::json serialize();
 
  // Configuration Methods
  void setMaxFitnessEvaluations(size_t maxFitnessEvaluations) { _maxFitnessEvaluations = maxFitnessEvaluations; }

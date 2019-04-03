@@ -2,6 +2,8 @@
 #include "conduits/base.h"
 #include <chrono>
 
+using json = nlohmann::json;
+
 Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
 {
  _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
@@ -27,6 +29,27 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
  _gaussianGenerator->initializeDistribution(problem->_seed + _problem->_parameterCount + 0xF0);
 }
 
+json Korali::Solver::CMAES::serialize()
+{
+  auto j = this->Korali::Solver::Base::serialize();
+
+  j["Solver"]["Engine"] = "CMA-ES";
+  j["Solver"]["mu"] = _mu;
+  j["Solver"]["muType"] = _muType;
+  j["Solver"]["muEffective"] = _muEffective;
+
+  auto p = _problem->serialize();
+  j["Problem"] = p;
+
+  return j;
+}
+
+void Korali::Solver::CMAES::saveInitialConfiguration()
+{
+ auto j = serialize();
+ printf("Conf: \n%s\n", j.dump(2).c_str());
+}
+
 void Korali::Solver::CMAES::reportConfiguration()
 {
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Starting CMAES.\n");
@@ -46,7 +69,6 @@ void Korali::Solver::CMAES::reportConfiguration()
    printf(" - Bounds: [%.3g; %.3g]\n", _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
   }
  }
-
 }
 
 void Korali::Solver::CMAES::reportGeneration()
@@ -87,6 +109,7 @@ void Korali::Solver::CMAES::runSolver()
  initializeInternalVariables();
 
  reportConfiguration();
+ saveInitialConfiguration();
 
  startTime = std::chrono::system_clock::now();
 
@@ -112,6 +135,7 @@ void Korali::Solver::CMAES::runSolver()
 
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
  reportResults(); // Printing Solver results
+
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
 }
 

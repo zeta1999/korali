@@ -1,6 +1,8 @@
 #include "problems/base.h"
 #include <chrono>
 
+using json = nlohmann::json;
+
 Korali::Problem::Base::Base(size_t seed)
 {
  _seed = seed;
@@ -48,4 +50,13 @@ bool Korali::Problem::Base::isSampleOutsideBounds(double* sample)
 {
   for (size_t i = 0; i < _parameterCount; i++) if (sample[i] < _parameters[i]->_lowerBound || sample[i] > _parameters[i]->_upperBound) return true;
   return false;
+}
+
+json Korali::Problem::Base::serialize()
+{
+ auto j = json({
+        { "parameterCount", _parameterCount },
+        { "referenceDataSize", _referenceDataSize },
+        { "seed", _seed }});
+ return j;
 }

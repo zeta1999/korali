@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "problems/base.h"
 #include <chrono>
+#include "json.hpp"
 
 enum verbosity { KORALI_MINIMAL = 0, KORALI_NORMAL = 1, KORALI_DETAILED = 2 };
 
@@ -46,6 +47,9 @@ class Base {
  void run();
  virtual void runSolver() = 0;
  virtual void processSample(size_t sampleId, double fitness) = 0;
+
+ // Serialization Method
+ virtual nlohmann::json serialize();
 };
 
 } // namespace Korali

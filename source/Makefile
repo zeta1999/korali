@@ -1,5 +1,6 @@
 include ../common.mk
 CXXFLAGS += -I../include
+CXXFLAGS += -I../libs/json/
 
 SOURCES =  $(shell ls *.cpp)
 SOURCES += $(shell ls conduits/*.cpp)
