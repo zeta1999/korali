@@ -287,18 +287,11 @@ void Korali::Solver::CMAES::initializeInternalVariables()
   for (size_t i = 0; i < _sampleCount; ++i)  index[i] = i; /* should not be necessary */
   curBest = (double *) calloc (sizeof(double), _sampleCount);
 
-  /* Initialize newed space  */
-
- for (size_t i = 0; i < N; ++i)
-  for (size_t j = 0; j < i; ++j)
-   C[i][j] = B[i][j] = B[j][i] = 0.;
-
  for (size_t i = 0; i < N; ++i)
  {
   B[i][i] = 1.;
   C[i][i] = rgD[i] = _problem->_parameters[i]->_initialStdDev * sqrt(N / trace);
   C[i][i] *= C[i][i];
-  rgpc[i] = rgps[i] = 0.;
  }
 
  minEW = doubleRangeMin(rgD, N); minEW = minEW * minEW;
