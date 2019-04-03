@@ -33,8 +33,8 @@ void Korali::Parameter::Gamma::printDetails()
 json Korali::Parameter::Gamma::serialize()
 {
  auto j = this->Korali::Parameter::Base::serialize();
- j["Distribution"]["Type"] = "Gamma";
- j["Distribution"]["Shape"] = _shape;
- j["Distribution"]["Rate"] = _rate;
+ j["Type"] = "Gamma";
+ j["Shape"] = _shape;
+ j["Rate"] = _rate;
  return j;
 }

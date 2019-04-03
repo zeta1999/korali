@@ -42,7 +42,6 @@ class CMAES : public Korali::Solver::Base
  void setStopFitnessDiffHistoryThreshold(double stopFitnessDiffHistoryThreshold) { _stopFitnessDiffHistoryThreshold = stopFitnessDiffHistoryThreshold; }
  void setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
  void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
- void setStopMaxTimePerEigenDecomposition(double stopMaxTimePerEigendecomposition) { _stopMaxTimePerEigendecomposition = stopMaxTimePerEigendecomposition; }
  void setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
  void setMu(size_t mu, std::string muType = "Logarithmic") { _mu = mu; _muType = muType; }
  void setMuCovariance(double muCovariance) { _muCovariance = muCovariance;}
@@ -81,17 +80,18 @@ class CMAES : public Korali::Solver::Base
  double _stopFitnessDiffHistoryThreshold; // Defines minimum function value differences among best values before stopping
  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
  double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
- double _stopMaxTimePerEigendecomposition; // Defines maximum time to be spent on eigensystem decomposition
  double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
 
  // Private CMAES-Specific Variables
  double sigma;  /* step size */
  Parameter::Gaussian* _gaussianGenerator;
 
+ double currentBest;
  double *rgxmean;  /* mean x vector, "parent" */
  double *rgxbestever;
  double *curBest;
  int *index;       /* sorting index of sample pop. */
+ size_t arFuncValueHistSize;
  double *arFuncValueHist;
 
  double chiN;

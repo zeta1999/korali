@@ -3,6 +3,8 @@
 #include "parameters/uniform.h"
 #include "conduits/base.h"
 
+using json = nlohmann::json;
+
 Korali::Problem::Likelihood::Likelihood(void (*modelFunction) (double*, double*), size_t seed) : Korali::Problem::Base::Base(seed)
 {
  _referenceData = NULL;
@@ -34,4 +36,12 @@ double Korali::Problem::Likelihood::evaluateFitness(double* sample)
  _modelFunction(parameters, fitnessData);
 
  return -Korali::Parameter::Gaussian::logLikelihood(sigma, _referenceDataSize, _referenceData, fitnessData);
+}
+
+json Korali::Problem::Likelihood::serialize()
+{
+ auto j = this->Korali::Problem::Base::serialize();
+ j["Type"] = "Likelihood";
+
+ return j;
 }

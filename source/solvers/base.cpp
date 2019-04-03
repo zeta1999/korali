@@ -73,8 +73,10 @@ void Korali::Solver::Base::run()
 json Korali::Solver::Base::serialize()
 {
  auto j = json();
- j["Solver"]["currentGeneration"] = _currentGeneration;
- j["Solver"]["maxGens"] = _maxGens;
- j["Solver"]["sampleCount"] = _sampleCount;
+ j["State"]["currentGeneration"] = _currentGeneration;
+ j["Configuration"]["maxGens"] = _maxGens;
+ j["Configuration"]["sampleCount"] = _sampleCount;
+ j["Configuration"]["reportFrequency"] = _reportFrequency;
+ j["Configuration"]["verbosity"] = _verbosity;
  return j;
 }

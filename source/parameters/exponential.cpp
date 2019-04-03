@@ -32,7 +32,7 @@ void Korali::Parameter::Exponential::printDetails()
 json Korali::Parameter::Exponential::serialize()
 {
  auto j = this->Korali::Parameter::Base::serialize();
- j["Distribution"]["Type"] = "Exponential";
- j["Distribution"]["Mean"] = _mean;
+ j["Type"] = "Exponential";
+ j["Mean"] = _mean;
  return j;
 }

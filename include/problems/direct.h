@@ -12,6 +12,9 @@ class Direct : public Korali::Problem::Base
  double (*_modelFunction) (double*);
  Direct(double (*modelFunction) (double*), size_t seed = -1);
  double evaluateFitness(double* sample);
+
+ // Serialization Method
+ nlohmann::json serialize();
 };
 
 } // namespace Korali

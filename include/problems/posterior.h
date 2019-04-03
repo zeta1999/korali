@@ -11,6 +11,9 @@ class Posterior : public Korali::Problem::Likelihood
  public:
  Posterior(void (*modelFunction) (double*, double*), size_t seed = -1);
  double evaluateFitness(double* sample);
+
+ // Serialization Method
+ nlohmann::json serialize();
 };
 
 } // namespace Korali

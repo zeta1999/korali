@@ -13,7 +13,6 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
  _stopFitnessDiffHistoryThreshold = 1e-13;
  _stopMinDeltaX = 0.0;
  _stopMaxStdDevXFactor = 1e+03;
- _stopMaxTimePerEigendecomposition = 1.0;
  _stopMinFitness = -std::numeric_limits<double>::max();
 
  _mu = 0;
@@ -27,19 +26,41 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
 
  _gaussianGenerator = new Parameter::Gaussian(0.0, 1.0);
  _gaussianGenerator->initializeDistribution(problem->_seed + _problem->_parameterCount + 0xF0);
+ _terminationReason[0] = '\0';
 }
 
 json Korali::Solver::CMAES::serialize()
 {
   auto j = this->Korali::Solver::Base::serialize();
 
-  j["Solver"]["Engine"] = "CMA-ES";
-  j["Solver"]["mu"] = _mu;
-  j["Solver"]["muType"] = _muType;
-  j["Solver"]["muEffective"] = _muEffective;
+  j["State"]["MuEffective"] = _muEffective;
+  j["State"]["Sigma"] = sigma;
+  j["State"]["CurrentBest"] = currentBest;
+  for (int i = 0; i < N; i++) j["State"]["MeanVector"] += rgxmean[i];
+  for (int i = 0; i < N; i++) j["State"]["BestEverVector"] += rgxbestever[i];
+  for (int i = 0; i < N; i++) j["State"]["CurrentBestVector"] += curBest[i];
+  for (int i = 0; i < N; i++) j["State"]["Index"] += index[i];
 
-  auto p = _problem->serialize();
-  j["Problem"] = p;
+  j["Configuration"]["Engine"] = "CMA-ES";
+  j["Configuration"]["Mu"] = _mu;
+  j["Configuration"]["maxFitnessEvaluations"] = _maxFitnessEvaluations ;
+  j["Configuration"]["diagonalCovarianceMatrixEvalFrequency"] = _diagonalCovarianceMatrixEvalFrequency;
+  j["Configuration"]["covarianceEigensystemEvaluationFrequency"] = _covarianceEigensystemEvaluationFrequency;
+  j["Configuration"]["muCovariance"] = _muCovariance;
+  j["Configuration"]["sigmaCumulationFactor"] = _sigmaCumulationFactor;
+  j["Configuration"]["dampFactor"] = _dampFactor;
+  j["Configuration"]["cumulativeCovariance"] = _cumulativeCovariance;
+  j["Configuration"]["covarianceMatrixLearningRate"] = _covarianceMatrixLearningRate;
+
+  j["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
+  j["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
+  j["Configuration"]["TerminationCriteria"]["stopFitnessDiffHistoryThreshold"] = _stopFitnessDiffHistoryThreshold ;
+  j["Configuration"]["TerminationCriteria"]["stopMinDeltaX"] = _stopMinDeltaX;
+  j["Configuration"]["TerminationCriteria"]["stopMaxStdDevXFactor"] = _stopMaxStdDevXFactor;
+  j["Configuration"]["TerminationCriteria"]["stopMinFitness"] = _stopMinFitness;
+
+//  auto p = _problem->serialize();
+//  j["Problem"] = p;
 
   return j;
 }
@@ -109,7 +130,7 @@ void Korali::Solver::CMAES::runSolver()
  initializeInternalVariables();
 
  reportConfiguration();
- saveInitialConfiguration();
+// saveInitialConfiguration();
 
  startTime = std::chrono::system_clock::now();
 
@@ -136,6 +157,7 @@ void Korali::Solver::CMAES::runSolver()
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
  reportResults(); // Printing Solver results
 
+ saveInitialConfiguration();
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
 }
 
@@ -239,23 +261,23 @@ void Korali::Solver::CMAES::initializeInternalVariables()
 
   countevals = 0;
   state = 0;
+  currentBest = 0.0;
 
   rgpc = (double*) calloc (sizeof(double), N);
   rgps = (double*) calloc (sizeof(double), N);
-  rgdTmp = (double*) calloc (sizeof(double), N+1);
+  rgdTmp = (double*) calloc (sizeof(double), N);
   rgBDz = (double*) calloc (sizeof(double), N);
-  rgxmean = (double*) calloc (sizeof(double), N+2); rgxmean[0] = N; ++rgxmean;
-  rgxold = (double*) calloc (sizeof(double), N+2); rgxold[0] = N; ++rgxold;
-  rgxbestever = (double*) calloc (sizeof(double), N+3); rgxbestever[0] = N; ++rgxbestever;
-  rgout = (double*) calloc (sizeof(double), N+2); rgout[0] = N; ++rgout;
+  rgxmean = (double*) calloc (sizeof(double), N);
+  rgxold = (double*) calloc (sizeof(double), N);
+  rgxbestever = (double*) calloc (sizeof(double), N);
+  rgout = (double*) calloc (sizeof(double), N);
   rgD = (double*) calloc (sizeof(double), N);
   C = (double**) calloc (sizeof(double*), N);
   B = (double**)calloc (sizeof(double*), N);
-  rgFuncValue = (double*) calloc (sizeof(double), _sampleCount+1);
-  rgFuncValue[0]=_sampleCount; ++rgFuncValue;
-  arFuncValueHist = (double*) calloc (sizeof(double), 10+(int)ceil(3.*10.*N/_sampleCount)+1);
-  arFuncValueHist[0] = (double)(10+(int)ceil(3.*10.*N/_sampleCount));
-  arFuncValueHist++;
+  rgFuncValue = (double*) calloc (sizeof(double), _sampleCount);
+
+  arFuncValueHistSize = 10+(int)ceil(3.*10.*N/_sampleCount)+1;
+  arFuncValueHist = (double*) calloc (sizeof(double), arFuncValueHistSize);
 
   for (size_t i = 0; i < N; ++i) {
    C[i] = (double*) calloc (sizeof(double), i+1);
@@ -386,24 +408,22 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  sorted_index(fitnessVector, index, _sampleCount);
 
  /* Test if function values are identical, escape flat fitness */
- if (rgFuncValue[index[0]] ==
-   rgFuncValue[index[(int)_sampleCount/2]]) {
+ if (rgFuncValue[index[0]] == rgFuncValue[index[(int)_sampleCount/2]]) {
   sigma *= exp(0.2+_sigmaCumulationFactor/_dampFactor);
   fprintf(stderr, "[Korali] Error: Warning: sigma increased due to equal function values.\n");
   fprintf(stderr, "[Korali] Reconsider the formulation of the objective function\n");
  }
 
  /* update function value history */
-   for(size_t i = (size_t)*(arFuncValueHist-1)-1; i > 0; --i)
+   for(size_t i = arFuncValueHistSize-1; i > 0; i--)
      arFuncValueHist[i] = arFuncValueHist[i-1];
    arFuncValueHist[0] = fitnessVector[index[0]];
 
  /* update xbestever */
- if ((rgxbestever[N] > curBest[index[0]] || _currentGeneration == 1))
+ if (currentBest > curBest[index[0]] || _currentGeneration == 1)
  {
   for (size_t i = 0; i < N; ++i) rgxbestever[i] = _samplePopulation[index[0]*N + i];
-  rgxbestever[N] = curBest[index[0]];
-  rgxbestever[N+1] = countevals;
+  currentBest = curBest[index[0]];
  }
 
  /* calculate rgxmean and rgBDz~N(0,C) */
@@ -488,9 +508,9 @@ void Korali::Solver::CMAES::adaptC2(int hsig)
 
 double Korali::Solver::CMAES::function_value_difference()
 {
- return std::max(doubleRangeMax(arFuncValueHist, (int)std::min((double)_currentGeneration,*(arFuncValueHist-1))),
+ return std::max(doubleRangeMax(arFuncValueHist, std::min(_currentGeneration,arFuncValueHistSize)),
    doubleRangeMax(rgFuncValue, _sampleCount)) -
-  std::min(doubleRangeMin(arFuncValueHist, (int)std::min((double)_currentGeneration, *(arFuncValueHist-1))),
+  std::min(doubleRangeMin(arFuncValueHist, std::min(_currentGeneration, arFuncValueHistSize)),
       doubleRangeMin(rgFuncValue, _sampleCount));
 }
 
@@ -516,9 +536,9 @@ bool Korali::Solver::CMAES::checkTermination()
  }
 
  /* TolFunHist */
- if (_currentGeneration > *(arFuncValueHist-1)) {
-  range = doubleRangeMax(arFuncValueHist, (int)*(arFuncValueHist-1))
-   - doubleRangeMin(arFuncValueHist, (int)*(arFuncValueHist-1));
+ if (_currentGeneration > arFuncValueHistSize) {
+  range = doubleRangeMax(arFuncValueHist, arFuncValueHistSize)
+   - doubleRangeMin(arFuncValueHist, arFuncValueHistSize);
   if (range <= _stopFitnessDiffHistoryThreshold)
   {
    terminate = true;

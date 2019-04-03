@@ -35,8 +35,8 @@ void Korali::Parameter::Uniform::printDetails()
 json Korali::Parameter::Uniform::serialize()
 {
  auto j = this->Korali::Parameter::Base::serialize();
- j["Distribution"]["Type"] = "Uniform";
- j["Distribution"]["Minimum"] = _min;
- j["Distribution"]["Maximum"] = _max;
+ j["Type"] = "Uniform";
+ j["Minimum"] = _min;
+ j["Maximum"] = _max;
  return j;
 }

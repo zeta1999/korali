@@ -34,6 +34,7 @@ class Base
  double getPriorsProbabilityDensity(double *x);
  void initializeParameters();
 
+ // Serialization Method
  virtual nlohmann::json serialize();
 };
 
