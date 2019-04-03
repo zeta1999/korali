@@ -1,5 +1,7 @@
 #include "parameters/gaussian.h"
 
+using json = nlohmann::json;
+
 Korali::Parameter::Gaussian::Gaussian(double mean, double sigma) : Korali::Parameter::Gaussian::Gaussian("NoNameGaussian", mean, sigma){}
 Korali::Parameter::Gaussian::Gaussian(std::string name, double mean, double sigma) : Korali::Parameter::Base::Base(name)
 {
@@ -50,4 +52,13 @@ double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, doubl
 void Korali::Parameter::Gaussian::printDetails()
 {
  printf("Gaussian(%.3g, %.3g)", _mean, _sigma);
+}
+
+json Korali::Parameter::Gaussian::serialize()
+{
+ auto j = this->Korali::Parameter::Base::serialize();
+ j["Distribution"]["Type"] = "Gaussian";
+ j["Distribution"]["Mean"] = _mean;
+ j["Distribution"]["Sigma"] = _sigma;
+ return j;
 }

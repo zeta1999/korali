@@ -1,5 +1,7 @@
 #include "parameters/base.h"
 
+using json = nlohmann::json;
+
 Korali::Parameter::Base::Base(std::string name)
 {
  _name = name;
@@ -36,4 +38,16 @@ void Korali::Parameter::Base::setBounds(double lowerBound, double upperBound)
  _lowerBound = lowerBound;
  _upperBound = upperBound;
  _initialValue = (lowerBound+upperBound)*0.5;
+}
+
+json Korali::Parameter::Base::serialize()
+{
+ auto j = json();
+ j["Name"] = _name;
+ j["LowerBound"] = _lowerBound;
+ j["UpperBound"] = _upperBound;
+ j["InitialValue"] = _initialValue;
+ j["InitialStdDev"] = _initialStdDev;
+ j["MinStdDevStep"] = _minStdDevChange;
+ return j;
 }

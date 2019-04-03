@@ -1,5 +1,7 @@
 #include "parameters/gamma.h"
 
+using json = nlohmann::json;
+
 Korali::Parameter::Gamma::Gamma(double shape, double rate) : Korali::Parameter::Gamma::Gamma("NoNameGamma", shape, rate) {}
 Korali::Parameter::Gamma::Gamma(std::string name, double shape, double rate) : Korali::Parameter::Base::Base(name)
 {
@@ -26,4 +28,13 @@ double Korali::Parameter::Gamma::getRandomNumber()
 void Korali::Parameter::Gamma::printDetails()
 {
  printf("Gamma(%.3g, %.3g)", _shape, _rate);
+}
+
+json Korali::Parameter::Gamma::serialize()
+{
+ auto j = this->Korali::Parameter::Base::serialize();
+ j["Distribution"]["Type"] = "Gamma";
+ j["Distribution"]["Shape"] = _shape;
+ j["Distribution"]["Rate"] = _rate;
+ return j;
 }

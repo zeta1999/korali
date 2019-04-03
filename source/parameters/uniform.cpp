@@ -1,5 +1,7 @@
 #include "parameters/uniform.h"
 
+using json = nlohmann::json;
+
 Korali::Parameter::Uniform::Uniform(double min, double max) : Korali::Parameter::Uniform::Uniform("NoNameUniform", min, max) {}
 Korali::Parameter::Uniform::Uniform(std::string name, double min, double max) : Korali::Parameter::Base::Base(name)
 {
@@ -28,4 +30,13 @@ double Korali::Parameter::Uniform::getRandomNumber()
 void Korali::Parameter::Uniform::printDetails()
 {
  printf("Uniform(%.3g, %.3g)", _min, _max);
+}
+
+json Korali::Parameter::Uniform::serialize()
+{
+ auto j = this->Korali::Parameter::Base::serialize();
+ j["Distribution"]["Type"] = "Uniform";
+ j["Distribution"]["Minimum"] = _min;
+ j["Distribution"]["Maximum"] = _max;
+ return j;
 }

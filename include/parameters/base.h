@@ -6,6 +6,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf.h>
+#include "json.hpp"
 
 namespace Korali::Parameter
 {
@@ -37,6 +38,9 @@ class Base
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
  virtual double getRandomNumber() = 0;
+
+ // Serialization Method
+ virtual nlohmann::json serialize();
 };
 
 } // namespace Korali

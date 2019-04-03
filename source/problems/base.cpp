@@ -58,5 +58,8 @@ json Korali::Problem::Base::serialize()
         { "parameterCount", _parameterCount },
         { "referenceDataSize", _referenceDataSize },
         { "seed", _seed }});
+
+ for (int i = 0; i < _parameterCount; i++) j["Parameters"] += _parameters[i]->serialize();
+
  return j;
 }

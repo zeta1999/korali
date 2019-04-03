@@ -18,6 +18,9 @@ class Exponential : public Korali::Parameter::Base
   double getDensityLog(double x);
   double getRandomNumber();
   void printDetails();
+
+  // Serialization Method
+  nlohmann::json serialize();
 };
 
 } // namespace Korali

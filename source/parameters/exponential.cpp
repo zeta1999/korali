@@ -1,5 +1,7 @@
 #include "parameters/exponential.h"
 
+using json = nlohmann::json;
+
 Korali::Parameter::Exponential::Exponential(double mean) : Korali::Parameter::Exponential::Exponential("NoNameExponential", mean){}
 Korali::Parameter::Exponential::Exponential(std::string name, double mean) : Korali::Parameter::Base::Base(name)
 {
@@ -25,4 +27,12 @@ double Korali::Parameter::Exponential::getRandomNumber()
 void Korali::Parameter::Exponential::printDetails()
 {
  printf("Exponential(%.3g)", _mean);
+}
+
+json Korali::Parameter::Exponential::serialize()
+{
+ auto j = this->Korali::Parameter::Base::serialize();
+ j["Distribution"]["Type"] = "Exponential";
+ j["Distribution"]["Mean"] = _mean;
+ return j;
 }

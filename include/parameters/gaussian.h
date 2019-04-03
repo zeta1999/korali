@@ -20,6 +20,9 @@ class Gaussian : public Korali::Parameter::Base
   double getRandomNumber();
   static double logLikelihood(double sigma, int nData, double* x, double* u);
   void printDetails();
+
+  // Serialization Method
+  nlohmann::json serialize();
 };
 
 } // namespace Korali
