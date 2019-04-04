@@ -25,8 +25,10 @@ class CMAES : public Korali::Solver::Base
  void processSample(size_t sampleId, double fitness);
 
  // Serialization Methods
- nlohmann::json serialize();
- virtual void deserialize(nlohmann::json js);
+ virtual nlohmann::json getConfiguration();
+ virtual void setConfiguration(nlohmann::json js);
+ virtual nlohmann::json getState();
+ virtual void setState(nlohmann::json js);
  void saveGeneration();
 
  // Configuration Methods

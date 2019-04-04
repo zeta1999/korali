@@ -69,10 +69,9 @@ void Korali::Solver::Base::run()
  _conduit->initialize();
 }
 
-json Korali::Solver::Base::serialize()
+json Korali::Solver::Base::getConfiguration()
 {
  auto js = json();
- js["State"]["currentGeneration"] = _currentGeneration;
  js["Configuration"]["maxGens"] = _maxGens;
  js["Configuration"]["sampleCount"] = _sampleCount;
  js["Configuration"]["reportFrequency"] = _reportFrequency;
@@ -80,11 +79,22 @@ json Korali::Solver::Base::serialize()
  return js;
 }
 
-void Korali::Solver::Base::deserialize(json js)
+void Korali::Solver::Base::setConfiguration(json js)
 {
- _currentGeneration = js["State"]["currentGeneration"];
  _maxGens           = js["Configuration"]["maxGens"];
  _sampleCount       = js["Configuration"]["sampleCount"];
  _reportFrequency   = js["Configuration"]["reportFrequency"];
  _verbosity         = js["Configuration"]["verbosity"];
+}
+
+json Korali::Solver::Base::getState()
+{
+ auto js = json();
+ js["State"]["currentGeneration"] = _currentGeneration;
+ return js;
+}
+
+void Korali::Solver::Base::setState(json js)
+{
+ _currentGeneration = js["State"]["currentGeneration"];
 }

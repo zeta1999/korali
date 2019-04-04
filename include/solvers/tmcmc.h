@@ -85,6 +85,12 @@ class TMCMC : public Korali::Solver::Base
  void minSearch(double const *fj, int fn, double pj, double objTol, double *xmin, double *fmin);
  static double tmcmc_objlogp(double x, const double *fj, int fn, double pj, double zero);
  static double objLog(const gsl_vector *v, void *param);
+
+ // Serialization Methods
+ virtual nlohmann::json getConfiguration();
+ virtual void setConfiguration(nlohmann::json js);
+ virtual nlohmann::json getState();
+ virtual void setState(nlohmann::json js);
 };
 
 } // namespace Korali

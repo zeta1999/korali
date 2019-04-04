@@ -16,4 +16,18 @@
 #include "conduits/single.h"
 #include "conduits/upcxx.h"
 
+namespace Korali
+{
+
+class Korali {
+public:
+
+
+
+};
+
+extern Korali k;
+
+} // namespace Korali
+
 #endif // _KORALI_H_

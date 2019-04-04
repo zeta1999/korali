@@ -52,14 +52,19 @@ bool Korali::Problem::Base::isSampleOutsideBounds(double* sample)
   return false;
 }
 
-json Korali::Problem::Base::serialize()
+json Korali::Problem::Base::getConfiguration()
 {
- auto j = json({
-        { "parameterCount", _parameterCount },
-        { "referenceDataSize", _referenceDataSize },
-        { "seed", _seed }});
+ auto js = json();
+ js["parameterCount"] = _parameterCount;
+ js["referenceDataSize"] = _referenceDataSize;
+ js["seed"] = _seed;
 
- for (int i = 0; i < _parameterCount; i++) j["Parameters"] += _parameters[i]->serialize();
+ return js;
+}
 
- return j;
+void Korali::Solver::Base::setConfiguration(json js)
+{
+ _parameterCount = js["parameterCount"];
+ _referenceDataSize = js["referenceDataSize"];
+ _seed = js["seed"];
 }

@@ -43,8 +43,10 @@ class Base {
  virtual void processSample(size_t sampleId, double fitness) = 0;
 
  // Serialization Methods
- virtual nlohmann::json serialize();
- virtual void deserialize(nlohmann::json js);
+ virtual nlohmann::json getConfiguration();
+ virtual void setConfiguration(nlohmann::json js);
+ virtual nlohmann::json getState();
+ virtual void setState(nlohmann::json js);
 };
 
 } // namespace Korali

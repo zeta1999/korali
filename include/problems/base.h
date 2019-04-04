@@ -34,8 +34,9 @@ class Base
  double getPriorsProbabilityDensity(double *x);
  void initializeParameters();
 
- // Serialization Method
- virtual nlohmann::json serialize();
+ // Serialization Methods
+ virtual nlohmann::json getConfiguration();
+ virtual void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

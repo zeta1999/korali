@@ -28,9 +28,33 @@ Korali::Solver::CMAES::CMAES(Korali::Problem::Base* problem) : Korali::Solver::B
  _terminationReason[0] = '\0';
 }
 
-json Korali::Solver::CMAES::serialize()
+json Korali::Solver::CMAES::getConfiguration()
 {
-  auto js = this->Korali::Solver::Base::serialize();
+  auto js = this->Korali::Solver::Base::getConfiguration();
+
+  js["Configuration"]["Engine"] = "CMA-ES";
+  js["Configuration"]["Mu"] = _mu;
+  js["Configuration"]["MuType"] = _muType;
+  js["Configuration"]["diagonalCovarianceMatrixEvalFrequency"] = _diagonalCovarianceMatrixEvalFrequency;
+  js["Configuration"]["covarianceEigensystemEvaluationFrequency"] = _covarianceEigensystemEvaluationFrequency;
+  js["Configuration"]["muCovariance"] = _muCovariance;
+  js["Configuration"]["sigmaCumulationFactor"] = _sigmaCumulationFactor;
+  js["Configuration"]["dampFactor"] = _dampFactor;
+  js["Configuration"]["cumulativeCovariance"] = _cumulativeCovariance;
+  js["Configuration"]["covarianceMatrixLearningRate"] = _covarianceMatrixLearningRate;
+
+  js["Configuration"]["TerminationCriteria"]["MaxFitnessEvaluations"] = _maxFitnessEvaluations ;
+  js["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
+  js["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
+  js["Configuration"]["TerminationCriteria"]["stopMinDeltaX"] = _stopMinDeltaX;
+  js["Configuration"]["TerminationCriteria"]["stopMinFitness"] = _stopMinFitness;
+
+  return js;
+}
+
+json Korali::Solver::CMAES::getState()
+{
+  auto js = this->Korali::Solver::Base::getState();
 
   js["State"]["MuEffective"] = _muEffective;
   js["State"]["Sigma"] = sigma;
@@ -57,29 +81,33 @@ json Korali::Solver::CMAES::serialize()
   for (int i = 0; i < _sampleCount; i++) for (int j = 0; j < N; j++) js["State"]["Samples"][i] += _samplePopulation[i*N + j];
   for (int i = 0; i < _sampleCount; i++) js["State"]["SampleFitness"] += _fitnessVector[i];
 
-  js["Configuration"]["Engine"] = "CMA-ES";
-  js["Configuration"]["Mu"] = _mu;
-  js["Configuration"]["MuType"] = _muType;
-  js["Configuration"]["diagonalCovarianceMatrixEvalFrequency"] = _diagonalCovarianceMatrixEvalFrequency;
-  js["Configuration"]["covarianceEigensystemEvaluationFrequency"] = _covarianceEigensystemEvaluationFrequency;
-  js["Configuration"]["muCovariance"] = _muCovariance;
-  js["Configuration"]["sigmaCumulationFactor"] = _sigmaCumulationFactor;
-  js["Configuration"]["dampFactor"] = _dampFactor;
-  js["Configuration"]["cumulativeCovariance"] = _cumulativeCovariance;
-  js["Configuration"]["covarianceMatrixLearningRate"] = _covarianceMatrixLearningRate;
-
-  js["Configuration"]["TerminationCriteria"]["MaxFitnessEvaluations"] = _maxFitnessEvaluations ;
-  js["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
-  js["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
-  js["Configuration"]["TerminationCriteria"]["stopMinDeltaX"] = _stopMinDeltaX;
-  js["Configuration"]["TerminationCriteria"]["stopMinFitness"] = _stopMinFitness;
-
   return js;
 }
 
-void Korali::Solver::CMAES::deserialize(json js)
+void Korali::Solver::CMAES::setConfiguration(json js)
 {
-  this->Korali::Solver::Base::deserialize(js);
+  this->Korali::Solver::Base::setConfiguration(js);
+
+  _mu                                       = js["Configuration"]["Mu"];
+  _muType                                   = js["Configuration"]["MuType"];
+  _diagonalCovarianceMatrixEvalFrequency    = js["Configuration"]["diagonalCovarianceMatrixEvalFrequency"];
+  _covarianceEigensystemEvaluationFrequency = js["Configuration"]["covarianceEigensystemEvaluationFrequency"];
+  _muCovariance                             = js["Configuration"]["muCovariance"];
+  _sigmaCumulationFactor                    = js["Configuration"]["sigmaCumulationFactor"];
+  _dampFactor                               = js["Configuration"]["dampFactor"];
+  _cumulativeCovariance                     = js["Configuration"]["cumulativeCovariance"];
+  _covarianceMatrixLearningRate             = js["Configuration"]["covarianceMatrixLearningRate"];
+
+  _maxFitnessEvaluations    = js["Configuration"]["TerminationCriteria"]["MaxFitnessEvaluations"];
+  _stopFitnessEvalThreshold = js["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"];
+  _stopFitnessDiffThreshold = js["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"];
+  _stopMinDeltaX            = js["Configuration"]["TerminationCriteria"]["stopMinDeltaX"];
+  _stopMinFitness           = js["Configuration"]["TerminationCriteria"]["stopMinFitness"];
+}
+
+void Korali::Solver::CMAES::setState(json js)
+{
+  this->Korali::Solver::Base::setState(js);
 
   _muEffective          = js["State"]["MuEffective"];
   sigma                 = js["State"]["Sigma"];
@@ -107,22 +135,6 @@ void Korali::Solver::CMAES::deserialize(json js)
 
   for (int i = 0; i < _sampleCount; i++) for (int j = 0; j < N; j++) _samplePopulation[i*N + j] = js["State"]["Samples"][i][j];
   for (int i = 0; i < _sampleCount; i++) _fitnessVector[i] = js["State"]["SampleFitness"][i];
-
-  _mu                                       = js["Configuration"]["Mu"];
-  _muType                                   = js["Configuration"]["MuType"];
-  _diagonalCovarianceMatrixEvalFrequency    = js["Configuration"]["diagonalCovarianceMatrixEvalFrequency"];
-  _covarianceEigensystemEvaluationFrequency = js["Configuration"]["covarianceEigensystemEvaluationFrequency"];
-  _muCovariance                             = js["Configuration"]["muCovariance"];
-  _sigmaCumulationFactor                    = js["Configuration"]["sigmaCumulationFactor"];
-  _dampFactor                               = js["Configuration"]["dampFactor"];
-  _cumulativeCovariance                     = js["Configuration"]["cumulativeCovariance"];
-  _covarianceMatrixLearningRate             = js["Configuration"]["covarianceMatrixLearningRate"];
-
-  _maxFitnessEvaluations    = js["Configuration"]["TerminationCriteria"]["MaxFitnessEvaluations"];
-  _stopFitnessEvalThreshold = js["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"];
-  _stopFitnessDiffThreshold = js["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"];
-  _stopMinDeltaX            = js["Configuration"]["TerminationCriteria"]["stopMinDeltaX"];
-  _stopMinFitness           = js["Configuration"]["TerminationCriteria"]["stopMinFitness"];
 }
 
 void Korali::Solver::CMAES::saveGeneration()
@@ -132,7 +144,7 @@ void Korali::Solver::CMAES::saveGeneration()
 
  FILE *fid;
  fid = fopen(filepath, "w");
- fprintf(fid, serialize().dump(1).c_str());
+ fprintf(fid, getState().dump(1).c_str());
  fclose(fid);
 }
 

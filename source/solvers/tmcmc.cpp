@@ -11,6 +11,8 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multimin.h>
 
+using json = nlohmann::json;
+
 Korali::Solver::TMCMC::TMCMC(Korali::Problem::Base* problem) : Korali::Solver::Base::Base(problem)
 {
  _tolCOV  = 1;
@@ -456,4 +458,28 @@ void Korali::Solver::TMCMC::minSearch(double const *fj, int fn, double pj, doubl
  gsl_vector_free(x);
  gsl_vector_free(ss);
  gsl_multimin_fminimizer_free (s);
+}
+
+json Korali::Solver::TMCMC::getConfiguration()
+{
+  auto js = this->Korali::Solver::Base::getConfiguration();
+
+  return js;
+}
+
+json Korali::Solver::TMCMC::getState()
+{
+  auto js = this->Korali::Solver::Base::getState();
+
+  return js;
+}
+
+void Korali::Solver::TMCMC::setConfiguration(json js)
+{
+  this->Korali::Solver::Base::setConfiguration(js);
+}
+
+void Korali::Solver::TMCMC::setState(json js)
+{
+  this->Korali::Solver::Base::setState(js);
 }
