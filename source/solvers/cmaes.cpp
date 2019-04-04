@@ -1,6 +1,7 @@
 #include "solvers/cmaes.h"
 #include "conduits/base.h"
 #include <chrono>
+#include <sys/stat.h>
 
 using json = nlohmann::json;
 
@@ -42,7 +43,9 @@ json Korali::Solver::CMAES::serialize()
   js["State"]["MaxEigenvalue"] = maxEW;
   js["State"]["MinEigenvalue"] = minEW;
   js["State"]["EigenSystemUpToDate"] = flgEigensysIsUptodate;
+  js["State"]["EvaluationCount"] = countevals;
 
+  for (int i = 0; i < _mu; i++) js["State"]["MuWeights"] += _muWeights[i];
   for (int i = 0; i < N; i++) js["State"]["CurrentMeanVector"] += rgxmean[i];
   for (int i = 0; i < N; i++) js["State"]["PreviousMeanVector"] += rgxold[i];
   for (int i = 0; i < N; i++) js["State"]["BestEverVector"] += rgxbestever[i];
@@ -56,7 +59,7 @@ json Korali::Solver::CMAES::serialize()
 
   js["Configuration"]["Engine"] = "CMA-ES";
   js["Configuration"]["Mu"] = _mu;
-  js["Configuration"]["maxFitnessEvaluations"] = _maxFitnessEvaluations ;
+  js["Configuration"]["MuType"] = _muType;
   js["Configuration"]["diagonalCovarianceMatrixEvalFrequency"] = _diagonalCovarianceMatrixEvalFrequency;
   js["Configuration"]["covarianceEigensystemEvaluationFrequency"] = _covarianceEigensystemEvaluationFrequency;
   js["Configuration"]["muCovariance"] = _muCovariance;
@@ -65,81 +68,76 @@ json Korali::Solver::CMAES::serialize()
   js["Configuration"]["cumulativeCovariance"] = _cumulativeCovariance;
   js["Configuration"]["covarianceMatrixLearningRate"] = _covarianceMatrixLearningRate;
 
+  js["Configuration"]["TerminationCriteria"]["MaxFitnessEvaluations"] = _maxFitnessEvaluations ;
   js["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
   js["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
   js["Configuration"]["TerminationCriteria"]["stopMinDeltaX"] = _stopMinDeltaX;
   js["Configuration"]["TerminationCriteria"]["stopMinFitness"] = _stopMinFitness;
 
-//  auto p = _problem->serialize();
-//  js["Problem"] = p;
-
   return js;
 }
 
-void Korali::Solver::CMAES::saveInitialConfiguration()
+void Korali::Solver::CMAES::deserialize(json js)
 {
- auto j = serialize();
- printf("Conf: \n%s\n", j.dump(2).c_str());
-}
+  this->Korali::Solver::Base::deserialize(js);
 
-void Korali::Solver::CMAES::reportConfiguration()
-{
- if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Starting CMAES.\n");
+  _muEffective          = js["State"]["MuEffective"];
+  sigma                 = js["State"]["Sigma"];
+  currentBest           = js["State"]["CurrentBest"];
+  currentFunctionValue  = js["State"]["CurrentFunctionValue"];
+  prevFunctionValue     = js["State"]["prevFunctionValue"];
+  state                 = js["State"]["State"];
+  maxdiagC              = js["State"]["MaxDiagonalCovariance"];
+  mindiagC              = js["State"]["MinDiagonalCovariance"];
+  maxEW                 = js["State"]["MaxEigenvalue"];
+  minEW                 = js["State"]["MinEigenvalue"] ;
+  flgEigensysIsUptodate = js["State"]["EigenSystemUpToDate"];
+  countevals            = js["State"]["EvaluationCount"];
 
- if (_verbosity >= KORALI_NORMAL)
- {
-  printf("[Korali] Seed: 0x%lX\n", _problem->_seed);
-  printf("[Korali] Sample Count (lambda): %ld\n", _sampleCount);
-  printf("[Korali] Best Sample Selection Count (Mu): %ld\n", _mu);
-  printf("[Korali] Mu (Effective): %.3f\n", _muEffective);
-  printf("[Korali] Covariance Matrix Update Frequency: %lu\n", _diagonalCovarianceMatrixEvalFrequency);
-  printf("[Korali] Parameters: %ld\n", N);
-  for (size_t i = 0; i < N; i++)
-  {
-   printf("[Korali] Parameter \'%s\' - ", _problem->_parameters[i]->_name.c_str());
-   _problem->_parameters[i]->printDetails();
-   printf(" - Bounds: [%.3g; %.3g]\n", _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
-  }
- }
-}
+  for (int i = 0; i < _mu; i++) _muWeights[i] = js["State"]["MuWeights"][i];
+  for (int i = 0; i < N; i++) rgxmean[i]      = js["State"]["CurrentMeanVector"][i];
+  for (int i = 0; i < N; i++) rgxold[i]       = js["State"]["PreviousMeanVector"][i];
+  for (int i = 0; i < N; i++) rgxbestever[i]  = js["State"]["BestEverVector"][i];
+  for (int i = 0; i < N; i++) curBest[i]      = js["State"]["CurrentBestVector"][i];
+  for (int i = 0; i < N; i++) index[i]        = js["State"]["Index"][i];
+  for (int i = 0; i < N; i++) rgD[i]          = js["State"]["AxisLengths"][i];
+  for (int i = 0; i < N; i++) rgpc[i]         = js["State"]["CumulativeCovariance"][i];
+  for (int i = 0; i < N; i++) rgFuncValue[i]  = js["State"]["FunctionValues"][i];
+  for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) C[i][j] = js["State"]["CovarianceMatrix"][i][j];
+  for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) B[i][j] = js["State"]["EigenMatrix"][i][j];
 
-void Korali::Solver::CMAES::reportGeneration()
-{
- if (_currentGeneration % _reportFrequency != 0) return;
- t1 = std::chrono::system_clock::now();
- if (_verbosity >= KORALI_NORMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
- if (_verbosity >= KORALI_NORMAL) reportResults();
-}
+  _mu                                       = js["Configuration"]["Mu"];
+  _muType                                   = js["Configuration"]["MuType"];
+  _diagonalCovarianceMatrixEvalFrequency    = js["Configuration"]["diagonalCovarianceMatrixEvalFrequency"];
+  _covarianceEigensystemEvaluationFrequency = js["Configuration"]["covarianceEigensystemEvaluationFrequency"];
+  _muCovariance                             = js["Configuration"]["muCovariance"];
+  _sigmaCumulationFactor                    = js["Configuration"]["sigmaCumulationFactor"];
+  _dampFactor                               = js["Configuration"]["dampFactor"];
+  _cumulativeCovariance                     = js["Configuration"]["cumulativeCovariance"];
+  _covarianceMatrixLearningRate             = js["Configuration"]["covarianceMatrixLearningRate"];
 
-void Korali::Solver::CMAES::reportResults()
-{
- if (_verbosity >= KORALI_DETAILED)
- {
-  printf("[Korali] Function Evaluations: %lu\n", countevals);
-  printf("[Korali] Function Value f(x) = %g\n", curBest[index[0]]);
-  printf("[Korali] Function Value Difference = %g\n", fabs(currentFunctionValue - prevFunctionValue));
-  printf("[Korali] Maximal Standard Deviation %g\n", sigma*sqrt(maxdiagC));
-  printf("[Korali] Minimal Standard Deviation %g\n", sigma*sqrt(mindiagC));
-  printf("[Korali] Sigma %g\n", sigma);
-  printf("[Korali] Axis Ratio %g\n", doubleRangeMax(rgD, N)/doubleRangeMin(rgD, N));
-  printf("[Korali] Means: (%.3g", rgxmean[0]); for(size_t i = 1; i < N; i++) printf(", %.3g", rgxmean[i]); printf(")\n");
-  printf("[Korali] StdDevs: (%.3g", sigma*sqrt(C[0][0])); for(size_t i = 1; i < N; i++) printf(", %.3g", sigma*sqrt(C[i][i])); printf(")\n");
-
-  printf("[Korali] Ellipsoid Length: (%.3g", sigma*rgD[N-1]); for(size_t i = 1; i < N; i++) printf(", %.3g", sigma*rgD[N-1-i]); printf(")\n");
-  printf("[Korali] Longest Axis: (%.3g", B[0][maxIdx(rgD, N)]); for(size_t i = 1; i < N; i++) printf(", %.3g", B[i][maxIdx(rgD, N)]); printf(")\n");
-  printf("[Korali] Shortest Axis: (%.3g", B[0][minIdx(rgD, N)]); for(size_t i = 1; i < N; i++) printf(", %.3g", B[i][minIdx(rgD, N)]); printf(")\n");
- }
- if (_verbosity >= KORALI_MINIMAL) for (size_t i = 0; i < N; i++)  printf("[Korali] Best Value For \'%s\' = %g\n", _problem->_parameters[i]->_name.c_str(), rgxbestever[i]);
-
- if (_verbosity >= KORALI_NORMAL) printf("---------------------------------------------------------------------------\n");
+  _maxFitnessEvaluations    = js["Configuration"]["TerminationCriteria"]["MaxFitnessEvaluations"];
+  _stopFitnessEvalThreshold = js["Configuration"]["TerminationCriteria"]["stopFitnessEvalThreshold"];
+  _stopFitnessDiffThreshold = js["Configuration"]["TerminationCriteria"]["stopFitnessDiffThreshold"];
+  _stopMinDeltaX            = js["Configuration"]["TerminationCriteria"]["stopMinDeltaX"];
+  _stopMinFitness           = js["Configuration"]["TerminationCriteria"]["stopMinFitness"];
 }
 
 void Korali::Solver::CMAES::runSolver()
 {
- initializeInternalVariables();
+ if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Starting CMA-ES.\n");
 
- reportConfiguration();
-// saveInitialConfiguration();
+ size_t dirnum = 0;
+ int status = -1;
+ std::string dirpath;
+ while(status != 0)
+ {
+  if (dirnum > 100) { printf("[Korali] Error: Too many result folders. Backup your previous results and run again.\n"); exit(-1);}
+  dirpath = "./korali" + std::to_string(dirnum++);
+  status = mkdir(dirpath.c_str(), S_IRWXU | S_IRWXG);
+ }
+
+ initializeInternalVariables();
 
  startTime = std::chrono::system_clock::now();
 
@@ -158,16 +156,17 @@ void Korali::Solver::CMAES::runSolver()
    }
   updateDistribution(_fitnessVector);
 
-  reportGeneration();
+  t1 = std::chrono::system_clock::now();
+  if (_verbosity >= KORALI_NORMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
  }
 
  endTime = std::chrono::system_clock::now();
 
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
- reportResults(); // Printing Solver results
-
- saveInitialConfiguration();
+ if (_verbosity >= KORALI_MINIMAL)  for (size_t i = 0; i < N; i++)  printf("[Korali] Best Value For \'%s\' = %g\n", _problem->_parameters[i]->_name.c_str(), rgxbestever[i]);
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
+
+ if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Saving results to \'%s\'\n", dirpath.c_str());
 }
 
 void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)

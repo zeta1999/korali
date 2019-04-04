@@ -12,7 +12,6 @@ Korali::Solver::Base::Base(Korali::Problem::Base* problem)
  _sampleCount = 1000;
  _maxGens = 200;
  _verbosity = KORALI_NORMAL;
- _reportFrequency = 1;
  N = _problem->_parameterCount;
 }
 
@@ -72,11 +71,20 @@ void Korali::Solver::Base::run()
 
 json Korali::Solver::Base::serialize()
 {
- auto j = json();
- j["State"]["currentGeneration"] = _currentGeneration;
- j["Configuration"]["maxGens"] = _maxGens;
- j["Configuration"]["sampleCount"] = _sampleCount;
- j["Configuration"]["reportFrequency"] = _reportFrequency;
- j["Configuration"]["verbosity"] = _verbosity;
- return j;
+ auto js = json();
+ js["State"]["currentGeneration"] = _currentGeneration;
+ js["Configuration"]["maxGens"] = _maxGens;
+ js["Configuration"]["sampleCount"] = _sampleCount;
+ js["Configuration"]["reportFrequency"] = _reportFrequency;
+ js["Configuration"]["verbosity"] = _verbosity;
+ return js;
+}
+
+void Korali::Solver::Base::deserialize(json js)
+{
+ _currentGeneration = js["State"]["currentGeneration"];
+ _maxGens           = js["Configuration"]["maxGens"];
+ _sampleCount       = js["Configuration"]["sampleCount"];
+ _reportFrequency   = js["Configuration"]["reportFrequency"];
+ _verbosity         = js["Configuration"]["verbosity"];
 }

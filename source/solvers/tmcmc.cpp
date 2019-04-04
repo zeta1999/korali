@@ -21,49 +21,11 @@ Korali::Solver::TMCMC::TMCMC(Korali::Problem::Base* problem) : Korali::Solver::B
  _burnIn = 0;
 }
 
-void Korali::Solver::TMCMC::reportConfiguration()
-{
- if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Starting TMCMC.\n");
- if (_verbosity >= KORALI_NORMAL)
- {
-  printf("[Korali] Seed: 0x%lX\n", _problem->_seed);
-  printf("[Korali] Population Size: %ld\n", _sampleCount);
-  printf("[Korali] Parameters: %ld\n", N);
-  for (size_t i = 0; i < N; i++)
-  {
-   printf("[Korali] Parameter \'%s\' - ", _problem->_parameters[i]->_name.c_str());
-   _problem->_parameters[i]->printDetails();
-   printf(" - Bounds: [%.3g; %.3g]\n", _problem->_parameters[i]->_lowerBound, _problem->_parameters[i]->_upperBound);
-  }
-  printf("---------------------------------------------------------------------------\n");
- }
-}
-
-void Korali::Solver::TMCMC::reportGeneration()
-{
- if (_currentGeneration % _reportFrequency != 0) return;
- if (_verbosity >= KORALI_NORMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
- if (_verbosity >= KORALI_NORMAL) reportResults();
-}
-
-void Korali::Solver::TMCMC::reportResults()
-{
- if (_verbosity >= KORALI_DETAILED)
-  {
-   printf("[Korali] Annealing Ratio:  %.2f%%\n",  _annealingRatio*100);
-   printf("[Korali] Acceptance Ratio: %.2f%%\n", _acceptanceRate*100);
-   printf("[Korali] LogEvidence: %g\n", _logEvidence);
-  }
-
-  if (_verbosity >= KORALI_NORMAL) printf("---------------------------------------------------------------------------\n");
-}
-
 void Korali::Solver::TMCMC::runSolver()
 {
  double samplingTime = 0.0;
  double engineTime = 0.0;
  initializeEngine();
- reportConfiguration();
 
  startTime = std::chrono::system_clock::now();
 
@@ -85,7 +47,7 @@ void Korali::Solver::TMCMC::runSolver()
   t1 = std::chrono::system_clock::now();
   samplingTime += std::chrono::duration<double>(t1-t0).count();
 
-  reportGeneration();
+  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Generation %ld - Annealing Ratio:  %.2f%% - Elapsed Time: %fs\n", _currentGeneration, _annealingRatio*100, std::chrono::duration<double>(t1-startTime).count());
 
   t2 = std::chrono::system_clock::now();
   resampleGeneration();

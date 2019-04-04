@@ -6,7 +6,7 @@
 #include <chrono>
 #include "json.hpp"
 
-enum verbosity { KORALI_MINIMAL = 0, KORALI_NORMAL = 1, KORALI_DETAILED = 2 };
+enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
 
 namespace Korali::Conduit {
     class Base;
@@ -35,21 +35,16 @@ class Base {
  Base(Korali::Problem::Base* problem);
  void setPopulationSize(int size) { _sampleCount = size; }
  void setMaxGenerations(int maxGens) { _maxGens = maxGens; }
- void setReportFrequency(size_t reportFrequency) { _reportFrequency = reportFrequency; }
  void setReportVerbosity(int verbosity) { _verbosity = verbosity; }
-
- // Reporting Methods
- virtual void reportResults() = 0;
- virtual void reportConfiguration() = 0;
- virtual void reportGeneration() = 0;
 
  // Running Methods
  void run();
  virtual void runSolver() = 0;
  virtual void processSample(size_t sampleId, double fitness) = 0;
 
- // Serialization Method
+ // Serialization Methods
  virtual nlohmann::json serialize();
+ virtual void deserialize(nlohmann::json js);
 };
 
 } // namespace Korali
