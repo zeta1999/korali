@@ -27,6 +27,7 @@ class CMAES : public Korali::Solver::Base
  // Serialization Methods
  nlohmann::json serialize();
  virtual void deserialize(nlohmann::json js);
+ void saveGeneration();
 
  // Configuration Methods
  void setMaxFitnessEvaluations(size_t maxFitnessEvaluations) { _maxFitnessEvaluations = maxFitnessEvaluations; }
@@ -55,6 +56,7 @@ class CMAES : public Korali::Solver::Base
  size_t _finishedSamples;
  size_t _mu;
  std::string _muType;
+ std::string dirpath;
  double* _muWeights;
  double _muEffective;
  double _muCovariance;
@@ -100,8 +102,6 @@ class CMAES : public Korali::Solver::Base
  double *rgFuncValue;
 
  size_t countevals;
- double state; /* 1 == sampled, 2 == not in use anymore, 3 == updated */
-
  double maxdiagC; /* repeatedly used for output */
  double mindiagC;
  double maxEW;

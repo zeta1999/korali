@@ -37,7 +37,6 @@ json Korali::Solver::CMAES::serialize()
   js["State"]["CurrentBest"] = currentBest;
   js["State"]["CurrentFunctionValue"] = currentFunctionValue;
   js["State"]["prevFunctionValue"] = prevFunctionValue;
-  js["State"]["State"] = state;
   js["State"]["MaxDiagonalCovariance"] = maxdiagC;
   js["State"]["MinDiagonalCovariance"] = mindiagC;
   js["State"]["MaxEigenvalue"] = maxEW;
@@ -54,8 +53,9 @@ json Korali::Solver::CMAES::serialize()
   for (int i = 0; i < N; i++) js["State"]["AxisLengths"] += rgD[i];
   for (int i = 0; i < N; i++) js["State"]["CumulativeCovariance"] += rgpc[i];
   for (int i = 0; i < N; i++) js["State"]["FunctionValues"] += rgFuncValue[i];
-  for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) js["State"]["CovarianceMatrix"][i] += C[i][j];
-  for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) js["State"]["EigenMatrix"][i] += B[i][j];
+
+  for (int i = 0; i < _sampleCount; i++) for (int j = 0; j < N; j++) js["State"]["Samples"][i] += _samplePopulation[i*N + j];
+  for (int i = 0; i < _sampleCount; i++) js["State"]["SampleFitness"] += _fitnessVector[i];
 
   js["Configuration"]["Engine"] = "CMA-ES";
   js["Configuration"]["Mu"] = _mu;
@@ -86,7 +86,6 @@ void Korali::Solver::CMAES::deserialize(json js)
   currentBest           = js["State"]["CurrentBest"];
   currentFunctionValue  = js["State"]["CurrentFunctionValue"];
   prevFunctionValue     = js["State"]["prevFunctionValue"];
-  state                 = js["State"]["State"];
   maxdiagC              = js["State"]["MaxDiagonalCovariance"];
   mindiagC              = js["State"]["MinDiagonalCovariance"];
   maxEW                 = js["State"]["MaxEigenvalue"];
@@ -106,6 +105,9 @@ void Korali::Solver::CMAES::deserialize(json js)
   for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) C[i][j] = js["State"]["CovarianceMatrix"][i][j];
   for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) B[i][j] = js["State"]["EigenMatrix"][i][j];
 
+  for (int i = 0; i < _sampleCount; i++) for (int j = 0; j < N; j++) _samplePopulation[i*N + j] = js["State"]["Samples"][i][j];
+  for (int i = 0; i < _sampleCount; i++) _fitnessVector[i] = js["State"]["SampleFitness"][i];
+
   _mu                                       = js["Configuration"]["Mu"];
   _muType                                   = js["Configuration"]["MuType"];
   _diagonalCovarianceMatrixEvalFrequency    = js["Configuration"]["diagonalCovarianceMatrixEvalFrequency"];
@@ -123,13 +125,23 @@ void Korali::Solver::CMAES::deserialize(json js)
   _stopMinFitness           = js["Configuration"]["TerminationCriteria"]["stopMinFitness"];
 }
 
+void Korali::Solver::CMAES::saveGeneration()
+{
+ char filepath[500];
+ sprintf(filepath, "%s/gen%05lu.json", dirpath.c_str(), _currentGeneration);
+
+ FILE *fid;
+ fid = fopen(filepath, "w");
+ fprintf(fid, serialize().dump(1).c_str());
+ fclose(fid);
+}
+
 void Korali::Solver::CMAES::runSolver()
 {
  if (_verbosity >= KORALI_MINIMAL) printf("[Korali] Starting CMA-ES.\n");
 
  size_t dirnum = 0;
  int status = -1;
- std::string dirpath;
  while(status != 0)
  {
   if (dirnum > 100) { printf("[Korali] Error: Too many result folders. Backup your previous results and run again.\n"); exit(-1);}
@@ -140,6 +152,7 @@ void Korali::Solver::CMAES::runSolver()
  initializeInternalVariables();
 
  startTime = std::chrono::system_clock::now();
+ saveGeneration();
 
  while(!checkTermination())
  {
@@ -158,6 +171,7 @@ void Korali::Solver::CMAES::runSolver()
 
   t1 = std::chrono::system_clock::now();
   if (_verbosity >= KORALI_NORMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
+  saveGeneration();
  }
 
  endTime = std::chrono::system_clock::now();
@@ -263,7 +277,6 @@ void Korali::Solver::CMAES::initializeInternalVariables()
  flgEigensysIsUptodate = true;
 
   countevals = 0;
-  state = 0;
   currentBest = 0.0;
 
   rgpc = (double*) calloc (sizeof(double), N);
@@ -351,8 +364,7 @@ void Korali::Solver::CMAES::prepareGeneration()
    }
  }
 
- if(state == 3 || _currentGeneration == 0)   ++_currentGeneration;
- state = 1;
+ _currentGeneration++;
 
  for(size_t i = 0; i < _sampleCount; ++i) while( !isFeasible(&_samplePopulation[i*N] )) reSampleSingle(i);
 
@@ -383,16 +395,7 @@ void Korali::Solver::CMAES::reSampleSingle(size_t idx)
 void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 {
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
-
- if(state == 3)
-  fprintf(stderr, "[Korali] Error: updateDistribution(): You need to call SamplePopulation() before update can take place.");
- if(fitnessVector == NULL)
-  fprintf(stderr, "[Korali] Error: updateDistribution(): Fitness function value array input is missing.");
-
- if(state == 1)  /* function values are delivered here */
-  countevals += _sampleCount;
- else
-  fprintf(stderr, "[Korali] Error: updateDistribution(): unexpected state");
+ countevals += _sampleCount;
 
  /* assign function values */
  for (size_t i = 0; i < _sampleCount; i++) curBest[i] = rgFuncValue[i] = fitnessVector[i];
@@ -465,8 +468,6 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 
  /* update of sigma */
  sigma *= exp(((sqrt(psxps)/chiN)-1.)*_sigmaCumulationFactor/_dampFactor);
-
- state = 3;
 }
 
 
@@ -506,7 +507,7 @@ bool Korali::Solver::CMAES::checkTermination()
  bool terminate = false;
 
  /* function value reached */
- if ((_currentGeneration > 1 || state > 1) &&   rgFuncValue[index[0]] <= _stopMinFitness)
+ if (_currentGeneration > 1  &&   rgFuncValue[index[0]] <= _stopMinFitness)
  {
   terminate = true;
   sprintf(_terminationReason, "Fitness Value (%7.2e) < (%7.2e)",  rgFuncValue[index[0]], _stopMinFitness);
