@@ -15,7 +15,6 @@ class Base {
  public:
 
   // Korali Runtime Variables
- size_t  N; // Parameter Count
  size_t _currentGeneration;
 
  // Reporting Settings

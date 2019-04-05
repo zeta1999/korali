@@ -27,7 +27,7 @@ void Korali::Conduit::UPCXX::initialize()
 
   // Allocating Global Pointer for Samples
  fitnessArrayPointer = (double*) calloc (_k->_referenceDataSize, sizeof(double));
- if (_rankId == 0) sampleGlobalPtr  = upcxx::new_array<double>(_k->_parameterCount*_k->_sampleCount);
+ if (_rankId == 0) sampleGlobalPtr  = upcxx::new_array<double>(_k->N*_k->S);
  upcxx::broadcast(&sampleGlobalPtr,  1, 0).wait();
 
   if (_rankId == 0) supervisorThread(); else workerThread();
@@ -63,8 +63,8 @@ void Korali::Conduit::UPCXX::workerThread()
   if (_evaluateSample)
   {
    _evaluateSample = false;
-   double candidatePoint[_k->_parameterCount];
-   upcxx::rget(sampleGlobalPtr + _sampleId*_k->_parameterCount, candidatePoint, _k->_parameterCount).wait();
+   double candidatePoint[_k->N];
+   upcxx::rget(sampleGlobalPtr + _sampleId*_k->N, candidatePoint, _k->N).wait();
    double candidateFitness = _k->_problem->evaluateFitness(candidatePoint);
    //printf("Worker %d: Evaluated %ld:[%f, %f] - Fitness: %f\n", _rankId, _sampleId, candidatePoint[0], candidatePoint[1], candidateFitness);
    upcxx::rpc_ff(0, [](size_t c, double fitness, int workerId){_k->_solver->processSample(c, fitness); _ux->_workers.push(workerId); }, _sampleId, candidateFitness, _rankId);

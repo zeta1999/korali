@@ -46,8 +46,8 @@ class Engine {
   double* _referenceData;
   void setReferenceData(size_t nData, double* referenceData);
 
-  size_t _sampleCount;
-  size_t _parameterCount;
+  size_t S; // Sample Size
+  size_t N; // Parameter Count
   size_t _referenceDataSize;
   size_t _seed;
   size_t _maxGens;
@@ -55,7 +55,7 @@ class Engine {
   int _verbosity;
   size_t _reportFrequency;
   void setReportVerbosity(int verbosity) { _verbosity = verbosity; }
-  void setPopulationSize(int size) { _sampleCount = size; }
+  void setPopulationSize(int size) { S = size; }
   void setMaxGenerations(int maxGens) { _maxGens = maxGens; }
 
   // Serialization Methods

@@ -9,7 +9,6 @@ Korali::Solver::Base::Base()
 
 void Korali::Solver::Base::run()
 {
- N = _k->_parameterCount;
 }
 
 json Korali::Solver::Base::getConfiguration()
