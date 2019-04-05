@@ -28,9 +28,9 @@ class Engine {
  public:
 
   Korali::Conduit::Base* _conduit;
-  Korali::Problem::Base* _problem;
-  Korali::Solver::Base*  _solver;
-  std::vector<Korali::Parameter::Base*> _parameters;
+  Korali::Problem::Base* Problem;
+  Korali::Solver::Base*  Solver;
+  std::vector<Korali::Parameter::Base*> Parameters;
 
   Engine(size_t seed = 0);
   void run();

@@ -83,36 +83,36 @@ void Korali::Engine::run()
 void Korali::Engine::initializeParameters()
 {
  // Initialize Parameter Priors
- for (size_t i = 0; i < N; i++) _parameters[i]->initializeDistribution(_seed+i);
+ for (size_t i = 0; i < N; i++) Parameters[i]->initializeDistribution(_seed+i);
 
  // Checking correct parameters for problem
- for (size_t i = 0; i < N; i++) _parameters[i]->checkBounds();
+ for (size_t i = 0; i < N; i++) Parameters[i]->checkBounds();
 }
 
 void Korali::Engine::addParameter(Korali::Parameter::Base* p)
 {
  if(p->_name == "") p->setName("Parameter" + std::to_string(N));
- _parameters.push_back(p);
- N = _parameters.size();
+ Parameters.push_back(p);
+ N = Parameters.size();
 }
 
 double Korali::Engine::getPriorsLogProbabilityDensity(double *x)
 {
   double logp = 0.0;
-  for (size_t i = 0; i < N; i++) logp += _parameters[i]->getDensityLog(x[i]);
+  for (size_t i = 0; i < N; i++) logp += Parameters[i]->getDensityLog(x[i]);
   return logp;
 }
 
 double Korali::Engine::getPriorsProbabilityDensity(double *x)
 {
   double dp = 1.0;
-  for (size_t i = 0; i < N; i++) dp *= _parameters[i]->getDensity(x[i]);
+  for (size_t i = 0; i < N; i++) dp *= Parameters[i]->getDensity(x[i]);
   return dp;
 }
 
 bool Korali::Engine::isSampleOutsideBounds(double* sample)
 {
-  for (size_t i = 0; i < N; i++) if (sample[i] < _parameters[i]->_lowerBound || sample[i] > _parameters[i]->_upperBound) return true;
+  for (size_t i = 0; i < N; i++) if (sample[i] < Parameters[i]->_lowerBound || sample[i] > Parameters[i]->_upperBound) return true;
   return false;
 }
 

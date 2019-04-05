@@ -167,7 +167,7 @@ void Korali::Solver::TMCMC::initializeEngine()
  // First definition of chains and their leaders
  nChains = _k->S;
  finishedChains = 0;
- for (size_t c = 0; c < _k->S; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
+ for (size_t c = 0; c < _k->S; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->Parameters[d]->getRandomNumber();
  for (size_t c = 0; c < _k->S; c++) clLogPrior[c] = _k->getPriorsLogProbabilityDensity(&clPoints[c*_k->N]);
  for (size_t c = 0; c < _k->S; c++) chainCurrentStep[c] = 0;
  for (size_t c = 0; c < _k->S; c++) chainLength[c] = 1 + _burnIn;

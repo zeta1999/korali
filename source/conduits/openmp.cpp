@@ -18,8 +18,8 @@ void Korali::Conduit::OpenMP::initialize()
  if (_threadCount < 2) { fprintf(stderr, "[Korali] Error: Running Korali's OpenMP Conduit with less than 2 threads is not allowed.\n"); exit(-1); }
 
  // Allocating Global Pointer for Samples
- sampleArrayPointer  = (double*) calloc (_solver->N*_solver->_sampleCount, sizeof(double));
- fitnessArrayPointer = (double*) calloc (_solver->_problem->_referenceDataSize*_threadCount, sizeof(double));
+ sampleArrayPointer  = (double*) calloc (Solver->N*Solver->_sampleCount, sizeof(double));
+ fitnessArrayPointer = (double*) calloc (Solver->Problem->_referenceDataSize*_threadCount, sizeof(double));
 
  #pragma omp parallel
  {
@@ -31,7 +31,7 @@ void Korali::Conduit::OpenMP::initialize()
 
 void Korali::Conduit::OpenMP::supervisorThread()
 {
- _solver->run();
+ Solver->run();
 
  _continueEvaluations = false;
 }
@@ -44,7 +44,7 @@ double* Korali::Conduit::OpenMP::getSampleArrayPointer()
 double* Korali::Conduit::OpenMP::getFitnessArrayPointer()
 {
  int threadId = omp_get_thread_num();
-  return &fitnessArrayPointer[_solver->_problem->_referenceDataSize*threadId];
+  return &fitnessArrayPointer[Solver->Problem->_referenceDataSize*threadId];
 }
 
 void Korali::Conduit::OpenMP::workerThread()
@@ -67,11 +67,11 @@ void Korali::Conduit::OpenMP::workerThread()
 
   if (foundSample)
   {
-   double candidateFitness = _solver->_problem->evaluateFitness(&sampleArrayPointer[_solver->N*sampleId]);
+   double candidateFitness = Solver->Problem->evaluateFitness(&sampleArrayPointer[Solver->N*sampleId]);
    //printf("Thread %d/%d: Sample: %ld, Fitness: %f\n", threadId, _threadCount, sampleId, candidateFitness);
 
    _queueLock.lock();
-    _solver->processSample(sampleId, candidateFitness);
+    Solver->processSample(sampleId, candidateFitness);
    _queueLock.unlock();
 
    //printf("Thread %d/%d: Updated\n", threadId, _threadCount);

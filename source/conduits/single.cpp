@@ -8,7 +8,7 @@ void Korali::Conduit::Single::initialize()
  sampleArrayPointer  = (double*) calloc (_k->N*_k->S, sizeof(double));
  fitnessArrayPointer = (double*) calloc (_k->_referenceDataSize, sizeof(double));
 
- _k->_solver->run();
+ _k->Solver->run();
 }
 
 double* Korali::Conduit::Single::getSampleArrayPointer()
@@ -18,8 +18,8 @@ double* Korali::Conduit::Single::getSampleArrayPointer()
 
 void Korali::Conduit::Single::evaluateSample(size_t sampleId)
 {
- double fitness = _k->_problem->evaluateFitness(&sampleArrayPointer[_k->N*sampleId]);
- _k->_solver->processSample(sampleId, fitness);
+ double fitness = _k->Problem->evaluateFitness(&sampleArrayPointer[_k->N*sampleId]);
+ _k->Solver->processSample(sampleId, fitness);
 }
 
 double* Korali::Conduit::Single::getFitnessArrayPointer()

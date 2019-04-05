@@ -41,7 +41,7 @@ void Korali::Conduit::UPCXX::supervisorThread()
   // Creating Worker Queue
   for (int i = 1; i < _rankCount; i++) _workers.push(i);
 
- _k->_solver->run();
+ _k->Solver->run();
 
   for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_ux->_continueEvaluations = false;});
 }
@@ -65,9 +65,9 @@ void Korali::Conduit::UPCXX::workerThread()
    _evaluateSample = false;
    double candidatePoint[_k->N];
    upcxx::rget(sampleGlobalPtr + _sampleId*_k->N, candidatePoint, _k->N).wait();
-   double candidateFitness = _k->_problem->evaluateFitness(candidatePoint);
+   double candidateFitness = _k->Problem->evaluateFitness(candidatePoint);
    //printf("Worker %d: Evaluated %ld:[%f, %f] - Fitness: %f\n", _rankId, _sampleId, candidatePoint[0], candidatePoint[1], candidateFitness);
-   upcxx::rpc_ff(0, [](size_t c, double fitness, int workerId){_k->_solver->processSample(c, fitness); _ux->_workers.push(workerId); }, _sampleId, candidateFitness, _rankId);
+   upcxx::rpc_ff(0, [](size_t c, double fitness, int workerId){_k->Solver->processSample(c, fitness); _ux->_workers.push(workerId); }, _sampleId, candidateFitness, _rankId);
   }
   upcxx::progress();
  }
