@@ -14,14 +14,14 @@ class CMAES : public Korali::Solver::Base
  public:
 
  // Public Methods
- CMAES(Korali::Problem::Base* problem);
+ CMAES();
 
  // Runtime Methods (to be inherited from base class in the future)
  void initializeInternalVariables();
  void prepareGeneration();
  bool checkTermination();
  void updateDistribution(const double *fitnessVector);
- void runSolver();
+ void run();
  void processSample(size_t sampleId, double fitness);
 
  // Serialization Methods
@@ -54,11 +54,11 @@ class CMAES : public Korali::Solver::Base
  double* _samplePopulation;
  bool* _initializedSample;
  char _terminationReason[500];
+ char filepath[500];
 
  size_t _finishedSamples;
  size_t _mu;
  std::string _muType;
- std::string dirpath;
  double* _muWeights;
  double _muEffective;
  double _muCovariance;

@@ -1,6 +1,5 @@
 #include "conduits/base.h"
 
-Korali::Conduit::Base::Base(Korali::Solver::Base* solver)
+Korali::Conduit::Base::Base()
 {
- _solver = solver;
 }

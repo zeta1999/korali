@@ -32,7 +32,7 @@ class OpenMP : public Base
  double* fitnessArrayPointer;
  Lock _queueLock;
 
- OpenMP(Korali::Solver::Base* solver);
+ OpenMP();
  void initialize();
  void evaluateSample(size_t sampleId);
  double* getSampleArrayPointer();

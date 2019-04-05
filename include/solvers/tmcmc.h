@@ -2,6 +2,8 @@
 #define _KORALI_TMCMC_H_
 
 #include "solvers/base.h"
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_vector.h>
 
 namespace Korali::Solver
 {
@@ -64,9 +66,9 @@ class TMCMC : public Korali::Solver::Base
 
   // Korali Methods
 
- TMCMC(Korali::Problem::Base* problem);
+ TMCMC();
  void initializeEngine();
- void runSolver();
+ void run();
 
  // TMCMC Configuration Methods
  void setToleranceCOV(double TolCOV) { _tolCOV = TolCOV; }

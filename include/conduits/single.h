@@ -12,7 +12,7 @@ class Single : public Base {
  double* sampleArrayPointer;
  double* fitnessArrayPointer;
 
- Single(Korali::Solver::Base* solver);
+ Single();
  void initialize();
  void evaluateSample(size_t sampleId);
  double* getSampleArrayPointer();

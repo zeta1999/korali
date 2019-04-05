@@ -1,100 +1,38 @@
-#include "solvers/base.h"
-#include "conduits/upcxx.h"
-#include "conduits/single.h"
-#include "conduits/openmp.h"
+#include "korali.h"
 
 using json = nlohmann::json;
 
-Korali::Solver::Base::Base(Korali::Problem::Base* problem)
+Korali::Solver::Base::Base()
 {
- _problem = problem;
  _currentGeneration = 0;
- _sampleCount = 1000;
- _maxGens = 200;
- _verbosity = KORALI_NORMAL;
- N = _problem->_parameterCount;
 }
 
 void Korali::Solver::Base::run()
 {
- _problem->initializeParameters();
- auto printSyntax = [](){fprintf(stderr, "[Korali] Use $export KORALI_CONDUIT={single,openmp,upcxx,mpi} to select a conduit.\n");};
-
- const char* env_conduit = std::getenv("KORALI_CONDUIT");
- if(env_conduit == NULL)
- {
-  fprintf(stderr, "[Korali] Error: No sampling conduit was selected.\n");
-  printSyntax();
-  exit(-1);
- }
-
- std::string conduitString = env_conduit;
-
- bool recognized = false;
-
- if (conduitString == "single") { _conduit = new Korali::Conduit::Single(this); recognized = true; }
-
- if (conduitString == "upcxx")
-  {
-   #ifdef _KORALI_USE_UPCXX
-    _conduit = new Korali::Conduit::UPCXX(this);  recognized = true;
-   #else
-    fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");
-    printSyntax();
-    fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support UPC++.\n");
-    exit(-1);
-   #endif
-  }
-
- if (conduitString == "openmp")
- {
-  #ifdef _KORALI_USE_OPENMP
-   _conduit = new Korali::Conduit::OpenMP(this); recognized = true;
-  #else
-   fprintf(stderr, "[Korali] Error: OpenMP conduit is not properly configured.\n");
-   printSyntax();
-   fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support openMP.\n");
-   exit(-1);
-  #endif
- }
-
- if (recognized == false)
- {
-   fprintf(stderr, "[Korali] Error: Unrecognized conduit '%s' selected.\n", conduitString.c_str());
-   printSyntax();
-   exit(-1);
- }
-
- _problem->_conduit = _conduit;
- _conduit->initialize();
+ N = _k->_parameterCount;
 }
 
 json Korali::Solver::Base::getConfiguration()
 {
  auto js = json();
- js["Configuration"]["maxGens"] = _maxGens;
- js["Configuration"]["sampleCount"] = _sampleCount;
- js["Configuration"]["reportFrequency"] = _reportFrequency;
- js["Configuration"]["verbosity"] = _verbosity;
+
  return js;
 }
 
 void Korali::Solver::Base::setConfiguration(json js)
 {
- _maxGens           = js["Configuration"]["maxGens"];
- _sampleCount       = js["Configuration"]["sampleCount"];
- _reportFrequency   = js["Configuration"]["reportFrequency"];
- _verbosity         = js["Configuration"]["verbosity"];
+
 }
 
 json Korali::Solver::Base::getState()
 {
  auto js = json();
- js["State"]["currentGeneration"] = _currentGeneration;
+
  return js;
 }
 
 void Korali::Solver::Base::setState(json js)
 {
- _currentGeneration = js["State"]["currentGeneration"];
+ _currentGeneration = js["currentGeneration"];
 }
+

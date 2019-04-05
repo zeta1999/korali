@@ -10,11 +10,12 @@ class Direct : public Korali::Problem::Base
 {
  public:
  double (*_modelFunction) (double*);
- Direct(double (*modelFunction) (double*), size_t seed = -1);
+ Direct(double (*modelFunction) (double*));
  double evaluateFitness(double* sample);
 
- // Serialization Method
- nlohmann::json serialize();
+ // Serialization Methods
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

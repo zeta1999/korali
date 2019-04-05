@@ -1,15 +1,14 @@
-#include "conduits/single.h"
-#include "solvers/base.h"
+#include "korali.h"
 
-Korali::Conduit::Single::Single(Korali::Solver::Base* solver) : Korali::Conduit::Base::Base(solver) {}
+Korali::Conduit::Single::Single() : Korali::Conduit::Base::Base() {}
 
 void Korali::Conduit::Single::initialize()
 {
   // Allocating Global Pointer for Samples
- sampleArrayPointer  = (double*) calloc (_solver->N*_solver->_sampleCount, sizeof(double));
- fitnessArrayPointer = (double*) calloc (_solver->_problem->_referenceDataSize, sizeof(double));
+ sampleArrayPointer  = (double*) calloc (_k->_parameterCount*_k->_sampleCount, sizeof(double));
+ fitnessArrayPointer = (double*) calloc (_k->_referenceDataSize, sizeof(double));
 
- _solver->runSolver();
+ _k->_solver->run();
 }
 
 double* Korali::Conduit::Single::getSampleArrayPointer()
@@ -19,8 +18,8 @@ double* Korali::Conduit::Single::getSampleArrayPointer()
 
 void Korali::Conduit::Single::evaluateSample(size_t sampleId)
 {
- double fitness = _solver->_problem->evaluateFitness(&sampleArrayPointer[_solver->N*sampleId]);
- _solver->processSample(sampleId, fitness);
+ double fitness = _k->_problem->evaluateFitness(&sampleArrayPointer[_k->_solver->N*sampleId]);
+ _k->_solver->processSample(sampleId, fitness);
 }
 
 double* Korali::Conduit::Single::getFitnessArrayPointer()

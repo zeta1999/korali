@@ -3,16 +3,19 @@
 
 int main(int argc, char* argv[])
 {
- auto problem = Korali::Problem::Direct([](double *x) {return -rosenbrock(x);}, 8500);
+ auto korali = Korali::Engine(0xC0FFEE);
+
+ korali._problem = new Korali::Problem::Direct([](double *x) {return -rosenbrock(x);});
 
  Korali::Parameter::Uniform p(-3.0, +3.0);
- for (int i = 0; i < NDIMS; i++) problem.addParameter(&p);
+ for (int i = 0; i < NDIMS; i++) korali.addParameter(&p);
 
- auto solver = Korali::Solver::TMCMC(&problem);
+ auto solver =  new Korali::Solver::TMCMC();
+ solver->setCovarianceScaling(0.04);
 
- solver.setPopulationSize(30000);
- solver.setCovarianceScaling(0.04);
- solver.run();
+ korali._solver = solver;
+ korali.setPopulationSize(30000);
+ korali.run();
 
  return 0;
 }

@@ -1,22 +1,27 @@
-#include "problems/direct.h"
+#include "korali.h"
 
 using json = nlohmann::json;
 
-Korali::Problem::Direct::Direct(double (*modelFunction) (double*), size_t seed) : Korali::Problem::Base::Base(seed)
+Korali::Problem::Direct::Direct(double (*modelFunction) (double*)) : Korali::Problem::Base::Base()
 {
  _modelFunction = modelFunction;
 }
 
 double Korali::Problem::Direct::evaluateFitness(double* sample)
 {
- if (isSampleOutsideBounds(sample)) return -DBL_MAX;
+ if (_k->isSampleOutsideBounds(sample)) return -DBL_MAX;
  return _modelFunction(sample);
 }
 
-json Korali::Problem::Direct::serialize()
+json Korali::Problem::Direct::getConfiguration()
 {
- auto j = this->Korali::Problem::Base::serialize();
- j["Type"] = "Direct Evaluation";
- return j;
+ auto js = this->Korali::Problem::Base::getConfiguration();
+ js["Type"] = "Direct Evaluation";
+ return js;
 }
+
+void Korali::Problem::Direct::setConfiguration(json js)
+{
+}
+
 

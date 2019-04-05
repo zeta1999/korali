@@ -24,7 +24,7 @@ class UPCXX : public Base
  upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
  double* fitnessArrayPointer;
 
- UPCXX(Korali::Solver::Base* solver);
+ UPCXX();
  void initialize();
  void evaluateSample(size_t sampleId);
  double* getSampleArrayPointer();
@@ -35,8 +35,6 @@ class UPCXX : public Base
 };
 
 } // namespace Korali
-
-extern Korali::Conduit::UPCXX* _k;
 
 #endif // _KORALI_UPCXX_H_
 

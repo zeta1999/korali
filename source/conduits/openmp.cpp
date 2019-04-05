@@ -4,7 +4,7 @@
 #include "solvers/base.h"
 #include "omp.h"
 
-Korali::Conduit::OpenMP::OpenMP(Korali::Solver::Base* solver) : Korali::Conduit::Base::Base(solver)
+Korali::Conduit::OpenMP::OpenMP() : Korali::Conduit::Base::Base()
 {
  _threadCount = 1;
   _continueEvaluations = true;
@@ -31,7 +31,7 @@ void Korali::Conduit::OpenMP::initialize()
 
 void Korali::Conduit::OpenMP::supervisorThread()
 {
- _solver->runSolver();
+ _solver->run();
 
  _continueEvaluations = false;
 }

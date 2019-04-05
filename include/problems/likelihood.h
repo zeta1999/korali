@@ -10,18 +10,13 @@ class Likelihood : public Korali::Problem::Base
 {
  public:
 
- double* _referenceData;
  void (*_modelFunction) (double*, double*);
-
- bool _modelDataSet;
- bool _referenceDataSet;
-
- void setReferenceData(size_t nData, double* referenceData);
- Likelihood(void (*modelFunction) (double*, double*), size_t seed = -1);
+ Likelihood(void (*modelFunction) (double*, double*));
  double evaluateFitness(double* sample);
 
- // Serialization Method
- nlohmann::json serialize();
+ // Serialization Methods
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali
