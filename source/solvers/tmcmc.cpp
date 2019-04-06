@@ -18,20 +18,18 @@ Korali::Solver::TMCMC::TMCMC() : Korali::Solver::Base::Base()
  _bbeta   = 0.005;
  _useLocalCov = false;
  _verbose = false;
+ _maxGens = 200;
  _burnIn = 0;
 }
 
 void Korali::Solver::TMCMC::run()
 {
- this->Korali::Solver::Base::run();
-
  double samplingTime = 0.0;
  double engineTime = 0.0;
- initializeEngine();
 
  startTime = std::chrono::system_clock::now();
 
- for(_currentGeneration = 0; _annealingRatio < 1.0 && _currentGeneration < _k->_maxGens; _currentGeneration++)
+ for(_currentGeneration = 0; _annealingRatio < 1.0 && _currentGeneration < _maxGens; _currentGeneration++)
  {
   auto t0 = std::chrono::system_clock::now();
 
@@ -59,7 +57,7 @@ void Korali::Solver::TMCMC::run()
 
  auto endTime = std::chrono::system_clock::now();
 
- if (_currentGeneration == _k->_maxGens) printf("[Korali] Finished (Max Generations Reached).\n");
+ if (_currentGeneration == _maxGens) printf("[Korali] Finished (Max Generations Reached).\n");
  printf("[Korali] Total Time: %fs - Sampling Time: %fs - Engine Time: %fs.\n", std::chrono::duration<double>(endTime-startTime).count(), samplingTime, engineTime);
 
  saveResults();
@@ -125,8 +123,10 @@ void Korali::Solver::TMCMC::saveResults()
  fclose(fp);
 }
 
-void Korali::Solver::TMCMC::initializeEngine()
+void Korali::Solver::TMCMC::initialize()
 {
+	this->Korali::Solver::Base::initialize();
+
  // Initializing Data Variables
  double *LCmem  = (double*) calloc (_k->S*_k->N*_k->N, sizeof(double));
  local_cov = (double**) calloc ( _k->S, sizeof(double*));
@@ -167,7 +167,7 @@ void Korali::Solver::TMCMC::initializeEngine()
  // First definition of chains and their leaders
  nChains = _k->S;
  finishedChains = 0;
- for (size_t c = 0; c < _k->S; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->Parameters[d]->getRandomNumber();
+ for (size_t c = 0; c < _k->S; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
  for (size_t c = 0; c < _k->S; c++) clLogPrior[c] = _k->getPriorsLogProbabilityDensity(&clPoints[c*_k->N]);
  for (size_t c = 0; c < _k->S; c++) chainCurrentStep[c] = 0;
  for (size_t c = 0; c < _k->S; c++) chainLength[c] = 1 + _burnIn;
@@ -175,13 +175,13 @@ void Korali::Solver::TMCMC::initializeEngine()
 
  // Setting Chain-Specific Seeds
  range = gsl_rng_alloc (gsl_rng_default);
- gsl_rng_set(range, _k->_seed+_k->N+0xD00);
+ gsl_rng_set(range, _k->_seed++);
 
  chainGSLRange = (gsl_rng**) calloc (_k->S, sizeof(gsl_rng*));
  for (size_t c = 0; c < _k->S; c++)
  {
   chainGSLRange[c] = gsl_rng_alloc (gsl_rng_default);
-  gsl_rng_set(chainGSLRange[c], _k->_seed+_k->N+0xF00+c);
+  gsl_rng_set(chainGSLRange[c], _k->_seed++);
  }
 
  // TODO: Ensure proper memory deallocation

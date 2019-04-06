@@ -12,15 +12,15 @@ class Exponential : public Korali::Parameter::Base
   double _mean;
 
  public:
-  Exponential(double mean);
-  Exponential(std::string name, double mean);
+  Exponential();
+
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
-  void printDetails();
 
-  // Serialization Method
-  nlohmann::json serialize();
+  // Serialization Methods
+  nlohmann::json getConfiguration();
+  void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

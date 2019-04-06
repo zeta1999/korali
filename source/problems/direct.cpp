@@ -2,21 +2,24 @@
 
 using json = nlohmann::json;
 
-Korali::Problem::Direct::Direct(double (*modelFunction) (double*)) : Korali::Problem::Base::Base()
+Korali::Problem::Direct::Direct() : Korali::Problem::Base::Base()
 {
- _modelFunction = modelFunction;
+}
+
+void Korali::Problem::Direct::initialize()
+{
+	this->Korali::Problem::Base::initialize();
 }
 
 double Korali::Problem::Direct::evaluateFitness(double* sample)
 {
  if (_k->isSampleOutsideBounds(sample)) return -DBL_MAX;
- return _modelFunction(sample);
+ return _k->_modelSingle(sample);
 }
 
 json Korali::Problem::Direct::getConfiguration()
 {
  auto js = this->Korali::Problem::Base::getConfiguration();
- js["Type"] = "Direct Evaluation";
  return js;
 }
 

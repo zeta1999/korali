@@ -5,131 +5,172 @@ using json = nlohmann::json;
 
 Korali::Engine* Korali::_k;
 
-Korali::Engine::Engine(size_t seed)
+Korali::Engine::Engine()
 {
- _seed = seed;
- if (_seed == 0)
- {
-    std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
-  _seed  = std::chrono::nanoseconds(now_c).count();
- }
- gsl_rng_env_setup();
-
+ // Setting Defaults
  N = 0;
- _referenceData = NULL;
- _referenceDataSize = 0;
- S = 1000;
- _maxGens = 200;
+ S = 0;
  _reportFrequency = 1;
  _verbosity = KORALI_NORMAL;
+ std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
+ _seed  = std::chrono::nanoseconds(now_c).count();
+ gsl_rng_env_setup();
+}
+
+void Korali::Engine::initialize()
+{
+ // Configure Korali Engine
+ if (_config.find("Seed") != _config.end()) if (_config["Seed"].is_number())
+ { _seed = _config["Seed"]; _config.erase("Seed"); }
+
+ if (_config.find("Verbosity") != _config.end()) if (_config["Verbosity"].is_string())
+ {
+	 bool found = false;
+	 if (_config["Verbosity"] == "Silent") { _verbosity = KORALI_SILENT; found = true; }
+	 if (_config["Verbosity"] == "Minimal") { _verbosity = KORALI_MINIMAL; found = true; }
+	 if (_config["Verbosity"] == "Normal")  { _verbosity = KORALI_NORMAL; found = true; }
+	 if (_config["Verbosity"] == "Detailed") { _verbosity = KORALI_DETAILED; found = true; }
+	 if (found) _config.erase("Verbosity");
+ }
+
+ if (_config.find("Report Frequency") != _config.end()) if (_config["Report Frequency"].is_number())
+ { _reportFrequency = _config["Report Frequency"]; _config.erase("Report Frequency"); }
+
+ // Configure Parameters
+ if (_config.find("Parameters") != _config.end()) if(_config["Parameters"].is_array())
+ if (_config["Parameters"].size() > 0) for (int i = 0; i < _config["Parameters"].size(); i++)
+ {
+	 if (_config["Parameters"][i].find("Distribution") != _config["Parameters"][i].end())
+	 if (_config["Parameters"][i]["Distribution"].is_string())
+	 {
+		bool foundDistribution = false;
+	  if (_config["Parameters"][i]["Distribution"] == "Uniform")     { _parameters.push_back(new Korali::Parameter::Uniform());     foundDistribution = true; }
+	  if (_config["Parameters"][i]["Distribution"] == "Gaussian")    { _parameters.push_back(new Korali::Parameter::Gaussian());    foundDistribution = true; }
+	  if (_config["Parameters"][i]["Distribution"] == "Gamma")       { _parameters.push_back(new Korali::Parameter::Gamma());       foundDistribution = true; }
+	  if (_config["Parameters"][i]["Distribution"] == "Exponential") { _parameters.push_back(new Korali::Parameter::Exponential()); foundDistribution = true; }
+	  if (foundDistribution == false) { fprintf(stderr, "[Korali] Error: Incorrect or parameter distribution: \n %s.\n", _config["Parameters"][i]["Distribution"].dump(1).c_str() ); exit(-1); }
+	  _parameters[i]->setConfiguration(_config["Parameters"][i]);
+	 }
+ }
+ if (_parameters.size() == 0) { fprintf(stderr, "[Korali] Error: Incorrect or undefined parameters.\n"); exit(-1); }
+ _config.erase("Parameters");
+ N = _parameters.size();
+
+  // Configure Problem
+ bool foundProblem = false;
+ if (_config.find("Problem") != _config.end())
+ if (_config["Problem"].find("Objective") != _config["Problem"].end()) if(_config["Problem"]["Objective"].is_string())
+ {
+	 if (_config["Problem"]["Objective"] == "Direct Evaluation") { _problem = new Korali::Problem::Direct();     foundProblem = true; }
+	 if (_config["Problem"]["Objective"] == "Likelihood")        { _problem = new Korali::Problem::Likelihood(); foundProblem = true; }
+	 if (_config["Problem"]["Objective"] == "Posterior")         { _problem = new Korali::Problem::Posterior();  foundProblem = true; }
+ }
+ if (foundProblem == false) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Problem."); exit(-1); }
+ _problem->setConfiguration(_config["Problem"]);
+ _config.erase("Problem");
+
+ // Configure Conduit
+
+ std::string conduitString = "Sequential";
+ if (_config.find("Conduit") != _config.end())
+ if (_config["Conduit"].find("Type") != _config["Conduit"].end()) if(_config["Conduit"]["Type"].is_string()) conduitString = _config["Conduit"]["Type"];
+
+ bool recognizedConduit = false;
+
+ if (conduitString == "Sequential") { _conduit = new Korali::Conduit::Single(); recognizedConduit = true; }
+
+ if (conduitString == "UPC++")
+  {
+   #ifdef _KORALI_USE_UPCXX
+    _conduit = new Korali::Conduit::UPCXX();  recognizedConduit = true;
+   #else
+    fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");
+    fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support UPC++.\n");
+    exit(-1);
+   #endif
+  }
+
+ if (conduitString == "OpenMP")
+ {
+  #ifdef _KORALI_USE_OPENMP
+   _conduit = new Korali::Conduit::OpenMP(); recognizedConduit = true;
+  #else
+   fprintf(stderr, "[Korali] Error: OpenMP conduit is not properly configured.\n");
+   fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support openMP.\n");
+   exit(-1);
+  #endif
+ }
+
+ if (recognizedConduit == false)
+ {
+   fprintf(stderr, "[Korali] Error: Unrecognized conduit '%s' selected.\n", conduitString.c_str());
+   exit(-1);
+ }
+
+ if (_config.find("Conduit") != _config.end())
+ {
+  _conduit->setConfiguration(_config["Conduit"]);
+  _config.erase("Conduit");
+ }
+
+ // Configure Solver
+ bool foundSolver = false;
+ if (_config.find("Solver") != _config.end())
+ if (_config["Solver"].find("Method") != _config["Solver"].end()) if(_config["Solver"]["Method"].is_string())
+ {
+	 if (_config["Solver"]["Method"] == "CMA-ES") { _solver = new Korali::Solver::CMAES(); foundSolver = true; }
+	 if (_config["Solver"]["Method"] == "TMCMC")  { _solver = new Korali::Solver::TMCMC(); foundSolver = true; }
+ }
+ if (foundSolver == false) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Solver."); exit(-1); }
+ _solver->setConfiguration(_config["Solver"]);
+ _config.erase("Solver");
+
+ // Initializing Modules
+ _problem->initialize();
+ for(int i = 0; i < _parameters.size(); i++)  _parameters[i]->initialize(_seed++);
+ _conduit->initialize();
+ _solver->initialize();
 }
 
 void Korali::Engine::run()
 {
  _k = this;
 
- initializeParameters();
+ initialize();
 
- auto printSyntax = [](){fprintf(stderr, "[Korali] Use $export KORALI_CONDUIT={single,openmp,upcxx,mpi} to select a conduit.\n");};
+ printf("%s\n", _config.dump(2).c_str());
 
- const char* env_conduit = std::getenv("KORALI_CONDUIT");
- if(env_conduit == NULL)
- {
-  fprintf(stderr, "[Korali] Error: No sampling conduit was selected.\n");
-  printSyntax();
-  exit(-1);
- }
+ return;
 
- std::string conduitString = env_conduit;
 
- bool recognized = false;
-
- if (conduitString == "single") { _conduit = new Korali::Conduit::Single(); recognized = true; }
-
- if (conduitString == "upcxx")
-  {
-   #ifdef _KORALI_USE_UPCXX
-    _conduit = new Korali::Conduit::UPCXX();  recognized = true;
-   #else
-    fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");
-    printSyntax();
-    fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support UPC++.\n");
-    exit(-1);
-   #endif
-  }
-
- if (conduitString == "openmp")
- {
-  #ifdef _KORALI_USE_OPENMP
-   _conduit = new Korali::Conduit::OpenMP(); recognized = true;
-  #else
-   fprintf(stderr, "[Korali] Error: OpenMP conduit is not properly configured.\n");
-   printSyntax();
-   fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support openMP.\n");
-   exit(-1);
-  #endif
- }
-
- if (recognized == false)
- {
-   fprintf(stderr, "[Korali] Error: Unrecognized conduit '%s' selected.\n", conduitString.c_str());
-   printSyntax();
-   exit(-1);
- }
-
- _conduit->initialize();
-}
-
-void Korali::Engine::initializeParameters()
-{
- // Initialize Parameter Priors
- for (size_t i = 0; i < N; i++) Parameters[i]->initializeDistribution(_seed+i);
-
- // Checking correct parameters for problem
- for (size_t i = 0; i < N; i++) Parameters[i]->checkBounds();
-}
-
-void Korali::Engine::addParameter(Korali::Parameter::Base* p)
-{
- if(p->_name == "") p->setName("Parameter" + std::to_string(N));
- Parameters.push_back(p);
- N = Parameters.size();
 }
 
 double Korali::Engine::getPriorsLogProbabilityDensity(double *x)
 {
   double logp = 0.0;
-  for (size_t i = 0; i < N; i++) logp += Parameters[i]->getDensityLog(x[i]);
+  for (size_t i = 0; i < N; i++) logp += _parameters[i]->getDensityLog(x[i]);
   return logp;
 }
 
 double Korali::Engine::getPriorsProbabilityDensity(double *x)
 {
   double dp = 1.0;
-  for (size_t i = 0; i < N; i++) dp *= Parameters[i]->getDensity(x[i]);
+  for (size_t i = 0; i < N; i++) dp *= _parameters[i]->getDensity(x[i]);
   return dp;
 }
 
 bool Korali::Engine::isSampleOutsideBounds(double* sample)
 {
-  for (size_t i = 0; i < N; i++) if (sample[i] < Parameters[i]->_lowerBound || sample[i] > Parameters[i]->_upperBound) return true;
+  for (size_t i = 0; i < N; i++) if (sample[i] < _parameters[i]->_lowerBound || sample[i] > _parameters[i]->_upperBound) return true;
   return false;
-}
-
-void Korali::Engine::setReferenceData(size_t nData, double* referenceData)
-{
- _referenceDataSize = nData;
- _referenceData = referenceData;
 }
 
 json Korali::Engine::getConfiguration()
 {
  auto js = json();
  js["parameterCount"] = N;
- js["referenceDataSize"] = _referenceDataSize;
  js["seed"] = _seed;
  js["verbosity"] = _verbosity;
- js["maxGens"] = _maxGens;
  js["sampleCount"] = S;
  js["reportFrequency"] = _reportFrequency;
  return js;
@@ -138,10 +179,8 @@ json Korali::Engine::getConfiguration()
 void Korali::Engine::setConfiguration(json js)
 {
  N                  = js["parameterCount"];
- _referenceDataSize = js["referenceDataSize"];
  _seed              = js["seed"];
  _verbosity         = js["verbosity"];
- _maxGens           = js["maxGens"];
  S                  = js["sampleCount"];
  _reportFrequency   = js["reportFrequency"];
 }

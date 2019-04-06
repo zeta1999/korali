@@ -2,12 +2,14 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Gaussian::Gaussian(double mean, double sigma) : Korali::Parameter::Gaussian::Gaussian("NoNameGaussian", mean, sigma){}
-Korali::Parameter::Gaussian::Gaussian(std::string name, double mean, double sigma) : Korali::Parameter::Base::Base(name)
-{
- _mean = mean;
- _sigma = sigma;
-}
+Korali::Parameter::Gaussian::Gaussian() : Korali::Parameter::Base::Base() {};
+
+//Korali::Parameter::Gaussian::Gaussian(double mean, double sigma) : Korali::Parameter::Gaussian::Gaussian("NoNameGaussian", mean, sigma){}
+//Korali::Parameter::Gaussian::Gaussian(std::string name, double mean, double sigma) : Korali::Parameter::Base::Base(name)
+//{
+// _mean = mean;
+// _sigma = sigma;
+//}
 
 double Korali::Parameter::Gaussian::getDensity(double x)
 {
@@ -29,7 +31,7 @@ double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, doubl
 {
  if (nData == 0)
  {
-  fprintf(stderr, "[Korali] Error: Problem's reference dataset not defined for the Likelihood (use: Problem.setReferenceData()).\n");
+  fprintf(stderr, "[Korali] Error: _problem's reference dataset not defined for the Likelihood (use: _problem.setReferenceData()).\n");
    return 0.0;
  }
 
@@ -49,16 +51,15 @@ double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, doubl
  return res;
 }
 
-void Korali::Parameter::Gaussian::printDetails()
+json Korali::Parameter::Gaussian::getConfiguration()
 {
- printf("Gaussian(%.3g, %.3g)", _mean, _sigma);
+ auto js = this->Korali::Parameter::Base::getConfiguration();
+ return js;
 }
 
-json Korali::Parameter::Gaussian::serialize()
+void Korali::Parameter::Gaussian::setConfiguration(json js)
 {
- auto j = this->Korali::Parameter::Base::serialize();
- j["Distribution"]["Type"] = "Gaussian";
- j["Distribution"]["Mean"] = _mean;
- j["Distribution"]["Sigma"] = _sigma;
- return j;
+	this->Korali::Parameter::Base::setConfiguration(js);
 }
+
+

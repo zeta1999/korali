@@ -13,15 +13,15 @@ class Gamma : public Korali::Parameter::Base
   double _rate;
 
  public:
-  Gamma(double shape, double rate);
-  Gamma(std::string name, double shape, double rate);
+  Gamma();
+
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
-  void printDetails();
 
-  // Serialization Method
-  nlohmann::json serialize();
+  // Serialization Methods
+  nlohmann::json getConfiguration();
+  void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

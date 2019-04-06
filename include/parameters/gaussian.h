@@ -13,16 +13,17 @@ class Gaussian : public Korali::Parameter::Base
   double _sigma;
 
  public:
-  Gaussian(double mean, double sigma);
-  Gaussian(std::string name, double mean, double sigma);
+  Gaussian();
+
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
   static double logLikelihood(double sigma, int nData, double* x, double* u);
-  void printDetails();
+  void setDistribution(double mean, double sigma) { _mean = mean; _sigma = sigma; };
 
-  // Serialization Method
-  nlohmann::json serialize();
+  // Serialization Methods
+  nlohmann::json getConfiguration();
+  void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

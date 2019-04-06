@@ -4,6 +4,7 @@
 #include "json.hpp"
 #include "stdlib.h"
 #include <vector>
+#include <functional>
 
 #include "problems/direct.h"
 #include "problems/likelihood.h"
@@ -20,6 +21,10 @@
 #include "conduits/single.h"
 #include "conduits/upcxx.h"
 
+#include "json.hpp"
+
+enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
+
 namespace Korali
 {
 
@@ -27,36 +32,40 @@ class Engine {
 
  public:
 
-  Korali::Conduit::Base* _conduit;
-  Korali::Problem::Base* Problem;
-  Korali::Solver::Base*  Solver;
-  std::vector<Korali::Parameter::Base*> Parameters;
+	nlohmann::json _config;
 
-  Engine(size_t seed = 0);
+	nlohmann::json& operator [](std::string key) { return _config[key]; }
+
+  Korali::Conduit::Base* _conduit;
+  Korali::Problem::Base* _problem;
+  Korali::Solver::Base*  _solver;
+  std::vector<Korali::Parameter::Base*> _parameters;
+
+  // Model Functions and constructors
+  Engine();
+
+  std::function<double (double*)> _modelSingle;
+  Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _config["Problem"]["Model"] = "Single"; }
+
+  std::function<void (double*, double*)> _modelMultiple;
+  Engine(std::function<void (double*, double*)> model) : Engine::Engine() {	_modelMultiple = model;	_config["Problem"]["Model"] = "Multiple"; }
+
+  std::function<void (double*, double*, double*, double*)> _modelManifold;
+  Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() {_modelManifold = model;	_config["Problem"]["Model"] = "Manifold"; }
+
   void run();
 
   // Parameter Management
-  void addParameter(Korali::Parameter::Base* p);
   bool isSampleOutsideBounds(double* sample);
   double getPriorsLogProbabilityDensity(double *x);
   double getPriorsProbabilityDensity(double *x);
-  void initializeParameters();
-
-  // Reference Data
-  double* _referenceData;
-  void setReferenceData(size_t nData, double* referenceData);
+  void initialize();
 
   size_t S; // Sample Size
   size_t N; // Parameter Count
-  size_t _referenceDataSize;
   size_t _seed;
-  size_t _maxGens;
-
   int _verbosity;
   size_t _reportFrequency;
-  void setReportVerbosity(int verbosity) { _verbosity = verbosity; }
-  void setPopulationSize(int size) { S = size; }
-  void setMaxGenerations(int maxGens) { _maxGens = maxGens; }
 
   // Serialization Methods
   virtual nlohmann::json getConfiguration();

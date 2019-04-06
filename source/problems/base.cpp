@@ -6,6 +6,10 @@ Korali::Problem::Base::Base()
 {
 }
 
+void Korali::Problem::Base::initialize()
+{
+}
+
 json Korali::Problem::Base::getConfiguration()
 {
  auto js = json();

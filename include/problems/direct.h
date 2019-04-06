@@ -9,9 +9,9 @@ namespace Korali::Problem
 class Direct : public Korali::Problem::Base
 {
  public:
- double (*_modelFunction) (double*);
- Direct(double (*modelFunction) (double*));
+ Direct();
  double evaluateFitness(double* sample);
+ void initialize();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

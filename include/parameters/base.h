@@ -14,7 +14,7 @@ namespace Korali::Parameter
 class Base
 {
  public:
- Base(std::string name);
+ Base();
  gsl_rng* _range;
 
  std::string _name;
@@ -31,16 +31,16 @@ class Base
  void setMinStdDevChange(double minStdDevChange) { _minStdDevChange = minStdDevChange; }
  void setBounds(double lowerBound, double upperBound);
  void setName(std::string name)    { _name = name; }
- void initializeDistribution(int seed);
+ void initialize(int seed);
  void checkBounds();
 
- virtual void printDetails() = 0;
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
  virtual double getRandomNumber() = 0;
 
- // Serialization Method
- virtual nlohmann::json serialize();
+ // Serialization Methods
+ virtual nlohmann::json getConfiguration();
+ virtual void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

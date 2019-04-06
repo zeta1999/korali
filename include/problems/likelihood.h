@@ -10,9 +10,14 @@ class Likelihood : public Korali::Problem::Base
 {
  public:
 
- void (*_modelFunction) (double*, double*);
- Likelihood(void (*modelFunction) (double*, double*));
+ Likelihood();
+ // Reference Data
+ double* _referenceData;
+ double* fitnessArrayPointer;
+
+ size_t _referenceDataSize;
  double evaluateFitness(double* sample);
+ void initialize();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

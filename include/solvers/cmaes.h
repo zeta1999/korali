@@ -17,7 +17,7 @@ class CMAES : public Korali::Solver::Base
  CMAES();
 
  // Runtime Methods (to be inherited from base class in the future)
- void initializeInternalVariables();
+ void initialize();
  void prepareGeneration();
  bool checkTermination();
  void updateDistribution(const double *fitnessVector);
@@ -31,22 +31,6 @@ class CMAES : public Korali::Solver::Base
  virtual void setState(nlohmann::json js);
  void saveGeneration();
 
- // Configuration Methods
- void setMaxFitnessEvaluations(size_t maxFitnessEvaluations) { _maxFitnessEvaluations = maxFitnessEvaluations; }
- void setDiagonalCovarianceMatrixEvalFrequency(size_t diagonalCovarianceMatrixEvalFrequency) { _diagonalCovarianceMatrixEvalFrequency = diagonalCovarianceMatrixEvalFrequency; }
- void setCovarianceEigensystemEvaluationFrequency(size_t covarianceEigensystemEvaluationFrequency) { _covarianceEigensystemEvaluationFrequency = covarianceEigensystemEvaluationFrequency; }
- void setStopFitnessEvalThreshold(double stopFitnessEvalThreshold) { _stopFitnessEvalThreshold = stopFitnessEvalThreshold; }
- void setStopFitnessDiffThreshold(double stopFitnessDiffThreshold) { _stopFitnessDiffThreshold = stopFitnessDiffThreshold; }
- void setStopMinDeltaX(double stopMinDeltaX) { _stopMinDeltaX = stopMinDeltaX; }
- void setStopMaxStdDevXFactor(double stopMaxStdDevXFactor) { _stopMaxStdDevXFactor = stopMaxStdDevXFactor; }
- void setStopMinFitness(double stopMinFitness) { _stopMinFitness = stopMinFitness; }
- void setMu(size_t mu, std::string muType = "Logarithmic") { _mu = mu; _muType = muType; }
- void setMuCovariance(double muCovariance) { _muCovariance = muCovariance;}
- void setSigmaCumulationFactor(double sigmaCumulationFactor) { _sigmaCumulationFactor = sigmaCumulationFactor;}
- void setDampingFactor(double dampFactor) { _dampFactor = dampFactor; }
- void setCumulativeCovariance(double cumulativeCovariance) { _cumulativeCovariance = cumulativeCovariance; }
- void setCovarianceMatrixLearningRate(double covarianceMatrixLearningRate) { _covarianceMatrixLearningRate = covarianceMatrixLearningRate; }
-
  private:
 
  // Korali Runtime Variables
@@ -57,6 +41,7 @@ class CMAES : public Korali::Solver::Base
  char filepath[500];
 
  size_t _finishedSamples;
+ size_t _lambda;
  size_t _mu;
  std::string _muType;
  double* _muWeights;
@@ -78,6 +63,7 @@ class CMAES : public Korali::Solver::Base
  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
  double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
  double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
+ size_t _maxGens;
 
  // Private CMAES-Specific Variables
  double sigma;  /* step size */

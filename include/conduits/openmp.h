@@ -34,12 +34,17 @@ class OpenMP : public Base
 
  OpenMP();
  void initialize();
+ void run();
  void evaluateSample(size_t sampleId);
  double* getSampleArrayPointer();
  double* getFitnessArrayPointer();
  void checkProgress();
  void supervisorThread();
  void workerThread();
+
+ // Serialization Methods
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

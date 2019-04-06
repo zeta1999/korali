@@ -22,16 +22,19 @@ class UPCXX : public Base
 
  std::queue<int> _workers;
  upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
- double* fitnessArrayPointer;
 
  UPCXX();
  void initialize();
+ void run();
  void evaluateSample(size_t sampleId);
  double* getSampleArrayPointer();
- double* getFitnessArrayPointer();
  void checkProgress();
  void supervisorThread();
  void workerThread();
+
+ // Serialization Methods
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

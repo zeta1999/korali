@@ -13,15 +13,15 @@ class Uniform : public Korali::Parameter::Base
   double _max;
 
  public:
-  Uniform(double min, double max);
-  Uniform(std::string name, double min, double max);
+  Uniform();
+
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
-  void printDetails();
 
-  // Serialization Method
-  nlohmann::json serialize();
+  // Serialization Methods
+  nlohmann::json getConfiguration();
+  void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

@@ -2,13 +2,15 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Uniform::Uniform(double min, double max) : Korali::Parameter::Uniform::Uniform("NoNameUniform", min, max) {}
-Korali::Parameter::Uniform::Uniform(std::string name, double min, double max) : Korali::Parameter::Base::Base(name)
-{
- _min = min;
- _max = max;
- setBounds(min, max);
-}
+Korali::Parameter::Uniform::Uniform() : Korali::Parameter::Base::Base() {};
+
+//Korali::Parameter::Uniform::Uniform(double min, double max) : Korali::Parameter::Uniform::Uniform("NoNameUniform", min, max) {}
+//Korali::Parameter::Uniform::Uniform(std::string name, double min, double max) : Korali::Parameter::Base::Base(name)
+//{
+// _min = min;
+// _max = max;
+// setBounds(min, max);
+//}
 
 double Korali::Parameter::Uniform::getDensity(double x)
 {
@@ -27,16 +29,14 @@ double Korali::Parameter::Uniform::getRandomNumber()
  return gsl_ran_flat(_range, _min, _max);
 }
 
-void Korali::Parameter::Uniform::printDetails()
+json Korali::Parameter::Uniform::getConfiguration()
 {
- printf("Uniform(%.3g, %.3g)", _min, _max);
+ auto js = this->Korali::Parameter::Base::getConfiguration();
+ return js;
 }
 
-json Korali::Parameter::Uniform::serialize()
+void Korali::Parameter::Uniform::setConfiguration(json js)
 {
- auto j = this->Korali::Parameter::Base::serialize();
- j["Type"] = "Uniform";
- j["Minimum"] = _min;
- j["Maximum"] = _max;
- return j;
+	this->Korali::Parameter::Base::setConfiguration(js);
 }
+

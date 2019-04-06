@@ -1,8 +1,8 @@
 #ifdef _KORALI_USE_OPENMP
 
-#include "conduits/openmp.h"
-#include "solvers/base.h"
-#include "omp.h"
+#include "korali.h"
+
+using json = nlohmann::json;
 
 Korali::Conduit::OpenMP::OpenMP() : Korali::Conduit::Base::Base()
 {
@@ -18,8 +18,8 @@ void Korali::Conduit::OpenMP::initialize()
  if (_threadCount < 2) { fprintf(stderr, "[Korali] Error: Running Korali's OpenMP Conduit with less than 2 threads is not allowed.\n"); exit(-1); }
 
  // Allocating Global Pointer for Samples
- sampleArrayPointer  = (double*) calloc (Solver->N*Solver->_sampleCount, sizeof(double));
- fitnessArrayPointer = (double*) calloc (Solver->Problem->_referenceDataSize*_threadCount, sizeof(double));
+ sampleArrayPointer  = (double*) calloc (_solver->N*_solver->_sampleCount, sizeof(double));
+ fitnessArrayPointer = (double*) calloc (_solver->_problem->_referenceDataSize*_threadCount, sizeof(double));
 
  #pragma omp parallel
  {
@@ -31,7 +31,7 @@ void Korali::Conduit::OpenMP::initialize()
 
 void Korali::Conduit::OpenMP::supervisorThread()
 {
- Solver->run();
+ _solver->run();
 
  _continueEvaluations = false;
 }
@@ -39,12 +39,6 @@ void Korali::Conduit::OpenMP::supervisorThread()
 double* Korali::Conduit::OpenMP::getSampleArrayPointer()
 {
   return sampleArrayPointer;
-}
-
-double* Korali::Conduit::OpenMP::getFitnessArrayPointer()
-{
- int threadId = omp_get_thread_num();
-  return &fitnessArrayPointer[Solver->Problem->_referenceDataSize*threadId];
 }
 
 void Korali::Conduit::OpenMP::workerThread()
@@ -67,11 +61,11 @@ void Korali::Conduit::OpenMP::workerThread()
 
   if (foundSample)
   {
-   double candidateFitness = Solver->Problem->evaluateFitness(&sampleArrayPointer[Solver->N*sampleId]);
+   double candidateFitness = _solver->_problem->evaluateFitness(&sampleArrayPointer[_solver->N*sampleId]);
    //printf("Thread %d/%d: Sample: %ld, Fitness: %f\n", threadId, _threadCount, sampleId, candidateFitness);
 
    _queueLock.lock();
-    Solver->processSample(sampleId, candidateFitness);
+    _solver->processSample(sampleId, candidateFitness);
    _queueLock.unlock();
 
    //printf("Thread %d/%d: Updated\n", threadId, _threadCount);
@@ -90,6 +84,17 @@ void Korali::Conduit::OpenMP::evaluateSample(size_t sampleId)
 
 void Korali::Conduit::OpenMP::checkProgress()
 {
+}
+
+json Korali::Conduit::Single::getConfiguration()
+{
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+ return js;
+}
+
+void Korali::Conduit::Single::setConfiguration(json js)
+{
+	this->Korali::Conduit::Base::setConfiguration(js);
 }
 
 #endif // _KORALI_USE_OPENMP

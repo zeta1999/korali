@@ -2,11 +2,13 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Exponential::Exponential(double mean) : Korali::Parameter::Exponential::Exponential("NoNameExponential", mean){}
-Korali::Parameter::Exponential::Exponential(std::string name, double mean) : Korali::Parameter::Base::Base(name)
-{
- _mean = mean;
-}
+Korali::Parameter::Exponential::Exponential() : Korali::Parameter::Base::Base() {};
+
+//Korali::Parameter::Exponential::Exponential(double mean) : Korali::Parameter::Exponential::Exponential("NoNameExponential", mean){}
+//Korali::Parameter::Exponential::Exponential(std::string name, double mean) : Korali::Parameter::Base::Base(name)
+//{
+// _mean = mean;
+//}
 
 double Korali::Parameter::Exponential::getDensity(double x)
 {
@@ -24,15 +26,13 @@ double Korali::Parameter::Exponential::getRandomNumber()
  return gsl_ran_exponential(_range, _mean);
 }
 
-void Korali::Parameter::Exponential::printDetails()
+json Korali::Parameter::Exponential::getConfiguration()
 {
- printf("Exponential(%.3g)", _mean);
+ auto js = this->Korali::Parameter::Base::getConfiguration();
+ return js;
 }
 
-json Korali::Parameter::Exponential::serialize()
+void Korali::Parameter::Exponential::setConfiguration(json js)
 {
- auto j = this->Korali::Parameter::Base::serialize();
- j["Type"] = "Exponential";
- j["Mean"] = _mean;
- return j;
+	this->Korali::Parameter::Base::setConfiguration(js);
 }

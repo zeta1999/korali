@@ -6,8 +6,6 @@
 #include <chrono>
 #include "json.hpp"
 
-enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
-
 namespace Korali::Solver
 {
 
@@ -24,7 +22,8 @@ class Base {
  Base();
 
  // Running Methods
- virtual void run();
+ virtual void run() = 0;
+ virtual void initialize();
  virtual void processSample(size_t sampleId, double fitness) = 0;
 
  // Serialization Methods

@@ -9,8 +9,9 @@ namespace Korali::Problem
 class Posterior : public Korali::Problem::Likelihood
 {
  public:
- Posterior(void (*modelFunction) (double*, double*));
+ Posterior();
  double evaluateFitness(double* sample);
+ void initialize();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

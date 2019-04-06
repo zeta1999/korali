@@ -14,10 +14,14 @@ class Single : public Base {
 
  Single();
  void initialize();
+ void run();
  void evaluateSample(size_t sampleId);
  double* getSampleArrayPointer();
- double* getFitnessArrayPointer();
  void checkProgress();
+
+ // Serialization Methods
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json js);
 };
 
 } // namespace Korali

@@ -2,14 +2,20 @@
 
 using json = nlohmann::json;
 
-Korali::Problem::Likelihood::Likelihood(void (*modelFunction) (double*, double*)) : Korali::Problem::Base::Base()
+Korali::Problem::Likelihood::Likelihood() : Korali::Problem::Base::Base()
 {
- _modelFunction = modelFunction;
+	 _referenceData = NULL;
+	 _referenceDataSize = 0;
+}
 
- auto sigma = new Korali::Parameter::Uniform(0.0, +20.0);
- sigma->setName("Sigma");
- sigma->setBounds(0, +20.0);
- _k->addParameter(sigma);
+void Korali::Problem::Likelihood::initialize()
+{
+	// auto sigma = new Korali::Parameter::Uniform(0.0, +20.0);
+	// sigma->setName("Sigma");
+	// sigma->setBounds(0, +20.0);
+	// _k->addParameter(sigma);
+
+	this->Korali::Problem::Base::initialize();
 }
 
 double Korali::Problem::Likelihood::evaluateFitness(double* sample)
@@ -18,17 +24,18 @@ double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 
  double sigma = sample[0];
  double* parameters = &sample[1];
- double* fitnessData = _k->_conduit->getFitnessArrayPointer();
+ double fitnessData[_referenceDataSize];
 
- _modelFunction(parameters, fitnessData);
+ _k->_modelMultiple(parameters, fitnessData);
 
- return -Korali::Parameter::Gaussian::logLikelihood(sigma, _k->_referenceDataSize, _k->_referenceData, fitnessData);
+ double likelihood = -Korali::Parameter::Gaussian::logLikelihood(sigma, _referenceDataSize, _referenceData, fitnessData);
+
+ return likelihood;
 }
 
 json Korali::Problem::Likelihood::getConfiguration()
 {
  auto js = this->Korali::Problem::Base::getConfiguration();
- js["Type"] = "Likelihood";
  return js;
 }
 

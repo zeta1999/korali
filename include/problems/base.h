@@ -12,6 +12,7 @@ class Base
 
  Base();
  virtual double evaluateFitness(double* sample) = 0;
+ virtual void initialize();
 
  // Serialization Methods
  virtual nlohmann::json getConfiguration();

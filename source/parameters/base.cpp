@@ -1,10 +1,10 @@
-#include "parameters/base.h"
+#include "korali.h"
 
 using json = nlohmann::json;
 
-Korali::Parameter::Base::Base(std::string name)
+Korali::Parameter::Base::Base()
 {
- _name = name;
+ _name = "";
  _lowerBound = 0.0;
  _upperBound = -1.0;
  _initialValue = 0.5;
@@ -12,10 +12,12 @@ Korali::Parameter::Base::Base(std::string name)
  _minStdDevChange = 0.0;
 }
 
-void Korali::Parameter::Base::initializeDistribution(int seed)
+void Korali::Parameter::Base::initialize(int seed)
 {
  _range = gsl_rng_alloc (gsl_rng_default);
  gsl_rng_set(_range, seed);
+
+ checkBounds();
 }
 
 void Korali::Parameter::Base::checkBounds()
@@ -40,14 +42,12 @@ void Korali::Parameter::Base::setBounds(double lowerBound, double upperBound)
  _initialValue = (lowerBound+upperBound)*0.5;
 }
 
-json Korali::Parameter::Base::serialize()
+json Korali::Parameter::Base::getConfiguration()
 {
- auto j = json();
- j["Name"] = _name;
- j["LowerBound"] = _lowerBound;
- j["UpperBound"] = _upperBound;
- j["InitialValue"] = _initialValue;
- j["InitialStdDev"] = _initialStdDev;
- j["MinStdDevStep"] = _minStdDevChange;
- return j;
+ auto js = json();
+ return js;
+}
+
+void Korali::Parameter::Base::setConfiguration(json js)
+{
 }

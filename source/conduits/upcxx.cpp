@@ -2,6 +2,8 @@
 
 #include "korali.h"
 
+using json = nlohmann::json;
+
 Korali::Conduit::UPCXX* _ux;
 
 Korali::Conduit::UPCXX::UPCXX() : Korali::Conduit::Base::Base()
@@ -25,12 +27,16 @@ void Korali::Conduit::UPCXX::initialize()
   exit(-1);
  }
 
-  // Allocating Global Pointer for Samples
- fitnessArrayPointer = (double*) calloc (_k->_referenceDataSize, sizeof(double));
+ // Allocating Global Pointer for Samples
+ // fitnessArrayPointer = (double*) calloc (_k->_referenceDataSize, sizeof(double));
  if (_rankId == 0) sampleGlobalPtr  = upcxx::new_array<double>(_k->N*_k->S);
  upcxx::broadcast(&sampleGlobalPtr,  1, 0).wait();
+}
 
-  if (_rankId == 0) supervisorThread(); else workerThread();
+void Korali::Conduit::UPCXX::run()
+{
+  if (_rankId == 0) supervisorThread();
+  else workerThread();
 
   upcxx::barrier();
   upcxx::finalize();
@@ -41,7 +47,7 @@ void Korali::Conduit::UPCXX::supervisorThread()
   // Creating Worker Queue
   for (int i = 1; i < _rankCount; i++) _workers.push(i);
 
- _k->Solver->run();
+ _k->_solver->run();
 
   for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_ux->_continueEvaluations = false;});
 }
@@ -49,11 +55,6 @@ void Korali::Conduit::UPCXX::supervisorThread()
 double* Korali::Conduit::UPCXX::getSampleArrayPointer()
 {
   return sampleGlobalPtr.local();
-}
-
-double* Korali::Conduit::UPCXX::getFitnessArrayPointer()
-{
-  return fitnessArrayPointer;
 }
 
 void Korali::Conduit::UPCXX::workerThread()
@@ -65,9 +66,9 @@ void Korali::Conduit::UPCXX::workerThread()
    _evaluateSample = false;
    double candidatePoint[_k->N];
    upcxx::rget(sampleGlobalPtr + _sampleId*_k->N, candidatePoint, _k->N).wait();
-   double candidateFitness = _k->Problem->evaluateFitness(candidatePoint);
+   double candidateFitness = _k->_problem->evaluateFitness(candidatePoint);
    //printf("Worker %d: Evaluated %ld:[%f, %f] - Fitness: %f\n", _rankId, _sampleId, candidatePoint[0], candidatePoint[1], candidateFitness);
-   upcxx::rpc_ff(0, [](size_t c, double fitness, int workerId){_k->Solver->processSample(c, fitness); _ux->_workers.push(workerId); }, _sampleId, candidateFitness, _rankId);
+   upcxx::rpc_ff(0, [](size_t c, double fitness, int workerId){_k->_solver->processSample(c, fitness); _ux->_workers.push(workerId); }, _sampleId, candidateFitness, _rankId);
   }
   upcxx::progress();
  }
@@ -84,5 +85,17 @@ void Korali::Conduit::UPCXX::checkProgress()
 {
  upcxx::progress();
 }
+
+json Korali::Conduit::UPCXX::getConfiguration()
+{
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+ return js;
+}
+
+void Korali::Conduit::UPCXX::setConfiguration(json js)
+{
+	this->Korali::Conduit::Base::setConfiguration(js);
+}
+
 
 #endif // #ifdef _KORALI_USE_UPCXX

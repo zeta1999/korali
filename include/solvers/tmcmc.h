@@ -42,6 +42,7 @@ class TMCMC : public Korali::Solver::Base
  double* _covarianceMatrix;            /*[PROBDIM][PROBDIM];*/
  double* _meanTheta;     /*[PROBDIM]*/
  bool    _verbose;
+ size_t _maxGens;
 
  // TMCMC Fields
  gsl_rng  *range;
@@ -65,17 +66,9 @@ class TMCMC : public Korali::Solver::Base
  double* databaseFitness;
 
   // Korali Methods
-
  TMCMC();
- void initializeEngine();
+ void initialize();
  void run();
-
- // TMCMC Configuration Methods
- void setToleranceCOV(double TolCOV) { _tolCOV = TolCOV; }
- void setMinRhoUpdate(double minStep) { _minStep = minStep; }
- void setUseLocalCOV(bool useLocalCov) { _useLocalCov = useLocalCov; }
- void setCovarianceScaling(double bbeta) { _bbeta = bbeta; }
- void setBurnIn(size_t burnIn) { _burnIn = burnIn; }
 
   // Internal TMCMC Methods
  void saveResults();
