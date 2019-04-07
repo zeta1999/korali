@@ -17,7 +17,6 @@ Korali::Conduit::UPCXX::UPCXX() : Korali::Conduit::Base::Base()
 void Korali::Conduit::UPCXX::initialize()
 {
  _ux = this;
- upcxx::init();
  _rankId = upcxx::rank_me();
  _rankCount = upcxx::rank_n();
 

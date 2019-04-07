@@ -73,6 +73,12 @@ void Korali::Engine::initialize()
  // Configure Conduit
 
  std::string conduitString = "Sequential";
+
+ #ifdef _KORALI_USE_UPCXX
+ upcxx::init();
+ if (upcxx::rank_n() > 1) conduitString = "UPC++";
+ #endif
+
  if (_config.find("Conduit") != _config.end())
  if (_config["Conduit"].find("Type") != _config["Conduit"].end()) if(_config["Conduit"]["Type"].is_string()) conduitString = _config["Conduit"]["Type"];
 
@@ -146,6 +152,10 @@ void Korali::Engine::run()
  initialize();
 
  _conduit->run();
+
+ #ifdef _KORALI_USE_UPCXX
+ upcxx::finalize();
+ #endif
 
  return;
 }
