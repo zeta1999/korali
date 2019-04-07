@@ -1,23 +1,19 @@
-include ../../common.mk
-
-LDFLAGS  += -L../../source -lkorali
-CXXFLAGS += -I../../include
-CXXFLAGS += -I../../libs/json
 BINARIES = maximize_function sample_function
 OBJECTS = model/gaussian.o
+CXX = korali-cxx
 
 .SECONDARY:
 .PHONY: all
 all: $(BINARIES)
 
 $(BINARIES) : % : %.o $(OBJECTS)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ 
 
 model/%.o: 
 	$(MAKE) -C model all 
 
 %.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $<
+	$(CXX) -c $<
 
 .PHONY: clean
 clean:

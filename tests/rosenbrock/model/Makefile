@@ -1,9 +1,6 @@
-include ../../../common.mk
-
 all: rosenbrock.o
 
-$(TARGET).o: $(TARGET).cpp
-	$(CXX) -c $< $(CXXFLAGS)
+CXXFLAGS = -O3 -g
 
 clean:; rm -rf $(TARGET) *.o
 

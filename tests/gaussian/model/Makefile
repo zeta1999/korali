@@ -1,9 +1,7 @@
-include ../../../common.mk
-
 all: gaussian.o
 
-$(TARGET).o: $(TARGET).cpp
-	$(CXX) -c $< $(CXXFLAGS)
+gaussian.o: gaussian.cpp
+	$(CXX) -c $< -O3 `gsl-config --cflags` 
 
 clean:; rm -rf $(TARGET) *.o
 
