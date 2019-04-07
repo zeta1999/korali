@@ -50,7 +50,7 @@ class Engine {
   Engine(std::function<void (double*, double*)> model) : Engine::Engine() {	_modelMultiple = model;	_config["Problem"]["Model"] = "Multiple"; }
 
   std::function<void (double*, double*, double*, double*)> _modelManifold;
-  Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() {_modelManifold = model;	_config["Problem"]["Model"] = "Manifold"; }
+  Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model;	_config["Problem"]["Model"] = "Manifold"; }
 
   void run();
   void initialize();
@@ -61,8 +61,8 @@ class Engine {
   size_t _reportFrequency;
 
   // Serialization Methods
-  virtual nlohmann::json getConfiguration();
-  virtual void setConfiguration(nlohmann::json js);
+  nlohmann::json getConfiguration();
+  void setConfiguration(nlohmann::json js);
 };
 
 extern Engine* _k;
