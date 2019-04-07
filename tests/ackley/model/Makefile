@@ -1,9 +1,7 @@
-include ../../../common.mk
-
 all: ackley.o
 
 $(TARGET).o: $(TARGET).cpp
-	$(CXX) -c $< $(CXXFLAGS)
+	$(CXX) -c $< -O3 -g 
 
 clean:; rm -rf $(TARGET) *.o
 

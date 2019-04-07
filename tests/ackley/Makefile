@@ -1,10 +1,6 @@
-include ../../common.mk
-
-LDFLAGS  += -L../../source -lkorali
-CXXFLAGS += -I../../include
-CXXFLAGS += -I../../libs/json
 BINARIES = minimize_function sample_function
 OBJECTS = model/ackley.o
+CXX = korali-cxx
 
 .SECONDARY:
 .PHONY: all
@@ -17,7 +13,7 @@ model/ackley.o:
 	$(MAKE) -C model all 
 
 %.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $<
+	$(CXX) -c $<
 
 .PHONY: clean
 clean:
