@@ -2,15 +2,11 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Uniform::Uniform() : Korali::Parameter::Base::Base() {};
-
-//Korali::Parameter::Uniform::Uniform(double min, double max) : Korali::Parameter::Uniform::Uniform("NoNameUniform", min, max) {}
-//Korali::Parameter::Uniform::Uniform(std::string name, double min, double max) : Korali::Parameter::Base::Base(name)
-//{
-// _min = min;
-// _max = max;
-// setBounds(min, max);
-//}
+Korali::Parameter::Uniform::Uniform() : Korali::Parameter::Base::Base()
+{
+	_min = -1.0;
+	_max = +1.0;
+};
 
 double Korali::Parameter::Uniform::getDensity(double x)
 {
@@ -38,5 +34,17 @@ json Korali::Parameter::Uniform::getConfiguration()
 void Korali::Parameter::Uniform::setConfiguration(json js)
 {
 	this->Korali::Parameter::Base::setConfiguration(js);
+
+  if (js.find("Distribution") != js.end())
+  {
+    json dist = js["Distribution"];
+    if (dist.find("Minimum") != dist.end()) if (dist["Minimum"].is_number())
+    { _min = dist["Minimum"]; dist.erase("Minimum"); }
+    if (dist.find("Maximum") != dist.end()) if (dist["Maximum"].is_number())
+    { _max = dist["Maximum"]; dist.erase("Maximum"); }
+  }
+
+  _lowerBound = _min;
+  _upperBound = _max;
 }
 

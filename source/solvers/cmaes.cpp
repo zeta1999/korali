@@ -40,11 +40,11 @@ json Korali::Solver::CMAES::getConfiguration()
   js["cumulativeCovariance"] = _cumulativeCovariance;
   js["covarianceMatrixLearningRate"] = _covarianceMatrixLearningRate;
 
-  js["TerminationCriteria"]["MaxFitnessEvaluations"] = _maxFitnessEvaluations ;
-  js["TerminationCriteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
-  js["TerminationCriteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
-  js["TerminationCriteria"]["stopMinDeltaX"] = _stopMinDeltaX;
-  js["TerminationCriteria"]["stopMinFitness"] = _stopMinFitness;
+  js["Termination Criteria"]["MaxFitnessEvaluations"] = _maxFitnessEvaluations ;
+  js["Termination Criteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
+  js["Termination Criteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
+  js["Termination Criteria"]["stopMinDeltaX"] = _stopMinDeltaX;
+  js["Termination Criteria"]["stopMinFitness"] = _stopMinFitness;
 
   return js;
 }

@@ -20,17 +20,15 @@ class TMCMC : public Korali::Solver::Base
  public:
 
  // TMCMC Configuration
- size_t nChains;
-
  double _tolCOV;              /* Target coefficient of variation of weights */
  double _minStep;             /* Min update of rho */
  double _bbeta;               /* Covariance scaling parameter */
-
- double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
+ size_t  _populationSize;
  bool _useLocalCov;
 
  // TMCMC Runtime Variables
 
+ size_t nChains;
  size_t  _currentGeneration;
  size_t  _burnIn;
  double  _varianceCoefficient;
@@ -41,10 +39,8 @@ class TMCMC : public Korali::Solver::Base
  double  _acceptanceRate;
  double* _covarianceMatrix;            /*[PROBDIM][PROBDIM];*/
  double* _meanTheta;     /*[PROBDIM]*/
- bool    _verbose;
  size_t _maxGens;
 
- // TMCMC Fields
  gsl_rng  *range;
 
  double* clPoints;   // Chain Leader Parameter Values
@@ -64,6 +60,8 @@ class TMCMC : public Korali::Solver::Base
  size_t  databaseEntries;
  double* databasePoints;
  double* databaseFitness;
+
+ double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
 
   // Korali Methods
  TMCMC();

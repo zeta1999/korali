@@ -41,14 +41,15 @@ void Korali::Engine::initialize()
  if (_config["Parameters"].size() > 0) for (int i = 0; i < _config["Parameters"].size(); i++)
  {
 	 if (_config["Parameters"][i].find("Distribution") != _config["Parameters"][i].end())
-	 if (_config["Parameters"][i]["Distribution"].is_string())
+	 if (_config["Parameters"][i]["Distribution"].find("Type") != _config["Parameters"][i]["Distribution"].end())
+	 if (_config["Parameters"][i]["Distribution"]["Type"].is_string())
 	 {
 		bool foundDistribution = false;
-	  if (_config["Parameters"][i]["Distribution"] == "Uniform")     { _parameters.push_back(new Korali::Parameter::Uniform());     foundDistribution = true; }
-	  if (_config["Parameters"][i]["Distribution"] == "Gaussian")    { _parameters.push_back(new Korali::Parameter::Gaussian());    foundDistribution = true; }
-	  if (_config["Parameters"][i]["Distribution"] == "Gamma")       { _parameters.push_back(new Korali::Parameter::Gamma());       foundDistribution = true; }
-	  if (_config["Parameters"][i]["Distribution"] == "Exponential") { _parameters.push_back(new Korali::Parameter::Exponential()); foundDistribution = true; }
-	  if (foundDistribution == false) { fprintf(stderr, "[Korali] Error: Incorrect or parameter distribution: \n %s.\n", _config["Parameters"][i]["Distribution"].dump(1).c_str() ); exit(-1); }
+	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Uniform")     { _parameters.push_back(new Korali::Parameter::Uniform());     foundDistribution = true; }
+	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Gaussian")    { _parameters.push_back(new Korali::Parameter::Gaussian());    foundDistribution = true; }
+	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Gamma")       { _parameters.push_back(new Korali::Parameter::Gamma());       foundDistribution = true; }
+	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Exponential") { _parameters.push_back(new Korali::Parameter::Exponential()); foundDistribution = true; }
+	  if (foundDistribution == false) { fprintf(stderr, "[Korali] Error: Incorrect or parameter distribution: \n %s.\n", _config["Parameters"][i]["Distribution"]["Type"].dump(1).c_str() ); exit(-1); }
 	  _parameters[i]->setConfiguration(_config["Parameters"][i]);
 	 }
  }
@@ -125,6 +126,12 @@ void Korali::Engine::initialize()
  _solver->setConfiguration(_config["Solver"]);
  _config.erase("Solver");
 
+ if (_config.size() > 0)
+ {
+	 fprintf(stderr, "[Korali] Warning: Unrecognized Settings for Korali:\n");
+	 fprintf(stderr, "%s\n", _config.dump(2).c_str());
+ }
+
  // Initializing Modules
  _problem->initialize();
  for(int i = 0; i < _parameters.size(); i++)  _parameters[i]->initialize(_seed++);
@@ -138,11 +145,9 @@ void Korali::Engine::run()
 
  initialize();
 
- printf("%s\n", _config.dump(2).c_str());
+ _conduit->run();
 
  return;
-
-
 }
 
 double Korali::Engine::getPriorsLogProbabilityDensity(double *x)

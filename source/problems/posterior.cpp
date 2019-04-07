@@ -28,6 +28,7 @@ json Korali::Problem::Posterior::getConfiguration()
 
 void Korali::Problem::Posterior::setConfiguration(json js)
 {
+	this->Korali::Problem::Likelihood::setConfiguration(js);
 }
 
 

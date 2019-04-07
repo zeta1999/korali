@@ -36,9 +36,26 @@ double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 json Korali::Problem::Likelihood::getConfiguration()
 {
  auto js = this->Korali::Problem::Base::getConfiguration();
+
  return js;
 }
 
 void Korali::Problem::Likelihood::setConfiguration(json js)
 {
+ this->Korali::Problem::Base::setConfiguration(js);
+
+ if (js.find("Reference Data") != js.end()) if (js["Reference Data"].is_array())
+ {
+	 auto ref = js["Reference Data"];
+	 _referenceDataSize = ref.size();
+	 _referenceData = (double*) calloc (_referenceDataSize, sizeof(double));
+	 for (int i = 0; i < _referenceDataSize; i++) _referenceData[i] = ref[i];
+ }
+
+ if (_referenceDataSize == 0)
+ {
+	 fprintf(stderr, "[Korali] Error: No Reference Data set for Likelihood.\n");
+	 exit(-1);
+ }
+
 }

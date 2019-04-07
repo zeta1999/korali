@@ -25,6 +25,7 @@ json Korali::Problem::Direct::getConfiguration()
 
 void Korali::Problem::Direct::setConfiguration(json js)
 {
+	this->Korali::Problem::Base::setConfiguration(js);
 }
 
 

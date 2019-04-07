@@ -21,16 +21,11 @@ class Base
  double _lowerBound;
  double _upperBound;
 
- // These are CMA-ES Specific, but could be used for other methos in the future
+ // These are CMA-ES Specific, but could be used for other methods in the future
  double _initialValue;
  double _initialStdDev;
  double _minStdDevChange;
 
- void setInitialValue(double initialX) { _initialValue = initialX; }
- void setInitialStdDev(double initialStdDev) { _initialStdDev = initialStdDev; }
- void setMinStdDevChange(double minStdDevChange) { _minStdDevChange = minStdDevChange; }
- void setBounds(double lowerBound, double upperBound);
- void setName(std::string name)    { _name = name; }
  void initialize(int seed);
  void checkBounds();
 

@@ -2,14 +2,11 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Gaussian::Gaussian() : Korali::Parameter::Base::Base() {};
-
-//Korali::Parameter::Gaussian::Gaussian(double mean, double sigma) : Korali::Parameter::Gaussian::Gaussian("NoNameGaussian", mean, sigma){}
-//Korali::Parameter::Gaussian::Gaussian(std::string name, double mean, double sigma) : Korali::Parameter::Base::Base(name)
-//{
-// _mean = mean;
-// _sigma = sigma;
-//}
+Korali::Parameter::Gaussian::Gaussian() : Korali::Parameter::Base::Base()
+{
+	_mean = 0.0;
+	_sigma = 1.0;
+};
 
 double Korali::Parameter::Gaussian::getDensity(double x)
 {
@@ -60,6 +57,15 @@ json Korali::Parameter::Gaussian::getConfiguration()
 void Korali::Parameter::Gaussian::setConfiguration(json js)
 {
 	this->Korali::Parameter::Base::setConfiguration(js);
+
+  if (js.find("Distribution") != js.end())
+  {
+    json dist = js["Distribution"];
+    if (dist.find("Mean") != dist.end()) if (dist["Mean"].is_number())
+    { _mean = dist["Mean"]; dist.erase("Mean"); }
+    if (dist.find("Sigma") != dist.end()) if (dist["Sigma"].is_number())
+    { _sigma = dist["Sigma"]; dist.erase("Sigma"); }
+  }
 }
 
 

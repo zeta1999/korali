@@ -2,13 +2,10 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Exponential::Exponential() : Korali::Parameter::Base::Base() {};
-
-//Korali::Parameter::Exponential::Exponential(double mean) : Korali::Parameter::Exponential::Exponential("NoNameExponential", mean){}
-//Korali::Parameter::Exponential::Exponential(std::string name, double mean) : Korali::Parameter::Base::Base(name)
-//{
-// _mean = mean;
-//}
+Korali::Parameter::Exponential::Exponential() : Korali::Parameter::Base::Base()
+{
+	_mean = 1.0;
+}
 
 double Korali::Parameter::Exponential::getDensity(double x)
 {
@@ -35,4 +32,11 @@ json Korali::Parameter::Exponential::getConfiguration()
 void Korali::Parameter::Exponential::setConfiguration(json js)
 {
 	this->Korali::Parameter::Base::setConfiguration(js);
+
+  if (js.find("Distribution") != js.end())
+  {
+    json dist = js["Distribution"];
+    if (dist.find("Mean") != dist.end()) if (dist["Mean"].is_number())
+    { _mean = dist["Mean"]; dist.erase("Mean"); }
+  }
 }

@@ -4,7 +4,7 @@ using json = nlohmann::json;
 
 Korali::Parameter::Base::Base()
 {
- _name = "";
+ _name = "Unnamed Parameter";
  _lowerBound = 0.0;
  _upperBound = -1.0;
  _initialValue = 0.5;
@@ -35,13 +35,6 @@ void Korali::Parameter::Base::checkBounds()
   fprintf(stderr,"[Korali] Warning: Initial Value (%.4f) for \'%s\' is out of bounds (%.4f-%.4f).\n", _initialValue, _name.c_str(), _lowerBound, _upperBound);
 }
 
-void Korali::Parameter::Base::setBounds(double lowerBound, double upperBound)
-{
- _lowerBound = lowerBound;
- _upperBound = upperBound;
- _initialValue = (lowerBound+upperBound)*0.5;
-}
-
 json Korali::Parameter::Base::getConfiguration()
 {
  auto js = json();
@@ -50,4 +43,24 @@ json Korali::Parameter::Base::getConfiguration()
 
 void Korali::Parameter::Base::setConfiguration(json js)
 {
+  if (js.find("Name") != js.end()) if (js["Name"].is_string())
+  { _name = js["Name"]; js.erase("Name"); }
+
+  if (js.find("Bounds") != js.end())
+  {
+    json bounds = js["Bounds"];
+    if (bounds.find("Lower") != bounds.end()) if (bounds["Lower"].is_number())
+    { _lowerBound = bounds["Lower"]; bounds.erase("Lower"); }
+  	if (bounds.find("Upper") != bounds.end()) if (bounds["Upper"].is_number())
+    { _upperBound = bounds["Upper"]; bounds.erase("Upper"); }
+  }
+
+  if (js.find("Initial Mean") != js.end()) if (js["Initial Mean"].is_number())
+  { _initialValue = js["Initial Mean"]; js.erase("Initial Mean"); }
+
+  if (js.find("Initial StdDev") != js.end()) if (js["Initial StdDev"].is_number())
+  { _initialStdDev = js["Initial StdDev"]; js.erase("Initial StdDev"); }
+
+  if (js.find("Min StdDev Change") != js.end()) if (js["Min StdDev Change"].is_number())
+  { _minStdDevChange = js["Min StdDev Change"]; js.erase("Min StdDev Change"); }
 }

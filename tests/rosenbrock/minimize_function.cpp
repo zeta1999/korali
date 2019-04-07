@@ -10,15 +10,16 @@ int main(int argc, char* argv[])
 
  for (int i = 0; i < NDIMS; i++)
  {
-	 korali["Parameters"][i]["Distribution"] = "Uniform";
-	 korali["Parameters"][i]["Minimum"] = -3.0;
-	 korali["Parameters"][i]["Maximum"] = +3.0;
+	 korali["Parameters"][i]["Name"] = "X" + std::to_string(i);
+	 korali["Parameters"][i]["Distribution"]["Type"] = "Uniform";
+	 korali["Parameters"][i]["Distribution"]["Minimum"] = -3.0;
+	 korali["Parameters"][i]["Distribution"]["Maximum"] = +3.0;
  }
 
  korali["Problem"]["Objective"] = "Direct Evaluation";
 
  korali["Solver"]["Method"] = "CMA-ES";
- korali["Solver"]["TerminationCriteria"]["StopMinDeltaX"] = 1e-11;
+ korali["Solver"]["Termination Criteria"]["StopMinDeltaX"] = 1e-11;
  korali["Solver"]["Lambda"] = 128;
 
  korali.run();

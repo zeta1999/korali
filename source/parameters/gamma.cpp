@@ -2,14 +2,11 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Gamma::Gamma() : Korali::Parameter::Base::Base() {};
-
-//Korali::Parameter::Gamma::Gamma(double shape, double rate) : Korali::Parameter::Gamma::Gamma("NoNameGamma", shape, rate) {}
-//Korali::Parameter::Gamma::Gamma(std::string name, double shape, double rate) : Korali::Parameter::Base::Base(name)
-//{
-// _shape = shape;
-// _rate = rate;
-//}
+Korali::Parameter::Gamma::Gamma() : Korali::Parameter::Base::Base()
+{
+	_rate = 1.0;
+	_shape = 1.0;
+};
 
 double Korali::Parameter::Gamma::getDensity(double x)
 {
@@ -36,4 +33,13 @@ json Korali::Parameter::Gamma::getConfiguration()
 void Korali::Parameter::Gamma::setConfiguration(json js)
 {
 	this->Korali::Parameter::Base::setConfiguration(js);
+
+  if (js.find("Distribution") != js.end())
+  {
+    json dist = js["Distribution"];
+    if (dist.find("Shape") != dist.end()) if (dist["Shape"].is_number())
+    { _shape = dist["Shape"]; dist.erase("Shape"); }
+    if (dist.find("Rate") != dist.end()) if (dist["Rate"].is_number())
+    { _rate = dist["Rate"]; dist.erase("Rate"); }
+  }
 }
