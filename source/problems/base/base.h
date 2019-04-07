@@ -13,6 +13,7 @@ class Base
  Base();
  virtual double evaluateFitness(double* sample) = 0;
  virtual void initialize();
+ bool isSampleOutsideBounds(double* sample);
 
  // Serialization Methods
  virtual nlohmann::json getConfiguration();

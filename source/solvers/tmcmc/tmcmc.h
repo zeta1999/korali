@@ -45,11 +45,9 @@ class TMCMC : public Korali::Solver::Base
 
  double* clPoints;   // Chain Leader Parameter Values
  double* clFitness;  // Chain Leader Fitness
- double* clLogPrior; // Chain Leader Log Prior
 
  double* ccPoints;   // Chain Candidate Parameter Values
  double* ccFitness;  // Chain Candidate Fitness
- double* ccLogPrior; // Chain Candidate Log Prior
  gsl_rng** chainGSLRange;
 
  bool*   chainPendingFitness; // Indicates that the fitness result for the chain is pending

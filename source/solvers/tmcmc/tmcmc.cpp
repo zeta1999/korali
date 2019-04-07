@@ -66,14 +66,12 @@ void Korali::Solver::TMCMC::run()
 void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
 {
  ccFitness[c] = fitness;
- ccLogPrior[c] = _k->getPriorsLogProbabilityDensity(&ccPoints[c*_k->N]);
- double L = exp((ccLogPrior[c]-clLogPrior[c])+(ccFitness[c]-clFitness[c])*_annealingRatio);
+ double L = exp((ccFitness[c]-clFitness[c])*_annealingRatio);
  double P = gsl_ran_flat(chainGSLRange[c], 0.0, 1.0);
 
  if (P < L) {
    for (size_t i = 0; i < _k->N; i++) clPoints[c*_k->N + i] = ccPoints[c*_k->N + i];
    clFitness[c]  = ccFitness[c];
-   clLogPrior[c] = ccLogPrior[c];
    _uniqueEntries++;
  }
 
@@ -150,11 +148,9 @@ void Korali::Solver::TMCMC::initialize()
  // Initializing TMCMC Leaders
  ccPoints    = _k->_conduit->getSampleArrayPointer();
  ccFitness   = (double*) calloc (_k->S, sizeof(double));
- ccLogPrior  = (double*) calloc (_k->S, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 
  clPoints    = (double*) calloc (_k->N*_k->S, sizeof(double));
  clFitness   = (double*) calloc (_k->S, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
- clLogPrior  = (double*) calloc (_k->S, sizeof(double));
 
  chainPendingFitness = (bool*) calloc (_k->S, sizeof(bool));
  chainCurrentStep    = (size_t*) calloc (_k->S, sizeof(size_t));
@@ -168,7 +164,6 @@ void Korali::Solver::TMCMC::initialize()
  nChains = _k->S;
  finishedChains = 0;
  for (size_t c = 0; c < _k->S; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
- for (size_t c = 0; c < _k->S; c++) clLogPrior[c] = _k->getPriorsLogProbabilityDensity(&clPoints[c*_k->N]);
  for (size_t c = 0; c < _k->S; c++) chainCurrentStep[c] = 0;
  for (size_t c = 0; c < _k->S; c++) chainLength[c] = 1 + _burnIn;
  for (size_t c = 0; c < _k->S; c++) chainPendingFitness[c] = false;

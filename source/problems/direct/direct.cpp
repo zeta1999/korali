@@ -13,7 +13,7 @@ void Korali::Problem::Direct::initialize()
 
 double Korali::Problem::Direct::evaluateFitness(double* sample)
 {
- if (_k->isSampleOutsideBounds(sample)) return -DBL_MAX;
+ if (isSampleOutsideBounds(sample)) return -DBL_MAX;
  return _k->_modelSingle(sample);
 }
 
@@ -26,6 +26,17 @@ json Korali::Problem::Direct::getConfiguration()
 void Korali::Problem::Direct::setConfiguration(json js)
 {
 	this->Korali::Problem::Base::setConfiguration(js);
+
+ bool correctModel = false;
+ if (js.find("Model") != js.end()) if (js["Model"].is_string())
+ { if (js["Model"] == "Single") correctModel = true; }
+
+ if (correctModel == false)
+ {
+	 fprintf(stderr, "[Korali] Error: Incorrect model for the Direct Evaluation problem.\n");
+	 exit(-1);
+ }
+
 }
 
 

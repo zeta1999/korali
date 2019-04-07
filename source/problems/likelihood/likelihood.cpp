@@ -20,7 +20,7 @@ void Korali::Problem::Likelihood::initialize()
 
 double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 {
- if (_k->isSampleOutsideBounds(sample)) return -DBL_MAX;
+ if (isSampleOutsideBounds(sample)) return -DBL_MAX;
 
  double sigma = sample[0];
  double* parameters = &sample[1];
@@ -50,6 +50,16 @@ void Korali::Problem::Likelihood::setConfiguration(json js)
 	 _referenceDataSize = ref.size();
 	 _referenceData = (double*) calloc (_referenceDataSize, sizeof(double));
 	 for (int i = 0; i < _referenceDataSize; i++) _referenceData[i] = ref[i];
+ }
+
+ bool correctModel = false;
+ if (js.find("Model") != js.end()) if (js["Model"].is_string())
+ { if (js["Model"] == "Multiple") correctModel = true; }
+
+ if (correctModel == false)
+ {
+	 fprintf(stderr, "[Korali] Error: Incorrect model for the Likelihood problem.\n");
+	 exit(-1);
  }
 
  if (_referenceDataSize == 0)

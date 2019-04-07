@@ -38,7 +38,6 @@ void Korali::Conduit::UPCXX::run()
   else workerThread();
 
   upcxx::barrier();
-  upcxx::finalize();
 }
 
 void Korali::Conduit::UPCXX::supervisorThread()

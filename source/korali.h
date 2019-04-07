@@ -53,11 +53,6 @@ class Engine {
   Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() {_modelManifold = model;	_config["Problem"]["Model"] = "Manifold"; }
 
   void run();
-
-  // Parameter Management
-  bool isSampleOutsideBounds(double* sample);
-  double getPriorsLogProbabilityDensity(double *x);
-  double getPriorsProbabilityDensity(double *x);
   void initialize();
 
   size_t S; // Sample Size

@@ -160,26 +160,6 @@ void Korali::Engine::run()
  return;
 }
 
-double Korali::Engine::getPriorsLogProbabilityDensity(double *x)
-{
-  double logp = 0.0;
-  for (size_t i = 0; i < N; i++) logp += _parameters[i]->getDensityLog(x[i]);
-  return logp;
-}
-
-double Korali::Engine::getPriorsProbabilityDensity(double *x)
-{
-  double dp = 1.0;
-  for (size_t i = 0; i < N; i++) dp *= _parameters[i]->getDensity(x[i]);
-  return dp;
-}
-
-bool Korali::Engine::isSampleOutsideBounds(double* sample)
-{
-  for (size_t i = 0; i < N; i++) if (sample[i] < _parameters[i]->_lowerBound || sample[i] > _parameters[i]->_upperBound) return true;
-  return false;
-}
-
 json Korali::Engine::getConfiguration()
 {
  auto js = json();
