@@ -64,15 +64,16 @@ void Korali::Conduit::UPCXX::evaluateSample(double* sampleArray, size_t sampleId
 
  put.then([workerId, sampleId]()
  {
-	 upcxx::rpc_ff(workerId, [](size_t sampleId)
+	 auto doWorker = upcxx::rpc(workerId, [](size_t sampleId)
 	 {
 		 double fitness = _k->_problem->evaluateFitness(_ux->samplePtr.local());
-		 upcxx::rpc_ff(0, [](size_t sampleId, double fitness, int workerId)
+		 upcxx::rpc_ff(0, [](size_t sampleId, double fitness)
 		 {
 			 _k->_solver->processSample(sampleId, fitness);
-			 _ux->_workers.push(workerId);
-		 },	sampleId, fitness, _ux->_rankId);
+		 },	sampleId, fitness);
 	 }, sampleId);
+
+	 doWorker.then([workerId](){_ux->_workers.push(workerId);});
  });
 }
 
