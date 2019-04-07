@@ -13,9 +13,6 @@ class CMAES : public Korali::Solver::Base
 {
  public:
 
- // Public Methods
- CMAES();
-
  // Runtime Methods (to be inherited from base class in the future)
  void initialize();
  void prepareGeneration();
@@ -36,12 +33,13 @@ class CMAES : public Korali::Solver::Base
  // Korali Runtime Variables
  double* _fitnessVector;
  double* _samplePopulation;
+ size_t _currentGeneration;
  bool* _initializedSample;
  char _terminationReason[500];
  char filepath[500];
 
  size_t _finishedSamples;
- size_t _lambda;
+ size_t _s;
  size_t _mu;
  std::string _muType;
  double* _muWeights;

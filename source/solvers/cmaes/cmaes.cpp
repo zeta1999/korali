@@ -3,28 +3,6 @@
 
 using json = nlohmann::json;
 
-Korali::Solver::CMAES::CMAES() : Korali::Solver::Base::Base()
-{
- _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
-
- _stopFitnessEvalThreshold = std::numeric_limits<double>::min();
- _stopFitnessDiffThreshold = 1e-12;
- _stopMinDeltaX = 0.0;
- _stopMinFitness = -std::numeric_limits<double>::max();
-
- _mu = 0;
- _muType = "Logarithmic";
- _muCovariance = -1;
- _diagonalCovarianceMatrixEvalFrequency = 0;
- _sigmaCumulationFactor = -1;
- _dampFactor = -1;
- _cumulativeCovariance = -1;
- _covarianceMatrixLearningRate = -1;
- _maxGens = 200;
-
- _terminationReason[0] = '\0';
-}
-
 json Korali::Solver::CMAES::getConfiguration()
 {
   auto js = this->Korali::Solver::Base::getConfiguration();
@@ -75,19 +53,41 @@ json Korali::Solver::CMAES::getState()
   for (int i = 0; i < _k->N; i++) js["CumulativeCovariance"] += rgpc[i];
   for (int i = 0; i < _k->N; i++) js["FunctionValues"] += rgFuncValue[i];
 
-  for (int i = 0; i < _lambda; i++) for (int j = 0; j < _k->N; j++) js["Samples"][i] += _samplePopulation[i*_k->N + j];
-  for (int i = 0; i < _lambda; i++) js["SampleFitness"] += _fitnessVector[i];
+  for (int i = 0; i < _s; i++) for (int j = 0; j < _k->N; j++) js["Samples"][i] += _samplePopulation[i*_k->N + j];
+  for (int i = 0; i < _s; i++) js["SampleFitness"] += _fitnessVector[i];
 
   return js;
 }
 
 void Korali::Solver::CMAES::setConfiguration(json js)
 {
+	_maxFitnessEvaluations = std::numeric_limits<size_t>::max();
+
+	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
+	_stopFitnessDiffThreshold = 1e-12;
+	_stopMinDeltaX = 0.0;
+	_stopMinFitness = -std::numeric_limits<double>::max();
+
+	_mu = 0;
+	_muType = "Logarithmic";
+	_muCovariance = -1;
+	_diagonalCovarianceMatrixEvalFrequency = 0;
+	_sigmaCumulationFactor = -1;
+	_dampFactor = -1;
+	_cumulativeCovariance = -1;
+	_covarianceMatrixLearningRate = -1;
+	_maxGens = 200;
+	_currentGeneration = 0;
+
+	_terminationReason[0] = '\0';
+
   this->Korali::Solver::Base::setConfiguration(js);
 
+  if (js.find("currentGeneration") != js.end()) if (js["currentGeneration"].is_number())
+  { _currentGeneration = js["currentGeneration"]; js.erase("currentGeneration"); }
+
   if (js.find("Lambda") != js.end()) if (js["Lambda"].is_number())
-  { _lambda = js["Lambda"]; js.erase("Lambda"); }
-  _k->S = _lambda;
+  { _s = js["Lambda"]; js.erase("Lambda"); }
 
   if (js.find("dampFactor") != js.end()) if (js["dampFactor"].is_number())
   { _dampFactor = js["dampFactor"]; js.erase("dampFactor"); }
@@ -134,7 +134,6 @@ void Korali::Solver::CMAES::setConfiguration(json js)
   	if (term.find("stopMinFitness") != term.end()) if (term["stopMinFitness"].is_number())
   	{ _stopMinFitness = term["stopMinFitness"]; term.erase("stopMinFitness"); }
   }
-
 }
 
 void Korali::Solver::CMAES::setState(json js)
@@ -165,8 +164,8 @@ void Korali::Solver::CMAES::setState(json js)
   for (int i = 0; i < _k->N; i++) for (int j = 0; j < _k->N; j++) C[i][j] = js["CovarianceMatrix"][i][j];
   for (int i = 0; i < _k->N; i++) for (int j = 0; j < _k->N; j++) B[i][j] = js["EigenMatrix"][i][j];
 
-  for (int i = 0; i < _lambda; i++) for (int j = 0; j < _k->N; j++) _samplePopulation[i*_k->N + j] = js["Samples"][i][j];
-  for (int i = 0; i < _lambda; i++) _fitnessVector[i] = js["SampleFitness"][i];
+  for (int i = 0; i < _s; i++) for (int j = 0; j < _k->N; j++) _samplePopulation[i*_k->N + j] = js["Samples"][i][j];
+  for (int i = 0; i < _s; i++) _fitnessVector[i] = js["SampleFitness"][i];
 }
 
 void Korali::Solver::CMAES::saveGeneration()
@@ -197,9 +196,9 @@ void Korali::Solver::CMAES::run()
  {
   prepareGeneration();
 
-   while (_finishedSamples < _lambda)
+   while (_finishedSamples < _s)
    {
-    for (size_t i = 0; i < _lambda; i++) if (_initializedSample[i] == false)
+    for (size_t i = 0; i < _s; i++) if (_initializedSample[i] == false)
     {
      _initializedSample[i] = true;
      _k->_conduit->evaluateSample(_samplePopulation, i);
@@ -246,11 +245,11 @@ void Korali::Solver::CMAES::initialize()
  _gaussianGenerator->initialize(_k->_seed++);
 
  // Getting sample vector pointer
- _samplePopulation =  (double*) calloc (sizeof(double), _k->N*_lambda);
+ _samplePopulation =  (double*) calloc (sizeof(double), _k->N*_s);
 
  // Initializing MU and its weights
 
- if (_mu == 0) _mu = _lambda;
+ if (_mu == 0) _mu = _s;
    _muWeights = new double[_mu];
 
  if (_muType == "LinearDecreasing") for (size_t i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;
@@ -271,15 +270,15 @@ void Korali::Solver::CMAES::initialize()
 
  for (size_t i = 0; i < _mu; i++) _muWeights[i] /= s1;
 
- if(_mu < 1 || _mu > _lambda || (_mu == _lambda && _muWeights[0] == _muWeights[_mu-1]))
- { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%lu) and/or Lambda (%lu)\n", _mu, _lambda); exit(-1); }
+ if(_mu < 1 || _mu > _s || (_mu == _s && _muWeights[0] == _muWeights[_mu-1]))
+ { fprintf( stderr, "[Korali] Error: Invalid setting of Mu (%lu) and/or Lambda (%lu)\n", _mu, _s); exit(-1); }
 
  // Setting MU Covariance
  if (_muCovariance < 1) _muCovariance = _muEffective;
 
  // Checking Covariance Matrix Evaluation Frequency
 
- if (_diagonalCovarianceMatrixEvalFrequency == 0)  _diagonalCovarianceMatrixEvalFrequency = 2 + 100. * _k->N / sqrt((double)_lambda);
+ if (_diagonalCovarianceMatrixEvalFrequency == 0)  _diagonalCovarianceMatrixEvalFrequency = 2 + 100. * _k->N / sqrt((double)_s);
  if (_diagonalCovarianceMatrixEvalFrequency < 1)
  { fprintf( stderr, "[Korali] Error: Matrix covariance evaluation frequency is less than 1 (%lu)\n", _diagonalCovarianceMatrixEvalFrequency); exit(-1); }
 
@@ -293,7 +292,7 @@ void Korali::Solver::CMAES::initialize()
 
  if (_dampFactor < 0) _dampFactor = 1;
  _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_k->N+1.0)) - 1))  /* basic factor */
-  * std::max(0.3, 1. - (double)_k->N / (1e-6+std::min(_maxGens, _maxFitnessEvaluations/_lambda)))
+  * std::max(0.3, 1. - (double)_k->N / (1e-6+std::min(_maxGens, _maxFitnessEvaluations/_s)))
   + _sigmaCumulationFactor;             /* minor increment */
 
  // Setting Cumulative Covariance
@@ -335,15 +334,15 @@ void Korali::Solver::CMAES::initialize()
   rgD = (double*) calloc (sizeof(double), _k->N);
   C = (double**) calloc (sizeof(double*), _k->N);
   B = (double**)calloc (sizeof(double*), _k->N);
-  rgFuncValue = (double*) calloc (sizeof(double), _lambda);
+  rgFuncValue = (double*) calloc (sizeof(double), _s);
 
   for (size_t i = 0; i < _k->N; ++i) {
    C[i] = (double*) calloc (sizeof(double), _k->N);
    B[i] = (double*) calloc (sizeof(double), _k->N);
   }
-  index = (int *) calloc (sizeof(int*), _lambda);
-  for (size_t i = 0; i < _lambda; ++i)  index[i] = i; /* should not be necessary */
-  curBest = (double *) calloc (sizeof(double), _lambda);
+  index = (int *) calloc (sizeof(int*), _s);
+  for (size_t i = 0; i < _s; ++i)  index[i] = i; /* should not be necessary */
+  curBest = (double *) calloc (sizeof(double), _s);
 
  for (size_t i = 0; i < _k->N; ++i)
  {
@@ -366,8 +365,8 @@ void Korali::Solver::CMAES::initialize()
    rgxmean[i] = rgxold[i] = _k->_parameters[i]->_initialValue;
  }
 
- _initializedSample = (bool*) calloc (_lambda, sizeof(bool));
- _fitnessVector = (double*) calloc (sizeof(double), _lambda);
+ _initializedSample = (bool*) calloc (_s, sizeof(bool));
+ _fitnessVector = (double*) calloc (sizeof(double), _s);
 }
 
 void Korali::Solver::CMAES::prepareGeneration()
@@ -392,7 +391,7 @@ void Korali::Solver::CMAES::prepareGeneration()
   while (sigma * sqrt(C[i][i]) < _k->_parameters[i]->_minStdDevChange)
    sigma *= exp(0.05+_sigmaCumulationFactor/_dampFactor);
 
- for (size_t iNk = 0; iNk < _lambda; ++iNk)
+ for (size_t iNk = 0; iNk < _s; ++iNk)
  { /* generate scaled random vector (D * z) */
   for (size_t i = 0; i < _k->N; ++i)
   {
@@ -411,10 +410,10 @@ void Korali::Solver::CMAES::prepareGeneration()
 
  _currentGeneration++;
 
- for(size_t i = 0; i < _lambda; ++i) while( !isFeasible(&_samplePopulation[i*_k->N] )) reSampleSingle(i);
+ for(size_t i = 0; i < _s; ++i) while( !isFeasible(&_samplePopulation[i*_k->N] )) reSampleSingle(i);
 
  _finishedSamples = 0;
- for (size_t i = 0; i < _lambda; i++) _initializedSample[i] = false;
+ for (size_t i = 0; i < _s; i++) _initializedSample[i] = false;
 }
 
 
@@ -422,7 +421,7 @@ void Korali::Solver::CMAES::reSampleSingle(size_t idx)
 {
  double *rgx;
 
- if (idx < 0 || idx >= _lambda)  fprintf(stderr, "[Korali] Error: reSampleSingle(): Population member \n");
+ if (idx < 0 || idx >= _s)  fprintf(stderr, "[Korali] Error: reSampleSingle(): Population member \n");
  rgx = &_samplePopulation[idx*_k->N];
 
  for (size_t i = 0; i < _k->N; ++i)  rgdTmp[i] = rgD[i] * _gaussianGenerator->getRandomNumber();
@@ -440,16 +439,16 @@ void Korali::Solver::CMAES::reSampleSingle(size_t idx)
 void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
 {
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
- countevals += _lambda;
+ countevals += _s;
 
  /* assign function values */
- for (size_t i = 0; i < _lambda; i++) curBest[i] = rgFuncValue[i] = fitnessVector[i];
+ for (size_t i = 0; i < _s; i++) curBest[i] = rgFuncValue[i] = fitnessVector[i];
 
  /* Generate index */
- sorted_index(fitnessVector, index, _lambda);
+ sorted_index(fitnessVector, index, _s);
 
  /* Test if function values are identical, escape flat fitness */
- if (rgFuncValue[index[0]] == rgFuncValue[index[(int)_lambda/2]]) {
+ if (rgFuncValue[index[0]] == rgFuncValue[index[(int)_s/2]]) {
   sigma *= exp(0.2+_sigmaCumulationFactor/_dampFactor);
   fprintf(stderr, "[Korali] Error: Warning: sigma increased due to equal function values.\n");
   fprintf(stderr, "[Korali] Reconsider the formulation of the objective function\n");

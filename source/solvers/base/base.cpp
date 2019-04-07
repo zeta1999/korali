@@ -2,11 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Solver::Base::Base()
-{
- _currentGeneration = 0;
-}
-
 void Korali::Solver::Base::initialize()
 {
 }
@@ -32,6 +27,6 @@ json Korali::Solver::Base::getState()
 
 void Korali::Solver::Base::setState(json js)
 {
- _currentGeneration = js["currentGeneration"];
+
 }
 

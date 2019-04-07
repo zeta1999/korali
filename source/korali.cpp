@@ -9,7 +9,6 @@ Korali::Engine::Engine()
 {
  // Setting Defaults
  N = 0;
- S = 0;
  _reportFrequency = 1;
  _verbosity = KORALI_NORMAL;
  std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
@@ -163,19 +162,15 @@ void Korali::Engine::run()
 json Korali::Engine::getConfiguration()
 {
  auto js = json();
- js["parameterCount"] = N;
  js["seed"] = _seed;
  js["verbosity"] = _verbosity;
- js["sampleCount"] = S;
  js["reportFrequency"] = _reportFrequency;
  return js;
 }
 
 void Korali::Engine::setConfiguration(json js)
 {
- N                  = js["parameterCount"];
  _seed              = js["seed"];
  _verbosity         = js["verbosity"];
- S                  = js["sampleCount"];
  _reportFrequency   = js["reportFrequency"];
 }

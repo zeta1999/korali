@@ -55,7 +55,6 @@ class Engine {
   void run();
   void initialize();
 
-  size_t S; // Sample Size
   size_t N; // Parameter Count
   size_t _seed;
   int _verbosity;

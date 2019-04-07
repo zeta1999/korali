@@ -4,10 +4,18 @@
 
 using json = nlohmann::json;
 
-Korali::Conduit::OpenMP::OpenMP() : Korali::Conduit::Base::Base()
+json Korali::Conduit::Single::getConfiguration()
+{
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+ return js;
+}
+
+void Korali::Conduit::Single::setConfiguration(json js)
 {
  _threadCount = 1;
-  _continueEvaluations = true;
+ _continueEvaluations = true;
+
+ this->Korali::Conduit::Base::setConfiguration(js);
 }
 
 void Korali::Conduit::OpenMP::initialize()
@@ -73,17 +81,6 @@ void Korali::Conduit::OpenMP::evaluateSample(double* sampleArray, size_t sampleI
 
 void Korali::Conduit::OpenMP::checkProgress()
 {
-}
-
-json Korali::Conduit::Single::getConfiguration()
-{
- auto js = this->Korali::Conduit::Base::getConfiguration();
- return js;
-}
-
-void Korali::Conduit::Single::setConfiguration(json js)
-{
-	this->Korali::Conduit::Base::setConfiguration(js);
 }
 
 #endif // _KORALI_USE_OPENMP

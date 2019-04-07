@@ -4,14 +4,22 @@
 
 using json = nlohmann::json;
 
-Korali::Conduit::UPCXX* _ux;
-
-Korali::Conduit::UPCXX::UPCXX() : Korali::Conduit::Base::Base()
+json Korali::Conduit::UPCXX::getConfiguration()
 {
- _rankId = 0;
- _rankCount = 1;
-  _continueEvaluations = true;
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+ return js;
 }
+
+void Korali::Conduit::UPCXX::setConfiguration(json js)
+{
+	 _rankId = 0;
+	 _rankCount = 1;
+	  _continueEvaluations = true;
+
+	this->Korali::Conduit::Base::setConfiguration(js);
+}
+
+Korali::Conduit::UPCXX* _ux;
 
 void Korali::Conduit::UPCXX::initialize()
 {
@@ -65,9 +73,7 @@ void Korali::Conduit::UPCXX::evaluateSample(double* sampleArray, size_t sampleId
 	 {
 		 double fitness = _k->_problem->evaluateFitness(_ux->samplePtr.local());
 		 upcxx::rpc_ff(0, [](size_t sampleId, double fitness)
-		 {
-			 _k->_solver->processSample(sampleId, fitness);
-		 },	sampleId, fitness);
+		 { _k->_solver->processSample(sampleId, fitness); },	sampleId, fitness);
 	 }, sampleId);
 
 	 doWorker.then([workerId](){_ux->_workers.push(workerId);});
@@ -79,16 +85,6 @@ void Korali::Conduit::UPCXX::checkProgress()
  upcxx::progress();
 }
 
-json Korali::Conduit::UPCXX::getConfiguration()
-{
- auto js = this->Korali::Conduit::Base::getConfiguration();
- return js;
-}
-
-void Korali::Conduit::UPCXX::setConfiguration(json js)
-{
-	this->Korali::Conduit::Base::setConfiguration(js);
-}
 
 
 #endif // #ifdef _KORALI_USE_UPCXX

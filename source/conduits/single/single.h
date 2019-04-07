@@ -9,7 +9,6 @@ namespace Korali::Conduit
 class Single : public Base {
  public:
 
- Single();
  void initialize();
  void run();
  void evaluateSample(double* sampleArray, size_t sampleId);

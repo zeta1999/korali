@@ -12,14 +12,9 @@ namespace Korali::Solver
 class Base {
  public:
 
-  // Korali Runtime Variables
- size_t _currentGeneration;
-
  // Reporting Settings
  std::chrono::time_point<std::chrono::system_clock> startTime, endTime;
  std::chrono::time_point<std::chrono::system_clock> t0, t1, t2, t3;
-
- Base();
 
  // Running Methods
  virtual void run() = 0;

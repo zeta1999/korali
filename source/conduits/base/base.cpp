@@ -2,10 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Conduit::Base::Base()
-{
-}
-
 json Korali::Conduit::Base::getConfiguration()
 {
  auto js = json();

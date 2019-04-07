@@ -11,17 +11,6 @@
 
 using json = nlohmann::json;
 
-Korali::Solver::TMCMC::TMCMC() : Korali::Solver::Base::Base()
-{
- _tolCOV  = 1;
- _minStep = 1e-9;
- _bbeta   = 0.005;
- _useLocalCov = false;
- _maxGens = 200;
- _populationSize = 1000;
- _burnIn = 0;
-}
-
 void Korali::Solver::TMCMC::run()
 {
  double samplingTime = 0.0;
@@ -29,7 +18,7 @@ void Korali::Solver::TMCMC::run()
 
  startTime = std::chrono::system_clock::now();
 
- for(_currentGeneration = 0; _annealingRatio < 1.0 && _currentGeneration < _maxGens; _currentGeneration++)
+ for(; _annealingRatio < 1.0 && _currentGeneration < _maxGens; _currentGeneration++)
  {
   auto t0 = std::chrono::system_clock::now();
 
@@ -126,9 +115,9 @@ void Korali::Solver::TMCMC::initialize()
 	this->Korali::Solver::Base::initialize();
 
  // Initializing Data Variables
- double *LCmem  = (double*) calloc (_k->S*_k->N*_k->N, sizeof(double));
- local_cov = (double**) calloc ( _k->S, sizeof(double*));
- for (size_t pos = 0; pos < _k->S; ++pos)
+ double *LCmem  = (double*) calloc (_s*_k->N*_k->N, sizeof(double));
+ local_cov = (double**) calloc ( _s, sizeof(double*));
+ for (size_t pos = 0; pos < _s; ++pos)
  {
   local_cov[pos] = LCmem + pos*_k->N*_k->N;
   for (size_t i = 0; i < _k->N; i++) local_cov[pos][i*_k->N+i] = 1;
@@ -138,7 +127,7 @@ void Korali::Solver::TMCMC::initialize()
  _varianceCoefficient        = 0;
  _annealingRatio              = 0;
  _uniqueSelections = 0;
- _uniqueEntries = _k->S;
+ _uniqueEntries = _s;
  _logEvidence  = 0;
  _acceptanceRate     = 1.0;
  _varianceCoefficient = std::numeric_limits<double>::infinity();
@@ -146,34 +135,34 @@ void Korali::Solver::TMCMC::initialize()
  _meanTheta =  (double*) calloc (_k->N+1, sizeof(double));
 
  // Initializing TMCMC Leaders
- ccPoints    = (double*) calloc (_k->N*_k->S, sizeof(double));
- ccFitness   = (double*) calloc (_k->S, sizeof(double));
+ ccPoints    = (double*) calloc (_k->N*_s, sizeof(double));
+ ccFitness   = (double*) calloc (_s, sizeof(double));
 
- clPoints    = (double*) calloc (_k->N*_k->S, sizeof(double));
- clFitness   = (double*) calloc (_k->S, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
+ clPoints    = (double*) calloc (_k->N*_s, sizeof(double));
+ clFitness   = (double*) calloc (_s, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
 
- chainPendingFitness = (bool*) calloc (_k->S, sizeof(bool));
- chainCurrentStep    = (size_t*) calloc (_k->S, sizeof(size_t));
- chainLength         = (size_t*) calloc (_k->S, sizeof(size_t));
+ chainPendingFitness = (bool*) calloc (_s, sizeof(bool));
+ chainCurrentStep    = (size_t*) calloc (_s, sizeof(size_t));
+ chainLength         = (size_t*) calloc (_s, sizeof(size_t));
 
  databaseEntries  = 0;
- databasePoints   = (double*) calloc (_k->N*_k->S, sizeof(double));
- databaseFitness  = (double*) calloc (_k->S, sizeof(double));
+ databasePoints   = (double*) calloc (_k->N*_s, sizeof(double));
+ databaseFitness  = (double*) calloc (_s, sizeof(double));
 
  // First definition of chains and their leaders
- nChains = _k->S;
+ nChains = _s;
  finishedChains = 0;
- for (size_t c = 0; c < _k->S; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
- for (size_t c = 0; c < _k->S; c++) chainCurrentStep[c] = 0;
- for (size_t c = 0; c < _k->S; c++) chainLength[c] = 1 + _burnIn;
- for (size_t c = 0; c < _k->S; c++) chainPendingFitness[c] = false;
+ for (size_t c = 0; c < _s; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
+ for (size_t c = 0; c < _s; c++) chainCurrentStep[c] = 0;
+ for (size_t c = 0; c < _s; c++) chainLength[c] = 1 + _burnIn;
+ for (size_t c = 0; c < _s; c++) chainPendingFitness[c] = false;
 
  // Setting Chain-Specific Seeds
  range = gsl_rng_alloc (gsl_rng_default);
  gsl_rng_set(range, _k->_seed++);
 
- chainGSLRange = (gsl_rng**) calloc (_k->S, sizeof(gsl_rng*));
- for (size_t c = 0; c < _k->S; c++)
+ chainGSLRange = (gsl_rng**) calloc (_s, sizeof(gsl_rng*));
+ for (size_t c = 0; c < _s; c++)
  {
   chainGSLRange[c] = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(chainGSLRange[c], _k->_seed++);
@@ -220,13 +209,13 @@ void Korali::Solver::TMCMC::resampleGeneration()
  for (size_t i = 0; i < databaseEntries; i++) q[i] = weight[i]/sum_weight;
 
  for (size_t i = 0; i < databaseEntries; i++) sel[i] = 0;
- gsl_ran_multinomial(range, databaseEntries, _k->S, q, nn);
+ gsl_ran_multinomial(range, databaseEntries, _s, q, nn);
  for (size_t i = 0; i < databaseEntries; i++) sel[i] += nn[i];
 
  int zeroCount = 0;
  for (size_t i = 0; i < databaseEntries; i++) if (sel[i] == 0) zeroCount++;
  _uniqueSelections = databaseEntries - zeroCount;
- _acceptanceRate     = (1.0*_uniqueSelections)/_k->S;
+ _acceptanceRate     = (1.0*_uniqueSelections)/_s;
 
  for (size_t i = 0; i < _k->N; i++)
  {
@@ -290,7 +279,7 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
  for (size_t d = 0; d < _k->N; ++d) {
   double d_min = +1e6;
   double d_max = -1e6;
-  for (size_t pos = 0; pos < _k->S; ++pos) {
+  for (size_t pos = 0; pos < _s; ++pos) {
    double s = databasePoints[pos*_k->N+d];
    if (d_min > s) d_min = s;
    if (d_max < s) d_max = s;
@@ -303,16 +292,16 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
  int status = 0;
  double ds = 0.05;
  for (double scale = 0.1; scale <= 1.0; scale += ds) {
-  // find neighbors in a rectangle - O(_k->S^2)
+  // find neighbors in a rectangle - O(_s^2)
   for (pos = 0; pos < newchains; ++pos) {
    nn_count[pos] = 0;
    double* curr = &clPoints[pos*_k->N];
-   for (size_t i = 0; i < _k->S; i++) {
+   for (size_t i = 0; i < _s; i++) {
     double* s = &databasePoints[i*_k->N];
     bool isInRectangle = true;
      for (size_t d = 0; d < _k->N; d++)  if (fabs(curr[d]-s[d]) > scale*diam[d]) isInRectangle = false;
      if (isInRectangle) {
-      nn_ind[pos*_k->S+nn_count[pos]] = i;
+      nn_ind[pos*_s+nn_count[pos]] = i;
       nn_count[pos]++;
      }
    }
@@ -323,7 +312,7 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
    for (size_t d = 0; d < _k->N; ++d) {
     chain_mean[d] = 0;
     for (size_t k = 0; k < nn_count[pos]; ++k) {
-     idx = nn_ind[pos*_k->S+k];
+     idx = nn_ind[pos*_s+k];
      chain_mean[d] += databasePoints[idx*_k->N+d];
     }
     chain_mean[d] /= nn_count[pos];
@@ -333,7 +322,7 @@ void Korali::Solver::TMCMC::computeChainCovariances(double** chain_cov, int newc
     for (size_t j = 0; j < _k->N; ++j) {
      double s = 0;
      for (size_t k = 0; k < nn_count[pos]; k++) {
-      idx = nn_ind[pos*_k->S+k];
+      idx = nn_ind[pos*_s+k];
       s  += (databasePoints[idx*_k->N+i]-chain_mean[i]) *
          (databasePoints[idx*_k->N+j]-chain_mean[j]);
      }
@@ -471,10 +460,22 @@ json Korali::Solver::TMCMC::getState()
 
 void Korali::Solver::TMCMC::setConfiguration(json js)
 {
+	_tolCOV  = 1;
+	_minStep = 1e-9;
+	_bbeta   = 0.005;
+	_useLocalCov = false;
+	_maxGens = 200;
+	_s = 1000;
+	_burnIn = 0;
+	_currentGeneration = 0;
+
   this->Korali::Solver::Base::setConfiguration(js);
 
+  if (js.find("currentGeneration") != js.end()) if (js["currentGeneration"].is_number())
+  { _currentGeneration = js["currentGeneration"]; js.erase("currentGeneration"); }
+
 	if (js.find("Population Size") != js.end()) if (js["Population Size"].is_number())
-	{ _populationSize = js["Population Size"]; js.erase("Population Size"); }
+	{ _s = js["Population Size"]; js.erase("Population Size"); }
 
   if (js.find("Covariance Tolerance") != js.end()) if (js["Covariance Tolerance"].is_number())
 	{ _tolCOV = js["Covariance Tolerance"]; js.erase("Covariance Tolerance"); }
@@ -497,8 +498,6 @@ void Korali::Solver::TMCMC::setConfiguration(json js)
   	if (term.find("Max Generations") != term.end()) if (term["Max Generations"].is_number())
     { _maxGens = term["Max Generations"]; term.erase("Max Generations"); }
   }
-
-  _k->S = _populationSize;
 }
 
 void Korali::Solver::TMCMC::setState(json js)

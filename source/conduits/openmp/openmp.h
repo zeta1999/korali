@@ -32,7 +32,6 @@ class OpenMP : public Base
  double* fitnessArrayPointer;
  Lock _queueLock;
 
- OpenMP();
  void initialize();
  void run();
  void evaluateSample(double* sampleArray, size_t sampleId);

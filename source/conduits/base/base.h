@@ -10,8 +10,6 @@ namespace Korali::Conduit
 class Base {
  public:
 
- Base();
-
  virtual void initialize() = 0;
  virtual void run() = 0;
  virtual void evaluateSample(double* sampleArray, size_t sampleId) = 0;

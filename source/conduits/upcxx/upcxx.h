@@ -21,7 +21,6 @@ class UPCXX : public Base
  std::queue<int> _workers;
  bool _continueEvaluations;
 
- UPCXX();
  void initialize();
  void run();
  void evaluateSample(double* sampleArray, size_t sampleId);

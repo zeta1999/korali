@@ -23,7 +23,7 @@ class TMCMC : public Korali::Solver::Base
  double _tolCOV;              /* Target coefficient of variation of weights */
  double _minStep;             /* Min update of rho */
  double _bbeta;               /* Covariance scaling parameter */
- size_t  _populationSize;
+ size_t  _s; // Population Size
  bool _useLocalCov;
 
  // TMCMC Runtime Variables
@@ -62,7 +62,6 @@ class TMCMC : public Korali::Solver::Base
  double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
 
   // Korali Methods
- TMCMC();
  void initialize();
  void run();
 
