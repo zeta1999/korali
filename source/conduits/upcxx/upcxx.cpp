@@ -48,10 +48,7 @@ void Korali::Conduit::UPCXX::run()
    for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_ux->_continueEvaluations = false;});
   }
   // Workers
-  else
-  {
-  	while(_continueEvaluations) upcxx::progress();
-  }
+  else while(_continueEvaluations) upcxx::progress();
 
   upcxx::barrier();
 }
