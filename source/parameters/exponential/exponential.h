@@ -12,8 +12,6 @@ class Exponential : public Korali::Parameter::Base
   double _mean;
 
  public:
-  Exponential();
-
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();

@@ -2,10 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Problem::Posterior::Posterior() : Korali::Problem::Likelihood::Likelihood()
-{
-}
-
 void Korali::Problem::Posterior::initialize()
 {
 	this->Korali::Problem::Base::initialize();

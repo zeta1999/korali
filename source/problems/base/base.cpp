@@ -2,10 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Problem::Base::Base()
-{
-}
-
 void Korali::Problem::Base::initialize()
 {
 }

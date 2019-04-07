@@ -2,14 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Base::Base()
-{
- _name = "Unnamed Parameter";
- _lowerBound = -1.0;
- _upperBound = 1.0;
- _minStdDevChange = 0.0;
-}
-
 void Korali::Parameter::Base::initialize(int seed)
 {
  _range = gsl_rng_alloc (gsl_rng_default);
@@ -24,6 +16,11 @@ json Korali::Parameter::Base::getConfiguration()
 
 void Korali::Parameter::Base::setConfiguration(json js)
 {
+	 _name = "Unnamed Parameter";
+	 _lowerBound = -1.0;
+	 _upperBound = 1.0;
+	 _minStdDevChange = 0.0;
+
   if (js.find("Name") != js.end()) if (js["Name"].is_string())
   { _name = js["Name"]; js.erase("Name"); }
 

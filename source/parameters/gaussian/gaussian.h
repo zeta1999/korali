@@ -13,8 +13,6 @@ class Gaussian : public Korali::Parameter::Base
   double _sigma;
 
  public:
-  Gaussian();
-
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();

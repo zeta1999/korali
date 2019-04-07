@@ -14,7 +14,6 @@ namespace Korali::Parameter
 class Base
 {
  public:
- Base();
  gsl_rng* _range;
 
  std::string _name;

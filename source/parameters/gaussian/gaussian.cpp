@@ -2,12 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Gaussian::Gaussian() : Korali::Parameter::Base::Base()
-{
-	_mean = 0.0;
-	_sigma = 1.0;
-};
-
 double Korali::Parameter::Gaussian::getDensity(double x)
 {
  return gsl_ran_gaussian_pdf(x - _mean, _sigma);
@@ -56,6 +50,9 @@ json Korali::Parameter::Gaussian::getConfiguration()
 
 void Korali::Parameter::Gaussian::setConfiguration(json js)
 {
+	_mean = 0.0;
+	_sigma = 1.0;
+
   if (js.find("Distribution") != js.end())
   {
     json dist = js["Distribution"];

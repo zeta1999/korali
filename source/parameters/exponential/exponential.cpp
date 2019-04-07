@@ -2,11 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Exponential::Exponential() : Korali::Parameter::Base::Base()
-{
-	_mean = 1.0;
-}
-
 double Korali::Parameter::Exponential::getDensity(double x)
 {
  return  gsl_ran_exponential_pdf(x, _mean);
@@ -31,6 +26,8 @@ json Korali::Parameter::Exponential::getConfiguration()
 
 void Korali::Parameter::Exponential::setConfiguration(json js)
 {
+	_mean = 1.0;
+
   if (js.find("Distribution") != js.end())
   {
     json dist = js["Distribution"];

@@ -9,7 +9,6 @@ namespace Korali::Problem
 class Direct : public Korali::Problem::Base
 {
  public:
- Direct();
  double evaluateFitness(double* sample);
  void initialize();
 

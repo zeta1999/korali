@@ -10,7 +10,6 @@ class Likelihood : public Korali::Problem::Base
 {
  public:
 
- Likelihood();
  // Reference Data
  double* _referenceData;
  double* fitnessArrayPointer;

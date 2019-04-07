@@ -2,12 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Problem::Likelihood::Likelihood() : Korali::Problem::Base::Base()
-{
-	 _referenceData = NULL;
-	 _referenceDataSize = 0;
-}
-
 void Korali::Problem::Likelihood::initialize()
 {
 	// auto sigma = new Korali::Parameter::Uniform(0.0, +20.0);
@@ -42,6 +36,10 @@ json Korali::Problem::Likelihood::getConfiguration()
 
 void Korali::Problem::Likelihood::setConfiguration(json js)
 {
+
+	 _referenceData = NULL;
+	 _referenceDataSize = 0;
+
  this->Korali::Problem::Base::setConfiguration(js);
 
  if (js.find("Reference Data") != js.end()) if (js["Reference Data"].is_array())

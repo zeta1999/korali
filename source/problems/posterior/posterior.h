@@ -9,7 +9,6 @@ namespace Korali::Problem
 class Posterior : public Korali::Problem::Likelihood
 {
  public:
- Posterior();
  double evaluateFitness(double* sample);
  void initialize();
 

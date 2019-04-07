@@ -2,12 +2,6 @@
 
 using json = nlohmann::json;
 
-Korali::Parameter::Gamma::Gamma() : Korali::Parameter::Base::Base()
-{
-	_rate = 1.0;
-	_shape = 1.0;
-};
-
 double Korali::Parameter::Gamma::getDensity(double x)
 {
  return gsl_ran_gamma_pdf( x, _shape, _rate );
@@ -32,6 +26,9 @@ json Korali::Parameter::Gamma::getConfiguration()
 
 void Korali::Parameter::Gamma::setConfiguration(json js)
 {
+	_rate = 1.0;
+	_shape = 1.0;
+
   if (js.find("Distribution") != js.end())
   {
     json dist = js["Distribution"];

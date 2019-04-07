@@ -13,8 +13,6 @@ class Gamma : public Korali::Parameter::Base
   double _rate;
 
  public:
-  Gamma();
-
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();

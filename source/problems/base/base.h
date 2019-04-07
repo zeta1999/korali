@@ -10,7 +10,6 @@ class Base
 {
  public:
 
- Base();
  virtual double evaluateFitness(double* sample) = 0;
  virtual void initialize();
  bool isSampleOutsideBounds(double* sample);
