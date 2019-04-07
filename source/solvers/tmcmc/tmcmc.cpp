@@ -39,7 +39,7 @@ void Korali::Solver::TMCMC::run()
    {
     chainPendingFitness[c] = true;
     generateCandidate(c);
-    _k->_conduit->evaluateSample(c);
+    _k->_conduit->evaluateSample(ccPoints, c);
    }
    _k->_conduit->checkProgress();
   }
@@ -146,7 +146,7 @@ void Korali::Solver::TMCMC::initialize()
  _meanTheta =  (double*) calloc (_k->N+1, sizeof(double));
 
  // Initializing TMCMC Leaders
- ccPoints    = _k->_conduit->getSampleArrayPointer();
+ ccPoints    = (double*) calloc (_k->N*_k->S, sizeof(double));
  ccFitness   = (double*) calloc (_k->S, sizeof(double));
 
  clPoints    = (double*) calloc (_k->N*_k->S, sizeof(double));

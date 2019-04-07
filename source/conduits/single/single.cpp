@@ -6,9 +6,6 @@ Korali::Conduit::Single::Single() : Korali::Conduit::Base::Base() {}
 
 void Korali::Conduit::Single::initialize()
 {
-  // Allocating Global Pointer for Samples
- sampleArrayPointer  = (double*) calloc (_k->N*_k->S, sizeof(double));
-// fitnessArrayPointer = (double*) calloc (_k->_referenceDataSize, sizeof(double));
 }
 
 void Korali::Conduit::Single::run()
@@ -16,14 +13,9 @@ void Korali::Conduit::Single::run()
 	 _k->_solver->run();
 }
 
-double* Korali::Conduit::Single::getSampleArrayPointer()
+void Korali::Conduit::Single::evaluateSample(double* sampleArray, size_t sampleId)
 {
-  return sampleArrayPointer;
-}
-
-void Korali::Conduit::Single::evaluateSample(size_t sampleId)
-{
- double fitness = _k->_problem->evaluateFitness(&sampleArrayPointer[_k->N*sampleId]);
+ double fitness = _k->_problem->evaluateFitness(&sampleArray[_k->N*sampleId]);
  _k->_solver->processSample(sampleId, fitness);
 }
 

@@ -9,14 +9,10 @@ namespace Korali::Conduit
 class Single : public Base {
  public:
 
- double* sampleArrayPointer;
- double* fitnessArrayPointer;
-
  Single();
  void initialize();
  void run();
- void evaluateSample(size_t sampleId);
- double* getSampleArrayPointer();
+ void evaluateSample(double* sampleArray, size_t sampleId);
  void checkProgress();
 
  // Serialization Methods

@@ -202,7 +202,7 @@ void Korali::Solver::CMAES::run()
     for (size_t i = 0; i < _lambda; i++) if (_initializedSample[i] == false)
     {
      _initializedSample[i] = true;
-     _k->_conduit->evaluateSample(i);
+     _k->_conduit->evaluateSample(_samplePopulation, i);
     }
     _k->_conduit->checkProgress();
    }
@@ -246,7 +246,7 @@ void Korali::Solver::CMAES::initialize()
  _gaussianGenerator->initialize(_k->_seed++);
 
  // Getting sample vector pointer
- _samplePopulation = _k->_conduit->getSampleArrayPointer();
+ _samplePopulation =  (double*) calloc (sizeof(double), _k->N*_lambda);
 
  // Initializing MU and its weights
 

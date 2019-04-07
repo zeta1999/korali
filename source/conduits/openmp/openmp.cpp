@@ -29,17 +29,6 @@ void Korali::Conduit::OpenMP::initialize()
  }
 }
 
-void Korali::Conduit::OpenMP::supervisorThread()
-{
- _solver->run();
-
- _continueEvaluations = false;
-}
-
-double* Korali::Conduit::OpenMP::getSampleArrayPointer()
-{
-  return sampleArrayPointer;
-}
 
 void Korali::Conduit::OpenMP::workerThread()
 {
@@ -73,7 +62,7 @@ void Korali::Conduit::OpenMP::workerThread()
  }
 }
 
-void Korali::Conduit::OpenMP::evaluateSample(size_t sampleId)
+void Korali::Conduit::OpenMP::evaluateSample(double* sampleArray, size_t sampleId)
 {
  //printf("SampleId: %ld\n", sampleId);
 

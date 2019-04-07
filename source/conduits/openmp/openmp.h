@@ -35,9 +35,7 @@ class OpenMP : public Base
  OpenMP();
  void initialize();
  void run();
- void evaluateSample(size_t sampleId);
- double* getSampleArrayPointer();
- double* getFitnessArrayPointer();
+ void evaluateSample(double* sampleArray, size_t sampleId);
  void checkProgress();
  void supervisorThread();
  void workerThread();

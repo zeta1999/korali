@@ -14,10 +14,8 @@ class Base {
 
  virtual void initialize() = 0;
  virtual void run() = 0;
- virtual void evaluateSample(size_t sampleId) = 0;
+ virtual void evaluateSample(double* sampleArray, size_t sampleId) = 0;
  virtual void checkProgress() = 0;
-
- virtual double* getSampleArrayPointer() = 0;
 
  // Serialization Methods
  virtual nlohmann::json getConfiguration();

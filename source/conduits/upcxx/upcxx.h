@@ -16,21 +16,16 @@ class UPCXX : public Base
  int _rankId;
  int _rankCount;
 
- size_t _sampleId;
- bool _continueEvaluations;
- bool _evaluateSample;
-
+ upcxx::global_ptr<double> samplePtr; // Individual Pointer for Sample parameters
+ upcxx::global_ptr<double>* samplePtrGlobal; // Common Pointer for Sample parameters
  std::queue<int> _workers;
- upcxx::global_ptr<double> sampleGlobalPtr; // Global Pointer for Sample parameters
+ bool _continueEvaluations;
 
  UPCXX();
  void initialize();
  void run();
- void evaluateSample(size_t sampleId);
- double* getSampleArrayPointer();
+ void evaluateSample(double* sampleArray, size_t sampleId);
  void checkProgress();
- void supervisorThread();
- void workerThread();
 
  // Serialization Methods
  nlohmann::json getConfiguration();
