@@ -33,8 +33,6 @@ json Korali::Parameter::Uniform::getConfiguration()
 
 void Korali::Parameter::Uniform::setConfiguration(json js)
 {
-	this->Korali::Parameter::Base::setConfiguration(js);
-
   if (js.find("Distribution") != js.end())
   {
     json dist = js["Distribution"];
@@ -46,5 +44,7 @@ void Korali::Parameter::Uniform::setConfiguration(json js)
 
   _lowerBound = _min;
   _upperBound = _max;
+
+	this->Korali::Parameter::Base::setConfiguration(js);
 }
 

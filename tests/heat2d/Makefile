@@ -2,6 +2,7 @@ include ../../common.mk
 
 LDFLAGS  += -L../../source -lkorali
 CXXFLAGS += -I../../include
+CXXFLAGS += -I../../libs/json
 BINARIES = maximize_likelihood maximize_posterior sample_likelihood sample_posterior
 OBJECTS = model/heat2d.o
 

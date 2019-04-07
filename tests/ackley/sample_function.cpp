@@ -3,17 +3,27 @@
 
 int main(int argc, char* argv[])
 {
- auto problem = Korali::Problem::Direct([](double *x) {return -ackley(x);});
+ auto korali = Korali::Engine([](double *x) {return -ackley(x);});
 
- Korali::Parameter::Uniform p(-32.0, +32.0);
- for (int i = 0; i < NDIMS; i++) problem.addParameter(&p);
+ korali["Seed"] = 0xC0FFEE;
+ korali["Verbosity"] = "Normal";
 
- auto solver = Korali::Solver::TMCMC(&problem);
+ for (int i = 0; i < NDIMS; i++)
+ {
+	 korali["Parameters"][i]["Name"] = "X" + std::to_string(i);
+	 korali["Parameters"][i]["Distribution"]["Type"] = "Uniform";
+	 korali["Parameters"][i]["Distribution"]["Minimum"] = -32.0;
+	 korali["Parameters"][i]["Distribution"]["Maximum"] = +32.0;
+ }
 
- solver.setPopulationSize(20000);
- solver.setCovarianceScaling(0.2);
- solver.setBurnIn(5);
- solver.run();
+ korali["Problem"]["Objective"] = "Direct Evaluation";
+
+ korali["Solver"]["Method"] = "TMCMC";
+ korali["Solver"]["Covariance Scaling"] = 0.02;
+ korali["Solver"]["Population Size"] = 5000;
+ korali["Solver"]["Burn In"] = 5000;
+
+ korali.run();
 
  return 0;
 }

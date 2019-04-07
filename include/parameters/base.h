@@ -27,7 +27,6 @@ class Base
  double _minStdDevChange;
 
  void initialize(int seed);
- void checkBounds();
 
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
