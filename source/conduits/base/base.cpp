@@ -1,13 +1,6 @@
 #include "korali.h"
 
-using json = nlohmann::json;
-
-json Korali::Conduit::Base::getConfiguration()
+void Korali::Conduit::Base::initialize()
 {
- auto js = json();
- return js;
-}
 
-void Korali::Conduit::Base::setConfiguration(json js)
-{
 }

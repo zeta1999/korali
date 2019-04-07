@@ -1,8 +1,6 @@
 #include "korali.h"
 #include <chrono>
 
-using json = nlohmann::json;
-
 Korali::Engine* Korali::_k;
 
 Korali::Engine::Engine()
@@ -157,20 +155,4 @@ void Korali::Engine::run()
  #endif
 
  return;
-}
-
-json Korali::Engine::getConfiguration()
-{
- auto js = json();
- js["seed"] = _seed;
- js["verbosity"] = _verbosity;
- js["reportFrequency"] = _reportFrequency;
- return js;
-}
-
-void Korali::Engine::setConfiguration(json js)
-{
- _seed              = js["seed"];
- _verbosity         = js["verbosity"];
- _reportFrequency   = js["reportFrequency"];
 }

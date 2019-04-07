@@ -1,7 +1,5 @@
 #include "korali.h"
 
-using json = nlohmann::json;
-
 void Korali::Problem::Posterior::initialize()
 {
 	this->Korali::Problem::Base::initialize();
@@ -14,16 +12,4 @@ double Korali::Problem::Posterior::evaluateFitness(double* sample)
 
   return posterior;
 }
-
-json Korali::Problem::Posterior::getConfiguration()
-{
- auto js = this->Korali::Problem::Likelihood::getConfiguration();
- return js;
-}
-
-void Korali::Problem::Posterior::setConfiguration(json js)
-{
-	this->Korali::Problem::Likelihood::setConfiguration(js);
-}
-
 
