@@ -56,8 +56,6 @@ json Korali::Parameter::Gaussian::getConfiguration()
 
 void Korali::Parameter::Gaussian::setConfiguration(json js)
 {
-	this->Korali::Parameter::Base::setConfiguration(js);
-
   if (js.find("Distribution") != js.end())
   {
     json dist = js["Distribution"];
@@ -66,6 +64,8 @@ void Korali::Parameter::Gaussian::setConfiguration(json js)
     if (dist.find("Sigma") != dist.end()) if (dist["Sigma"].is_number())
     { _sigma = dist["Sigma"]; dist.erase("Sigma"); }
   }
+
+	this->Korali::Parameter::Base::setConfiguration(js);
 }
 
 

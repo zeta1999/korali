@@ -32,8 +32,6 @@ json Korali::Parameter::Gamma::getConfiguration()
 
 void Korali::Parameter::Gamma::setConfiguration(json js)
 {
-	this->Korali::Parameter::Base::setConfiguration(js);
-
   if (js.find("Distribution") != js.end())
   {
     json dist = js["Distribution"];
@@ -42,4 +40,6 @@ void Korali::Parameter::Gamma::setConfiguration(json js)
     if (dist.find("Rate") != dist.end()) if (dist["Rate"].is_number())
     { _rate = dist["Rate"]; dist.erase("Rate"); }
   }
+
+	this->Korali::Parameter::Base::setConfiguration(js);
 }
