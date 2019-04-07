@@ -6,7 +6,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf.h>
-#include "json.hpp"
+#include "json/json.hpp"
 
 namespace Korali::Parameter
 {

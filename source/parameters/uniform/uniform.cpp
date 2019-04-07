@@ -1,4 +1,4 @@
-#include "parameters/uniform.h"
+#include "korali.h"
 
 using json = nlohmann::json;
 

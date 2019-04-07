@@ -1,27 +1,26 @@
 #ifndef _KORALI_H_
 #define _KORALI_H_
 
-#include "json.hpp"
 #include "stdlib.h"
 #include <vector>
 #include <functional>
 
-#include "problems/direct.h"
-#include "problems/likelihood.h"
-#include "problems/posterior.h"
+#include "problems/direct/direct.h"
+#include "problems/likelihood/likelihood.h"
+#include "problems/posterior/posterior.h"
 
-#include "parameters/exponential.h"
-#include "parameters/gamma.h"
-#include "parameters/gaussian.h"
-#include "parameters/uniform.h"
+#include "parameters/exponential/exponential.h"
+#include "parameters/gamma/gamma.h"
+#include "parameters/gaussian/gaussian.h"
+#include "parameters/uniform/uniform.h"
 
-#include "solvers/cmaes.h"
-#include "solvers/tmcmc.h"
+#include "solvers/cmaes/cmaes.h"
+#include "solvers/tmcmc/tmcmc.h"
 
-#include "conduits/single.h"
-#include "conduits/upcxx.h"
+#include "conduits/single/single.h"
+#include "conduits/upcxx/upcxx.h"
 
-#include "json.hpp"
+#include "json/json.hpp"
 
 enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
 

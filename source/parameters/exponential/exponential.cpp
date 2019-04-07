@@ -1,4 +1,4 @@
-#include "parameters/exponential.h"
+#include "korali.h"
 
 using json = nlohmann::json;
 

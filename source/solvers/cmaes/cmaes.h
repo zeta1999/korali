@@ -1,8 +1,8 @@
 #ifndef _KORALI_CMAES_H_
 #define _KORALI_CMAES_H_
 
-#include "solvers/base.h"
-#include "parameters/gaussian.h"
+#include "solvers/base/base.h"
+#include "parameters/gaussian/gaussian.h"
 #include <chrono>
 #include <map>
 

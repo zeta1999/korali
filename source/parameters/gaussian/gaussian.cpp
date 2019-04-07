@@ -1,4 +1,4 @@
-#include "parameters/gaussian.h"
+#include "korali.h"
 
 using json = nlohmann::json;
 

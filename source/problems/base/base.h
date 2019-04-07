@@ -1,7 +1,7 @@
 #ifndef _KORALI_BASEPROBLEM_H_
 #define _KORALI_BASEPROBLEM_H_
 
-#include "json.hpp"
+#include "json/json.hpp"
 
 namespace Korali::Problem
 {

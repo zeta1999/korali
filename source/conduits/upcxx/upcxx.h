@@ -3,7 +3,7 @@
 #ifndef _KORALI_UPCXX_H_
 #define _KORALI_UPCXX_H_
 
-#include "conduits/base.h"
+#include "conduits/base/base.h"
 #include <upcxx/upcxx.hpp>
 #include <queue>
 

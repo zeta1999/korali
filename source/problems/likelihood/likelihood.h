@@ -1,7 +1,7 @@
 #ifndef _KORALI_LIKELIHOOD_H_
 #define _KORALI_LIKELIHOOD_H_
 
-#include "problems/base.h"
+#include "problems/base/base.h"
 
 namespace Korali::Problem
 {

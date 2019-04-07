@@ -1,7 +1,7 @@
 #ifndef _KORALI_GAUSSIAN_H_
 #define _KORALI_GAUSSIAN_H_
 
-#include "parameters/base.h"
+#include "parameters/base/base.h"
 
 namespace Korali::Parameter
 {

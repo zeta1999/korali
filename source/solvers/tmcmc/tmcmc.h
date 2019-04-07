@@ -1,7 +1,7 @@
 #ifndef _KORALI_TMCMC_H_
 #define _KORALI_TMCMC_H_
 
-#include "solvers/base.h"
+#include "solvers/base/base.h"
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_vector.h>
 

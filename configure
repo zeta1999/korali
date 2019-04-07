@@ -38,6 +38,7 @@ DETECTED_MPI=0
 DETECTED_UPCXX=0
 MPICXX=
 UPCXX=
+PREFIX=$PWD/korali
 
 for i in "$@"
 do
@@ -151,6 +152,7 @@ if [ $USE_UPCXX  -eq 1 ]; then compiler=$UPCXX;  fi
 echo "[Korali] Creating common.mk..."
  
 echo "$compiler" > common.mk 
+echo "PREFIX = $PREFIX" >> common.mk
 echo "CXXFLAGS = -O3 -g" >> common.mk
 echo "#CXXFLAGS = -O0 -g" >> common.mk 
 echo "CXXFLAGS += -std=c++17 -Wall -Wfatal-errors \`gsl-config --cflags\` $pthreadFlags $openMPFlags $upcxxFlags $mpiFlags" >> common.mk

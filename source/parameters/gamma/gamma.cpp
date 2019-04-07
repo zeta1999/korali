@@ -1,4 +1,4 @@
-#include "parameters/gamma.h"
+#include "korali.h"
 
 using json = nlohmann::json;
 

@@ -3,7 +3,7 @@
 #ifndef _KORALI_OPENMP_H_
 #define _KORALI_OPENMP_H_
 
-#include "conduits/base.h"
+#include "conduits/base/base.h"
 #include "pthread.h"
 #include <queue>
 

@@ -1,7 +1,7 @@
 #ifndef _KORALI_SINGLE_H_
 #define _KORALI_SINGLE_H_
 
-#include "conduits/base.h"
+#include "conduits/base/base.h"
 
 namespace Korali::Conduit
 {

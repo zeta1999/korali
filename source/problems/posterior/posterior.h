@@ -1,15 +1,15 @@
-#ifndef _KORALI_DIRECT_H_
-#define _KORALI_DIRECT_H_
+#ifndef _KORALI_POSTERIOR_H
+#define _KORALI_POSTERIOR_H
 
-#include "problems/base.h"
+#include "problems/likelihood/likelihood.h"
 
 namespace Korali::Problem
 {
 
-class Direct : public Korali::Problem::Base
+class Posterior : public Korali::Problem::Likelihood
 {
  public:
- Direct();
+ Posterior();
  double evaluateFitness(double* sample);
  void initialize();
 
@@ -21,4 +21,4 @@ class Direct : public Korali::Problem::Base
 } // namespace Korali
 
 
-#endif // _KORALI_DIRECT_H_
+#endif // _KORALI_POSTERIOR_H

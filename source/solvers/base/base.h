@@ -2,9 +2,9 @@
 #define _BASESOLVER_H_
 
 #include <stdlib.h>
-#include "problems/base.h"
+#include "problems/base/base.h"
 #include <chrono>
-#include "json.hpp"
+#include "json/json.hpp"
 
 namespace Korali::Solver
 {
