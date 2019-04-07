@@ -493,6 +493,16 @@ void Korali::Solver::TMCMC::setConfiguration(json js)
 	if (js.find("Use Local Covariance") != js.end()) if (js["Use Local Covariance"].is_boolean())
 	{ _useLocalCov = js["Use Local Covariance"]; js.erase("Use Local Covariance"); }
 
+	if (js.find("Burn In") != js.end()) if (js["Burn In"].is_number())
+	{ _burnIn = js["Burn In"]; js.erase("Burn In"); }
+
+  if (js.find("TerminationCriteria") != js.end())
+  {
+    json term = js["TerminationCriteria"];
+  	if (term.find("Max Generations") != term.end()) if (term["Max Generations"].is_number())
+    { _maxGens = term["Max Generations"]; term.erase("Max Generations"); }
+  }
+
   _k->S = _populationSize;
 }
 
