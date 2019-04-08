@@ -14,6 +14,7 @@ class Likelihood : public Korali::Problem::Base
  double* _referenceData;
  double* fitnessArrayPointer;
 
+ size_t _sigmaPosition;
  size_t _referenceDataSize;
  double evaluateFitness(double* sample);
  void initialize();

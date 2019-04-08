@@ -31,38 +31,40 @@ class Engine {
 
  public:
 
-	nlohmann::json _config;
+ nlohmann::json _config;
+ nlohmann::json& operator [](std::string key) { return _config[key]; }
 
-	nlohmann::json& operator [](std::string key) { return _config[key]; }
+ Korali::Conduit::Base* _conduit;
+ Korali::Problem::Base* _problem;
+ Korali::Solver::Base*  _solver;
 
-  Korali::Conduit::Base* _conduit;
-  Korali::Problem::Base* _problem;
-  Korali::Solver::Base*  _solver;
-  std::vector<Korali::Parameter::Base*> _parameters;
+ std::vector<Korali::Parameter::Base*> _parameters;
 
-  // Model Functions and constructors
-  Engine();
+ // Model Functions and constructors
+ Engine();
 
-  std::function<double (double*)> _modelSingle;
-  Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _config["Problem"]["Model"] = "Single"; }
+ std::function<double (double*)> _modelSingle;
+ Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _config["Problem"]["Model"] = "Single"; }
 
-  std::function<void (double*, double*)> _modelMultiple;
-  Engine(std::function<void (double*, double*)> model) : Engine::Engine() {	_modelMultiple = model;	_config["Problem"]["Model"] = "Multiple"; }
+ std::function<void (double*, double*)> _modelMultiple;
+ Engine(std::function<void (double*, double*)> model) : Engine::Engine() { _modelMultiple = model; _config["Problem"]["Model"] = "Multiple"; }
 
-  std::function<void (double*, double*, double*, double*)> _modelManifold;
-  Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model;	_config["Problem"]["Model"] = "Manifold"; }
+ std::function<void (double*, double*, double*, double*)> _modelManifold;
+ Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _config["Problem"]["Model"] = "Manifold"; }
 
-  void run();
-  void initialize();
+ void run();
+ void initialize();
 
-  size_t N; // Parameter Count
-  size_t _seed;
-  int _verbosity;
-  size_t _reportFrequency;
+ size_t N; // Parameter Count
+ size_t _statisticalParameterCount;
+ size_t _computationalParameterCount;
+ size_t _seed;
+ int _verbosity;
+ size_t _reportFrequency;
 
-  // Serialization Methods
-  nlohmann::json getConfiguration();
-  void setConfiguration(nlohmann::json js);
+ // Serialization Methods
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json js);
 };
 
 extern Engine* _k;

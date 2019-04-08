@@ -8,6 +8,8 @@ Korali::Engine::Engine()
  // Setting Defaults
  N = 0;
  _reportFrequency = 1;
+ _statisticalParameterCount = 0;
+ _computationalParameterCount = 0;
  _verbosity = KORALI_NORMAL;
  std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
  _seed  = std::chrono::nanoseconds(now_c).count();
@@ -22,36 +24,40 @@ void Korali::Engine::initialize()
 
  if (_config.find("Verbosity") != _config.end()) if (_config["Verbosity"].is_string())
  {
-	 bool found = false;
-	 if (_config["Verbosity"] == "Silent") { _verbosity = KORALI_SILENT; found = true; }
-	 if (_config["Verbosity"] == "Minimal") { _verbosity = KORALI_MINIMAL; found = true; }
-	 if (_config["Verbosity"] == "Normal")  { _verbosity = KORALI_NORMAL; found = true; }
-	 if (_config["Verbosity"] == "Detailed") { _verbosity = KORALI_DETAILED; found = true; }
-	 if (found) _config.erase("Verbosity");
+  bool found = false;
+  if (_config["Verbosity"] == "Silent") { _verbosity = KORALI_SILENT; found = true; }
+  if (_config["Verbosity"] == "Minimal") { _verbosity = KORALI_MINIMAL; found = true; }
+  if (_config["Verbosity"] == "Normal")  { _verbosity = KORALI_NORMAL; found = true; }
+  if (_config["Verbosity"] == "Detailed") { _verbosity = KORALI_DETAILED; found = true; }
+  if (found) _config.erase("Verbosity");
  }
 
  if (_config.find("Report Frequency") != _config.end()) if (_config["Report Frequency"].is_number())
  { _reportFrequency = _config["Report Frequency"]; _config.erase("Report Frequency"); }
 
  // Configure Parameters
+ std::vector<Korali::Parameter::Base*> tmp;
+
  if (_config.find("Parameters") != _config.end()) if(_config["Parameters"].is_array())
  if (_config["Parameters"].size() > 0) for (int i = 0; i < _config["Parameters"].size(); i++)
  {
-	 if (_config["Parameters"][i].find("Distribution") != _config["Parameters"][i].end())
-	 if (_config["Parameters"][i]["Distribution"].find("Type") != _config["Parameters"][i]["Distribution"].end())
-	 if (_config["Parameters"][i]["Distribution"]["Type"].is_string())
-	 {
-		bool foundDistribution = false;
-	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Uniform")     { _parameters.push_back(new Korali::Parameter::Uniform());     foundDistribution = true; }
-	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Gaussian")    { _parameters.push_back(new Korali::Parameter::Gaussian());    foundDistribution = true; }
-	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Gamma")       { _parameters.push_back(new Korali::Parameter::Gamma());       foundDistribution = true; }
-	  if (_config["Parameters"][i]["Distribution"]["Type"] == "Exponential") { _parameters.push_back(new Korali::Parameter::Exponential()); foundDistribution = true; }
-	  if (foundDistribution == false) { fprintf(stderr, "[Korali] Error: Incorrect or parameter distribution: \n %s.\n", _config["Parameters"][i]["Distribution"]["Type"].dump(1).c_str() ); exit(-1); }
-	  _parameters[i]->setConfiguration(_config["Parameters"][i]);
-	 }
+  if (_config["Parameters"][i].find("Distribution") != _config["Parameters"][i].end())
+  if (_config["Parameters"][i]["Distribution"].is_string())
+  {
+   bool foundDistribution = false;
+   if (_config["Parameters"][i]["Distribution"] == "Uniform")     { tmp.push_back(new Korali::Parameter::Uniform());     foundDistribution = true; }
+   if (_config["Parameters"][i]["Distribution"] == "Gaussian")    { tmp.push_back(new Korali::Parameter::Gaussian());    foundDistribution = true; }
+   if (_config["Parameters"][i]["Distribution"] == "Gamma")       { tmp.push_back(new Korali::Parameter::Gamma());       foundDistribution = true; }
+   if (_config["Parameters"][i]["Distribution"] == "Exponential") { tmp.push_back(new Korali::Parameter::Exponential()); foundDistribution = true; }
+   if (foundDistribution == false) { fprintf(stderr, "[Korali] Error: Incorrect or parameter distribution: \n %s.\n", _config["Parameters"][i]["Distribution"]["Type"].dump(1).c_str() ); exit(-1); }
+   tmp[i]->setConfiguration(_config["Parameters"][i]);
+  }
  }
- if (_parameters.size() == 0) { fprintf(stderr, "[Korali] Error: Incorrect or undefined parameters.\n"); exit(-1); }
+ if (tmp.size() == 0) { fprintf(stderr, "[Korali] Error: Incorrect or undefined parameters.\n"); exit(-1); }
  _config.erase("Parameters");
+
+ for (int i = 0; i < tmp.size(); i++) if (tmp[i]->_type == KORALI_COMPUTATIONAL) { _parameters.push_back(tmp[i]); _computationalParameterCount++; }
+ for (int i = 0; i < tmp.size(); i++) if (tmp[i]->_type == KORALI_STATISTICAL)   { _parameters.push_back(tmp[i]); _statisticalParameterCount++; };
  N = _parameters.size();
 
   // Configure Problem
@@ -59,9 +65,9 @@ void Korali::Engine::initialize()
  if (_config.find("Problem") != _config.end())
  if (_config["Problem"].find("Objective") != _config["Problem"].end()) if(_config["Problem"]["Objective"].is_string())
  {
-	 if (_config["Problem"]["Objective"] == "Direct Evaluation") { _problem = new Korali::Problem::Direct();     foundProblem = true; }
-	 if (_config["Problem"]["Objective"] == "Likelihood")        { _problem = new Korali::Problem::Likelihood(); foundProblem = true; }
-	 if (_config["Problem"]["Objective"] == "Posterior")         { _problem = new Korali::Problem::Posterior();  foundProblem = true; }
+  if (_config["Problem"]["Objective"] == "Direct Evaluation") { _problem = new Korali::Problem::Direct();     foundProblem = true; }
+  if (_config["Problem"]["Objective"] == "Likelihood")        { _problem = new Korali::Problem::Likelihood(); foundProblem = true; }
+  if (_config["Problem"]["Objective"] == "Posterior")         { _problem = new Korali::Problem::Posterior();  foundProblem = true; }
  }
  if (foundProblem == false) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Problem."); exit(-1); }
  _problem->setConfiguration(_config["Problem"]);
@@ -122,8 +128,8 @@ void Korali::Engine::initialize()
  if (_config.find("Solver") != _config.end())
  if (_config["Solver"].find("Method") != _config["Solver"].end()) if(_config["Solver"]["Method"].is_string())
  {
-	 if (_config["Solver"]["Method"] == "CMA-ES") { _solver = new Korali::Solver::CMAES(); foundSolver = true; }
-	 if (_config["Solver"]["Method"] == "TMCMC")  { _solver = new Korali::Solver::TMCMC(); foundSolver = true; }
+  if (_config["Solver"]["Method"] == "CMA-ES") { _solver = new Korali::Solver::CMAES(); foundSolver = true; }
+  if (_config["Solver"]["Method"] == "TMCMC")  { _solver = new Korali::Solver::TMCMC(); foundSolver = true; }
  }
  if (foundSolver == false) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Solver."); exit(-1); }
  _solver->setConfiguration(_config["Solver"]);
@@ -131,8 +137,8 @@ void Korali::Engine::initialize()
 
  if (_config.size() > 0)
  {
-	 fprintf(stderr, "[Korali] Warning: Unrecognized Settings for Korali:\n");
-	 fprintf(stderr, "%s\n", _config.dump(2).c_str());
+  fprintf(stderr, "[Korali] Warning: Unrecognized Settings for Korali:\n");
+  fprintf(stderr, "%s\n", _config.dump(2).c_str());
  }
 
  // Initializing Modules

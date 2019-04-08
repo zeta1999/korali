@@ -10,10 +10,11 @@ int main(int argc, char* argv[])
 
  for (int i = 0; i < NDIMS; i++)
  {
-	 korali["Parameters"][i]["Name"] = "X" + std::to_string(i);
-	 korali["Parameters"][i]["Distribution"]["Type"] = "Uniform";
-	 korali["Parameters"][i]["Distribution"]["Minimum"] = -3.0;
-	 korali["Parameters"][i]["Distribution"]["Maximum"] = +3.0;
+  korali["Parameters"][i]["Name"] = "X" + std::to_string(i);
+  korali["Parameters"][i]["Distribution"] = "Uniform";
+  korali["Parameters"][i]["Type"] = "Computational";
+  korali["Parameters"][i]["Minimum"] = -32.0;
+  korali["Parameters"][i]["Maximum"] = +32.0;
  }
 
  korali["Problem"]["Objective"] = "Direct Evaluation";

@@ -10,20 +10,31 @@ json Korali::Parameter::Base::getConfiguration()
 
 void Korali::Parameter::Base::setConfiguration(json js)
 {
-	 _name = "Unnamed Parameter";
-	 _lowerBound = -1.0;
-	 _upperBound = 1.0;
-	 _minStdDevChange = 0.0;
+  _name = "Unnamed Parameter";
+  _lowerBound = -1.0;
+  _upperBound = 1.0;
+  _minStdDevChange = 0.0;
+  _type = KORALI_COMPUTATIONAL;
 
   if (js.find("Name") != js.end()) if (js["Name"].is_string())
   { _name = js["Name"]; js.erase("Name"); }
+
+  bool typeDefined = false;
+  if (js.find("Type") != js.end()) if (js["Type"].is_string())
+  {
+   if (js["Type"] == "Computational") { _type = KORALI_COMPUTATIONAL; typeDefined = true; };
+   if (js["Type"] == "Statistical")   { _type = KORALI_STATISTICAL;   typeDefined = true; };
+  }
+
+  if (typeDefined) js.erase("Type");
+  else fprintf(stderr,"[Korali] Warning: Type not defined for parameter \'%s\'. Assuming Computational.\n", _name.c_str());
 
   if (js.find("Bounds") != js.end())
   {
     json bounds = js["Bounds"];
     if (bounds.find("Lower") != bounds.end()) if (bounds["Lower"].is_number())
     { _lowerBound = bounds["Lower"]; bounds.erase("Lower"); }
-  	if (bounds.find("Upper") != bounds.end()) if (bounds["Upper"].is_number())
+    if (bounds.find("Upper") != bounds.end()) if (bounds["Upper"].is_number())
     { _upperBound = bounds["Upper"]; bounds.erase("Upper"); }
   }
 

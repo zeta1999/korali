@@ -8,6 +8,8 @@
 #include <gsl/gsl_sf.h>
 #include "json/json.hpp"
 
+enum parameterType { KORALI_COMPUTATIONAL, KORALI_STATISTICAL };
+
 namespace Korali::Parameter
 {
 
@@ -15,6 +17,7 @@ class Base
 {
  public:
  gsl_rng* _range;
+ parameterType _type;
 
  std::string _name;
  double _lowerBound;
