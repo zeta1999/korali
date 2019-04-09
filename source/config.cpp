@@ -45,8 +45,7 @@ json Korali::consumeString(json& js, std::vector<std::string> settings)
 {
  if (isDefined(js, settings))
  {
-  json tmp = js;
-  json* ptr = &tmp;
+  json* ptr = &js;
   for (int i = 0; i < settings.size()-1; i++) ptr = &((*ptr)[settings[i]]);
   if ((*ptr)[settings[settings.size()-1]].is_string())
   {
