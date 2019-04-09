@@ -1,4 +1,5 @@
 korali/
+*.tar.gz
 *.o
 *.json
 *.a
