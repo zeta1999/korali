@@ -9,7 +9,7 @@ all: libkorali.a
 libkorali.a:
 	@$(MAKE) -j -C source
 
-clean:
+clean: clean_tests
 	@$(MAKE) -j -C source clean
 
 tests:

@@ -1,9 +1,9 @@
 # This file is subject to the license agreement located in the file LICENSE
 # and cannot be distributed without it. This notice cannot be removed or modified. 
 
-PREFIX = (PREFIX)
-CXX = (CXX)
-CXXFLAGS = (CXXFLAGS)
-LDFLAGS = (LDFLAGS)
+PREFIX="(PREFIX)"
+CXX="(CXX)"
+CXXFLAGS="(CXXFLAGS)"
+LDFLAGS="(LDFLAGS)"
 
 $CXX $@ $CXXFLAGS $LDFLAGS -I$PREFIX/include -L$PREFIX/lib -lkorali
