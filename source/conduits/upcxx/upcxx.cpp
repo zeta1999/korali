@@ -22,8 +22,8 @@ void Korali::Conduit::UPCXX::initialize()
 
  if (_rankId == 0)
  {
-	samplePtrGlobal = (upcxx::global_ptr<double>*) calloc (_rankCount, sizeof(upcxx::global_ptr<double>));
-	for (int i = 0; i < _rankCount; i++)	samplePtrGlobal[i] = p.fetch(i).wait();
+  samplePtrGlobal = (upcxx::global_ptr<double>*) calloc (_rankCount, sizeof(upcxx::global_ptr<double>));
+  for (int i = 0; i < _rankCount; i++)samplePtrGlobal[i] = p.fetch(i).wait();
  }
 
  upcxx::barrier();
@@ -31,17 +31,17 @@ void Korali::Conduit::UPCXX::initialize()
 
 void Korali::Conduit::UPCXX::run()
 {
-	// Supervisor
-  if (_rankId == 0)
-  {
-   for (int i = 1; i < _rankCount; i++) _workers.push(i);
- 	 _k->_solver->run();
-   for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_ux->_continueEvaluations = false;});
-  }
-  // Workers
-  else while(_continueEvaluations) upcxx::progress();
+ // Supervisor
+ if (_rankId == 0)
+ {
+  for (int i = 1; i < _rankCount; i++) _workers.push(i);
+ _k->_solver->run();
+  for (int i = 1; i < _rankCount; i++) upcxx::rpc_ff(i, [](){_ux->_continueEvaluations = false;});
+ }
+ // Workers
+ else while(_continueEvaluations) upcxx::progress();
 
-  upcxx::barrier();
+ upcxx::barrier();
 }
 
 void Korali::Conduit::UPCXX::evaluateSample(double* sampleArray, size_t sampleId)
@@ -52,14 +52,14 @@ void Korali::Conduit::UPCXX::evaluateSample(double* sampleArray, size_t sampleId
 
  put.then([workerId, sampleId]()
  {
-	 auto doWorker = upcxx::rpc(workerId, [](size_t sampleId)
-	 {
-		 double fitness = _k->_problem->evaluateFitness(_ux->samplePtr.local());
-		 upcxx::rpc_ff(0, [](size_t sampleId, double fitness)
-		 { _k->_solver->processSample(sampleId, fitness); },	sampleId, fitness);
-	 }, sampleId);
+ auto doWorker = upcxx::rpc(workerId, [](size_t sampleId)
+ {
+ double fitness = _k->_problem->evaluateFitness(_ux->samplePtr.local());
+ upcxx::rpc_ff(0, [](size_t sampleId, double fitness)
+ { _k->_solver->processSample(sampleId, fitness); },sampleId, fitness);
+ }, sampleId);
 
-	 doWorker.then([workerId](){_ux->_workers.push(workerId);});
+ doWorker.then([workerId](){_ux->_workers.push(workerId);});
  });
 }
 

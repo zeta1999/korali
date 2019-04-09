@@ -29,19 +29,15 @@ void Korali::Parameter::Base::setConfiguration(json js)
   if (typeDefined) js.erase("Type");
   else fprintf(stderr,"[Korali] Warning: Type not defined for parameter \'%s\'. Assuming Computational.\n", _name.c_str());
 
-  if (js.find("Bounds") != js.end())
-  {
-    json bounds = js["Bounds"];
-    if (bounds.find("Lower") != bounds.end()) if (bounds["Lower"].is_number())
-    { _lowerBound = bounds["Lower"]; bounds.erase("Lower"); }
-    if (bounds.find("Upper") != bounds.end()) if (bounds["Upper"].is_number())
-    { _upperBound = bounds["Upper"]; bounds.erase("Upper"); }
-  }
+   if (js.find("Minimum") != js.end()) if (js["Minimum"].is_number())
+   { _lowerBound = js["Minimum"]; js.erase("Minimum"); }
+
+   if (js.find("Maximum") != js.end()) if (js["Maximum"].is_number())
+   { _upperBound = js["Maximum"]; js.erase("Maximum"); }
 
   if (_upperBound <= _lowerBound)
   {
    fprintf(stderr, "[Korali] Warning: Invalid lower/upper bounds for %s.\n", _name.c_str());
-   fprintf(stderr, "[Korali] Tip: Use parameter.setBounds(lower,upper); to define bounds.\n");
   }
 
   _initialValue = (_lowerBound + _upperBound) * 0.5;

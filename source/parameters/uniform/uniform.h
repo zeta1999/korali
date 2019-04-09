@@ -9,8 +9,6 @@ namespace Korali::Parameter
 class Uniform : public Korali::Parameter::Base
 {
  private:
-  double _min;
-  double _max;
 
  public:
   Uniform();
