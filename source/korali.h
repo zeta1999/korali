@@ -65,9 +65,13 @@ class Engine {
  // Serialization Methods
  nlohmann::json getConfiguration();
  void setConfiguration(nlohmann::json js);
+
 };
 
 extern Engine* _k;
+extern bool isArray(nlohmann::json js, std::vector<std::string> settings);
+extern bool isDefined(nlohmann::json js, std::vector<std::string> settings);
+extern nlohmann::json consumeString(nlohmann::json& js, std::vector<std::string> settings);
 
 } // namespace Korali
 

@@ -10,5 +10,5 @@ json Korali::Conduit::Single::getConfiguration()
 
 void Korali::Conduit::Single::setConfiguration(json js)
 {
-	this->Korali::Conduit::Base::setConfiguration(js);
+ this->Korali::Conduit::Base::setConfiguration(js);
 }

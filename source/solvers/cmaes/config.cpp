@@ -4,49 +4,49 @@ using json = nlohmann::json;
 
 json Korali::Solver::CMAES::getConfiguration()
 {
-  auto js = this->Korali::Solver::Base::getConfiguration();
+ auto js = this->Korali::Solver::Base::getConfiguration();
 
-  js["Engine"] = "CMA-ES";
-  js["Mu"] = _mu;
-  js["MuType"] = _muType;
-  js["diagonalCovarianceMatrixEvalFrequency"] = _diagonalCovarianceMatrixEvalFrequency;
-  js["covarianceEigensystemEvaluationFrequency"] = _covarianceEigensystemEvaluationFrequency;
-  js["muCovariance"] = _muCovariance;
-  js["sigmaCumulationFactor"] = _sigmaCumulationFactor;
-  js["dampFactor"] = _dampFactor;
-  js["cumulativeCovariance"] = _cumulativeCovariance;
-  js["covarianceMatrixLearningRate"] = _covarianceMatrixLearningRate;
+ js["Engine"] = "CMA-ES";
+ js["Mu"] = _mu;
+ js["MuType"] = _muType;
+ js["diagonalCovarianceMatrixEvalFrequency"] = _diagonalCovarianceMatrixEvalFrequency;
+ js["covarianceEigensystemEvaluationFrequency"] = _covarianceEigensystemEvaluationFrequency;
+ js["muCovariance"] = _muCovariance;
+ js["sigmaCumulationFactor"] = _sigmaCumulationFactor;
+ js["dampFactor"] = _dampFactor;
+ js["cumulativeCovariance"] = _cumulativeCovariance;
+ js["covarianceMatrixLearningRate"] = _covarianceMatrixLearningRate;
 
-  js["Termination Criteria"]["MaxFitnessEvaluations"] = _maxFitnessEvaluations ;
-  js["Termination Criteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
-  js["Termination Criteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
-  js["Termination Criteria"]["stopMinDeltaX"] = _stopMinDeltaX;
-  js["Termination Criteria"]["stopMinFitness"] = _stopMinFitness;
+ js["Termination Criteria"]["MaxFitnessEvaluations"] = _maxFitnessEvaluations ;
+ js["Termination Criteria"]["stopFitnessEvalThreshold"] = _stopFitnessEvalThreshold ;
+ js["Termination Criteria"]["stopFitnessDiffThreshold"] = _stopFitnessDiffThreshold ;
+ js["Termination Criteria"]["stopMinDeltaX"] = _stopMinDeltaX;
+ js["Termination Criteria"]["stopMinFitness"] = _stopMinFitness;
 
-  return js;
+ return js;
 }
 
 void Korali::Solver::CMAES::setConfiguration(json js)
 {
-	_maxFitnessEvaluations = std::numeric_limits<size_t>::max();
+ _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
 
-	_stopFitnessEvalThreshold = std::numeric_limits<double>::min();
-	_stopFitnessDiffThreshold = 1e-12;
-	_stopMinDeltaX = 0.0;
-	_stopMinFitness = -std::numeric_limits<double>::max();
+ _stopFitnessEvalThreshold = std::numeric_limits<double>::min();
+ _stopFitnessDiffThreshold = 1e-12;
+ _stopMinDeltaX = 0.0;
+ _stopMinFitness = -std::numeric_limits<double>::max();
 
-	_mu = 0;
-	_muType = "Logarithmic";
-	_muCovariance = -1;
-	_diagonalCovarianceMatrixEvalFrequency = 0;
-	_sigmaCumulationFactor = -1;
-	_dampFactor = -1;
-	_cumulativeCovariance = -1;
-	_covarianceMatrixLearningRate = -1;
-	_maxGens = 200;
-	_currentGeneration = 0;
+ _mu = 0;
+ _muType = "Logarithmic";
+ _muCovariance = -1;
+ _diagonalCovarianceMatrixEvalFrequency = 0;
+ _sigmaCumulationFactor = -1;
+ _dampFactor = -1;
+ _cumulativeCovariance = -1;
+ _covarianceMatrixLearningRate = -1;
+ _maxGens = 200;
+ _currentGeneration = 0;
 
-	_terminationReason[0] = '\0';
+ _terminationReason[0] = '\0';
 
   this->Korali::Solver::Base::setConfiguration(js);
 
@@ -70,69 +70,69 @@ void Korali::Solver::CMAES::setConfiguration(json js)
     json mu = js["Mu"];
     if (mu.find("Value") != mu.end()) if (mu["Value"].is_number())
     { _mu = mu["Value"]; mu.erase("Value"); }
-  	if (mu.find("Type") != mu.end()) if (mu["Type"].is_string())
+   if (mu.find("Type") != mu.end()) if (mu["Type"].is_string())
     { _muType = mu["Type"]; mu.erase("Type"); }
-  	if (mu.find("Covariance") != mu.end()) if (mu["Covariance"].is_number())
-  	{ _muCovariance = mu["Covariance"]; mu.erase("Covariance"); }
+   if (mu.find("Covariance") != mu.end()) if (mu["Covariance"].is_number())
+   { _muCovariance = mu["Covariance"]; mu.erase("Covariance"); }
   }
 
   if (js.find("CovarianceMatrix") != js.end())
   {
     json cov = js["CovarianceMatrix"];
-  	if (cov.find("DiagonalEvaluationFrequency") != cov.end()) if (cov["DiagonalEvaluationFrequency"].is_number())
+   if (cov.find("DiagonalEvaluationFrequency") != cov.end()) if (cov["DiagonalEvaluationFrequency"].is_number())
     { _diagonalCovarianceMatrixEvalFrequency = cov["DiagonalEvaluationFrequency"]; cov.erase("DiagonalEvaluationFrequency"); }
-  	if (cov.find("EigenEvaluationFrequency") != cov.end()) if (cov["EigenEvaluationFrequency"].is_number())
-  	{ _diagonalCovarianceMatrixEvalFrequency = cov["EigenEvaluationFrequency"]; cov.erase("EigenEvaluationFrequency"); }
-  	if (cov.find("LearningRate") != cov.end()) if (cov["LearningRate"].is_number())
-  	{ _covarianceMatrixLearningRate = cov["LearningRate"]; cov.erase("LearningRate"); }
+   if (cov.find("EigenEvaluationFrequency") != cov.end()) if (cov["EigenEvaluationFrequency"].is_number())
+   { _diagonalCovarianceMatrixEvalFrequency = cov["EigenEvaluationFrequency"]; cov.erase("EigenEvaluationFrequency"); }
+   if (cov.find("LearningRate") != cov.end()) if (cov["LearningRate"].is_number())
+   { _covarianceMatrixLearningRate = cov["LearningRate"]; cov.erase("LearningRate"); }
   }
 
   if (js.find("TerminationCriteria") != js.end())
   {
     json term = js["TerminationCriteria"];
-  	if (term.find("MaxFitnessEvaluations") != term.end()) if (term["MaxFitnessEvaluations"].is_number())
+   if (term.find("MaxFitnessEvaluations") != term.end()) if (term["MaxFitnessEvaluations"].is_number())
     { _maxFitnessEvaluations = term["MaxFitnessEvaluations"]; term.erase("MaxFitnessEvaluations"); }
-  	if (term.find("stopFitnessEvalThreshold") != term.end()) if (term["stopFitnessEvalThreshold"].is_number())
-  	{ _stopFitnessEvalThreshold = term["stopFitnessEvalThreshold"]; term.erase("stopFitnessEvalThreshold"); }
-  	if (term.find("stopFitnessDiffThreshold") != term.end()) if (term["stopFitnessDiffThreshold"].is_number())
-  	{ _stopFitnessDiffThreshold = term["stopFitnessDiffThreshold"]; term.erase("stopFitnessDiffThreshold"); }
-  	if (term.find("stopMinDeltaX") != term.end()) if (term["stopMinDeltaX"].is_number())
-  	{ _stopMinDeltaX = term["stopMinDeltaX"]; term.erase("stopMinDeltaX"); }
-  	if (term.find("stopMinFitness") != term.end()) if (term["stopMinFitness"].is_number())
-  	{ _stopMinFitness = term["stopMinFitness"]; term.erase("stopMinFitness"); }
+   if (term.find("stopFitnessEvalThreshold") != term.end()) if (term["stopFitnessEvalThreshold"].is_number())
+   { _stopFitnessEvalThreshold = term["stopFitnessEvalThreshold"]; term.erase("stopFitnessEvalThreshold"); }
+   if (term.find("stopFitnessDiffThreshold") != term.end()) if (term["stopFitnessDiffThreshold"].is_number())
+   { _stopFitnessDiffThreshold = term["stopFitnessDiffThreshold"]; term.erase("stopFitnessDiffThreshold"); }
+   if (term.find("stopMinDeltaX") != term.end()) if (term["stopMinDeltaX"].is_number())
+   { _stopMinDeltaX = term["stopMinDeltaX"]; term.erase("stopMinDeltaX"); }
+   if (term.find("stopMinFitness") != term.end()) if (term["stopMinFitness"].is_number())
+   { _stopMinFitness = term["stopMinFitness"]; term.erase("stopMinFitness"); }
   }
 }
 
 json Korali::Solver::CMAES::getState()
 {
-  auto js = this->Korali::Solver::Base::getState();
+ auto js = this->Korali::Solver::Base::getState();
 
-  js["MuEffective"] = _muEffective;
-  js["Sigma"] = sigma;
-  js["CurrentBest"] = currentBest;
-  js["CurrentFunctionValue"] = currentFunctionValue;
-  js["prevFunctionValue"] = prevFunctionValue;
-  js["MaxDiagonalCovariance"] = maxdiagC;
-  js["MinDiagonalCovariance"] = mindiagC;
-  js["MaxEigenvalue"] = maxEW;
-  js["MinEigenvalue"] = minEW;
-  js["EigenSystemUpToDate"] = flgEigensysIsUptodate;
-  js["EvaluationCount"] = countevals;
+ js["MuEffective"] = _muEffective;
+ js["Sigma"] = sigma;
+ js["CurrentBest"] = currentBest;
+ js["CurrentFunctionValue"] = currentFunctionValue;
+ js["prevFunctionValue"] = prevFunctionValue;
+ js["MaxDiagonalCovariance"] = maxdiagC;
+ js["MinDiagonalCovariance"] = mindiagC;
+ js["MaxEigenvalue"] = maxEW;
+ js["MinEigenvalue"] = minEW;
+ js["EigenSystemUpToDate"] = flgEigensysIsUptodate;
+ js["EvaluationCount"] = countevals;
 
-  for (int i = 0; i < _mu; i++) js["MuWeights"] += _muWeights[i];
-  for (int i = 0; i < _k->N; i++) js["CurrentMeanVector"] += rgxmean[i];
-  for (int i = 0; i < _k->N; i++) js["PreviousMeanVector"] += rgxold[i];
-  for (int i = 0; i < _k->N; i++) js["BestEverVector"] += rgxbestever[i];
-  for (int i = 0; i < _k->N; i++) js["CurrentBestVector"] += curBest[i];
-  for (int i = 0; i < _k->N; i++) js["Index"] += index[i];
-  for (int i = 0; i < _k->N; i++) js["AxisLengths"] += rgD[i];
-  for (int i = 0; i < _k->N; i++) js["CumulativeCovariance"] += rgpc[i];
-  for (int i = 0; i < _k->N; i++) js["FunctionValues"] += rgFuncValue[i];
+ for (int i = 0; i < _mu; i++) js["MuWeights"] += _muWeights[i];
+ for (int i = 0; i < _k->N; i++) js["CurrentMeanVector"] += rgxmean[i];
+ for (int i = 0; i < _k->N; i++) js["PreviousMeanVector"] += rgxold[i];
+ for (int i = 0; i < _k->N; i++) js["BestEverVector"] += rgxbestever[i];
+ for (int i = 0; i < _k->N; i++) js["CurrentBestVector"] += curBest[i];
+ for (int i = 0; i < _k->N; i++) js["Index"] += index[i];
+ for (int i = 0; i < _k->N; i++) js["AxisLengths"] += rgD[i];
+ for (int i = 0; i < _k->N; i++) js["CumulativeCovariance"] += rgpc[i];
+ for (int i = 0; i < _k->N; i++) js["FunctionValues"] += rgFuncValue[i];
 
-  for (int i = 0; i < _s; i++) for (int j = 0; j < _k->N; j++) js["Samples"][i] += _samplePopulation[i*_k->N + j];
-  for (int i = 0; i < _s; i++) js["SampleFitness"] += _fitnessVector[i];
+ for (int i = 0; i < _s; i++) for (int j = 0; j < _k->N; j++) js["Samples"][i] += _samplePopulation[i*_k->N + j];
+ for (int i = 0; i < _s; i++) js["SampleFitness"] += _fitnessVector[i];
 
-  return js;
+ return js;
 }
 
 void Korali::Solver::CMAES::setState(json js)
