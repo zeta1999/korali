@@ -13,16 +13,16 @@ void Korali::Engine::setConfiguration(json js)
  // Configure Korali Engine
  std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
  _seed  = std::chrono::nanoseconds(now_c).count();
- _seed = consume<size_t>(js, { "Seed" }, 0);
+ _seed = consume(js, { "Seed" }, KORALI_NUMBER, "0");
  gsl_rng_env_setup();
 
- auto vString = consume<std::string>(js, { "Verbosity" }, "Normal");
+ auto vString = consume(js, { "Verbosity" }, KORALI_STRING, "Normal");
  if (vString == "Silent")   _verbosity = KORALI_SILENT;
  if (vString == "Minimal")  _verbosity = KORALI_MINIMAL;
  if (vString == "Normal")   _verbosity = KORALI_NORMAL;
  if (vString == "Detailed") _verbosity = KORALI_DETAILED;
 
- _reportFrequency = consume<size_t>(js, { "Report Frequency" }, 1);
+ _reportFrequency = consume(js, { "Report Frequency" }, KORALI_NUMBER, "1");
 
  // Configure Parameters
  std::vector<Korali::Parameter::Base*> tmp;
@@ -30,7 +30,7 @@ void Korali::Engine::setConfiguration(json js)
  if (isArray(js, { "Parameters" } ))
  for (size_t i = 0; i < js["Parameters"].size(); i++)
  {
-  auto dString = consume<std::string>(js["Parameters"][i], { "Distribution" });
+  auto dString = consume(js["Parameters"][i], { "Distribution" }, KORALI_STRING);
   bool foundDistribution = false;
   if (dString == "Uniform")     { tmp.push_back(new Korali::Parameter::Uniform());     foundDistribution = true; }
   if (dString == "Gaussian")    { tmp.push_back(new Korali::Parameter::Gaussian());    foundDistribution = true; }
@@ -51,7 +51,7 @@ void Korali::Engine::setConfiguration(json js)
 
   // Configure Problem
  bool foundProblem = false;
- auto pString =  consume<std::string>(js, { "Problem", "Objective" });
+ auto pString =  consume(js, { "Problem", "Objective" }, KORALI_STRING);
  if (pString == "Direct Evaluation") { _problem = new Korali::Problem::Direct();     foundProblem = true; }
  if (pString == "Likelihood")        { _problem = new Korali::Problem::Likelihood(); foundProblem = true; }
  if (pString == "Posterior")         { _problem = new Korali::Problem::Posterior();  foundProblem = true; }
@@ -67,7 +67,7 @@ void Korali::Engine::setConfiguration(json js)
  if (upcxx::rank_n() > 1) conduitString = "UPC++";
  #endif
 
- conduitString = consume<std::string>(js, { "Conduit", "Type" }, conduitString);
+ conduitString = consume(js, { "Conduit", "Type" }, KORALI_STRING, conduitString);
  _conduit = NULL;
 
  if (conduitString == "Sequential")
@@ -101,7 +101,7 @@ void Korali::Engine::setConfiguration(json js)
    exit(-1);
  }
 
- if (js.find("Conduit") != js.end())
+ if (isDefined(js, { "Conduit" }) )
  {
   _conduit->setConfiguration(js["Conduit"]);
   js.erase("Conduit");
@@ -109,7 +109,7 @@ void Korali::Engine::setConfiguration(json js)
 
  // Configure Solver
  _solver = NULL;
- auto sString = consume<std::string>(js, { "Solver", "Method" });
+ auto sString = consume(js, { "Solver", "Method" }, KORALI_STRING);
  if (sString == "CMA-ES") _solver = new Korali::Solver::CMAES();
  if (sString == "TMCMC")  _solver = new Korali::Solver::TMCMC();
  if (_solver == NULL) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Solver."); exit(-1); }

@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
  auto korali = Korali::Engine([](double *x) {return -rosenbrock(x);});
 
- korali["Seed"] = 0xC0FFEE;
+// korali["Seed"] = 0xC0FFEE;
  korali["Verbosity"] = "Normal";
 
  for (int i = 0; i < NDIMS; i++)

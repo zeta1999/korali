@@ -10,6 +10,8 @@ namespace Korali
 
 #pragma GCC diagnostic ignored "-Wunused-function"
 
+enum jsonType { KORALI_STRING, KORALI_NUMBER};
+
 static bool isDefined(nlohmann::json js, std::vector<std::string> settings)
 {
  auto tmp = js;
@@ -32,11 +34,11 @@ static bool isArray(nlohmann::json js, std::vector<std::string> settings)
  return false;
 }
 
-template <typename T> nlohmann::json consume(nlohmann::json& js, std::vector<std::string> settings, T def = std::string("__NO_DEFAULT") )
+static nlohmann::json consume(nlohmann::json& js, std::vector<std::string> settings, jsonType type, std::string def = "__NO_DEFAULT" )
 {
  bool hasDefault = true;
 
- if constexpr (std::is_same_v<T, std::string>) if (def == "__NO_DEFAULT") hasDefault = false;
+ if (def == "__NO_DEFAULT") hasDefault = false;
 
  size_t sz =  settings.size();
  std::string fullOption = "";
@@ -48,7 +50,11 @@ template <typename T> nlohmann::json consume(nlohmann::json& js, std::vector<std
   nlohmann::json* ptr = &tmp;
   for (size_t i = 0; i < sz-1; i++) ptr = &((*ptr)[settings[i]]);
 
-  if ((*ptr)[settings[sz-1]].is_string())
+  bool isCorrect = false;
+  if (type == KORALI_STRING && (*ptr)[settings[sz-1]].is_string()) isCorrect = true;
+  if (type == KORALI_NUMBER && (*ptr)[settings[sz-1]].is_number()) isCorrect = true;
+
+  if (isCorrect)
   {
    nlohmann::json ret = (*ptr)[settings[sz-1]];
    ptr->erase(settings[sz-1]);
@@ -57,18 +63,20 @@ template <typename T> nlohmann::json consume(nlohmann::json& js, std::vector<std
   }
   else
   {
-   fprintf(stderr, "[Korali] Error: Passing non-string value to string-type option: %s.\n", fullOption.c_str());
+   if (type == KORALI_STRING) fprintf(stderr, "[Korali] Error: Passing non-string value to string-type option: %s.\n", fullOption.c_str());
+   if (type == KORALI_NUMBER) fprintf(stderr, "[Korali] Error: Passing non-numeric value to numeric option: %s.\n", fullOption.c_str());
    exit(-1);
   }
  }
 
  if (hasDefault == false)
  {
-  fprintf(stderr, "[Korali] Error: No value passed for non-default string-type option: %s.\n", fullOption.c_str());
+  fprintf(stderr, "[Korali] Error: No value passed for non-default option: %s.\n", fullOption.c_str());
   exit(-1);
  }
 
- return nlohmann::json(def);
+ if (type == KORALI_STRING) def = "\"" + def + "\"";
+ return nlohmann::json::parse(def);
 }
 
 }
