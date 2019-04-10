@@ -1,28 +1,28 @@
-#ifndef _KORALI_GAUSSIAN_H_
-#define _KORALI_GAUSSIAN_H_
+#ifndef _KORALI_LAPLACE_H_
+#define _KORALI_LAPLACE_H_
 
 #include "parameters/base/base.h"
 
 namespace Korali::Parameter
 {
 
-class Gaussian : public Korali::Parameter::Base
+class Laplace : public Korali::Parameter::Base
 {
  private:
   double _mean;
-  double _sigma;
+  double _width;
   double _aux;
 
  public:
-  Gaussian();
-  Gaussian(double mean, double sigma);
-  Gaussian(double mean, double sigma, size_t seed);
+
+  Laplace();
+  Laplace(double mean, double width);
+  Laplace(double mean, double width, size_t seed);
 
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
   static double logLikelihood(double sigma, int nData, double* x, double* u);
-  void setDistribution(double mean, double sigma) { _mean = mean; _sigma = sigma; };
 
   void printDetails() override;
 
@@ -33,4 +33,4 @@ class Gaussian : public Korali::Parameter::Base
 
 } // namespace Korali
 
-#endif // _KORALI_GAUSSIAN_H_
+#endif // _KORALI_LAPLACE_H_

@@ -14,6 +14,7 @@
 #include "parameters/gaussian/gaussian.h"
 #include "parameters/uniform/uniform.h"
 #include "parameters/cauchy/cauchy.h"
+#include "parameters/laplace/laplace.h"
 
 #include "solvers/cmaes/cmaes.h"
 #include "solvers/tmcmc/tmcmc.h"
