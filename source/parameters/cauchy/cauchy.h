@@ -19,6 +19,7 @@ class Cauchy : public Korali::Parameter::Base
   Cauchy();
   Cauchy(double scale);
   Cauchy(double loc, double scale);
+  Cauchy(double scale, size_t seed);
   Cauchy(double loc, double scale, size_t seed);
 
   double getDensity(double x);

@@ -8,10 +8,13 @@ Exponential::Exponential(double mean) : Exponential(0.0,mean){}
 
 Exponential::Exponential(double loc, double mean) : Exponential(loc, mean, 0xC0FFEE){}
 
+Exponential::Exponential(double mean, size_t seed) : Exponential(0., mean, seed){}
+
 Exponential::Exponential(double loc, double mean, size_t seed) : _loc(loc), _mean(mean)
 {
   this->Korali::Parameter::Base::initialize(seed);
 }
+
 
 
 

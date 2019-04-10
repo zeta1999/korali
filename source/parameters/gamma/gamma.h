@@ -10,14 +10,14 @@ class Gamma : public Korali::Parameter::Base
 {
  private:
   double _shape;
-  double _rate;
+  double _scale;
   double _aux;
 
  public:
 
   Gamma();
-  Gamma(double shape, double rate);
-  Gamma(double shape, double rate, size_t seed);
+  Gamma(double shape, double scale);
+  Gamma(double shape, double scale, size_t seed);
 
   double getDensity(double x);
   double getDensityLog(double x);

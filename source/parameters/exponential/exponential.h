@@ -17,6 +17,7 @@ class Exponential : public Korali::Parameter::Base
   Exponential();
   Exponential(double mean);
   Exponential(double loc, double mean);
+  Exponential(double mean, size_t seed);
   Exponential(double loc, double mean, size_t seed);
 
   double getDensity(double x);

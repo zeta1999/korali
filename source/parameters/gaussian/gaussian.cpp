@@ -3,7 +3,7 @@
 using namespace Korali::Parameter;
 
 
-Gaussian::Gaussian() : _mean(1.), _sigma(1.) {}
+Gaussian::Gaussian() : _mean(0.), _sigma(1.) {}
 
 Gaussian::Gaussian(double mean, double sigma) : Gaussian(mean, sigma, 0xC0FFEE){}
 
@@ -21,8 +21,8 @@ double Gaussian::getDensity(double x)
 
 double Gaussian::getDensityLog(double x)
 {
- // Optimize by pre-calculating constants and using multiplication instead of power.
- return _aux - 0.5*gsl_sf_pow_int( (x-_mean)/_sigma, 2 );
+ double d = (x-_mean)/_sigma;
+ return _aux - 0.5*d*d;
 }
 
 double Gaussian::getRandomNumber()
