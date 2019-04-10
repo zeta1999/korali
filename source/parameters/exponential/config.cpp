@@ -10,14 +10,7 @@ json Korali::Parameter::Exponential::getConfiguration()
 
 void Korali::Parameter::Exponential::setConfiguration(json js)
 {
-	_mean = 1.0;
+ this->Korali::Parameter::Base::setConfiguration(js);
 
-  if (js.find("Distribution") != js.end())
-  {
-    json dist = js["Distribution"];
-    if (dist.find("Mean") != dist.end()) if (dist["Mean"].is_number())
-    { _mean = dist["Mean"]; dist.erase("Mean"); }
-  }
-
-	this->Korali::Parameter::Base::setConfiguration(js);
+ _mean = consume(js, { "Mean" }, KORALI_NUMBER);
 }

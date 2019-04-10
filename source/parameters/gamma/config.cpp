@@ -10,17 +10,9 @@ json Korali::Parameter::Gamma::getConfiguration()
 
 void Korali::Parameter::Gamma::setConfiguration(json js)
 {
-	_rate = 1.0;
-	_shape = 1.0;
+ this->Korali::Parameter::Base::setConfiguration(js);
 
-  if (js.find("Distribution") != js.end())
-  {
-    json dist = js["Distribution"];
-    if (dist.find("Shape") != dist.end()) if (dist["Shape"].is_number())
-    { _shape = dist["Shape"]; dist.erase("Shape"); }
-    if (dist.find("Rate") != dist.end()) if (dist["Rate"].is_number())
-    { _rate = dist["Rate"]; dist.erase("Rate"); }
-  }
+ _rate  = consume(js, { "Rate" }, KORALI_NUMBER);
+ _shape = consume(js, { "Shape" }, KORALI_NUMBER);
 
-	this->Korali::Parameter::Base::setConfiguration(js);
 }
