@@ -9,7 +9,7 @@ json Korali::Solver::Base::getConfiguration()
  return js;
 }
 
-void Korali::Solver::Base::setConfiguration(json js)
+void Korali::Solver::Base::setConfiguration(json& js)
 {
 }
 

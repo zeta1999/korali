@@ -26,7 +26,7 @@ json Korali::Solver::CMAES::getConfiguration()
  return js;
 }
 
-void Korali::Solver::CMAES::setConfiguration(json js)
+void Korali::Solver::CMAES::setConfiguration(json& js)
 {
  _mu = 0;
  _muType = "Logarithmic";
