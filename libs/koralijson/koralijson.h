@@ -11,7 +11,7 @@ namespace Korali
 
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-enum jsonType { KORALI_STRING, KORALI_NUMBER, KORALI_ARRAY};
+enum jsonType { KORALI_STRING, KORALI_NUMBER, KORALI_ARRAY, KORALI_BOOLEAN};
 
 static bool isEmpty(nlohmann::json& js)
 {
@@ -84,6 +84,7 @@ static nlohmann::json consume(nlohmann::json& js, std::vector<std::string> setti
   if (type == KORALI_STRING && (*ptr)[settings[sz-1]].is_string()) isCorrect = true;
   if (type == KORALI_NUMBER && (*ptr)[settings[sz-1]].is_number()) isCorrect = true;
   if (type == KORALI_ARRAY && (*ptr)[settings[sz-1]].is_array()) isCorrect = true;
+  if (type == KORALI_BOOLEAN && (*ptr)[settings[sz-1]].is_boolean()) isCorrect = true;
 
   if (isCorrect)
   {
@@ -94,9 +95,10 @@ static nlohmann::json consume(nlohmann::json& js, std::vector<std::string> setti
   }
   else
   {
-   if (type == KORALI_STRING) fprintf(stderr, "[Korali] Error: Passing non-string value to string-type option: %s.\n", fullOption.c_str());
-   if (type == KORALI_NUMBER) fprintf(stderr, "[Korali] Error: Passing non-numeric value to numeric option: %s.\n", fullOption.c_str());
-   if (type == KORALI_ARRAY)  fprintf(stderr, "[Korali] Error: Passing non-array value to array option: %s.\n", fullOption.c_str());
+   if (type == KORALI_STRING)  fprintf(stderr, "[Korali] Error: Passing non-string value to string-type option: %s.\n", fullOption.c_str());
+   if (type == KORALI_NUMBER)  fprintf(stderr, "[Korali] Error: Passing non-numeric value to numeric option: %s.\n", fullOption.c_str());
+   if (type == KORALI_ARRAY)   fprintf(stderr, "[Korali] Error: Passing non-array value to array option: %s.\n", fullOption.c_str());
+   if (type == KORALI_BOOLEAN) fprintf(stderr, "[Korali] Error: Passing non-boolean value to boolean option: %s.\n", fullOption.c_str());
    exit(-1);
   }
  }

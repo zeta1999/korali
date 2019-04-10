@@ -35,12 +35,10 @@ void Korali::Solver::CMAES::setConfiguration(json& js)
  _sigmaCumulationFactor = consume(js, { "Sigma Cumulation Factor" }, KORALI_NUMBER, std::to_string(-1));
  _dampFactor = consume(js, { "Damp Factor" }, KORALI_NUMBER, std::to_string(-1));
 
-
  _mu = ceil(_s / 2);
  _mu = consume(js, { "Mu", "Value" }, KORALI_NUMBER, std::to_string(_mu));
  _muType = consume(js, { "Mu", "Type" }, KORALI_STRING, "Logarithmic");
  _muCovariance = consume(js, { "Mu", "Covariance" }, KORALI_NUMBER, std::to_string(-1));
-
 
  _covarianceEigensystemEvaluationFrequency = consume(js, { "Covariance Matrix", "Eigenvalue Evaluation Frequency" }, KORALI_NUMBER, std::to_string(0));
  _covarianceMatrixLearningRate = consume(js, { "Covariance Matrix", "LearningRate" }, KORALI_NUMBER, std::to_string(-1));
