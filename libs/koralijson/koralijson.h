@@ -19,18 +19,24 @@ static bool isEmpty(nlohmann::json& js)
 
  if (js.is_primitive()) return false;
 
- for (auto& el : js.items())
+ if (js.is_array())
  {
-  bool elEmpty = isEmpty(el.value());
-  if (elEmpty)
-   {
-    if (el.value().is_array())
-    {
-     el.value().clear();
-     js.erase(el.key());
-    }
-   }
-  empty = empty && elEmpty;
+  for (size_t i = 0; i < js.size(); i++)
+  {
+   bool elEmpty = isEmpty(js[i]);
+   if (elEmpty) js.erase(i--);
+   empty = empty && elEmpty;
+  }
+ }
+
+ if (js.is_object())
+ {
+  for (auto& el : js.items())
+  {
+   bool elEmpty = isEmpty(el.value());
+   if (elEmpty) js.erase(el.key());
+   empty = empty && elEmpty;
+  }
  }
 
  return empty;
