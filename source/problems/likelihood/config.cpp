@@ -11,28 +11,19 @@ json Korali::Problem::Likelihood::getConfiguration()
 
 void Korali::Problem::Likelihood::setConfiguration(json js)
 {
- _referenceData = NULL;
- _referenceDataSize = 0;
-
  this->Korali::Problem::Base::setConfiguration(js);
 
- if (js.find("Reference Data") != js.end()) if (js["Reference Data"].is_array())
- {
-  auto ref = js["Reference Data"];
-  _referenceDataSize = ref.size();
-  _referenceData = (double*) calloc (_referenceDataSize, sizeof(double));
-  for (size_t i = 0; i < _referenceDataSize; i++) _referenceData[i] = ref[i];
- }
-
- bool correctModel = false;
- if (js.find("Model") != js.end()) if (js["Model"].is_string())
- { if (js["Model"] == "Multiple") correctModel = true; }
-
- if (correctModel == false)
+ std::string model = consume(js, { "Model" }, KORALI_STRING);
+ if (model != "Multiple")
  {
   fprintf(stderr, "[Korali] Error: Incorrect model for the Likelihood problem.\n");
   exit(-1);
  }
+
+ auto ref = consume(js, { "Reference Data"}, KORALI_ARRAY);
+ _referenceDataSize = ref.size();
+ _referenceData = (double*) calloc (_referenceDataSize, sizeof(double));
+ for (size_t i = 0; i < _referenceDataSize; i++) _referenceData[i] = ref[i];
 
  if (_referenceDataSize == 0)
  {

@@ -10,7 +10,7 @@ namespace Korali
 
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-enum jsonType { KORALI_STRING, KORALI_NUMBER};
+enum jsonType { KORALI_STRING, KORALI_NUMBER, KORALI_ARRAY};
 
 static bool isDefined(nlohmann::json js, std::vector<std::string> settings)
 {
@@ -53,6 +53,7 @@ static nlohmann::json consume(nlohmann::json& js, std::vector<std::string> setti
   bool isCorrect = false;
   if (type == KORALI_STRING && (*ptr)[settings[sz-1]].is_string()) isCorrect = true;
   if (type == KORALI_NUMBER && (*ptr)[settings[sz-1]].is_number()) isCorrect = true;
+  if (type == KORALI_ARRAY && (*ptr)[settings[sz-1]].is_array()) isCorrect = true;
 
   if (isCorrect)
   {
@@ -65,6 +66,7 @@ static nlohmann::json consume(nlohmann::json& js, std::vector<std::string> setti
   {
    if (type == KORALI_STRING) fprintf(stderr, "[Korali] Error: Passing non-string value to string-type option: %s.\n", fullOption.c_str());
    if (type == KORALI_NUMBER) fprintf(stderr, "[Korali] Error: Passing non-numeric value to numeric option: %s.\n", fullOption.c_str());
+   if (type == KORALI_ARRAY)  fprintf(stderr, "[Korali] Error: Passing non-array value to array option: %s.\n", fullOption.c_str());
    exit(-1);
   }
  }

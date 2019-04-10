@@ -10,15 +10,12 @@ json Korali::Problem::Direct::getConfiguration()
 
 void Korali::Problem::Direct::setConfiguration(json js)
 {
-	this->Korali::Problem::Base::setConfiguration(js);
+ this->Korali::Problem::Base::setConfiguration(js);
 
- bool correctModel = false;
- if (js.find("Model") != js.end()) if (js["Model"].is_string())
- { if (js["Model"] == "Single") correctModel = true; }
-
- if (correctModel == false)
+ std::string model = consume(js, { "Model" }, KORALI_STRING);
+ if (model != "Single")
  {
-	 fprintf(stderr, "[Korali] Error: Incorrect model for the Direct Evaluation problem.\n");
-	 exit(-1);
+  fprintf(stderr, "[Korali] Error: Incorrect model for the Direct Evaluation problem.\n");
+  exit(-1);
  }
 }
