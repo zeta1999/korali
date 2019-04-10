@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
  korali["Parameters"][3]["Maximum"] = 20.0;
 
  korali["Problem"]["Objective"] = "Posterior";
- for (int i = 0; i < p.nPoints; i++) korali["Problem"]["Reference Data"][i] = p.refTemp[i];
+ for (size_t i = 0; i < p.nPoints; i++) korali["Problem"]["Reference Data"][i] = p.refTemp[i];
 
  korali["Solver"]["Method"] = "TMCMC";
  korali["Solver"]["Covariance Scaling"] = 0.02;

@@ -20,7 +20,7 @@
 #include "conduits/single/single.h"
 #include "conduits/upcxx/upcxx.h"
 
-#include "json/json.hpp"
+#include "koralijson/koralijson.h"
 
 enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
 
@@ -53,7 +53,6 @@ class Engine {
  Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _config["Problem"]["Model"] = "Manifold"; }
 
  void run();
- void initialize();
 
  size_t N; // Parameter Count
  size_t _statisticalParameterCount;
@@ -69,9 +68,6 @@ class Engine {
 };
 
 extern Engine* _k;
-extern bool isArray(nlohmann::json js, std::vector<std::string> settings);
-extern bool isDefined(nlohmann::json js, std::vector<std::string> settings);
-extern nlohmann::json consumeString(nlohmann::json& js, std::vector<std::string> settings);
 
 } // namespace Korali
 

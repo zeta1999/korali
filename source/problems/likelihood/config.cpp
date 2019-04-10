@@ -18,10 +18,10 @@ void Korali::Problem::Likelihood::setConfiguration(json js)
 
  if (js.find("Reference Data") != js.end()) if (js["Reference Data"].is_array())
  {
-	 auto ref = js["Reference Data"];
-	 _referenceDataSize = ref.size();
-	 _referenceData = (double*) calloc (_referenceDataSize, sizeof(double));
-	 for (int i = 0; i < _referenceDataSize; i++) _referenceData[i] = ref[i];
+  auto ref = js["Reference Data"];
+  _referenceDataSize = ref.size();
+  _referenceData = (double*) calloc (_referenceDataSize, sizeof(double));
+  for (size_t i = 0; i < _referenceDataSize; i++) _referenceData[i] = ref[i];
  }
 
  bool correctModel = false;
@@ -30,13 +30,13 @@ void Korali::Problem::Likelihood::setConfiguration(json js)
 
  if (correctModel == false)
  {
-	 fprintf(stderr, "[Korali] Error: Incorrect model for the Likelihood problem.\n");
-	 exit(-1);
+  fprintf(stderr, "[Korali] Error: Incorrect model for the Likelihood problem.\n");
+  exit(-1);
  }
 
  if (_referenceDataSize == 0)
  {
-	 fprintf(stderr, "[Korali] Error: No Reference Data set for Likelihood.\n");
-	 exit(-1);
+  fprintf(stderr, "[Korali] Error: No Reference Data set for Likelihood.\n");
+  exit(-1);
  }
 }

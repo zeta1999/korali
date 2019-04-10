@@ -11,7 +11,6 @@ class Uniform : public Korali::Parameter::Base
  private:
 
  public:
-  Uniform();
 
   double getDensity(double x);
   double getDensityLog(double x);

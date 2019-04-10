@@ -457,7 +457,7 @@ void Korali::Solver::CMAES::updateEigensystem(int flgforce)
 {
  if(flgforce == 0 && flgEigensysIsUptodate) return;
 
- eigen( _k->N, C, rgD, B);
+ eigen(_k->N, C, rgD, B);
 
  /* find largest and smallest eigenvalue, they are supposed to be sorted anyway */
  minEW = doubleRangeMin(rgD, _k->N);
@@ -468,12 +468,12 @@ void Korali::Solver::CMAES::updateEigensystem(int flgforce)
  flgEigensysIsUptodate = true;
 }
 
-void Korali::Solver::CMAES::eigen( int size,  double **C, double *diag, double **Q)
+void Korali::Solver::CMAES::eigen(size_t size,  double **C, double *diag, double **Q)
 {
  double* data = (double*) malloc (sizeof(double) * size * size);
 
- for (int i = 0; i <  size; i++)
- for (int j = 0; j <= i; j++)
+ for (size_t i = 0; i <  size; i++)
+ for (size_t j = 0; j <= i; j++)
  {
   data[i*size + j] = C[i][j];
   data[j*size + i] = C[i][j];
@@ -487,13 +487,13 @@ void Korali::Solver::CMAES::eigen( int size,  double **C, double *diag, double *
  gsl_eigen_symmv_free (w);
  gsl_eigen_symmv_sort (eval, evec, GSL_EIGEN_SORT_ABS_ASC);
 
- for (int i = 0; i < size; i++)
+ for (size_t i = 0; i < size; i++)
  {
   gsl_vector_view evec_i = gsl_matrix_column (evec, i);
-  for (int j = 0; j < size; j++) Q[j][i] =  -gsl_vector_get (&evec_i.vector, j);
+  for (size_t j = 0; j < size; j++) Q[j][i] =  -gsl_vector_get (&evec_i.vector, j);
  }
 
- for (int i = 0; i < size; i++) diag[i] = gsl_vector_get (eval, i);
+ for (size_t i = 0; i < size; i++) diag[i] = gsl_vector_get (eval, i);
 
  gsl_vector_free (eval);
  gsl_matrix_free (evec);

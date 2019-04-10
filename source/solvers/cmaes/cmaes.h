@@ -100,7 +100,7 @@ class CMAES : public Korali::Solver::Base
  void adaptC2(int hsig);
  double function_value_difference();
  void updateEigensystem(int flgforce);
- void eigen( int N,  double **C, double *diag, double **Q);
+ void eigen(size_t N,  double **C, double *diag, double **Q);
  int maxIdx(const double *rgd, int len);
  int minIdx(const double *rgd, int len);
  void sorted_index(const double *rgFunVal, int *iindex, int n);

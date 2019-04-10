@@ -119,18 +119,18 @@ json Korali::Solver::CMAES::getState()
  js["EigenSystemUpToDate"] = flgEigensysIsUptodate;
  js["EvaluationCount"] = countevals;
 
- for (int i = 0; i < _mu; i++) js["MuWeights"] += _muWeights[i];
- for (int i = 0; i < _k->N; i++) js["CurrentMeanVector"] += rgxmean[i];
- for (int i = 0; i < _k->N; i++) js["PreviousMeanVector"] += rgxold[i];
- for (int i = 0; i < _k->N; i++) js["BestEverVector"] += rgxbestever[i];
- for (int i = 0; i < _k->N; i++) js["CurrentBestVector"] += curBest[i];
- for (int i = 0; i < _k->N; i++) js["Index"] += index[i];
- for (int i = 0; i < _k->N; i++) js["AxisLengths"] += rgD[i];
- for (int i = 0; i < _k->N; i++) js["CumulativeCovariance"] += rgpc[i];
- for (int i = 0; i < _k->N; i++) js["FunctionValues"] += rgFuncValue[i];
+ for (size_t i = 0; i < _mu; i++) js["MuWeights"] += _muWeights[i];
+ for (size_t i = 0; i < _k->N; i++) js["CurrentMeanVector"] += rgxmean[i];
+ for (size_t i = 0; i < _k->N; i++) js["PreviousMeanVector"] += rgxold[i];
+ for (size_t i = 0; i < _k->N; i++) js["BestEverVector"] += rgxbestever[i];
+ for (size_t i = 0; i < _k->N; i++) js["CurrentBestVector"] += curBest[i];
+ for (size_t i = 0; i < _k->N; i++) js["Index"] += index[i];
+ for (size_t i = 0; i < _k->N; i++) js["AxisLengths"] += rgD[i];
+ for (size_t i = 0; i < _k->N; i++) js["CumulativeCovariance"] += rgpc[i];
+ for (size_t i = 0; i < _k->N; i++) js["FunctionValues"] += rgFuncValue[i];
 
- for (int i = 0; i < _s; i++) for (int j = 0; j < _k->N; j++) js["Samples"][i] += _samplePopulation[i*_k->N + j];
- for (int i = 0; i < _s; i++) js["SampleFitness"] += _fitnessVector[i];
+ for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++) js["Samples"][i] += _samplePopulation[i*_k->N + j];
+ for (size_t i = 0; i < _s; i++) js["SampleFitness"] += _fitnessVector[i];
 
  return js;
 }
@@ -151,18 +151,18 @@ void Korali::Solver::CMAES::setState(json js)
   flgEigensysIsUptodate = js["EigenSystemUpToDate"];
   countevals            = js["EvaluationCount"];
 
-  for (int i = 0; i < _mu; i++) _muWeights[i] = js["MuWeights"][i];
-  for (int i = 0; i < _k->N; i++) rgxmean[i]      = js["CurrentMeanVector"][i];
-  for (int i = 0; i < _k->N; i++) rgxold[i]       = js["PreviousMeanVector"][i];
-  for (int i = 0; i < _k->N; i++) rgxbestever[i]  = js["BestEverVector"][i];
-  for (int i = 0; i < _k->N; i++) curBest[i]      = js["CurrentBestVector"][i];
-  for (int i = 0; i < _k->N; i++) index[i]        = js["Index"][i];
-  for (int i = 0; i < _k->N; i++) rgD[i]          = js["AxisLengths"][i];
-  for (int i = 0; i < _k->N; i++) rgpc[i]         = js["CumulativeCovariance"][i];
-  for (int i = 0; i < _k->N; i++) rgFuncValue[i]  = js["FunctionValues"][i];
-  for (int i = 0; i < _k->N; i++) for (int j = 0; j < _k->N; j++) C[i][j] = js["CovarianceMatrix"][i][j];
-  for (int i = 0; i < _k->N; i++) for (int j = 0; j < _k->N; j++) B[i][j] = js["EigenMatrix"][i][j];
+  for (size_t i = 0; i < _mu; i++) _muWeights[i] = js["MuWeights"][i];
+  for (size_t i = 0; i < _k->N; i++) rgxmean[i]      = js["CurrentMeanVector"][i];
+  for (size_t i = 0; i < _k->N; i++) rgxold[i]       = js["PreviousMeanVector"][i];
+  for (size_t i = 0; i < _k->N; i++) rgxbestever[i]  = js["BestEverVector"][i];
+  for (size_t i = 0; i < _k->N; i++) curBest[i]      = js["CurrentBestVector"][i];
+  for (size_t i = 0; i < _k->N; i++) index[i]        = js["Index"][i];
+  for (size_t i = 0; i < _k->N; i++) rgD[i]          = js["AxisLengths"][i];
+  for (size_t i = 0; i < _k->N; i++) rgpc[i]         = js["CumulativeCovariance"][i];
+  for (size_t i = 0; i < _k->N; i++) rgFuncValue[i]  = js["FunctionValues"][i];
+  for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) C[i][j] = js["CovarianceMatrix"][i][j];
+  for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) B[i][j] = js["EigenMatrix"][i][j];
 
-  for (int i = 0; i < _s; i++) for (int j = 0; j < _k->N; j++) _samplePopulation[i*_k->N + j] = js["Samples"][i][j];
-  for (int i = 0; i < _s; i++) _fitnessVector[i] = js["SampleFitness"][i];
+  for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++) _samplePopulation[i*_k->N + j] = js["Samples"][i][j];
+  for (size_t i = 0; i < _s; i++) _fitnessVector[i] = js["SampleFitness"][i];
 }

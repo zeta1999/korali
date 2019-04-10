@@ -1,9 +1,5 @@
 #include "korali.h"
 
-Korali::Parameter::Uniform::Uniform() : Korali::Parameter::Base::Base()
-{
-};
-
 double Korali::Parameter::Uniform::getDensity(double x)
 {
  return gsl_ran_flat_pdf(x, _lowerBound, _upperBound);
