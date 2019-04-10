@@ -1,22 +1,42 @@
 #include "korali.h"
 
-Korali::Parameter::Uniform::Uniform() : Korali::Parameter::Base::Base()
-{
-};
+using namespace Korali::Parameter;
 
-double Korali::Parameter::Uniform::getDensity(double x)
+Uniform::Uniform() : Korali::Parameter::Base::Base(){}
+
+Uniform::Uniform(double lowerBound, double upperBound) : Uniform(lowerBound, upperBound, 0xC0FFEE){}
+
+Uniform::Uniform(double lowerBound, double upperBound, size_t seed) : Korali::Parameter::Base::Base()
+{
+   _lowerBound = lowerBound;
+   _upperBound = upperBound;
+  this->Korali::Parameter::Base::initialize(seed);
+  _aux = -gsl_sf_log(_upperBound-_lowerBound);
+}
+
+
+
+
+
+double Uniform::getDensity(double x)
 {
  return gsl_ran_flat_pdf(x, _lowerBound, _upperBound);
 }
 
-double Korali::Parameter::Uniform::getDensityLog(double x)
+double Uniform::getDensityLog(double x)
 {
  if (x >= _lowerBound && x <= _upperBound)
-  return -log(_upperBound-_lowerBound);
- return -INFINITY;
+  return _aux;
+ return -GSL_NEGINF;
 }
 
-double Korali::Parameter::Uniform::getRandomNumber()
+double Uniform::getRandomNumber()
 {
  return gsl_ran_flat(_range, _lowerBound, _upperBound);
+}
+
+
+void Uniform::printDetails()
+{
+  printf("Uniform(%.3g,%.3g)", _lowerBound, _upperBound);
 }

@@ -9,13 +9,19 @@ namespace Korali::Parameter
 class Uniform : public Korali::Parameter::Base
 {
  private:
-
+   double _aux;
+   
  public:
+
   Uniform();
+  Uniform(double _lowerBound, double _upperBound);
+  Uniform(double _lowerBound, double _upperBound, size_t seed);
 
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
+
+  void printDetails() override;
 
   // Serialization Methods
   nlohmann::json getConfiguration();

@@ -1,22 +1,37 @@
 #include "korali.h"
 
-double Korali::Parameter::Gaussian::getDensity(double x)
+using namespace Korali::Parameter;
+
+
+Gaussian::Gaussian() : _mean(1.), _sigma(1.) {}
+
+Gaussian::Gaussian(double mean, double sigma) : Gaussian(mean, sigma, 0xC0FFEE){}
+
+Gaussian::Gaussian(double mean, double sigma, size_t seed) : _mean(mean), _sigma(sigma)
+{
+  this->Korali::Parameter::Base::initialize(seed);
+  _aux = -0.5*gsl_sf_log(2*M_PI) - gsl_sf_log(_sigma);
+}
+
+
+double Gaussian::getDensity(double x)
 {
  return gsl_ran_gaussian_pdf(x - _mean, _sigma);
 }
 
-double Korali::Parameter::Gaussian::getDensityLog(double x)
+double Gaussian::getDensityLog(double x)
 {
  // Optimize by pre-calculating constants and using multiplication instead of power.
- return -0.5*log(2*M_PI) - log(_sigma) - 0.5*pow((x-_mean)/_sigma, 2);
+ return _aux - 0.5*gsl_sf_pow_int( (x-_mean)/_sigma, 2 );
 }
 
-double Korali::Parameter::Gaussian::getRandomNumber()
+double Gaussian::getRandomNumber()
 {
  return _mean + gsl_ran_gaussian(_range, _sigma);
 }
 
-double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, double* x, double* u)
+
+double Gaussian::logLikelihood(double sigma, int nData, double* x, double* u)
 {
  if (nData == 0)
  {
@@ -40,3 +55,10 @@ double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, doubl
  return res;
 }
 
+
+
+
+void Gaussian::printDetails()
+{
+  printf("Gaussian(%.3g,%.3g)", _mean, _sigma);
+}

@@ -10,8 +10,8 @@ json Korali::Parameter::Gaussian::getConfiguration()
 
 void Korali::Parameter::Gaussian::setConfiguration(json js)
 {
-	_mean = 0.0;
-	_sigma = 1.0;
+  _mean = 0.0;
+  _sigma = 1.0;
 
   if (js.find("Distribution") != js.end())
   {

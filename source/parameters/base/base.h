@@ -30,6 +30,7 @@ class Base
 
  void initialize(int seed);
 
+ virtual void printDetails() = 0;
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
  virtual double getRandomNumber() = 0;
