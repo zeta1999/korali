@@ -9,6 +9,6 @@ json Korali::Problem::Base::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Base::setConfiguration(json js)
+void Korali::Problem::Base::setConfiguration(json& js)
 {
 }

@@ -8,7 +8,7 @@ json Korali::Problem::Direct::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Direct::setConfiguration(json js)
+void Korali::Problem::Direct::setConfiguration(json& js)
 {
  this->Korali::Problem::Base::setConfiguration(js);
 

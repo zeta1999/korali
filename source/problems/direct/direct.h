@@ -14,7 +14,7 @@ class Direct : public Korali::Problem::Base
 
  // Serialization Methods
  nlohmann::json getConfiguration();
- void setConfiguration(nlohmann::json js);
+ void setConfiguration(nlohmann::json& js);
 };
 
 } // namespace Korali

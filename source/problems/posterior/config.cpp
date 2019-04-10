@@ -8,7 +8,7 @@ json Korali::Problem::Posterior::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Posterior::setConfiguration(json js)
+void Korali::Problem::Posterior::setConfiguration(json& js)
 {
   // Configuration goes here.
 

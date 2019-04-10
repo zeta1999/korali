@@ -9,7 +9,7 @@ json Korali::Problem::Likelihood::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Likelihood::setConfiguration(json js)
+void Korali::Problem::Likelihood::setConfiguration(json& js)
 {
  this->Korali::Problem::Base::setConfiguration(js);
 
