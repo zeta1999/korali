@@ -28,64 +28,32 @@ json Korali::Solver::CMAES::getConfiguration()
 
 void Korali::Solver::CMAES::setConfiguration(json& js)
 {
- _mu = 0;
- _muType = "Logarithmic";
- _muCovariance = -1;
- _diagonalCovarianceMatrixEvalFrequency = 0;
- _sigmaCumulationFactor = -1;
- _dampFactor = -1;
- _cumulativeCovariance = -1;
- _covarianceMatrixLearningRate = -1;
- _maxGens = 200;
- _currentGeneration = 0;
-
- _terminationReason[0] = '\0';
-
  this->Korali::Solver::Base::setConfiguration(js);
 
-  if (js.find("currentGeneration") != js.end()) if (js["currentGeneration"].is_number())
-  { _currentGeneration = js["currentGeneration"]; js.erase("currentGeneration"); }
+ _s = consume(js, { "Lambda" }, KORALI_NUMBER);
+ _currentGeneration = consume(js, { "Current Generation" }, KORALI_NUMBER, std::to_string(0));
+ _sigmaCumulationFactor = consume(js, { "Sigma Cumulation Factor" }, KORALI_NUMBER, std::to_string(-1));
+ _dampFactor = consume(js, { "Damp Factor" }, KORALI_NUMBER, std::to_string(-1));
 
-  if (js.find("Lambda") != js.end()) if (js["Lambda"].is_number())
-  { _s = js["Lambda"]; js.erase("Lambda"); }
 
-  if (js.find("dampFactor") != js.end()) if (js["dampFactor"].is_number())
-  { _dampFactor = js["dampFactor"]; js.erase("dampFactor"); }
+ _mu = ceil(_s / 2);
+ _mu = consume(js, { "Mu", "Value" }, KORALI_NUMBER, std::to_string(_mu));
+ _muType = consume(js, { "Mu", "Type" }, KORALI_STRING, "Logarithmic");
+ _muCovariance = consume(js, { "Mu", "Covariance" }, KORALI_NUMBER, std::to_string(-1));
 
-  if (js.find("sigmaCumulationFactor") != js.end()) if (js["sigmaCumulationFactor"].is_number())
-  { _sigmaCumulationFactor = js["sigmaCumulationFactor"]; js.erase("sigmaCumulationFactor"); }
 
-  if (js.find("cumulativeCovariance") != js.end()) if (js["cumulativeCovariance"].is_number())
-  { _cumulativeCovariance = js["cumulativeCovariance"]; js.erase("cumulativeCovariance"); }
+ _covarianceEigensystemEvaluationFrequency = consume(js, { "Covariance Matrix", "Eigenvalue Evaluation Frequency" }, KORALI_NUMBER, std::to_string(0));
+ _covarianceMatrixLearningRate = consume(js, { "Covariance Matrix", "LearningRate" }, KORALI_NUMBER, std::to_string(-1));
+ _cumulativeCovariance = consume(js, { "Covariance Matrix", "Cumulative Covariance" }, KORALI_NUMBER, std::to_string(-1));
+ _covarianceMatrixLearningRate = consume(js, { "Covariance Matrix", "Learning Rate" }, KORALI_NUMBER, std::to_string(-1));
 
-  if (js.find("Mu") != js.end())
-  {
-    json mu = js["Mu"];
-    if (mu.find("Value") != mu.end()) if (mu["Value"].is_number())
-    { _mu = mu["Value"]; mu.erase("Value"); }
-   if (mu.find("Type") != mu.end()) if (mu["Type"].is_string())
-    { _muType = mu["Type"]; mu.erase("Type"); }
-   if (mu.find("Covariance") != mu.end()) if (mu["Covariance"].is_number())
-   { _muCovariance = mu["Covariance"]; mu.erase("Covariance"); }
-  }
-
-  if (js.find("CovarianceMatrix") != js.end())
-  {
-    json cov = js["CovarianceMatrix"];
-   if (cov.find("DiagonalEvaluationFrequency") != cov.end()) if (cov["DiagonalEvaluationFrequency"].is_number())
-    { _diagonalCovarianceMatrixEvalFrequency = cov["DiagonalEvaluationFrequency"]; cov.erase("DiagonalEvaluationFrequency"); }
-   if (cov.find("EigenEvaluationFrequency") != cov.end()) if (cov["EigenEvaluationFrequency"].is_number())
-   { _diagonalCovarianceMatrixEvalFrequency = cov["EigenEvaluationFrequency"]; cov.erase("EigenEvaluationFrequency"); }
-   if (cov.find("LearningRate") != cov.end()) if (cov["LearningRate"].is_number())
-   { _covarianceMatrixLearningRate = cov["LearningRate"]; cov.erase("LearningRate"); }
-  }
-
-  _maxFitnessEvaluations = consume(js, { "Termination Criteria", "MaxModelEvaluations" }, KORALI_NUMBER, std::to_string(std::numeric_limits<size_t>::max()));
-  _stopFitnessEvalThreshold = consume(js, { "Termination Criteria", "StopFitnessEvalThreshold" }, KORALI_NUMBER, std::to_string(std::numeric_limits<double>::min()));
-  _stopFitnessDiffThreshold = consume(js, { "Termination Criteria", "StopFitnessDiffThreshold" }, KORALI_NUMBER, std::to_string(1e-9));
-  _stopMinDeltaX = consume(js, { "Termination Criteria", "StopMinDeltaX" }, KORALI_NUMBER, std::to_string(0.0));
-  _stopMinFitness = consume(js, { "Termination Criteria", "StopMinFitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
-
+ _maxGens = consume(js, { "Termination Criteria", "Max Generations" }, KORALI_NUMBER, std::to_string(200));
+ _stopMinFitness = consume(js, { "Termination Criteria", "StopMinFitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
+ _maxFitnessEvaluations = consume(js, { "Termination Criteria", "MaxModelEvaluations" }, KORALI_NUMBER, std::to_string(std::numeric_limits<size_t>::max()));
+ _stopFitnessEvalThreshold = consume(js, { "Termination Criteria", "StopFitnessEvalThreshold" }, KORALI_NUMBER, std::to_string(std::numeric_limits<double>::min()));
+ _stopFitnessDiffThreshold = consume(js, { "Termination Criteria", "StopFitnessDiffThreshold" }, KORALI_NUMBER, std::to_string(1e-9));
+ _stopMinDeltaX = consume(js, { "Termination Criteria", "StopMinDeltaX" }, KORALI_NUMBER, std::to_string(0.0));
+ _stopMinFitness = consume(js, { "Termination Criteria", "StopMinFitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
 }
 
 json Korali::Solver::CMAES::getState()
