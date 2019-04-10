@@ -41,7 +41,6 @@ void Korali::Engine::setConfiguration(json js)
  }
 
  if (tmp.size() == 0) { fprintf(stderr, "[Korali] Error: Incorrect or undefined parameters.\n"); exit(-1); }
- js.erase("Parameters");
 
  _statisticalParameterCount = 0;
  _computationalParameterCount = 0;
@@ -57,7 +56,6 @@ void Korali::Engine::setConfiguration(json js)
  if (pString == "Posterior")         { _problem = new Korali::Problem::Posterior();  foundProblem = true; }
  if (foundProblem == false) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Problem."); exit(-1); }
  _problem->setConfiguration(js["Problem"]);
- js.erase("Problem");
 
  // Configure Conduit
  std::string conduitString = "Sequential";
@@ -102,10 +100,7 @@ void Korali::Engine::setConfiguration(json js)
  }
 
  if (isDefined(js, { "Conduit" }) )
- {
   _conduit->setConfiguration(js["Conduit"]);
-  js.erase("Conduit");
- }
 
  // Configure Solver
  _solver = NULL;
@@ -114,9 +109,8 @@ void Korali::Engine::setConfiguration(json js)
  if (sString == "TMCMC")  _solver = new Korali::Solver::TMCMC();
  if (_solver == NULL) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Solver."); exit(-1); }
  _solver->setConfiguration(js["Solver"]);
- js.erase("Solver");
 
- if (js.size() > 0)
+ if (isEmpty(js) == false)
  {
   fprintf(stderr, "[Korali] Error: Unrecognized Settings for Korali:\n");
   fprintf(stderr, "%s\n", js.dump(2).c_str());

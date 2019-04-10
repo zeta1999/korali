@@ -11,7 +11,6 @@ json Korali::Solver::Base::getConfiguration()
 
 void Korali::Solver::Base::setConfiguration(json js)
 {
-
 }
 
 json Korali::Solver::Base::getState()

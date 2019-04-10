@@ -8,11 +8,10 @@ json Korali::Parameter::Gamma::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Gamma::setConfiguration(json js)
+void Korali::Parameter::Gamma::setConfiguration(json& js)
 {
  this->Korali::Parameter::Base::setConfiguration(js);
 
  _rate  = consume(js, { "Rate" }, KORALI_NUMBER);
  _shape = consume(js, { "Shape" }, KORALI_NUMBER);
-
 }

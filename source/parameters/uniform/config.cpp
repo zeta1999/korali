@@ -8,7 +8,9 @@ json Korali::Parameter::Uniform::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Uniform::setConfiguration(json js)
+void Korali::Parameter::Uniform::setConfiguration(json& js)
 {
  this->Korali::Parameter::Base::setConfiguration(js);
+
+ // Configuration goes here
 }

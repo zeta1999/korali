@@ -8,7 +8,7 @@ json Korali::Parameter::Exponential::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Exponential::setConfiguration(json js)
+void Korali::Parameter::Exponential::setConfiguration(json& js)
 {
  this->Korali::Parameter::Base::setConfiguration(js);
 

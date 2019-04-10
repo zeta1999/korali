@@ -8,7 +8,7 @@ json Korali::Parameter::Base::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Base::setConfiguration(json js)
+void Korali::Parameter::Base::setConfiguration(json& js)
 {
  _name = consume(js, { "Name" }, KORALI_STRING, "Unnamed Parameter");
 

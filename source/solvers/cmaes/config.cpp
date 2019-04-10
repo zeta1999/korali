@@ -28,13 +28,6 @@ json Korali::Solver::CMAES::getConfiguration()
 
 void Korali::Solver::CMAES::setConfiguration(json js)
 {
- _maxFitnessEvaluations = std::numeric_limits<size_t>::max();
-
- _stopFitnessEvalThreshold = std::numeric_limits<double>::min();
- _stopFitnessDiffThreshold = 1e-12;
- _stopMinDeltaX = 0.0;
- _stopMinFitness = -std::numeric_limits<double>::max();
-
  _mu = 0;
  _muType = "Logarithmic";
  _muCovariance = -1;
@@ -48,7 +41,7 @@ void Korali::Solver::CMAES::setConfiguration(json js)
 
  _terminationReason[0] = '\0';
 
-  this->Korali::Solver::Base::setConfiguration(js);
+ this->Korali::Solver::Base::setConfiguration(js);
 
   if (js.find("currentGeneration") != js.end()) if (js["currentGeneration"].is_number())
   { _currentGeneration = js["currentGeneration"]; js.erase("currentGeneration"); }
@@ -87,20 +80,12 @@ void Korali::Solver::CMAES::setConfiguration(json js)
    { _covarianceMatrixLearningRate = cov["LearningRate"]; cov.erase("LearningRate"); }
   }
 
-  if (js.find("TerminationCriteria") != js.end())
-  {
-    json term = js["TerminationCriteria"];
-   if (term.find("MaxFitnessEvaluations") != term.end()) if (term["MaxFitnessEvaluations"].is_number())
-    { _maxFitnessEvaluations = term["MaxFitnessEvaluations"]; term.erase("MaxFitnessEvaluations"); }
-   if (term.find("stopFitnessEvalThreshold") != term.end()) if (term["stopFitnessEvalThreshold"].is_number())
-   { _stopFitnessEvalThreshold = term["stopFitnessEvalThreshold"]; term.erase("stopFitnessEvalThreshold"); }
-   if (term.find("stopFitnessDiffThreshold") != term.end()) if (term["stopFitnessDiffThreshold"].is_number())
-   { _stopFitnessDiffThreshold = term["stopFitnessDiffThreshold"]; term.erase("stopFitnessDiffThreshold"); }
-   if (term.find("stopMinDeltaX") != term.end()) if (term["stopMinDeltaX"].is_number())
-   { _stopMinDeltaX = term["stopMinDeltaX"]; term.erase("stopMinDeltaX"); }
-   if (term.find("stopMinFitness") != term.end()) if (term["stopMinFitness"].is_number())
-   { _stopMinFitness = term["stopMinFitness"]; term.erase("stopMinFitness"); }
-  }
+  _maxFitnessEvaluations = consume(js, { "Termination Criteria", "MaxModelEvaluations" }, KORALI_NUMBER, std::to_string(std::numeric_limits<size_t>::max()));
+  _stopFitnessEvalThreshold = consume(js, { "Termination Criteria", "StopFitnessEvalThreshold" }, KORALI_NUMBER, std::to_string(std::numeric_limits<double>::min()));
+  _stopFitnessDiffThreshold = consume(js, { "Termination Criteria", "StopFitnessDiffThreshold" }, KORALI_NUMBER, std::to_string(1e-9));
+  _stopMinDeltaX = consume(js, { "Termination Criteria", "StopMinDeltaX" }, KORALI_NUMBER, std::to_string(0.0));
+  _stopMinFitness = consume(js, { "Termination Criteria", "StopMinFitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
+
 }
 
 json Korali::Solver::CMAES::getState()

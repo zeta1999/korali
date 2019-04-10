@@ -8,7 +8,7 @@ json Korali::Parameter::Gaussian::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Gaussian::setConfiguration(json js)
+void Korali::Parameter::Gaussian::setConfiguration(json& js)
 {
  this->Korali::Parameter::Base::setConfiguration(js);
 

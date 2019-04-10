@@ -4,6 +4,7 @@
 #include "json/json.hpp"
 #include <type_traits>
 #include <vector>
+#include <iostream>
 
 namespace Korali
 {
@@ -11,6 +12,29 @@ namespace Korali
 #pragma GCC diagnostic ignored "-Wunused-function"
 
 enum jsonType { KORALI_STRING, KORALI_NUMBER, KORALI_ARRAY};
+
+static bool isEmpty(nlohmann::json& js)
+{
+ bool empty = true;
+
+ if (js.is_primitive()) return false;
+
+ for (auto& el : js.items())
+ {
+  bool elEmpty = isEmpty(el.value());
+  if (elEmpty)
+   {
+    if (el.value().is_array())
+    {
+     el.value().clear();
+     js.erase(el.key());
+    }
+   }
+  empty = empty && elEmpty;
+ }
+
+ return empty;
+}
 
 static bool isDefined(nlohmann::json js, std::vector<std::string> settings)
 {
