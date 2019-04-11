@@ -7,6 +7,12 @@ Korali::Parameter::Gaussian::Gaussian(nlohmann::json& js, int seed) : Korali::Pa
  setConfiguration(js);
 }
 
+Korali::Parameter::Gaussian::Gaussian(double mean, double sigma, int seed) : Korali::Parameter::Base::Base(seed)
+{
+ _mean = mean;
+ _sigma = sigma;
+}
+
 Korali::Parameter::Gaussian::~Gaussian()
 {
 

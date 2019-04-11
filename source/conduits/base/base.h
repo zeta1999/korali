@@ -10,10 +10,13 @@ namespace Korali::Conduit
 class Base {
  public:
 
- virtual void initialize();
  virtual void run() = 0;
  virtual void evaluateSample(double* sampleArray, size_t sampleId) = 0;
  virtual void checkProgress() = 0;
+
+ // Constructor / Destructor
+ Base(nlohmann::json& js);
+ ~Base();
 
  // Serialization Methods
  virtual nlohmann::json getConfiguration();

@@ -2,9 +2,11 @@
 
 #include "korali.h"
 
-void Korali::Conduit::OpenMP::initialize()
+Korali::Conduit::OpenMP::OpenMP(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
- #pragma omp parallel
+ setConfiguration(js);
+
+#pragma omp parallel
  _threadCount = omp_get_num_threads();
 
  if (_threadCount < 2) { fprintf(stderr, "[Korali] Error: Running Korali's OpenMP Conduit with less than 2 threads is not allowed.\n"); exit(-1); }
@@ -21,6 +23,10 @@ void Korali::Conduit::OpenMP::initialize()
  }
 }
 
+Korali::Conduit::OpenMP::~OpenMP()
+{
+
+}
 
 void Korali::Conduit::OpenMP::workerThread()
 {

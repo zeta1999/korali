@@ -47,12 +47,11 @@ void Korali::Engine::setConfiguration(json js)
  {
   auto dString = consume(js["Parameters"][i], { "Distribution" }, KORALI_STRING);
   bool foundDistribution = false;
-  if (dString == "Uniform")     { tmp.push_back(new Korali::Parameter::Uniform());     foundDistribution = true; }
-  if (dString == "Gaussian")    { tmp.push_back(new Korali::Parameter::Gaussian());    foundDistribution = true; }
-  if (dString == "Gamma")       { tmp.push_back(new Korali::Parameter::Gamma());       foundDistribution = true; }
-  if (dString == "Exponential") { tmp.push_back(new Korali::Parameter::Exponential()); foundDistribution = true; }
+  if (dString == "Uniform")     { tmp.push_back(new Korali::Parameter::Uniform(js["Parameters"][i], _seed++));     foundDistribution = true; }
+  if (dString == "Gaussian")    { tmp.push_back(new Korali::Parameter::Gaussian(js["Parameters"][i], _seed++));    foundDistribution = true; }
+  if (dString == "Gamma")       { tmp.push_back(new Korali::Parameter::Gamma(js["Parameters"][i], _seed++));       foundDistribution = true; }
+  if (dString == "Exponential") { tmp.push_back(new Korali::Parameter::Exponential(js["Parameters"][i], _seed++)); foundDistribution = true; }
   if (foundDistribution == false) { fprintf(stderr, "[Korali] Error: Incorrect or missing distribution for parameter %lu.\n", i); exit(-1); }
-  tmp[i]->setConfiguration(js["Parameters"][i]);
  }
 
  if (tmp.size() == 0) { fprintf(stderr, "[Korali] Error: Incorrect or undefined parameters.\n"); exit(-1); }
@@ -83,12 +82,14 @@ void Korali::Engine::setConfiguration(json js)
  _conduit = NULL;
 
  if (conduitString == "Sequential")
-  _conduit = new Korali::Conduit::Single();
+ {
+  _conduit = new Korali::Conduit::Single(js["Conduit"]);
+ }
 
  if (conduitString == "UPC++")
  {
   #ifdef _KORALI_USE_UPCXX
-   _conduit = new Korali::Conduit::UPCXX();
+   _conduit = new Korali::Conduit::UPCXX(js["Conduit"]);
   #else
    fprintf(stderr, "[Korali] Error: UPC++ conduit is not properly configured.\n");
    fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support UPC++.\n");
@@ -99,7 +100,7 @@ void Korali::Engine::setConfiguration(json js)
  if (conduitString == "OpenMP")
  {
   #ifdef _KORALI_USE_OPENMP
-   _conduit = new Korali::Conduit::OpenMP();
+   _conduit = new Korali::Conduit::OpenMP(js["Conduit"]);
   #else
    fprintf(stderr, "[Korali] Error: OpenMP conduit is not properly configured.\n");
    fprintf(stderr, "[Korali] Reinstall Korali with the proper configuration to support openMP.\n");
@@ -112,9 +113,6 @@ void Korali::Engine::setConfiguration(json js)
    fprintf(stderr, "[Korali] Error: Unrecognized or no conduit ('%s') selected.\n", conduitString.c_str());
    exit(-1);
  }
-
- if (isDefined(js, { "Conduit" }) )
-  _conduit->setConfiguration(js["Conduit"]);
 
  // Configure Solver
  _solver = NULL;

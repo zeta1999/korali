@@ -17,6 +17,7 @@ static bool isEmpty(nlohmann::json& js)
 {
  bool empty = true;
 
+ if (js.is_null()) return true;
  if (js.is_primitive()) return false;
 
  if (js.is_array())

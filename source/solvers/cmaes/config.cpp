@@ -7,9 +7,7 @@ Korali::Solver::CMAES::CMAES(nlohmann::json& js) : Korali::Solver::Base::Base(js
  setConfiguration(js);
 
  // Initializing Gaussian Generator
- _gaussianGenerator = new Parameter::Gaussian();
- _gaussianGenerator->setDistribution(0.0, 1.0);
- _gaussianGenerator->initialize(_k->_seed++);
+ _gaussianGenerator = new Parameter::Gaussian(0.0, 1.0, _k->_seed++);
 
  // Getting sample vector pointer
  _samplePopulation =  (double*) calloc (sizeof(double), _k->N*_s);

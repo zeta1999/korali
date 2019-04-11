@@ -1,12 +1,19 @@
 #include "korali.h"
 
-void Korali::Conduit::Single::initialize()
+
+Korali::Conduit::Single::Single(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
+ setConfiguration(js);
+}
+
+Korali::Conduit::Single::~Single()
+{
+
 }
 
 void Korali::Conduit::Single::run()
 {
-	 _k->_solver->run();
+ _k->_solver->run();
 }
 
 void Korali::Conduit::Single::evaluateSample(double* sampleArray, size_t sampleId)

@@ -9,10 +9,13 @@ namespace Korali::Conduit
 class Single : public Base {
  public:
 
- void initialize();
  void run();
  void evaluateSample(double* sampleArray, size_t sampleId);
  void checkProgress();
+
+ // Constructor / Destructor
+ Single(nlohmann::json& js);
+ ~Single();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

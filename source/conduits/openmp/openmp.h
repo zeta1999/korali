@@ -32,12 +32,15 @@ class OpenMP : public Base
  double* fitnessArrayPointer;
  Lock _queueLock;
 
- void initialize();
  void run();
  void evaluateSample(double* sampleArray, size_t sampleId);
  void checkProgress();
  void supervisorThread();
  void workerThread();
+
+ // Constructor / Destructor
+ OpenMP(nlohmann::json& js);
+ ~OpenMP();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

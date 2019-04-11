@@ -1,6 +1,11 @@
 #include "korali.h"
 
-void Korali::Conduit::Base::initialize()
+Korali::Conduit::Base::Base(nlohmann::json& js)
+{
+ setConfiguration(js);
+}
+
+Korali::Conduit::Base::~Base()
 {
 
 }

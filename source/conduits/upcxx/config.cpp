@@ -18,8 +18,6 @@ void Korali::Conduit::UPCXX::setConfiguration(json js)
   _rankId = 0;
   _rankCount = 1;
   _continueEvaluations = true;
-
- this->Korali::Conduit::Base::setConfiguration(js);
 }
 
 #endif

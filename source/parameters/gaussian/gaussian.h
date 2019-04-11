@@ -21,6 +21,7 @@ class Gaussian : public Korali::Parameter::Base
 
   // Constructor / Destructor
   Gaussian(nlohmann::json& js, int seed);
+  Gaussian(double mean, double sigma, int seed);
   ~Gaussian();
 
   // Serialization Methods

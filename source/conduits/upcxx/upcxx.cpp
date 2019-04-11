@@ -4,8 +4,10 @@
 
 Korali::Conduit::UPCXX* _ux;
 
-void Korali::Conduit::UPCXX::initialize()
+Korali::Conduit::UPCXX::UPCXX(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
+ setConfiguration(js);
+
  _ux = this;
  _rankId = upcxx::rank_me();
  _rankCount = upcxx::rank_n();
@@ -27,6 +29,11 @@ void Korali::Conduit::UPCXX::initialize()
  }
 
  upcxx::barrier();
+}
+
+Korali::Conduit::UPCXX::~UPCXX()
+{
+
 }
 
 void Korali::Conduit::UPCXX::run()

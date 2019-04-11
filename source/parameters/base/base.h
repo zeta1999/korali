@@ -30,7 +30,10 @@ class Base
 
  // Constructor / Destructor
  Base(nlohmann::json& js, int seed);
+ Base(int seed);
  ~Base();
+
+ void initialize(int seed);
 
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
