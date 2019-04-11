@@ -52,7 +52,7 @@ class CMAES : public Korali::Solver::Base
  double _covarianceMatrixLearningRate;
 
  size_t _diagonalCovarianceMatrixEvalFrequency;
- size_t _covarianceEigensystemEvaluationFrequency;
+ size_t _covarianceEigenEvalFreq;
 
  // Stop conditions
  size_t _maxFitnessEvaluations;   // Defines maximum number of fitness evaluations

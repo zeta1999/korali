@@ -77,7 +77,7 @@ void Korali::Solver::CMAES::initialize()
  if (tmpCovarianceRate < 0 || tmpCovarianceRate > 1)  _covarianceMatrixLearningRate = t2;
 
  // Setting eigensystem evaluation Frequency
-   _covarianceEigensystemEvaluationFrequency = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_k->N)/10.0);
+   _covarianceEigenEvalFreq = floor(1.0/(double)_covarianceMatrixLearningRate/((double)_k->N)/10.0);
 
  double trace = 0.0;
  for (size_t i = 0; i < _k->N; ++i)   trace += _k->_parameters[i]->_initialStdDev*_k->_parameters[i]->_initialStdDev;
