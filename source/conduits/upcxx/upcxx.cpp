@@ -4,6 +4,24 @@
 
 Korali::Conduit::UPCXX* _ux;
 
+using json = nlohmann::json;
+
+json Korali::Conduit::UPCXX::getConfiguration()
+{
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+
+ js["Type"] = "UPC++"
+
+ return js;
+}
+
+void Korali::Conduit::UPCXX::setConfiguration(json js)
+{
+  _rankId = 0;
+  _rankCount = 1;
+  _continueEvaluations = true;
+}
+
 Korali::Conduit::UPCXX::UPCXX(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
  setConfiguration(js);
