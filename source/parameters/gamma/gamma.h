@@ -17,6 +17,10 @@ class Gamma : public Korali::Parameter::Base
   double getDensityLog(double x);
   double getRandomNumber();
 
+  // Constructor / Destructor
+  Gamma(nlohmann::json& js, int seed);
+  ~Gamma();
+
   // Serialization Methods
   nlohmann::json getConfiguration();
   void setConfiguration(nlohmann::json& js);

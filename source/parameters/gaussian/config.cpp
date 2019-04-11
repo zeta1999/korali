@@ -2,6 +2,16 @@
 
 using json = nlohmann::json;
 
+Korali::Parameter::Gaussian::Gaussian(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(js, seed)
+{
+ setConfiguration(js);
+}
+
+Korali::Parameter::Gaussian::~Gaussian()
+{
+
+}
+
 json Korali::Parameter::Gaussian::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
@@ -15,8 +25,6 @@ json Korali::Parameter::Gaussian::getConfiguration()
 
 void Korali::Parameter::Gaussian::setConfiguration(json& js)
 {
- this->Korali::Parameter::Base::setConfiguration(js);
-
  _mean  = consume(js, { "Mean" }, KORALI_NUMBER);
  _sigma = consume(js, { "Sigma" }, KORALI_NUMBER);
 }

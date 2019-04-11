@@ -19,6 +19,10 @@ class Gaussian : public Korali::Parameter::Base
   static double logLikelihood(double sigma, int nData, double* x, double* u);
   void setDistribution(double mean, double sigma) { _mean = mean; _sigma = sigma; };
 
+  // Constructor / Destructor
+  Gaussian(nlohmann::json& js, int seed);
+  ~Gaussian();
+
   // Serialization Methods
   nlohmann::json getConfiguration();
   void setConfiguration(nlohmann::json& js);

@@ -16,6 +16,10 @@ class Exponential : public Korali::Parameter::Base
   double getDensityLog(double x);
   double getRandomNumber();
 
+  // Constructor / Destructor
+  Exponential(nlohmann::json& js, int seed);
+  ~Exponential();
+
   // Serialization Methods
   nlohmann::json getConfiguration();
   void setConfiguration(nlohmann::json& js);

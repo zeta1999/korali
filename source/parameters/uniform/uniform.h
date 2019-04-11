@@ -16,6 +16,10 @@ class Uniform : public Korali::Parameter::Base
   double getDensityLog(double x);
   double getRandomNumber();
 
+  // Constructor / Destructor
+  Uniform(nlohmann::json& js, int seed);
+  ~Uniform();
+
   // Serialization Methods
   nlohmann::json getConfiguration();
   void setConfiguration(nlohmann::json& js);

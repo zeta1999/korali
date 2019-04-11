@@ -2,6 +2,19 @@
 
 using json = nlohmann::json;
 
+Korali::Parameter::Base::Base(nlohmann::json& js, int seed)
+{
+ setConfiguration(js);
+
+ _range = gsl_rng_alloc (gsl_rng_default);
+ gsl_rng_set(_range, seed);
+}
+
+Korali::Parameter::Base::~Base()
+{
+
+}
+
 json Korali::Parameter::Base::getConfiguration()
 {
  auto js = json();

@@ -28,7 +28,9 @@ class Base
  double _initialStdDev;
  double _minStdDevChange;
 
- void initialize(int seed);
+ // Constructor / Destructor
+ Base(nlohmann::json& js, int seed);
+ ~Base();
 
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
