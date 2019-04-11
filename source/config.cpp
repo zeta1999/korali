@@ -5,6 +5,21 @@ using json = nlohmann::json;
 json Korali::Engine::getConfiguration()
 {
  auto js = json();
+
+ js["Seed"] = _seed;
+
+ if (_verbosity == KORALI_SILENT)   js["Verbosity"] = "Silent";
+ if (_verbosity == KORALI_MINIMAL)  js["Verbosity"] = "Minimal";
+ if (_verbosity == KORALI_NORMAL)   js["Verbosity"] = "Normal";
+ if (_verbosity == KORALI_DETAILED) js["Verbosity"] = "Detailed";
+
+ js["Report Frequency"] = _reportFrequency;
+
+ for (size_t i = 0; i < N; i++) js["Parameters"][i] = _parameters[i]->getConfiguration();
+ js["Problem"] = _problem->getConfiguration();
+ js["Solver"] = _solver->getConfiguration();
+ js["Conduit"] = _conduit->getConfiguration();
+
  return js;
 }
 
@@ -48,14 +63,13 @@ void Korali::Engine::setConfiguration(json js)
  for (size_t i = 0; i < tmp.size(); i++) if (tmp[i]->_type == KORALI_STATISTICAL)   { _parameters.push_back(tmp[i]); _statisticalParameterCount++; };
  N = _parameters.size();
 
-  // Configure Problem
+ // Configure Problem
  bool foundProblem = false;
  auto pString =  consume(js, { "Problem", "Objective" }, KORALI_STRING);
- if (pString == "Direct Evaluation") { _problem = new Korali::Problem::Direct();     foundProblem = true; }
- if (pString == "Likelihood")        { _problem = new Korali::Problem::Likelihood(); foundProblem = true; }
- if (pString == "Posterior")         { _problem = new Korali::Problem::Posterior();  foundProblem = true; }
+ if (pString == "Direct Evaluation") { _problem = new Korali::Problem::Direct(js["Problem"]);     foundProblem = true; }
+ if (pString == "Likelihood")        { _problem = new Korali::Problem::Likelihood(js["Problem"]); foundProblem = true; }
+ if (pString == "Posterior")         { _problem = new Korali::Problem::Posterior(js["Problem"]);  foundProblem = true; }
  if (foundProblem == false) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Problem."); exit(-1); }
- _problem->setConfiguration(js["Problem"]);
 
  // Configure Conduit
  std::string conduitString = "Sequential";
@@ -105,10 +119,9 @@ void Korali::Engine::setConfiguration(json js)
  // Configure Solver
  _solver = NULL;
  auto sString = consume(js, { "Solver", "Method" }, KORALI_STRING);
- if (sString == "CMA-ES") _solver = new Korali::Solver::CMAES();
- if (sString == "TMCMC")  _solver = new Korali::Solver::TMCMC();
+ if (sString == "CMA-ES") _solver = new Korali::Solver::CMAES(js["Solver"]);
+ if (sString == "TMCMC")  _solver = new Korali::Solver::TMCMC(js["Solver"]);
  if (_solver == NULL) { fprintf(stderr, "[Korali] Error: Incorrect or undefined Solver."); exit(-1); }
- _solver->setConfiguration(js["Solver"]);
 
  if (isEmpty(js) == false)
  {

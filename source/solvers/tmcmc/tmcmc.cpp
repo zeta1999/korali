@@ -16,6 +16,11 @@ void Korali::Solver::TMCMC::run()
 
  startTime = std::chrono::system_clock::now();
 
+ // Setting initial conditions
+ for (size_t c = 0; c < _s; c++)
+  for (size_t d = 0; d < _k->N; d++)
+   clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
+
  for(; _annealingRatio < 1.0 && _currentGeneration < _maxGens; _currentGeneration++)
  {
   auto t0 = std::chrono::system_clock::now();
@@ -106,67 +111,6 @@ void Korali::Solver::TMCMC::saveResults()
  }
 
  fclose(fp);
-}
-
-void Korali::Solver::TMCMC::initialize()
-{
- this->Korali::Solver::Base::initialize();
-
- // Initializing Data Variables
- double *LCmem  = (double*) calloc (_s*_k->N*_k->N, sizeof(double));
- local_cov = (double**) calloc ( _s, sizeof(double*));
- for (size_t pos = 0; pos < _s; ++pos)
- {
-  local_cov[pos] = LCmem + pos*_k->N*_k->N;
-  for (size_t i = 0; i < _k->N; i++) local_cov[pos][i*_k->N+i] = 1;
- }
-
- // Initializing Run Variables
- _varianceCoefficient        = 0;
- _annealingRatio              = 0;
- _uniqueSelections = 0;
- _uniqueEntries = _s;
- _logEvidence  = 0;
- _acceptanceRate     = 1.0;
- _varianceCoefficient = std::numeric_limits<double>::infinity();
- _covarianceMatrix =  (double*) calloc (_k->N*_k->N, sizeof(double));
- _meanTheta =  (double*) calloc (_k->N+1, sizeof(double));
-
- // Initializing TMCMC Leaders
- ccPoints    = (double*) calloc (_k->N*_s, sizeof(double));
- ccFitness   = (double*) calloc (_s, sizeof(double));
-
- clPoints    = (double*) calloc (_k->N*_s, sizeof(double));
- clFitness   = (double*) calloc (_s, sizeof(double)); //chainLeaderFitnessGlobalPtr.local();
-
- chainPendingFitness = (bool*) calloc (_s, sizeof(bool));
- chainCurrentStep    = (size_t*) calloc (_s, sizeof(size_t));
- chainLength         = (size_t*) calloc (_s, sizeof(size_t));
-
- databaseEntries  = 0;
- databasePoints   = (double*) calloc (_k->N*_s, sizeof(double));
- databaseFitness  = (double*) calloc (_s, sizeof(double));
-
- // First definition of chains and their leaders
- nChains = _s;
- finishedChains = 0;
- for (size_t c = 0; c < _s; c++) for (size_t d = 0; d < _k->N; d++)  clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
- for (size_t c = 0; c < _s; c++) chainCurrentStep[c] = 0;
- for (size_t c = 0; c < _s; c++) chainLength[c] = 1 + _burnIn;
- for (size_t c = 0; c < _s; c++) chainPendingFitness[c] = false;
-
- // Setting Chain-Specific Seeds
- range = gsl_rng_alloc (gsl_rng_default);
- gsl_rng_set(range, _k->_seed++);
-
- chainGSLRange = (gsl_rng**) calloc (_s, sizeof(gsl_rng*));
- for (size_t c = 0; c < _s; c++)
- {
-  chainGSLRange[c] = gsl_rng_alloc (gsl_rng_default);
-  gsl_rng_set(chainGSLRange[c], _k->_seed++);
- }
-
- // TODO: Ensure proper memory deallocation
 }
 
 void Korali::Solver::TMCMC::resampleGeneration()

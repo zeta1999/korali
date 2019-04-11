@@ -13,8 +13,11 @@ class CMAES : public Korali::Solver::Base
 {
  public:
 
+ // Constructor / Destructor
+ CMAES(nlohmann::json& js);
+ ~CMAES();
+
  // Runtime Methods (to be inherited from base class in the future)
- void initialize();
  void prepareGeneration();
  bool checkTermination();
  void updateDistribution(const double *fitnessVector);

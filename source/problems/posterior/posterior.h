@@ -10,7 +10,10 @@ class Posterior : public Korali::Problem::Likelihood
 {
  public:
  double evaluateFitness(double* sample);
- void initialize();
+
+ // Constructor / Destructor
+ Posterior(nlohmann::json& js);
+ ~Posterior();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

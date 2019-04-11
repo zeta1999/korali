@@ -16,9 +16,12 @@ class Base {
  std::chrono::time_point<std::chrono::system_clock> startTime, endTime;
  std::chrono::time_point<std::chrono::system_clock> t0, t1, t2, t3;
 
+ // Constructor / Destructor
+ Base(nlohmann::json& js);
+ ~Base();
+
  // Running Methods
  virtual void run() = 0;
- virtual void initialize();
  virtual void processSample(size_t sampleId, double fitness) = 0;
 
  // Serialization Methods

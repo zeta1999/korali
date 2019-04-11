@@ -2,6 +2,15 @@
 
 using json = nlohmann::json;
 
+Korali::Problem::Posterior::Posterior(nlohmann::json& js) : Korali::Problem::Likelihood::Likelihood(js)
+{
+ setConfiguration(js);
+}
+
+Korali::Problem::Posterior::~Posterior()
+{
+}
+
 json Korali::Problem::Posterior::getConfiguration()
 {
  auto js = this->Korali::Problem::Likelihood::getConfiguration();
@@ -13,7 +22,4 @@ json Korali::Problem::Posterior::getConfiguration()
 
 void Korali::Problem::Posterior::setConfiguration(json& js)
 {
-  // Configuration goes here.
-
- this->Korali::Problem::Likelihood::setConfiguration(js);
 }

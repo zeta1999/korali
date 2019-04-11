@@ -10,7 +10,10 @@ class Direct : public Korali::Problem::Base
 {
  public:
  double evaluateFitness(double* sample);
- void initialize();
+
+ // Constructor / Destructor
+ Direct(nlohmann::json& js);
+ ~Direct();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

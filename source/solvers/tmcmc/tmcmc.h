@@ -19,6 +19,10 @@ class TMCMC : public Korali::Solver::Base
 {
  public:
 
+  // Constructor / Destructor
+  TMCMC(nlohmann::json& js);
+  ~TMCMC();
+
  // TMCMC Configuration
  double _tolCOV;              /* Target coefficient of variation of weights */
  double _minStep;             /* Min update of rho */
@@ -62,7 +66,6 @@ class TMCMC : public Korali::Solver::Base
  double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
 
   // Korali Methods
- void initialize();
  void run();
 
   // Internal TMCMC Methods

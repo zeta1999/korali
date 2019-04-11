@@ -6,13 +6,20 @@
 namespace Korali::Problem
 {
 
+enum modelType { KORALI_SINGLE, KORALI_MULTIPLE };
+
 class Base
 {
  public:
 
  virtual double evaluateFitness(double* sample) = 0;
- virtual void initialize();
  bool isSampleOutsideBounds(double* sample);
+
+ modelType _model;
+
+ // Constructor / Destructor
+ Base(nlohmann::json& js);
+ ~Base();
 
  // Serialization Methods
  virtual nlohmann::json getConfiguration();

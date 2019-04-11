@@ -1,10 +1,5 @@
 #include "korali.h"
 
-void Korali::Problem::Base::initialize()
-{
-}
-
-
 bool Korali::Problem::Base::isSampleOutsideBounds(double* sample)
 {
   for (size_t i = 0; i < _k->N; i++)
