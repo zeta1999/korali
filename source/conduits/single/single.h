@@ -12,6 +12,7 @@ class Single : public Base {
  void run();
  void evaluateSample(double* sampleArray, size_t sampleId);
  void checkProgress();
+ bool isRoot();
 
  // Constructor / Destructor
  Single(nlohmann::json& js);

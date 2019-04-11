@@ -1,20 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
-
-json Korali::Conduit::Single::getConfiguration()
-{
- auto js = this->Korali::Conduit::Base::getConfiguration();
-
- js["Type"] = "Single";
-
- return js;
-}
-
-void Korali::Conduit::Single::setConfiguration(json js)
-{
- this->Korali::Conduit::Base::setConfiguration(js);
-}
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Conduit::Single::Single(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
@@ -25,6 +13,28 @@ Korali::Conduit::Single::~Single()
 {
 
 }
+
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Conduit::Single::getConfiguration()
+{
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+
+ js["Type"] = "Single";
+
+ return js;
+}
+
+void Korali::Conduit::Single::setConfiguration(nlohmann::json js)
+{
+ this->Korali::Conduit::Base::setConfiguration(js);
+}
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 void Korali::Conduit::Single::run()
 {
@@ -42,3 +52,7 @@ void Korali::Conduit::Single::checkProgress()
 
 }
 
+bool Korali::Conduit::Single::isRoot()
+{
+ return true;
+}

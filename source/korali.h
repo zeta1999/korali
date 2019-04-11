@@ -37,7 +37,6 @@ class Engine {
  Korali::Conduit::Base* _conduit;
  Korali::Problem::Base* _problem;
  Korali::Solver::Base*  _solver;
-
  std::vector<Korali::Parameter::Base*> _parameters;
 
  // Model Functions and constructors
@@ -52,7 +51,10 @@ class Engine {
  std::function<void (double*, double*, double*, double*)> _modelManifold;
  Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _config["Problem"]["Model"] = "Manifold"; }
 
+ ~Engine();
+
  void run();
+ void saveConfiguration();
 
  size_t N; // Parameter Count
  size_t _statisticalParameterCount;

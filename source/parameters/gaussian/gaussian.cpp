@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Parameter::Gaussian::Gaussian(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(js, seed)
 {
@@ -18,7 +20,11 @@ Korali::Parameter::Gaussian::~Gaussian()
 
 }
 
-json Korali::Parameter::Gaussian::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Parameter::Gaussian::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
 
@@ -29,11 +35,15 @@ json Korali::Parameter::Gaussian::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Gaussian::setConfiguration(json& js)
+void Korali::Parameter::Gaussian::setConfiguration(nlohmann::json& js)
 {
  _mean  = consume(js, { "Mean" }, KORALI_NUMBER);
  _sigma = consume(js, { "Sigma" }, KORALI_NUMBER);
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 double Korali::Parameter::Gaussian::getDensity(double x)
 {

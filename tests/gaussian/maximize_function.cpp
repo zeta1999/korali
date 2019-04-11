@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 
  korali["Problem"]["Objective"] = "Direct Evaluation";
  korali["Solver"]["Method"] = "CMA-ES";
- korali["Solver"]["Termination Criteria"]["StopMinDeltaX"] = 1e-11;
+ korali["Solver"]["Termination Criteria"]["Min DeltaX"] = 1e-11;
  korali["Solver"]["Lambda"] = 128;
 
  korali.run();

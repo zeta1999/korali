@@ -37,6 +37,7 @@ class OpenMP : public Base
  void checkProgress();
  void supervisorThread();
  void workerThread();
+ bool isRoot();
 
  // Constructor / Destructor
  OpenMP(nlohmann::json& js);

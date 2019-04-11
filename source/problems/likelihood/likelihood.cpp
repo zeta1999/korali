@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Problem::Likelihood::Likelihood(nlohmann::json& js) : Korali::Problem::Base::Base(js)
 {
@@ -24,7 +26,11 @@ Korali::Problem::Likelihood::~Likelihood()
 
 }
 
-json Korali::Problem::Likelihood::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Problem::Likelihood::getConfiguration()
 {
  auto js = this->Korali::Problem::Base::getConfiguration();
 
@@ -35,7 +41,7 @@ json Korali::Problem::Likelihood::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Likelihood::setConfiguration(json& js)
+void Korali::Problem::Likelihood::setConfiguration(nlohmann::json& js)
 {
  auto ref = consume(js, { "Reference Data" }, KORALI_ARRAY);
  _referenceDataSize = ref.size();
@@ -48,6 +54,10 @@ void Korali::Problem::Likelihood::setConfiguration(json& js)
   exit(-1);
  }
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 {

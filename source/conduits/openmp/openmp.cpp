@@ -2,34 +2,9 @@
 
 #include "korali.h"
 
-#include "korali.h"
-
-using json = nlohmann::json;
-
-Korali::Conduit::OpenMP::OpenMP(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
-{
- setConfiguration(js);
-}
-
-Korali::Conduit::OpenMP::~OpenMP()
-{
-
-}
-
-json Korali::Conduit::OpenMP::getConfiguration()
-{
- auto js = this->Korali::Conduit::Base::getConfiguration();
-
- js["Type"] = "OpenMP"
-
- return js;
-}
-
-void Korali::Conduit::OpenMP::setConfiguration(json js)
-{
- _threadCount = 1;
- _continueEvaluations = true;
-}
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Conduit::OpenMP::OpenMP(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
@@ -56,6 +31,29 @@ Korali::Conduit::OpenMP::~OpenMP()
 {
 
 }
+
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Conduit::OpenMP::getConfiguration()
+{
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+
+ js["Type"] = "OpenMP"
+
+ return js;
+}
+
+void Korali::Conduit::OpenMP::setConfiguration(nlohmann::json js)
+{
+ _threadCount = 1;
+ _continueEvaluations = true;
+}
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 void Korali::Conduit::OpenMP::workerThread()
 {

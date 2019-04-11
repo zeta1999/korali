@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Problem::Direct::Direct(nlohmann::json& js) : Korali::Problem::Base::Base(js)
 {
@@ -24,7 +26,11 @@ Korali::Problem::Direct::~Direct()
 
 }
 
-json Korali::Problem::Direct::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Problem::Direct::getConfiguration()
 {
  auto js = this->Korali::Problem::Base::getConfiguration();
 
@@ -33,16 +39,16 @@ json Korali::Problem::Direct::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Direct::setConfiguration(json& js)
+void Korali::Problem::Direct::setConfiguration(nlohmann::json& js)
 {
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 double Korali::Problem::Direct::evaluateFitness(double* sample)
 {
  if (isSampleOutsideBounds(sample)) return -DBL_MAX;
  return _k->_modelSingle(sample);
 }
-
-
-
-

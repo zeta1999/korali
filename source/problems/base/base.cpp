@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Problem::Base::Base(nlohmann::json& js)
 {
@@ -12,9 +14,13 @@ Korali::Problem::Base::~Base()
 
 }
 
-json Korali::Problem::Base::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Problem::Base::getConfiguration()
 {
- auto js = json();
+ auto js = nlohmann::json();
 
  if (_model == KORALI_SINGLE)   js["Model"] = "Single";
  if (_model == KORALI_MULTIPLE) js["Model"] = "Multiple";
@@ -22,13 +28,16 @@ json Korali::Problem::Base::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Base::setConfiguration(json& js)
+void Korali::Problem::Base::setConfiguration(nlohmann::json& js)
 {
  auto modelString = consume(js, { "Model" }, KORALI_STRING);
  if (modelString == "Single")   _model = KORALI_SINGLE;
  if (modelString == "Multiple") _model = KORALI_MULTIPLE;
 }
 
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 bool Korali::Problem::Base::isSampleOutsideBounds(double* sample)
 {

@@ -3,11 +3,27 @@
 
 Korali::Engine* Korali::_k;
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
-json Korali::Engine::getConfiguration()
+Korali::Engine::Engine()
 {
- auto js = json();
+
+}
+
+Korali::Engine::~Engine()
+{
+
+}
+
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Engine::getConfiguration()
+{
+ auto js = nlohmann::json();
 
  js["Seed"] = _seed;
 
@@ -26,7 +42,7 @@ json Korali::Engine::getConfiguration()
  return js;
 }
 
-void Korali::Engine::setConfiguration(json js)
+void Korali::Engine::setConfiguration(nlohmann::json js)
 {
  // Configure Korali Engine
  std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
@@ -132,10 +148,9 @@ void Korali::Engine::setConfiguration(json js)
  }
 }
 
-Korali::Engine::Engine()
-{
-
-}
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 void Korali::Engine::run()
 {
@@ -145,11 +160,13 @@ void Korali::Engine::run()
 
  _conduit->run();
 
- printf("%s\n", getConfiguration().dump(2).c_str());
+ saveConfiguration();
+}
 
- #ifdef _KORALI_USE_UPCXX
- upcxx::finalize();
- #endif
-
- return;
+void Korali::Engine::saveConfiguration()
+{
+ printf("[Korali] Saving configuration to 'korali.cfg'\n");
+ FILE *fid = fopen("korali.cfg", "w");
+ fprintf(fid, getConfiguration().dump(1).c_str());
+ fclose(fid);
 }

@@ -1,20 +1,8 @@
 #include "korali.h"
 
-/**************************************************************/
-/*             Configuration / Initialization Code            */
-/**************************************************************/
-
-using json = nlohmann::json;
-
-json Korali::Conduit::Base::getConfiguration()
-{
- auto js = json();
- return js;
-}
-
-void Korali::Conduit::Base::setConfiguration(json js)
-{
-}
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Conduit::Base::Base(nlohmann::json& js)
 {
@@ -26,6 +14,21 @@ Korali::Conduit::Base::~Base()
 
 }
 
-/**************************************************************/
-/*                     Functional Code                        */
-/**************************************************************/
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Conduit::Base::getConfiguration()
+{
+ auto js = nlohmann::json();
+ return js;
+}
+
+void Korali::Conduit::Base::setConfiguration(nlohmann::json js)
+{
+}
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
+

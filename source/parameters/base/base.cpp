@@ -1,16 +1,18 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
-Korali::Parameter::Base::Base(nlohmann::json& js, int seed)
+Korali::Parameter::Base::Base(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(seed)
 {
  setConfiguration(js);
- initialize(seed);
 }
 
 Korali::Parameter::Base::Base(int seed)
 {
- initialize(seed);
+ _range = gsl_rng_alloc (gsl_rng_default);
+ gsl_rng_set(_range, seed);
 }
 
 Korali::Parameter::Base::~Base()
@@ -18,9 +20,13 @@ Korali::Parameter::Base::~Base()
 
 }
 
-json Korali::Parameter::Base::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Parameter::Base::getConfiguration()
 {
- auto js = json();
+ auto js = nlohmann::json();
 
  js["Name"] = _name;
 
@@ -37,7 +43,7 @@ json Korali::Parameter::Base::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Base::setConfiguration(json& js)
+void Korali::Parameter::Base::setConfiguration(nlohmann::json& js)
 {
  _name = consume(js, { "Name" }, KORALI_STRING, "Unnamed Parameter");
 
@@ -69,8 +75,7 @@ void Korali::Parameter::Base::setConfiguration(json& js)
  _minStdDevChange = consume(js, { "Min Std Change" }, KORALI_NUMBER, "0.0");
 }
 
- void Korali::Parameter::Base::initialize(int seed)
- {
-  _range = gsl_rng_alloc (gsl_rng_default);
-  gsl_rng_set(_range, seed);
- }
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
+

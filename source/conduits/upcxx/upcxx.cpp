@@ -4,23 +4,9 @@
 
 Korali::Conduit::UPCXX* _ux;
 
-using json = nlohmann::json;
-
-json Korali::Conduit::UPCXX::getConfiguration()
-{
- auto js = this->Korali::Conduit::Base::getConfiguration();
-
- js["Type"] = "UPC++"
-
- return js;
-}
-
-void Korali::Conduit::UPCXX::setConfiguration(json js)
-{
-  _rankId = 0;
-  _rankCount = 1;
-  _continueEvaluations = true;
-}
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Conduit::UPCXX::UPCXX(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
@@ -51,8 +37,32 @@ Korali::Conduit::UPCXX::UPCXX(nlohmann::json& js) : Korali::Conduit::Base::Base(
 
 Korali::Conduit::UPCXX::~UPCXX()
 {
-
+ upcxx::finalize();
 }
+
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+json Korali::Conduit::UPCXX::getConfiguration()
+{
+ auto js = this->Korali::Conduit::Base::getConfiguration();
+
+ js["Type"] = "UPC++"
+
+ return js;
+}
+
+void Korali::Conduit::UPCXX::setConfiguration(nlohmann::json js)
+{
+  _rankId = 0;
+  _rankCount = 1;
+  _continueEvaluations = true;
+}
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 void Korali::Conduit::UPCXX::run()
 {
@@ -91,6 +101,11 @@ void Korali::Conduit::UPCXX::evaluateSample(double* sampleArray, size_t sampleId
 void Korali::Conduit::UPCXX::checkProgress()
 {
  upcxx::progress();
+}
+
+bool Korali::Conduit::UPCXX::isRoot()
+{
+ return _rankId == 0;
 }
 
 #endif // #ifdef _KORALI_USE_UPCXX

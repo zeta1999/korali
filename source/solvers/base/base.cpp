@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Solver::Base::Base(nlohmann::json& js)
 {
@@ -12,28 +14,42 @@ Korali::Solver::Base::~Base()
 
 }
 
-json Korali::Solver::Base::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Solver::Base::getConfiguration()
 {
- auto js = json();
+ auto js = nlohmann::json();
 
  return js;
 }
 
-void Korali::Solver::Base::setConfiguration(json& js)
+void Korali::Solver::Base::setConfiguration(nlohmann::json& js)
 {
 
 }
 
-json Korali::Solver::Base::getState()
+/************************************************************************/
+/*                      Load/Save State Methods                         */
+/************************************************************************/
+
+nlohmann::json Korali::Solver::Base::getState()
 {
- auto js = json();
+ auto js = nlohmann::json();
 
  return js;
 }
 
-void Korali::Solver::Base::setState(json js)
+void Korali::Solver::Base::setState(nlohmann::json js)
 {
 
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
+
+
 
 

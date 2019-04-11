@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Parameter::Exponential::Exponential(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(js, seed)
 {
@@ -12,7 +14,11 @@ Korali::Parameter::Exponential::~Exponential()
 
 }
 
-json Korali::Parameter::Exponential::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Parameter::Exponential::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
 
@@ -22,10 +28,14 @@ json Korali::Parameter::Exponential::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Exponential::setConfiguration(json& js)
+void Korali::Parameter::Exponential::setConfiguration(nlohmann::json& js)
 {
  _mean = consume(js, { "Mean" }, KORALI_NUMBER);
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 double Korali::Parameter::Exponential::getDensity(double x)
 {

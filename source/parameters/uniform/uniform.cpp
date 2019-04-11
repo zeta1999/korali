@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Parameter::Uniform::Uniform(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(js, seed)
 {
@@ -12,7 +14,11 @@ Korali::Parameter::Uniform::~Uniform()
 
 }
 
-json Korali::Parameter::Uniform::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Parameter::Uniform::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
 
@@ -21,9 +27,13 @@ json Korali::Parameter::Uniform::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Uniform::setConfiguration(json& js)
+void Korali::Parameter::Uniform::setConfiguration(nlohmann::json& js)
 {
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 double Korali::Parameter::Uniform::getDensity(double x)
 {

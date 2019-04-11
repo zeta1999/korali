@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Parameter::Gamma::Gamma(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(js, seed)
 {
@@ -12,7 +14,11 @@ Korali::Parameter::Gamma::~Gamma()
 
 }
 
-json Korali::Parameter::Gamma::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Parameter::Gamma::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
 
@@ -23,11 +29,15 @@ json Korali::Parameter::Gamma::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Gamma::setConfiguration(json& js)
+void Korali::Parameter::Gamma::setConfiguration(nlohmann::json& js)
 {
  _rate  = consume(js, { "Rate" }, KORALI_NUMBER);
  _shape = consume(js, { "Shape" }, KORALI_NUMBER);
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 double Korali::Parameter::Gamma::getDensity(double x)
 {

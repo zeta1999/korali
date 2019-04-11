@@ -1,6 +1,8 @@
 #include "korali.h"
 
-using json = nlohmann::json;
+/************************************************************************/
+/*                  Constructor / Destructor Methods                    */
+/************************************************************************/
 
 Korali::Problem::Posterior::Posterior(nlohmann::json& js) : Korali::Problem::Likelihood::Likelihood(js)
 {
@@ -11,7 +13,11 @@ Korali::Problem::Posterior::~Posterior()
 {
 }
 
-json Korali::Problem::Posterior::getConfiguration()
+/************************************************************************/
+/*                    Configuration Methods                             */
+/************************************************************************/
+
+nlohmann::json Korali::Problem::Posterior::getConfiguration()
 {
  auto js = this->Korali::Problem::Likelihood::getConfiguration();
 
@@ -20,9 +26,13 @@ json Korali::Problem::Posterior::getConfiguration()
  return js;
 }
 
-void Korali::Problem::Posterior::setConfiguration(json& js)
+void Korali::Problem::Posterior::setConfiguration(nlohmann::json& js)
 {
 }
+
+/************************************************************************/
+/*                    Functional Methods                                */
+/************************************************************************/
 
 double Korali::Problem::Posterior::evaluateFitness(double* sample)
 {
