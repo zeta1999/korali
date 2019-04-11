@@ -5,6 +5,9 @@ using json = nlohmann::json;
 json Korali::Conduit::Single::getConfiguration()
 {
  auto js = this->Korali::Conduit::Base::getConfiguration();
+
+ js["Type"] = "Single";
+
  return js;
 }
 

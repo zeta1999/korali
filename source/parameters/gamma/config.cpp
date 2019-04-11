@@ -5,6 +5,11 @@ using json = nlohmann::json;
 json Korali::Parameter::Gamma::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
+
+ js["Type"] = "Gamma";
+ js["Rate"] = _rate;
+ js["Shape"] = _shape;
+
  return js;
 }
 

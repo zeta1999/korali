@@ -5,6 +5,9 @@ using json = nlohmann::json;
 json Korali::Problem::Direct::getConfiguration()
 {
  auto js = this->Korali::Problem::Base::getConfiguration();
+
+ js["Objective"] = "Direct Evaluation";
+
  return js;
 }
 

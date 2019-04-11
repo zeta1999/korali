@@ -6,6 +6,10 @@ json Korali::Problem::Likelihood::getConfiguration()
 {
  auto js = this->Korali::Problem::Base::getConfiguration();
 
+ js["Objective"] = "Likelihood";
+
+ for (size_t i = 0; i < _referenceDataSize; i++) js["Reference Data"][i] = _referenceData[i];
+
  return js;
 }
 

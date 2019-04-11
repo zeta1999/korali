@@ -5,6 +5,9 @@ using json = nlohmann::json;
 json Korali::Parameter::Uniform::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
+
+ js["Type"] = "Uniform";
+
  return js;
 }
 

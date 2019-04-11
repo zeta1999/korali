@@ -5,6 +5,19 @@ using json = nlohmann::json;
 json Korali::Parameter::Base::getConfiguration()
 {
  auto js = json();
+
+ js["Name"] = _name;
+
+ if(_type == KORALI_COMPUTATIONAL) js["Type"] = "Computational";
+ if(_type == KORALI_STATISTICAL)   js["Type"] = "Statistical";
+
+ js["Minimum"] = _lowerBound;
+ js["Maximum"] = _upperBound;
+
+ js["Initial Mean"] = _initialValue;
+ js["Initial StdDev"] = _initialStdDev;
+ js["Min Std Change"] = _minStdDevChange;
+
  return js;
 }
 
@@ -37,5 +50,5 @@ void Korali::Parameter::Base::setConfiguration(json& js)
   exit(-1);
  }
 
- _minStdDevChange = consume(js, { "Initial StdDev" }, KORALI_NUMBER, "0.0");
+ _minStdDevChange = consume(js, { "Min Std Change" }, KORALI_NUMBER, "0.0");
 }

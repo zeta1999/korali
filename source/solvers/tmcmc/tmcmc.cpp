@@ -110,7 +110,7 @@ void Korali::Solver::TMCMC::saveResults()
 
 void Korali::Solver::TMCMC::initialize()
 {
-	this->Korali::Solver::Base::initialize();
+ this->Korali::Solver::Base::initialize();
 
  // Initializing Data Variables
  double *LCmem  = (double*) calloc (_s*_k->N*_k->N, sizeof(double));

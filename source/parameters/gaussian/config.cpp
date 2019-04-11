@@ -5,6 +5,11 @@ using json = nlohmann::json;
 json Korali::Parameter::Gaussian::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
+
+ js["Type"] = "Gaussian";
+ js["Mean"] = _mean;
+ js["Sigma"] = _sigma;
+
  return js;
 }
 

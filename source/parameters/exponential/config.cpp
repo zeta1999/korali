@@ -5,6 +5,10 @@ using json = nlohmann::json;
 json Korali::Parameter::Exponential::getConfiguration()
 {
  auto js = this->Korali::Parameter::Base::getConfiguration();
+
+ js["Type"] = "Exponential";
+ js["Mean"] = _mean;
+
  return js;
 }
 
