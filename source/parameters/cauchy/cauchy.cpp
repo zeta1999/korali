@@ -6,20 +6,20 @@ using namespace Korali::Parameter;
 /*                  Constructor / Destructor Methods                    */
 /************************************************************************/
 
-Gamma::Gamma(double shape, double scale, size_t seed) : Base::Base(seed)
+Cauchy::Cauchy(double loc, double scale, size_t seed) : Base::Base(seed)
 {
-	_shape = shape;
+	_loc = loc;
 	_scale = scale;
 	initialize();
 }
 
-Gamma::Gamma(nlohmann::json& js, int seed) : Base::Base(js, seed)
+Cauchy::Cauchy(nlohmann::json& js, int seed) : Base::Base(js, seed)
 {
  setConfiguration(js);
  initialize();
 }
 
-Gamma::~Gamma()
+Cauchy::~Cauchy()
 {
 
 }
@@ -28,49 +28,48 @@ Gamma::~Gamma()
 /*                    Configuration Methods                             */
 /************************************************************************/
 
-nlohmann::json Gamma::getConfiguration()
+nlohmann::json Cauchy::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"] = "Gamma";
+ js["Type"] = "Cauchy";
+ js["Location"] = _loc;
  js["Scale"] = _scale;
- js["Shape"] = _shape;
 
  return js;
 }
 
-void Gamma::setConfiguration(nlohmann::json& js)
+void Cauchy::setConfiguration(nlohmann::json& js)
 {
- _scale  = consume(js, { "Scale" }, KORALI_NUMBER);
- _shape = consume(js, { "Shape" }, KORALI_NUMBER);
+	_loc  = consume(js, { "Location" }, KORALI_NUMBER);
+ _scale = consume(js, { "Scale" }, KORALI_NUMBER);
 }
 
 /************************************************************************/
 /*                    Functional Methods                                */
 /************************************************************************/
 
-void Gamma::initialize()
+void Cauchy::initialize()
 {
-	_aux = - gsl_sf_lngamma(_shape) - _shape*log(_scale);
+	_aux = -gsl_sf_log( _scale * M_PI );
 }
 
-double Gamma::getDensity(double x)
+double Cauchy::getDensity(double x)
 {
- return gsl_ran_gamma_pdf( x, _shape, _scale );
+ return gsl_ran_cauchy_pdf( x-_loc, _scale );
 }
 
-double Gamma::getDensityLog(double x)
+double Cauchy::getDensityLog(double x)
 {
- if(x < 0) return -INFINITY;
- return _aux + (_shape-1)*log(x) - x/_scale;
+ return  _aux - gsl_sf_log( 1. + gsl_sf_pow_int((x-_loc)/_scale,2) );
 }
 
-double Gamma::getRandomNumber()
+double Cauchy::getRandomNumber()
 {
- return gsl_ran_gamma(_range, _shape, _scale);
+ return _loc + gsl_ran_cauchy(_range, _scale);
 }
 
-void Gamma::printDetails()
+void Cauchy::printDetails()
 {
-  printf("Gamma(%.3g,%.3g)", _shape, _scale);
+  printf("Cauchy(%.3g,%.3g)", _loc, _scale);
 }

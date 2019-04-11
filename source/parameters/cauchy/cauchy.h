@@ -1,23 +1,23 @@
-#ifndef _KORALI_GAMMA_H_
-#define _KORALI_GAMMA_H_
+#ifndef _KORALI_CAUCHY_H_
+#define _KORALI_CAUCHY_H_
 
 #include "parameters/base/base.h"
 
 namespace Korali::Parameter
 {
 
-class Gamma : public Korali::Parameter::Base
+class Cauchy : public Korali::Parameter::Base
 {
  private:
-  double _shape;
-  double _scale;
   double _aux;
+  double _loc;
+  double _scale;
 
  public:
 
-  Gamma(nlohmann::json& js, int seed);
-  Gamma(double shape, double scale, size_t seed = 0);
-  ~Gamma();
+  Cauchy(nlohmann::json& js, int seed);
+  Cauchy(double loc, double scale, size_t seed = 0);
+  ~Cauchy();
 
   double getDensity(double x);
   double getDensityLog(double x);
@@ -33,4 +33,4 @@ class Gamma : public Korali::Parameter::Base
 
 } // namespace Korali
 
-#endif // _KORALI_GAMMA_H_
+#endif // _KORALI_CAUCHY_H_

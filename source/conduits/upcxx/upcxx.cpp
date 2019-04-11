@@ -44,11 +44,11 @@ Korali::Conduit::UPCXX::~UPCXX()
 /*                    Configuration Methods                             */
 /************************************************************************/
 
-json Korali::Conduit::UPCXX::getConfiguration()
+nlohmann::json Korali::Conduit::UPCXX::getConfiguration()
 {
  auto js = this->Korali::Conduit::Base::getConfiguration();
 
- js["Type"] = "UPC++"
+ js["Type"] = "UPC++";
 
  return js;
 }

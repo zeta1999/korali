@@ -33,11 +33,10 @@ class Base
  Base(int seed);
  ~Base();
 
- void initialize(int seed);
-
  virtual double getDensity(double x) = 0;
  virtual double getDensityLog(double x) = 0;
  virtual double getRandomNumber() = 0;
+ virtual void printDetails() = 0;
 
  // Serialization Methods
  virtual nlohmann::json getConfiguration();

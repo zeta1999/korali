@@ -1,4 +1,5 @@
 #include "korali.h"
+#include <chrono>
 
 /************************************************************************/
 /*                  Constructor / Destructor Methods                    */
@@ -11,8 +12,16 @@ Korali::Parameter::Base::Base(nlohmann::json& js, int seed) : Korali::Parameter:
 
 Korali::Parameter::Base::Base(int seed)
 {
+	int gSeed = seed;
+
+	if (gSeed == 0)
+	{
+	 std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::nanoseconds(0));
+	 gSeed  = std::chrono::nanoseconds(now_c).count();
+	}
+
  _range = gsl_rng_alloc (gsl_rng_default);
- gsl_rng_set(_range, seed);
+ gsl_rng_set(_range, gSeed);
 }
 
 Korali::Parameter::Base::~Base()
@@ -78,4 +87,3 @@ void Korali::Parameter::Base::setConfiguration(nlohmann::json& js)
 /************************************************************************/
 /*                    Functional Methods                                */
 /************************************************************************/
-

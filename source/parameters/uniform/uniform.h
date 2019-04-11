@@ -9,16 +9,21 @@ namespace Korali::Parameter
 class Uniform : public Korali::Parameter::Base
 {
  private:
-
+   double _aux;
+   
  public:
+
+	 Uniform(nlohmann::json& js, int seed);
+	 Uniform(double _lowerBound, double _upperBound, size_t seed = 0);
+	 ~Uniform();
 
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
 
   // Constructor / Destructor
-  Uniform(nlohmann::json& js, int seed);
-  ~Uniform();
+  void printDetails() override;
+  void initialize();
 
   // Serialization Methods
   nlohmann::json getConfiguration();

@@ -6,20 +6,20 @@ using namespace Korali::Parameter;
 /*                  Constructor / Destructor Methods                    */
 /************************************************************************/
 
-Uniform::Uniform(double lowerBound, double upperBound, size_t seed) : Base::Base(seed)
+Laplace::Laplace(double mean, double width, size_t seed) : Base::Base(seed)
 {
-   _lowerBound = lowerBound;
-   _upperBound = upperBound;
-   initialize();
+	_mean  = mean;
+	_width = width;
+  initialize();
 }
 
-Uniform::Uniform(nlohmann::json& js, int seed) : Base::Base(js, seed)
+Laplace::Laplace(nlohmann::json& js, int seed) : Base::Base(js, seed)
 {
  setConfiguration(js);
  initialize();
 }
 
-Uniform::~Uniform()
+Laplace::~Laplace()
 {
 
 }
@@ -28,46 +28,48 @@ Uniform::~Uniform()
 /*                    Configuration Methods                             */
 /************************************************************************/
 
-nlohmann::json Uniform::getConfiguration()
+nlohmann::json Laplace::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"] = "Uniform";
+ js["Type"]  = "Laplace";
+ js["Mean"]  = _mean;
+ js["Width"] = _width;
 
  return js;
 }
 
-void Uniform::setConfiguration(nlohmann::json& js)
+void Laplace::setConfiguration(nlohmann::json& js)
 {
+ _mean  = consume(js, { "Mean" }, KORALI_NUMBER);
+ _width = consume(js, { "Width" }, KORALI_NUMBER);
 }
 
 /************************************************************************/
 /*                    Functional Methods                                */
 /************************************************************************/
 
-void Uniform::initialize()
+void Laplace::initialize()
 {
-	_aux = -gsl_sf_log(_upperBound-_lowerBound);
+	_aux = - gsl_sf_log(2.*_width);
 }
 
-double Uniform::getDensity(double x)
+double Laplace::getDensity(double x)
 {
- return gsl_ran_flat_pdf(x, _lowerBound, _upperBound);
+ return gsl_ran_laplace_pdf( x-_mean, _width );
 }
 
-double Uniform::getDensityLog(double x)
+double Laplace::getDensityLog(double x)
 {
- if (x >= _lowerBound && x <= _upperBound)
-  return _aux;
- return -GSL_NEGINF;
+ return  _aux - fabs(x-_mean)/_width;
 }
 
-double Uniform::getRandomNumber()
+double Laplace::getRandomNumber()
 {
- return gsl_ran_flat(_range, _lowerBound, _upperBound);
+ return _mean + gsl_ran_laplace(_range, _width);
 }
 
-void Uniform::printDetails()
+void Laplace::printDetails()
 {
-  printf("Uniform(%.3g,%.3g)", _lowerBound, _upperBound);
+  printf("Laplace(%.3g,%.3g)", _mean, _width);
 }

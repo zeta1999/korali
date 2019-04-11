@@ -1,15 +1,23 @@
 #include "korali.h"
 
+using namespace Korali::Parameter;
+
 /************************************************************************/
 /*                  Constructor / Destructor Methods                    */
 /************************************************************************/
 
-Korali::Parameter::Exponential::Exponential(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(js, seed)
+Exponential::Exponential(double loc, double mean, size_t seed) : Base::Base(seed)
+{
+	_loc = loc;
+	_mean = mean;
+}
+
+Exponential::Exponential(nlohmann::json& js, int seed) : Base::Base(js, seed)
 {
  setConfiguration(js);
 }
 
-Korali::Parameter::Exponential::~Exponential()
+Exponential::~Exponential()
 {
 
 }
@@ -18,38 +26,44 @@ Korali::Parameter::Exponential::~Exponential()
 /*                    Configuration Methods                             */
 /************************************************************************/
 
-nlohmann::json Korali::Parameter::Exponential::getConfiguration()
+nlohmann::json Exponential::getConfiguration()
 {
- auto js = this->Korali::Parameter::Base::getConfiguration();
+ auto js = this->Base::getConfiguration();
 
  js["Type"] = "Exponential";
+ js["Location"] = _loc;
  js["Mean"] = _mean;
 
  return js;
 }
 
-void Korali::Parameter::Exponential::setConfiguration(nlohmann::json& js)
+void Exponential::setConfiguration(nlohmann::json& js)
 {
  _mean = consume(js, { "Mean" }, KORALI_NUMBER);
+ _loc  = consume(js, { "Location" }, KORALI_NUMBER);
 }
 
 /************************************************************************/
 /*                    Functional Methods                                */
 /************************************************************************/
 
-double Korali::Parameter::Exponential::getDensity(double x)
+double Exponential::getDensity(double x)
 {
- return  gsl_ran_exponential_pdf(x, _mean);
+ return gsl_ran_exponential_pdf(x-_loc, _mean);
 }
 
-double Korali::Parameter::Exponential::getDensityLog(double x)
+double Exponential::getDensityLog(double x)
 {
- if (x < 0) return -INFINITY;
- return - log(_mean) - x/_mean;
+ if (x-_loc < 0) return -INFINITY;
+ return - log(_mean) - (x-_loc)/_mean;
 }
 
-double Korali::Parameter::Exponential::getRandomNumber()
+double Exponential::getRandomNumber()
 {
- return gsl_ran_exponential(_range, _mean);
+ return _loc + gsl_ran_exponential(_range, _mean);
 }
 
+void Exponential::printDetails()
+{
+  printf("Exponential(%.3g,%.3g)", _loc, _mean);
+}

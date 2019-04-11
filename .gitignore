@@ -9,3 +9,6 @@ korali/
 *.txt
 *.err
 *.mk
+
+.tags
+.tags1

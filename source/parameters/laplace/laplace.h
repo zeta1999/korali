@@ -1,27 +1,28 @@
-#ifndef _KORALI_GAMMA_H_
-#define _KORALI_GAMMA_H_
+#ifndef _KORALI_LAPLACE_H_
+#define _KORALI_LAPLACE_H_
 
 #include "parameters/base/base.h"
 
 namespace Korali::Parameter
 {
 
-class Gamma : public Korali::Parameter::Base
+class Laplace : public Korali::Parameter::Base
 {
  private:
-  double _shape;
-  double _scale;
+  double _mean;
+  double _width;
   double _aux;
 
  public:
 
-  Gamma(nlohmann::json& js, int seed);
-  Gamma(double shape, double scale, size_t seed = 0);
-  ~Gamma();
+  Laplace(nlohmann::json& js, int seed = 0);
+  Laplace(double mean, double width, size_t seed = 0);
+  ~Laplace();
 
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
+  static double logLikelihood(double sigma, int nData, double* x, double* u);
 
   void printDetails() override;
   void initialize();
@@ -33,4 +34,4 @@ class Gamma : public Korali::Parameter::Base
 
 } // namespace Korali
 
-#endif // _KORALI_GAMMA_H_
+#endif // _KORALI_LAPLACE_H_

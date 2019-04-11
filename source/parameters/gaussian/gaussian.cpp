@@ -1,21 +1,25 @@
 #include "korali.h"
 
+using namespace Korali::Parameter;
+
 /************************************************************************/
 /*                  Constructor / Destructor Methods                    */
 /************************************************************************/
 
-Korali::Parameter::Gaussian::Gaussian(nlohmann::json& js, int seed) : Korali::Parameter::Base::Base(js, seed)
+Gaussian::Gaussian(double mean, double sigma, size_t seed) : Base::Base(seed)
+{
+	_mean = mean;
+	_sigma = sigma;
+	initialize();
+}
+
+Gaussian::Gaussian(nlohmann::json& js, int seed) : Base::Base(js, seed)
 {
  setConfiguration(js);
+ initialize();
 }
 
-Korali::Parameter::Gaussian::Gaussian(double mean, double sigma, int seed) : Korali::Parameter::Base::Base(seed)
-{
- _mean = mean;
- _sigma = sigma;
-}
-
-Korali::Parameter::Gaussian::~Gaussian()
+Gaussian::~Gaussian()
 {
 
 }
@@ -24,9 +28,9 @@ Korali::Parameter::Gaussian::~Gaussian()
 /*                    Configuration Methods                             */
 /************************************************************************/
 
-nlohmann::json Korali::Parameter::Gaussian::getConfiguration()
+nlohmann::json Gaussian::getConfiguration()
 {
- auto js = this->Korali::Parameter::Base::getConfiguration();
+ auto js = this->Base::getConfiguration();
 
  js["Type"] = "Gaussian";
  js["Mean"] = _mean;
@@ -35,7 +39,7 @@ nlohmann::json Korali::Parameter::Gaussian::getConfiguration()
  return js;
 }
 
-void Korali::Parameter::Gaussian::setConfiguration(nlohmann::json& js)
+void Gaussian::setConfiguration(nlohmann::json& js)
 {
  _mean  = consume(js, { "Mean" }, KORALI_NUMBER);
  _sigma = consume(js, { "Sigma" }, KORALI_NUMBER);
@@ -45,30 +49,29 @@ void Korali::Parameter::Gaussian::setConfiguration(nlohmann::json& js)
 /*                    Functional Methods                                */
 /************************************************************************/
 
-double Korali::Parameter::Gaussian::getDensity(double x)
+void Gaussian::initialize()
+{
+	_aux = -0.5*gsl_sf_log(2*M_PI) - gsl_sf_log(_sigma);
+}
+
+double Gaussian::getDensity(double x)
 {
  return gsl_ran_gaussian_pdf(x - _mean, _sigma);
 }
 
-double Korali::Parameter::Gaussian::getDensityLog(double x)
+double Gaussian::getDensityLog(double x)
 {
- // Optimize by pre-calculating constants and using multiplication instead of power.
- return -0.5*log(2*M_PI) - log(_sigma) - 0.5*pow((x-_mean)/_sigma, 2);
+ double d = (x-_mean)/_sigma;
+ return _aux - 0.5*d*d;
 }
 
-double Korali::Parameter::Gaussian::getRandomNumber()
+double Gaussian::getRandomNumber()
 {
  return _mean + gsl_ran_gaussian(_range, _sigma);
 }
 
-double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, double* x, double* u)
+double Gaussian::logLikelihood(double sigma, int nData, double* x, double* u)
 {
- if (nData == 0)
- {
-  fprintf(stderr, "[Korali] Error: _problem's reference dataset not defined for the Likelihood (use: _problem.setReferenceData()).\n");
-   return 0.0;
- }
-
  double sigma2 = sigma*sigma;
  double ssn = 0.0;
 
@@ -80,8 +83,10 @@ double Korali::Parameter::Gaussian::logLikelihood(double sigma, int nData, doubl
 
  double res = 0.5* (nData*log(2*M_PI) + nData*log(sigma2) + ssn/sigma2);
 
- // printf("Sigma: %.11f - Res: %f\n", sigma, res);
-
  return res;
 }
 
+void Gaussian::printDetails()
+{
+  printf("Gaussian(%.3g,%.3g)", _mean, _sigma);
+}

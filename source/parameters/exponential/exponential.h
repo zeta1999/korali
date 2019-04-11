@@ -9,16 +9,20 @@ namespace Korali::Parameter
 class Exponential : public Korali::Parameter::Base
 {
  private:
+  double _loc;
   double _mean;
 
  public:
+
+  Exponential(nlohmann::json& js, int seed);
+  Exponential(double loc, double mean, size_t seed = 0);
+  ~Exponential();
+
   double getDensity(double x);
   double getDensityLog(double x);
   double getRandomNumber();
 
-  // Constructor / Destructor
-  Exponential(nlohmann::json& js, int seed);
-  ~Exponential();
+  void printDetails() override;
 
   // Serialization Methods
   nlohmann::json getConfiguration();
