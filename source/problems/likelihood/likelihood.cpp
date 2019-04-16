@@ -7,18 +7,6 @@
 Korali::Problem::Likelihood::Likelihood(nlohmann::json& js) : Korali::Problem::Base::Base(js)
 {
  setConfiguration(js);
-
- if (_k->_statisticalParameterCount != 1)
- {
-  fprintf(stderr, "[Korali] Error: Likelihood problem requires 1 statistical parameter.\n");
-  exit(-1);
- }
-
- if (_model != KORALI_MULTIPLE)
- {
-  fprintf(stderr, "[Korali] Error: Incorrect model for the Likelihood problem.\n");
-  exit(-1);
- }
 }
 
 Korali::Problem::Likelihood::~Likelihood()
@@ -61,6 +49,19 @@ void Korali::Problem::Likelihood::setConfiguration(nlohmann::json& js)
 
 double Korali::Problem::Likelihood::evaluateFitness(double* sample)
 {
+
+ if (_k->_statisticalParameterCount != 1)
+ {
+  fprintf(stderr, "[Korali] Error: Likelihood problem requires 1 statistical parameter.\n");
+  exit(-1);
+ }
+
+ if (_model != KORALI_MULTIPLE)
+ {
+  fprintf(stderr, "[Korali] Error: Incorrect model for the Likelihood problem.\n");
+  exit(-1);
+ }
+
  if (isSampleOutsideBounds(sample)) return -DBL_MAX;
 
  double sigma = sample[_k->_computationalParameterCount];

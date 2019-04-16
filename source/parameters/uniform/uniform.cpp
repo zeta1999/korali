@@ -32,7 +32,7 @@ nlohmann::json Uniform::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"] = "Uniform";
+ js["Distribution"] = "Uniform";
 
  return js;
 }

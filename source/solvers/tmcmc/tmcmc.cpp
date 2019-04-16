@@ -17,46 +17,6 @@ Korali::Solver::TMCMC::TMCMC(nlohmann::json& js) : Korali::Solver::Base::Base(js
 {
  setConfiguration(js);
 
- // Initializing Data Variables
- double *LCmem  = (double*) calloc (_s*_k->N*_k->N, sizeof(double));
- local_cov = (double**) calloc ( _s, sizeof(double*));
- for (size_t pos = 0; pos < _s; ++pos)
- {
-  local_cov[pos] = LCmem + pos*_k->N*_k->N;
-  for (size_t i = 0; i < _k->N; i++) local_cov[pos][i*_k->N+i] = 1;
- }
-
- // Initializing Run Variables
- _varianceCoefficient        = 0;
- _annealingRatio              = 0;
- _uniqueSelections = 0;
- _uniqueEntries = _s;
- _logEvidence  = 0;
- _acceptanceRate     = 1.0;
- _nChains = _s;
- finishedChains = 0;
- _covarianceMatrix =  (double*) calloc (_k->N*_k->N, sizeof(double));
- _meanTheta =  (double*) calloc (_k->N, sizeof(double));
-
- // Initializing TMCMC Leaders
- ccPoints    = (double*) calloc (_k->N*_s, sizeof(double));
- ccFitness   = (double*) calloc (_s, sizeof(double));
-
- clPoints    = (double*) calloc (_k->N*_s, sizeof(double));
- clFitness   = (double*) calloc (_s, sizeof(double));
-
- chainPendingFitness = (bool*) calloc (_s, sizeof(bool));
- chainCurrentStep    = (size_t*) calloc (_s, sizeof(size_t));
- chainLength         = (size_t*) calloc (_s, sizeof(size_t));
-
- databaseEntries  = 0;
- databasePoints   = (double*) calloc (_k->N*_s, sizeof(double));
- databaseFitness  = (double*) calloc (_s, sizeof(double));
-
- for (size_t c = 0; c < _s; c++) chainCurrentStep[c] = 0;
- for (size_t c = 0; c < _s; c++) chainLength[c] = 1 + _burnIn;
- for (size_t c = 0; c < _s; c++) chainPendingFitness[c] = false;
-
  // Setting Chain-Specific Seeds
  range = gsl_rng_alloc (gsl_rng_default);
  gsl_rng_set(range, _k->_seed++);
@@ -68,7 +28,54 @@ Korali::Solver::TMCMC::TMCMC(nlohmann::json& js) : Korali::Solver::Base::Base(js
   gsl_rng_set(chainGSLRange[c], _k->_seed++);
  }
 
-  // TODO: Ensure proper memory deallocation
+ // Allocating TMCMC memory
+ double *LCmem       = (double*)  calloc (_s*_k->N*_k->N, sizeof(double));
+ local_cov           = (double**) calloc ( _s, sizeof(double*));
+ for (size_t pos = 0; pos < _s; ++pos)
+ {
+  local_cov[pos] = LCmem + pos*_k->N*_k->N;
+  for (size_t i = 0; i < _k->N; i++) local_cov[pos][i*_k->N+i] = 1;
+ }
+
+ _covarianceMatrix   = (double*) calloc (_k->N*_k->N, sizeof(double));
+ _meanTheta          = (double*) calloc (_k->N, sizeof(double));
+ ccPoints            = (double*) calloc (_k->N*_s, sizeof(double));
+ ccFitness           = (double*) calloc (_s, sizeof(double));
+ clPoints            = (double*) calloc (_k->N*_s, sizeof(double));
+ clFitness           = (double*) calloc (_s, sizeof(double));
+ chainPendingFitness = (bool*)   calloc (_s, sizeof(bool));
+ chainCurrentStep    = (size_t*) calloc (_s, sizeof(size_t));
+ chainLength         = (size_t*) calloc (_s, sizeof(size_t));
+ databasePoints      = (double*) calloc (_k->N*_s, sizeof(double));
+ databaseFitness     = (double*) calloc (_s, sizeof(double));
+
+ // Initializing Runtime Variables
+ for (size_t c = 0; c < _s; c++) chainCurrentStep[c] = 0;
+ for (size_t c = 0; c < _s; c++) chainLength[c] = 1 + _burnIn;
+ for (size_t c = 0; c < _s; c++) chainPendingFitness[c] = false;
+
+ _currentGeneration     = 0;
+ databaseEntries        = 0;
+ _varianceCoefficient   = 0;
+ _annealingRatio        = 0;
+ _uniqueSelections      = 0;
+ _uniqueEntries         = _s;
+ _logEvidence           = 0;
+ _acceptanceRate        = 1.0;
+ _nChains               = _s;
+ finishedChains         = 0;
+ databaseEntries        = 0;
+ for (size_t c = 0; c < _nChains; c++) chainCurrentStep[c] = 0;
+ for (size_t c = 0; c < _nChains; c++) chainPendingFitness[c] = false;
+
+ // If state is defined:
+ if (isDefined(js, {"State"}))
+ {
+  setState(js);
+  js.erase("State");
+ }
+
+ // TODO: Ensure proper memory deallocation
 }
 
 Korali::Solver::TMCMC::~TMCMC()
@@ -84,32 +91,33 @@ nlohmann::json Korali::Solver::TMCMC::getConfiguration()
 {
  auto js = this->Korali::Solver::Base::getConfiguration();
 
- js["Engine"] = "TMCMC";
- js["Population Size"] = _s;
+ js["Method"] = "TMCMC";
+
+ js["Population Size"]      = _s;
  js["Covariance Tolerance"] = _tolCOV;
- js["Min Rho Update"] = _minStep;
- js["Covariance Scaling"] = _bbeta;
+ js["Min Rho Update"]       = _minStep;
+ js["Covariance Scaling"]   = _bbeta;
  js["Use Local Covariance"] = _useLocalCov;
- js["Burn In"] = _burnIn;
+ js["Burn In"]              = _burnIn;
+
  js["Termination Criteria"]["Max Generations"] = _maxGens;
 
  // State Variables
- if (isDefined(js, {"State"}))
- {
-  js["State"]["nChains"]             = _nChains;
-  js["State"]["Current Generation"]  = _currentGeneration;
-  js["State"]["VarianceCoefficient"] = _varianceCoefficient;
-  js["State"]["AnnealingRatio"]      = _annealingRatio;
-  js["State"]["UniqueSelections"]    = _uniqueSelections;
-  js["State"]["UniqueEntries"]       = _uniqueEntries;
-  js["State"]["LogEvidence"]         = _logEvidence;
-  js["State"]["AcceptanceRate"]      = _acceptanceRate;
-  for (size_t i = 0; i < _k->N*_k->N; i++) js["State"]["CovarianceMatrix"][i] = _covarianceMatrix[i];
-  for (size_t i = 0; i < _k->N; i++)       js["State"]["MeanTheta"][i]        = _meanTheta[i];
-  for (size_t i = 0; i < _k->N*_s; i++)    js["State"]["DatabasePoints"][i]   = databasePoints[i];
-  for (size_t i = 0; i < _k->N; i++)       js["State"]["DatabaseFitness"][i]  = databaseFitness[i];
-  for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++) js["State"]["LocalCovarianceMatrix"][i][j] = local_cov[i][j];
- }
+ js["State"]["nChains"]             = _nChains;
+ js["State"]["Current Generation"]  = _currentGeneration;
+ js["State"]["VarianceCoefficient"] = _varianceCoefficient;
+ js["State"]["AnnealingRatio"]      = _annealingRatio;
+ js["State"]["UniqueSelections"]    = _uniqueSelections;
+ js["State"]["UniqueEntries"]       = _uniqueEntries;
+ js["State"]["LogEvidence"]         = _logEvidence;
+ js["State"]["AcceptanceRate"]      = _acceptanceRate;
+ js["State"]["Database Entries"]    = databaseEntries;
+
+ for (size_t i = 0; i < _k->N*_k->N; i++) js["State"]["CovarianceMatrix"][i] = _covarianceMatrix[i];
+ for (size_t i = 0; i < _k->N; i++)       js["State"]["MeanTheta"][i]        = _meanTheta[i];
+ for (size_t i = 0; i < _k->N*_s; i++)    js["State"]["DatabasePoints"][i]   = databasePoints[i];
+ for (size_t i = 0; i < _s; i++)          js["State"]["DatabaseFitness"][i]  = databaseFitness[i];
+ for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++) js["State"]["LocalCovarianceMatrix"][i][j] = local_cov[i][j];
 
  return js;
 }
@@ -118,7 +126,6 @@ void Korali::Solver::TMCMC::setConfiguration(nlohmann::json& js)
 {
  this->Korali::Solver::Base::setConfiguration(js);
 
- _currentGeneration = consume(js, { "Current Generation" }, KORALI_NUMBER, std::to_string(0));
  _s                 = consume(js, { "Population Size" }, KORALI_NUMBER);
  _tolCOV            = consume(js, { "Covariance Tolerance" }, KORALI_NUMBER, std::to_string(1.0));
  _minStep           = consume(js, { "Min Rho Update" }, KORALI_NUMBER, std::to_string(1e-9));
@@ -126,8 +133,12 @@ void Korali::Solver::TMCMC::setConfiguration(nlohmann::json& js)
  _useLocalCov       = consume(js, { "Use Local Covariance" }, KORALI_BOOLEAN, "false");
  _burnIn            = consume(js, { "Burn In" }, KORALI_NUMBER, std::to_string(0));
  _maxGens           = consume(js, { "Termination Criteria", "Max Generations" }, KORALI_NUMBER, std::to_string(20));
+}
 
- // State Variables
+void Korali::Solver::TMCMC::setState(nlohmann::json& js)
+{
+ this->Korali::Solver::Base::setState(js);
+
  _nChains             = js["State"]["nChains"];
  _currentGeneration   = js["State"]["Current Generation"];
  _varianceCoefficient = js["State"]["VarianceCoefficient"];
@@ -136,13 +147,13 @@ void Korali::Solver::TMCMC::setConfiguration(nlohmann::json& js)
  _uniqueEntries       = js["State"]["UniqueEntries"];
  _logEvidence         = js["State"]["LogEvidence"];
  _acceptanceRate      = js["State"]["AcceptanceRate"];
+ databaseEntries      = js["State"]["Database Entries"];
 
  for (size_t i = 0; i < _k->N*_k->N; i++) _covarianceMatrix[i] = js["State"]["CovarianceMatrix"][i];
  for (size_t i = 0; i < _k->N; i++)       _meanTheta[i]        = js["State"]["MeanTheta"][i];
  for (size_t i = 0; i < _k->N*_s; i++)    databasePoints[i]    = js["State"]["DatabasePoints"][i];
- for (size_t i = 0; i < _k->N; i++)       databaseFitness[i]   = js["State"]["DatabaseFitness"][i];
- for (size_t i = 0; i < _s; i++)
-  for (size_t j = 0; j < _k->N; j++)      local_cov[i][j]      = js["State"]["LocalCovarianceMatrix"][i][j];
+ for (size_t i = 0; i < _s; i++)          databaseFitness[i]   = js["State"]["DatabaseFitness"][i];
+ for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++) local_cov[i][j] = js["State"]["LocalCovarianceMatrix"][i][j];
 }
 
 /************************************************************************/
@@ -151,21 +162,20 @@ void Korali::Solver::TMCMC::setConfiguration(nlohmann::json& js)
 
 void Korali::Solver::TMCMC::run()
 {
- double samplingTime = 0.0;
- double engineTime = 0.0;
-
  startTime = std::chrono::system_clock::now();
 
- // Setting initial conditions
- for (size_t c = 0; c < _s; c++)
-  for (size_t d = 0; d < _k->N; d++)
-   clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
-
- _k->saveState();
-
- for(; _annealingRatio < 1.0 && _currentGeneration < _maxGens; _currentGeneration++)
+ for(; _currentGeneration < _maxGens; _currentGeneration++)
  {
-  auto t0 = std::chrono::system_clock::now();
+  _k->saveState();
+
+  // Generating Samples
+  if (_currentGeneration == 0)
+  for (size_t c = 0; c < _s; c++)
+   for (size_t d = 0; d < _k->N; d++)
+    clPoints[c*_k->N + d] = ccPoints[c*_k->N + d] = _k->_parameters[d]->getRandomNumber();
+  else resampleGeneration();
+
+  if (_annealingRatio >= 1.0) break;
 
   while (finishedChains < _nChains)
   {
@@ -179,22 +189,15 @@ void Korali::Solver::TMCMC::run()
   }
 
   t1 = std::chrono::system_clock::now();
-  samplingTime += std::chrono::duration<double>(t1-t0).count();
 
   if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Generation %ld - Annealing Ratio:  %.2f%% - Elapsed Time: %fs\n", _currentGeneration, _annealingRatio*100, std::chrono::duration<double>(t1-startTime).count());
-
-  t2 = std::chrono::system_clock::now();
-  resampleGeneration();
-  t3 = std::chrono::system_clock::now();
-  engineTime += std::chrono::duration<double>(t3-t2).count();
-
-  _k->saveState();
  }
 
+ _k->saveState(); // Saving final state.
  auto endTime = std::chrono::system_clock::now();
 
  if (_currentGeneration == _maxGens) printf("[Korali] Finished (Max Generations Reached).\n");
- printf("[Korali] Total Time: %fs - Sampling Time: %fs - Engine Time: %fs.\n", std::chrono::duration<double>(endTime-startTime).count(), samplingTime, engineTime);
+ printf("[Korali] Total Time: %fs.\n", std::chrono::duration<double>(endTime-startTime).count());
 }
 
 void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
@@ -217,7 +220,7 @@ void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
 
 void Korali::Solver::TMCMC::updateDatabase(double* point, double fitness)
 {
- for (size_t i = 0; i < _k->N; i++) databasePoints[databaseEntries*_k->N + i] = point[i];    // Re-add burn-in
+ for (size_t i = 0; i < _k->N; i++) databasePoints[databaseEntries*_k->N + i] = point[i];
  databaseFitness[databaseEntries] = fitness;
  databaseEntries++;
 }
@@ -256,8 +259,6 @@ void Korali::Solver::TMCMC::resampleGeneration()
   _annealingRatio       = _prevAnnealingRatio + _minStep;
   _varianceCoefficient = sqrt(tmcmc_objlogp(_annealingRatio, databaseFitness, databaseEntries, _prevAnnealingRatio, _tolCOV)) + _tolCOV;
  }
-
- if (_annealingRatio >= 1.0) { printf("[Korali] Finished (Annealing Ratio = 100%%).\n"); return; }
 
  /* Compute weights and normalize*/
 

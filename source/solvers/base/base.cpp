@@ -30,6 +30,11 @@ void Korali::Solver::Base::setConfiguration(nlohmann::json& js)
 
 }
 
+void Korali::Solver::Base::setState(nlohmann::json& js)
+{
+
+}
+
 /************************************************************************/
 /*                    Functional Methods                                */
 /************************************************************************/

@@ -25,8 +25,9 @@ class CMAES : public Korali::Solver::Base
  void processSample(size_t sampleId, double fitness);
 
  // Serialization Methods
- virtual nlohmann::json getConfiguration();
- virtual void setConfiguration(nlohmann::json& js);
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json& js);
+ void setState(nlohmann::json& js);
 
  private:
 
@@ -61,7 +62,7 @@ class CMAES : public Korali::Solver::Base
  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
  double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
  double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
- size_t _maxGens;
+ size_t _maxGenenerations;
 
  // Private CMAES-Specific Variables
  double sigma;  /* step size */

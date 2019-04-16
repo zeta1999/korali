@@ -32,7 +32,7 @@ nlohmann::json Gaussian::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"] = "Gaussian";
+ js["Distribution"] = "Gaussian";
  js["Mean"] = _mean;
  js["Sigma"] = _sigma;
 

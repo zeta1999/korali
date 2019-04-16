@@ -32,7 +32,7 @@ nlohmann::json Cauchy::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"] = "Cauchy";
+ js["Distribution"] = "Cauchy";
  js["Location"] = _loc;
  js["Scale"] = _scale;
 

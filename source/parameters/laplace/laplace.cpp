@@ -32,7 +32,7 @@ nlohmann::json Laplace::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"]  = "Laplace";
+ js["Distribution"]  = "Laplace";
  js["Mean"]  = _mean;
  js["Width"] = _width;
 

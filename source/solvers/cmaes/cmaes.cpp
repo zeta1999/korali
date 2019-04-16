@@ -9,17 +9,36 @@ Korali::Solver::CMAES::CMAES(nlohmann::json& js) : Korali::Solver::Base::Base(js
 {
  setConfiguration(js);
 
+ // Allocating Memory
+ _samplePopulation =  (double*) calloc (sizeof(double), _k->N*_s);
+ rgpc = (double*) calloc (sizeof(double), _k->N);
+ rgps = (double*) calloc (sizeof(double), _k->N);
+ rgdTmp = (double*) calloc (sizeof(double), _k->N);
+ rgBDz = (double*) calloc (sizeof(double), _k->N);
+ rgxmean = (double*) calloc (sizeof(double), _k->N);
+ rgxold = (double*) calloc (sizeof(double), _k->N);
+ rgxbestever = (double*) calloc (sizeof(double), _k->N);
+ rgout = (double*) calloc (sizeof(double), _k->N);
+ rgD = (double*) calloc (sizeof(double), _k->N);
+
+ rgFuncValue = (double*) calloc (sizeof(double), _s);
+ index = (int *) calloc (sizeof(int*), _s);
+ curBest = (double *) calloc (sizeof(double), _s);
+ _muWeights = (double *) calloc (sizeof(double), _mu);
+
+ C = (double**) calloc (sizeof(double*), _k->N);
+ B = (double**)calloc (sizeof(double*), _k->N);
+ for (size_t i = 0; i < _k->N; i++) C[i] = (double*) calloc (sizeof(double), _k->N);
+ for (size_t i = 0; i < _k->N; i++) B[i] = (double*) calloc (sizeof(double), _k->N);
+
+ _initializedSample = (bool*) calloc (_s, sizeof(bool));
+ _fitnessVector = (double*) calloc (sizeof(double), _s);
+
  // Initializing Gaussian Generator
  _gaussianGenerator = new Parameter::Gaussian(0.0, 1.0, _k->_seed++);
 
- // Getting sample vector pointer
- _samplePopulation =  (double*) calloc (sizeof(double), _k->N*_s);
-
- // Initializing MU and its weights
-
- if (_mu == 0) _mu = _s;
-   _muWeights = new double[_mu];
-
+ // Otherwise initialize from configuration.
+ // Initializing Mu Weights
  if (_muType == "LinearDecreasing") for (size_t i = 0; i < _mu; i++)  _muWeights[i] = _mu - i;
  if (_muType == "Equal")            for (size_t i = 0; i < _mu; i++)  _muWeights[i] = 1;
  if (_muType == "Logarithmic")      for (size_t i = 0; i < _mu; i++)  _muWeights[i] = log(_mu+1.)-log(i+1.);
@@ -60,7 +79,7 @@ Korali::Solver::CMAES::CMAES(nlohmann::json& js) : Korali::Solver::Base::Base(js
 
  if (_dampFactor < 0) _dampFactor = 1;
  _dampFactor = _dampFactor* (1 + 2*std::max(0.0, sqrt((_muEffective-1.0)/(_k->N+1.0)) - 1))  /* basic factor */
-  * std::max(0.3, 1. - (double)_k->N / (1e-6+std::min(_maxGens, _maxFitnessEvaluations/_s)))
+  * std::max(0.3, 1. - (double)_k->N / (1e-6+std::min(_maxGenenerations, _maxFitnessEvaluations/_s)))
   + _sigmaCumulationFactor;             /* minor increment */
 
  // Setting Cumulative Covariance
@@ -88,29 +107,9 @@ Korali::Solver::CMAES::CMAES(nlohmann::json& js) : Korali::Solver::Base::Base(js
 
  flgEigensysIsUptodate = true;
 
-  countevals = 0;
-  currentBest = 0.0;
-
-  rgpc = (double*) calloc (sizeof(double), _k->N);
-  rgps = (double*) calloc (sizeof(double), _k->N);
-  rgdTmp = (double*) calloc (sizeof(double), _k->N);
-  rgBDz = (double*) calloc (sizeof(double), _k->N);
-  rgxmean = (double*) calloc (sizeof(double), _k->N);
-  rgxold = (double*) calloc (sizeof(double), _k->N);
-  rgxbestever = (double*) calloc (sizeof(double), _k->N);
-  rgout = (double*) calloc (sizeof(double), _k->N);
-  rgD = (double*) calloc (sizeof(double), _k->N);
-  C = (double**) calloc (sizeof(double*), _k->N);
-  B = (double**)calloc (sizeof(double*), _k->N);
-  rgFuncValue = (double*) calloc (sizeof(double), _s);
-
-  for (size_t i = 0; i < _k->N; ++i) {
-   C[i] = (double*) calloc (sizeof(double), _k->N);
-   B[i] = (double*) calloc (sizeof(double), _k->N);
-  }
-  index = (int *) calloc (sizeof(int*), _s);
-  for (size_t i = 0; i < _s; ++i)  index[i] = i; /* should not be necessary */
-  curBest = (double *) calloc (sizeof(double), _s);
+ countevals = 0;
+ currentBest = 0.0;
+ for (size_t i = 0; i < _s; ++i)  index[i] = i; /* should not be necessary */
 
  for (size_t i = 0; i < _k->N; ++i)
  {
@@ -133,8 +132,12 @@ Korali::Solver::CMAES::CMAES(nlohmann::json& js) : Korali::Solver::Base::Base(js
    rgxmean[i] = rgxold[i] = _k->_parameters[i]->_initialValue;
  }
 
- _initializedSample = (bool*) calloc (_s, sizeof(bool));
- _fitnessVector = (double*) calloc (sizeof(double), _s);
+ // If state is defined:
+ if (isDefined(js, {"State"}))
+ {
+  setState(js);
+  js.erase("State");
+ }
 }
 
 Korali::Solver::CMAES::~CMAES()
@@ -150,7 +153,7 @@ nlohmann::json Korali::Solver::CMAES::getConfiguration()
 {
  auto js = this->Korali::Solver::Base::getConfiguration();
 
- js["Engine"] = "CMA-ES";
+ js["Method"] = "CMA-ES";
 
  js["Lambda"] = _s;
  js["Current Generation"] = _currentGeneration;
@@ -165,7 +168,7 @@ nlohmann::json Korali::Solver::CMAES::getConfiguration()
  js["Covariance Matrix"]["Cumulative Covariance"] = _cumulativeCovariance;
  js["Covariance Matrix"]["Learning Rate"] = _covarianceMatrixLearningRate;
 
- js["Termination Criteria"]["Max Generations"] = _covarianceMatrixLearningRate;
+ js["Termination Criteria"]["Max Generations"] = _maxGenenerations;
  js["Termination Criteria"]["Min Fitness"] = _stopMinFitness;
  js["Termination Criteria"]["Max Model Evaluations"] = _maxFitnessEvaluations;
  js["Termination Criteria"]["Fitness Eval Threshold"] = _stopFitnessEvalThreshold;
@@ -174,7 +177,6 @@ nlohmann::json Korali::Solver::CMAES::getConfiguration()
  js["Termination Criteria"]["Min Fitness"] = _stopMinFitness;
 
  // State Variables
-
  js["State"]["Current Generation"] = _currentGeneration;
  js["State"]["MuEffective"] = _muEffective;
  js["State"]["Sigma"] = sigma;
@@ -198,8 +200,9 @@ nlohmann::json Korali::Solver::CMAES::getConfiguration()
  for (size_t i = 0; i < _k->N; i++) js["State"]["CumulativeCovariance"] += rgpc[i];
  for (size_t i = 0; i < _k->N; i++) js["State"]["FunctionValues"] += rgFuncValue[i];
 
- for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++) js["State"]["Samples"][i] += _samplePopulation[i*_k->N + j];
- for (size_t i = 0; i < _s; i++) js["State"]["SampleFitness"] += _fitnessVector[i];
+ for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) js["State"]["CovarianceMatrix"][i][j] = C[i][j];
+ for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) js["State"]["EigenMatrix"][i][j] = B[i][j];
+ for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++)    js["State"]["Samples"][i][j] = _samplePopulation[i*_k->N + j];
 
  return js;
 }
@@ -221,45 +224,44 @@ void Korali::Solver::CMAES::setConfiguration(nlohmann::json& js)
  _cumulativeCovariance          = consume(js, { "Covariance Matrix", "Cumulative Covariance" }, KORALI_NUMBER, std::to_string(-1));
  _covarianceMatrixLearningRate  = consume(js, { "Covariance Matrix", "Learning Rate" }, KORALI_NUMBER, std::to_string(-1));
 
- _maxGens                       = consume(js, { "Termination Criteria", "Max Generations" }, KORALI_NUMBER, std::to_string(200));
+ _maxGenenerations              = consume(js, { "Termination Criteria", "Max Generations" }, KORALI_NUMBER, std::to_string(200));
  _stopMinFitness                = consume(js, { "Termination Criteria", "Min Fitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
  _maxFitnessEvaluations         = consume(js, { "Termination Criteria", "Max Model Evaluations" }, KORALI_NUMBER, std::to_string(std::numeric_limits<size_t>::max()));
  _stopFitnessEvalThreshold      = consume(js, { "Termination Criteria", "Fitness Eval Threshold" }, KORALI_NUMBER, std::to_string(std::numeric_limits<double>::min()));
  _stopFitnessDiffThreshold      = consume(js, { "Termination Criteria", "Fitness Diff Threshold" }, KORALI_NUMBER, std::to_string(1e-9));
  _stopMinDeltaX                 = consume(js, { "Termination Criteria", "Min DeltaX" }, KORALI_NUMBER, std::to_string(0.0));
  _stopMinFitness                = consume(js, { "Termination Criteria", "Min Fitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
+}
 
- // State Variables
- if (isDefined(js, {"State"}))
- {
-  _currentGeneration    = js["State"]["Current Generation"];
-  _muEffective          = js["State"]["MuEffective"];
-  sigma                 = js["State"]["Sigma"];
-  currentBest           = js["State"]["CurrentBest"];
-  currentFunctionValue  = js["State"]["CurrentFunctionValue"];
-  prevFunctionValue     = js["State"]["prevFunctionValue"];
-  maxdiagC              = js["State"]["MaxDiagonalCovariance"];
-  mindiagC              = js["State"]["MinDiagonalCovariance"];
-  maxEW                 = js["State"]["MaxEigenvalue"];
-  minEW                 = js["State"]["MinEigenvalue"] ;
-  flgEigensysIsUptodate = js["State"]["EigenSystemUpToDate"];
-  countevals            = js["State"]["EvaluationCount"];
+void Korali::Solver::CMAES::setState(nlohmann::json& js)
+{
+ this->Korali::Solver::Base::setState(js);
 
-  for (size_t i = 0; i < _mu; i++) _muWeights[i]     = js["State"]["MuWeights"][i];
-  for (size_t i = 0; i < _k->N; i++) rgxmean[i]      = js["State"]["CurrentMeanVector"][i];
-  for (size_t i = 0; i < _k->N; i++) rgxold[i]       = js["State"]["PreviousMeanVector"][i];
-  for (size_t i = 0; i < _k->N; i++) rgxbestever[i]  = js["State"]["BestEverVector"][i];
-  for (size_t i = 0; i < _k->N; i++) curBest[i]      = js["State"]["CurrentBestVector"][i];
-  for (size_t i = 0; i < _k->N; i++) index[i]        = js["State"]["Index"][i];
-  for (size_t i = 0; i < _k->N; i++) rgD[i]          = js["State"]["AxisLengths"][i];
-  for (size_t i = 0; i < _k->N; i++) rgpc[i]         = js["State"]["CumulativeCovariance"][i];
-  for (size_t i = 0; i < _k->N; i++) rgFuncValue[i]  = js["State"]["FunctionValues"][i];
-  for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) C[i][j] = js["State"]["CovarianceMatrix"][i][j];
-  for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) B[i][j] = js["State"]["EigenMatrix"][i][j];
+ _currentGeneration    = js["State"]["Current Generation"];
+ _muEffective          = js["State"]["MuEffective"];
+ sigma                 = js["State"]["Sigma"];
+ currentBest           = js["State"]["CurrentBest"];
+ currentFunctionValue  = js["State"]["CurrentFunctionValue"];
+ prevFunctionValue     = js["State"]["prevFunctionValue"];
+ maxdiagC              = js["State"]["MaxDiagonalCovariance"];
+ mindiagC              = js["State"]["MinDiagonalCovariance"];
+ maxEW                 = js["State"]["MaxEigenvalue"];
+ minEW                 = js["State"]["MinEigenvalue"] ;
+ flgEigensysIsUptodate = js["State"]["EigenSystemUpToDate"];
+ countevals            = js["State"]["EvaluationCount"];
 
-  for (size_t i = 0; i < _s; i++) for (size_t j = 0; j < _k->N; j++) _samplePopulation[i*_k->N + j] = js["State"]["Samples"][i][j];
-  for (size_t i = 0; i < _s; i++) _fitnessVector[i] = js["State"]["SampleFitness"][i];
- }
+ for (size_t i = 0; i < _mu; i++) _muWeights[i]     = js["State"]["MuWeights"][i];
+ for (size_t i = 0; i < _k->N; i++) rgxmean[i]      = js["State"]["CurrentMeanVector"][i];
+ for (size_t i = 0; i < _k->N; i++) rgxold[i]       = js["State"]["PreviousMeanVector"][i];
+ for (size_t i = 0; i < _k->N; i++) rgxbestever[i]  = js["State"]["BestEverVector"][i];
+ for (size_t i = 0; i < _k->N; i++) curBest[i]      = js["State"]["CurrentBestVector"][i];
+ for (size_t i = 0; i < _k->N; i++) index[i]        = js["State"]["Index"][i];
+ for (size_t i = 0; i < _k->N; i++) rgD[i]          = js["State"]["AxisLengths"][i];
+ for (size_t i = 0; i < _k->N; i++) rgpc[i]         = js["State"]["CumulativeCovariance"][i];
+ for (size_t i = 0; i < _k->N; i++) rgFuncValue[i]  = js["State"]["FunctionValues"][i];
+ for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) C[i][j] = js["State"]["CovarianceMatrix"][i][j];
+ for (size_t i = 0; i < _k->N; i++) for (size_t j = 0; j < _k->N; j++) B[i][j] = js["State"]["EigenMatrix"][i][j];
+ for (size_t i = 0; i < _s; i++)    for (size_t j = 0; j < _k->N; j++) _samplePopulation[i*_k->N + j] = js["State"]["Samples"][i][j];
 }
 
 /************************************************************************/
@@ -558,10 +560,10 @@ bool Korali::Solver::CMAES::checkTermination()
   terminate = true;
   sprintf(_terminationReason, "Conducted %lu function evaluations >= (%lu).", countevals, _maxFitnessEvaluations); }
 
- if(_currentGeneration >= _maxGens)
+ if(_currentGeneration >= _maxGenenerations)
  {
   terminate = true;
-  sprintf(_terminationReason, "Maximum number of Generations reached (%lu).", _maxGens);
+  sprintf(_terminationReason, "Maximum number of Generations reached (%lu).", _maxGenenerations);
  }
 
  return terminate;

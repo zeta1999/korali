@@ -4,12 +4,12 @@
 /*                  Constructor / Destructor Methods                    */
 /************************************************************************/
 
-Korali::Conduit::Single::Single(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
+Korali::Conduit::Sequential::Sequential(nlohmann::json& js) : Korali::Conduit::Base::Base(js)
 {
  setConfiguration(js);
 }
 
-Korali::Conduit::Single::~Single()
+Korali::Conduit::Sequential::~Sequential()
 {
 
 }
@@ -18,16 +18,16 @@ Korali::Conduit::Single::~Single()
 /*                    Configuration Methods                             */
 /************************************************************************/
 
-nlohmann::json Korali::Conduit::Single::getConfiguration()
+nlohmann::json Korali::Conduit::Sequential::getConfiguration()
 {
  auto js = this->Korali::Conduit::Base::getConfiguration();
 
- js["Type"] = "Single";
+ js["Type"] = "Sequential";
 
  return js;
 }
 
-void Korali::Conduit::Single::setConfiguration(nlohmann::json js)
+void Korali::Conduit::Sequential::setConfiguration(nlohmann::json js)
 {
  this->Korali::Conduit::Base::setConfiguration(js);
 }
@@ -36,23 +36,23 @@ void Korali::Conduit::Single::setConfiguration(nlohmann::json js)
 /*                    Functional Methods                                */
 /************************************************************************/
 
-void Korali::Conduit::Single::run()
+void Korali::Conduit::Sequential::run()
 {
  _k->_solver->run();
 }
 
-void Korali::Conduit::Single::evaluateSample(double* sampleArray, size_t sampleId)
+void Korali::Conduit::Sequential::evaluateSample(double* sampleArray, size_t sampleId)
 {
  double fitness = _k->_problem->evaluateFitness(&sampleArray[_k->N*sampleId]);
  _k->_solver->processSample(sampleId, fitness);
 }
 
-void Korali::Conduit::Single::checkProgress()
+void Korali::Conduit::Sequential::checkProgress()
 {
 
 }
 
-bool Korali::Conduit::Single::isRoot()
+bool Korali::Conduit::Sequential::isRoot()
 {
  return true;
 }

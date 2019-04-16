@@ -6,7 +6,7 @@
 namespace Korali::Conduit
 {
 
-class Single : public Base {
+class Sequential : public Base {
  public:
 
  void run();
@@ -15,8 +15,8 @@ class Single : public Base {
  bool isRoot();
 
  // Constructor / Destructor
- Single(nlohmann::json& js);
- ~Single();
+ Sequential(nlohmann::json& js);
+ ~Sequential();
 
  // Serialization Methods
  nlohmann::json getConfiguration();

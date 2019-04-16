@@ -32,7 +32,7 @@ nlohmann::json Gamma::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"] = "Gamma";
+ js["Distribution"] = "Gamma";
  js["Scale"] = _scale;
  js["Shape"] = _shape;
 

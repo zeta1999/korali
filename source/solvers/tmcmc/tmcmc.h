@@ -74,8 +74,9 @@ class TMCMC : public Korali::Solver::Base
  static double objLog(const gsl_vector *v, void *param);
 
  // Serialization Methods
- virtual nlohmann::json getConfiguration();
- virtual void setConfiguration(nlohmann::json& js);
+ nlohmann::json getConfiguration();
+ void setConfiguration(nlohmann::json& js);
+ void setState(nlohmann::json& js);
 };
 
 } // namespace Korali

@@ -19,7 +19,7 @@
 #include "solvers/cmaes/cmaes.h"
 #include "solvers/tmcmc/tmcmc.h"
 
-#include "conduits/single/single.h"
+#include "conduits/sequential/sequential.h"
 #include "conduits/upcxx/upcxx.h"
 
 #include "koralijson/koralijson.h"
@@ -34,7 +34,7 @@ class Engine {
  public:
 
  nlohmann::json  _js;
- nlohmann::json& operator [](std::string key) { return _js["Config"][key]; }
+ nlohmann::json& operator [](std::string key) { return _js[key]; }
 
  Korali::Conduit::Base* _conduit;
  Korali::Problem::Base* _problem;
@@ -45,19 +45,19 @@ class Engine {
  Engine();
 
  std::function<double (double*)> _modelSingle;
- Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _js["Config"]["Problem"]["Model"] = "Single"; }
+ Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _js["Problem"]["Model"] = "Single"; }
 
  std::function<void (double*, double*)> _modelMultiple;
- Engine(std::function<void (double*, double*)> model) : Engine::Engine() { _modelMultiple = model; _js["Config"]["Problem"]["Model"] = "Multiple"; }
+ Engine(std::function<void (double*, double*)> model) : Engine::Engine() { _modelMultiple = model; _js["Problem"]["Model"] = "Multiple"; }
 
  std::function<void (double*, double*, double*, double*)> _modelManifold;
- Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _js["Config"]["Problem"]["Model"] = "Manifold"; }
+ Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _js["Problem"]["Model"] = "Manifold"; }
 
  ~Engine();
 
  void run();
- void loadState(char* fileName);
- void saveState(char* fileName);
+ void loadState(std::string fileName);
+ void saveState(std::string fileName);
  void saveState();
 
  size_t N; // Parameter Count

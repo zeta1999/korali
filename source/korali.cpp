@@ -118,7 +118,7 @@ void Korali::Engine::setConfiguration(nlohmann::json js)
 
  if (conduitString == "Sequential")
  {
-  _conduit = new Korali::Conduit::Single(js["Conduit"]);
+  _conduit = new Korali::Conduit::Sequential(js["Conduit"]);
  }
 
  if (conduitString == "UPC++")
@@ -172,16 +172,16 @@ void Korali::Engine::run()
 {
  _k = this;
 
- setConfiguration(_js["Config"]);
+ setConfiguration(_js);
 
  _conduit->run();
 
  printf("[Korali] Results saved to folder: '%s'\n", _resultsDirName);
 }
 
-void Korali::Engine::saveState(char* fileName)
+void Korali::Engine::saveState(std::string fileName)
 {
- saveJsonToFile(fileName, getConfiguration());
+ saveJsonToFile(fileName.c_str(), getConfiguration());
 }
 
 void Korali::Engine::saveState()
@@ -193,7 +193,7 @@ void Korali::Engine::saveState()
  saveJsonToFile(fileName, getConfiguration());
 }
 
-void Korali::Engine::loadState(char* fileName)
+void Korali::Engine::loadState(std::string fileName)
 {
- setConfiguration(loadJsonFromFile(fileName));
+ _js = loadJsonFromFile(fileName.c_str());
 }

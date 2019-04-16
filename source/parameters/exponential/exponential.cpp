@@ -30,7 +30,7 @@ nlohmann::json Exponential::getConfiguration()
 {
  auto js = this->Base::getConfiguration();
 
- js["Type"] = "Exponential";
+ js["Distribution"] = "Exponential";
  js["Location"] = _loc;
  js["Mean"] = _mean;
 
