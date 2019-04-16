@@ -29,7 +29,6 @@ class CMAES : public Korali::Solver::Base
  virtual void setConfiguration(nlohmann::json& js);
  virtual nlohmann::json getState();
  virtual void setState(nlohmann::json js);
- void saveGeneration();
 
  private:
 

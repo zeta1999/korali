@@ -33,8 +33,8 @@ class Engine {
 
  public:
 
- nlohmann::json _config;
- nlohmann::json& operator [](std::string key) { return _config[key]; }
+ nlohmann::json  _js;
+ nlohmann::json& operator [](std::string key) { return _js["config"][key]; }
 
  Korali::Conduit::Base* _conduit;
  Korali::Problem::Base* _problem;
@@ -45,18 +45,19 @@ class Engine {
  Engine();
 
  std::function<double (double*)> _modelSingle;
- Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _config["Problem"]["Model"] = "Single"; }
+ Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _js["config"]["Problem"]["Model"] = "Single"; }
 
  std::function<void (double*, double*)> _modelMultiple;
- Engine(std::function<void (double*, double*)> model) : Engine::Engine() { _modelMultiple = model; _config["Problem"]["Model"] = "Multiple"; }
+ Engine(std::function<void (double*, double*)> model) : Engine::Engine() { _modelMultiple = model; _js["config"]["Problem"]["Model"] = "Multiple"; }
 
  std::function<void (double*, double*, double*, double*)> _modelManifold;
- Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _config["Problem"]["Model"] = "Manifold"; }
+ Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _js["config"]["Problem"]["Model"] = "Manifold"; }
 
  ~Engine();
 
  void run();
- void saveConfiguration();
+ void saveConfiguration(char* fileName);
+ void saveResults(nlohmann::json res);
 
  size_t N; // Parameter Count
  size_t _statisticalParameterCount;
@@ -64,6 +65,9 @@ class Engine {
  size_t _seed;
  int _verbosity;
  size_t _reportFrequency;
+
+ char   _resultsDirName[64];
+ size_t _curResult;
 
  // Serialization Methods
  nlohmann::json getConfiguration();

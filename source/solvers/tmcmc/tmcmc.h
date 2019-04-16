@@ -19,9 +19,9 @@ class TMCMC : public Korali::Solver::Base
 {
  public:
 
-  // Constructor / Destructor
-  TMCMC(nlohmann::json& js);
-  ~TMCMC();
+ // Constructor / Destructor
+ TMCMC(nlohmann::json& js);
+ ~TMCMC();
 
  // TMCMC Configuration
  double _tolCOV;              /* Target coefficient of variation of weights */
@@ -29,47 +29,41 @@ class TMCMC : public Korali::Solver::Base
  double _bbeta;               /* Covariance scaling parameter */
  size_t  _s; // Population Size
  bool _useLocalCov;
+ size_t  _burnIn;
+ size_t _maxGens;
 
  // TMCMC Runtime Variables
+ gsl_rng  *range;
+ gsl_rng** chainGSLRange;
+ bool*   chainPendingFitness; // Indicates that the fitness result for the chain is pending
+ double* ccPoints;   // Chain Candidate Parameter Values
+ double* ccFitness;  // Chain Candidate Fitness
+ double* clPoints;   // Chain Leader Parameter Values
+ double* clFitness;  // Chain Leader Fitness
+ size_t  finishedChains;
+ size_t* chainCurrentStep;
+ size_t* chainLength;
 
- size_t nChains;
+ // TMCMC Status variables
+ size_t  _nChains;
  size_t  _currentGeneration;
- size_t  _burnIn;
  double  _varianceCoefficient;
  double  _annealingRatio;
  size_t  _uniqueSelections;
  size_t  _uniqueEntries;
  double  _logEvidence;
  double  _acceptanceRate;
- double* _covarianceMatrix;            /*[PROBDIM][PROBDIM];*/
- double* _meanTheta;     /*[PROBDIM]*/
- size_t _maxGens;
-
- gsl_rng  *range;
-
- double* clPoints;   // Chain Leader Parameter Values
- double* clFitness;  // Chain Leader Fitness
-
- double* ccPoints;   // Chain Candidate Parameter Values
- double* ccFitness;  // Chain Candidate Fitness
- gsl_rng** chainGSLRange;
-
- bool*   chainPendingFitness; // Indicates that the fitness result for the chain is pending
- size_t  finishedChains;
- size_t* chainCurrentStep;
- size_t* chainLength;
-
+ double* _covarianceMatrix;
+ double* _meanTheta;
  size_t  databaseEntries;
  double* databasePoints;
  double* databaseFitness;
-
- double **local_cov;     /* [DATANUM][PROBDIM*PROBDIM] */
+ double **local_cov;
 
   // Korali Methods
  void run();
 
   // Internal TMCMC Methods
- void saveResults();
  void resampleGeneration();
  void updateDatabase(double* point, double fitness);
  void processSample(size_t c, double fitness);

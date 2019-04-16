@@ -1,5 +1,7 @@
 #include "korali.h"
 #include <chrono>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 Korali::Engine* Korali::_k;
 
@@ -9,7 +11,21 @@ Korali::Engine* Korali::_k;
 
 Korali::Engine::Engine()
 {
+ // Determining result folder name
+ _curResult = 0;
+ size_t runNumber = 0;
+ bool exists = true;
 
+ while(exists)
+ {
+  struct stat info;
+  if (runNumber > 100) { printf("[Korali] Error: Too many result files. Backup your previous results and run again.\n"); exit(-1);}
+  sprintf(_resultsDirName, "korali%05lu", runNumber);
+  if(stat(_resultsDirName, &info) != 0) exists = false;
+  else if(info.st_mode & S_IFDIR) runNumber++;
+ }
+
+ mkdir(_resultsDirName, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 }
 
 Korali::Engine::~Engine()
@@ -156,17 +172,45 @@ void Korali::Engine::run()
 {
  _k = this;
 
- setConfiguration(_config);
+ setConfiguration(_js["config"]);
 
  _conduit->run();
 
- saveConfiguration();
+ printf("[Korali] Results saved to folder: '%s'\n", _resultsDirName);
 }
 
-void Korali::Engine::saveConfiguration()
+void Korali::Engine::saveConfiguration(char* fileName)
 {
- printf("[Korali] Saving configuration to 'korali.cfg'\n");
- FILE *fid = fopen("korali.cfg", "w");
- fprintf(fid, getConfiguration().dump(1).c_str());
- fclose(fid);
+ FILE *fid = fopen(fileName, "w");
+ if (fid != NULL)
+ {
+   fprintf(fid, getConfiguration().dump(1).c_str());
+   fclose(fid);
+   printf("[Korali] Configuration saved to '%s'\n", fileName);
+ }
+ else
+ {
+  fprintf(stderr, "[Korali] Could not save configuration to file: %s\n.", fileName);
+  exit(-1);
+ }
+}
+
+void Korali::Engine::saveResults(nlohmann::json res)
+{
+ _js["state"] = res;
+ char resultsFileName[256];
+ sprintf(resultsFileName, "%s/result%05lu.json", _resultsDirName, _curResult);
+ FILE *fid = fopen(resultsFileName, "w");
+ if (fid != NULL)
+ {
+  fprintf(fid, _js.dump(1).c_str());
+  fclose(fid);
+ }
+ else
+ {
+  fprintf(stderr, "[Korali] Could not save results to file: %s (Error: %d)\n.", resultsFileName, errno);
+  exit(-1);
+ }
+
+ _curResult++;
 }

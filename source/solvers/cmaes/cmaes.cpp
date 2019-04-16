@@ -208,6 +208,7 @@ nlohmann::json Korali::Solver::CMAES::getState()
 {
  auto js = this->Korali::Solver::Base::getState();
 
+ js["Current Generation"] = _currentGeneration;
  js["MuEffective"] = _muEffective;
  js["Sigma"] = sigma;
  js["CurrentBest"] = currentBest;
@@ -238,6 +239,7 @@ nlohmann::json Korali::Solver::CMAES::getState()
 
 void Korali::Solver::CMAES::setState(nlohmann::json js)
 {
+  _currentGeneration    = js["Current Generation"];
   _muEffective          = js["MuEffective"];
   sigma                 = js["Sigma"];
   currentBest           = js["CurrentBest"];
@@ -266,23 +268,6 @@ void Korali::Solver::CMAES::setState(nlohmann::json js)
   for (size_t i = 0; i < _s; i++) _fitnessVector[i] = js["SampleFitness"][i];
 }
 
-void Korali::Solver::CMAES::saveGeneration()
-{
- FILE *fid = NULL;
-
- size_t filenum = 0;
- while(fid == NULL)
- {
-  if (filenum > 100) { printf("[Korali] Error: Too many result files. Backup your previous results and run again.\n"); exit(-1);}
-  sprintf(filepath, "korali%05lu.json",filenum);
-  fid = fopen(filepath, "w");
-  filenum++;
- }
-
- fprintf(fid, getState().dump(1).c_str());
- fclose(fid);
-}
-
 /************************************************************************/
 /*                    Functional Methods                                */
 /************************************************************************/
@@ -292,7 +277,7 @@ void Korali::Solver::CMAES::run()
  if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Starting CMA-ES.\n");
 
  startTime = std::chrono::system_clock::now();
- saveGeneration();
+ _k->saveResults(getState());
 
  while(!checkTermination())
  {
@@ -311,7 +296,8 @@ void Korali::Solver::CMAES::run()
 
   t1 = std::chrono::system_clock::now();
   if (_k->_verbosity >= KORALI_NORMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
-  saveGeneration();
+
+  _k->saveResults(getState());
  }
 
  endTime = std::chrono::system_clock::now();
@@ -319,7 +305,6 @@ void Korali::Solver::CMAES::run()
  if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
  if (_k->_verbosity >= KORALI_MINIMAL)  for (size_t i = 0; i < _k->N; i++)  printf("[Korali] Best Value For \'%s\' = %g\n", _k->_parameters[i]->_name.c_str(), rgxbestever[i]);
  if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
- if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Saving results to \'%s\'\n", filepath);
 }
 
 void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)
