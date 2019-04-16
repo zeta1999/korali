@@ -116,4 +116,47 @@ static nlohmann::json consume(nlohmann::json& js, std::vector<std::string> setti
 
 }
 
+static nlohmann::json loadJsonFromFile(char* fileName)
+{
+ nlohmann::json js;
+
+ FILE *fid = fopen(fileName, "r");
+ if (fid != NULL)
+ {
+   fseek(fid, 0, SEEK_END);
+   long fsize = ftell(fid);
+   fseek(fid, 0, SEEK_SET);  /* same as rewind(f); */
+
+   char *string = (char*) malloc(fsize + 1);
+   fread(string, 1, fsize, fid);
+   fclose(fid);
+
+   js = nlohmann::json::parse(string);
+
+   free(string);
+ }
+ else
+ {
+  fprintf(stderr, "[Korali] Could not load file: %s\n.", fileName);
+  exit(-1);
+ }
+
+ return js;
+}
+
+static void saveJsonToFile(char* fileName, nlohmann::json js)
+{
+ FILE *fid = fopen(fileName, "w");
+ if (fid != NULL)
+ {
+   fprintf(fid, js.dump(1).c_str());
+   fclose(fid);
+ }
+ else
+ {
+  fprintf(stderr, "[Korali] Could not write to file: %s\n.", fileName);
+  exit(-1);
+ }
+}
+
 #endif // _KORALI_JSON_H_

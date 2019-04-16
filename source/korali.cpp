@@ -12,14 +12,14 @@ Korali::Engine* Korali::_k;
 Korali::Engine::Engine()
 {
  // Determining result folder name
- _curResult = 0;
+ _currentState = 0;
  size_t runNumber = 0;
  bool exists = true;
 
  while(exists)
  {
   struct stat info;
-  if (runNumber > 100) { printf("[Korali] Error: Too many result files. Backup your previous results and run again.\n"); exit(-1);}
+  if (runNumber > 1000) { printf("[Korali] Error: Too many result files. Backup your previous results and run again.\n"); exit(-1);}
   sprintf(_resultsDirName, "korali%05lu", runNumber);
   if(stat(_resultsDirName, &info) != 0) exists = false;
   else if(info.st_mode & S_IFDIR) runNumber++;
@@ -172,45 +172,28 @@ void Korali::Engine::run()
 {
  _k = this;
 
- setConfiguration(_js["config"]);
+ setConfiguration(_js["Config"]);
 
  _conduit->run();
 
  printf("[Korali] Results saved to folder: '%s'\n", _resultsDirName);
 }
 
-void Korali::Engine::saveConfiguration(char* fileName)
+void Korali::Engine::saveState(char* fileName)
 {
- FILE *fid = fopen(fileName, "w");
- if (fid != NULL)
- {
-   fprintf(fid, getConfiguration().dump(1).c_str());
-   fclose(fid);
-   printf("[Korali] Configuration saved to '%s'\n", fileName);
- }
- else
- {
-  fprintf(stderr, "[Korali] Could not save configuration to file: %s\n.", fileName);
-  exit(-1);
- }
+ saveJsonToFile(fileName, getConfiguration());
 }
 
-void Korali::Engine::saveResults(nlohmann::json res)
+void Korali::Engine::saveState()
 {
- _js["state"] = res;
- char resultsFileName[256];
- sprintf(resultsFileName, "%s/result%05lu.json", _resultsDirName, _curResult);
- FILE *fid = fopen(resultsFileName, "w");
- if (fid != NULL)
- {
-  fprintf(fid, _js.dump(1).c_str());
-  fclose(fid);
- }
- else
- {
-  fprintf(stderr, "[Korali] Could not save results to file: %s (Error: %d)\n.", resultsFileName, errno);
-  exit(-1);
- }
+ char fileName[256];
 
- _curResult++;
+ sprintf(fileName, "./%s/s%05lu.json", _resultsDirName, _currentState++);
+
+ saveJsonToFile(fileName, getConfiguration());
+}
+
+void Korali::Engine::loadState(char* fileName)
+{
+ setConfiguration(loadJsonFromFile(fileName));
 }
