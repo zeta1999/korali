@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-import libkorali
+import sys
+sys.path.append('/home/martiser/skorali/korali/lib')
+import libkorali as korali
 
-kmh = 25
-print ("Speed:", kmh)
+p = korali.Pet('Molly')
+print(p)
+print(p.getName())
+p.setName('Charly')
+print(p.getName())

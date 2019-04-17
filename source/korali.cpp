@@ -198,10 +198,9 @@ void Korali::Engine::loadState(std::string fileName)
  _js = loadJsonFromFile(fileName.c_str());
 }
 
-int add(int i, int j) {
-    return i + j;
-}
-
 PYBIND11_MODULE(libkorali, m) {
-    m.def("add", &add, "A function which adds two numbers");
+ pybind11::class_<Pet>(m, "Pet")
+     .def(pybind11::init<const std::string &>())
+     .def("setName", &Pet::setName)
+     .def("getName", &Pet::getName);
 }
