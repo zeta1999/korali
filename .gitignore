@@ -3,6 +3,7 @@ korali/
 *.cfg
 *.o
 *.json
+*.so
 *.a
 *.swp
 *.out
