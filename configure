@@ -102,10 +102,6 @@ if [ "$UPCXX" != "" ]; then
  fi
 fi
 
-echo "[Korali] Checking for Python support..."
-python --version > /dev/null 2>&1
-if [ $? -eq 0 ]; then USE_PYTHON=1; fi
-
 if [ "$MPICXX" != "" ]; then
  echo "[Korali] Checking for MPI with $MPICXX command..."
  $MPICXX --version > /dev/null 2>&1
@@ -152,11 +148,12 @@ else
   openMPFlags=
 fi
 
-if [ $USE_PYTHON -eq 1 ]; then
-  echo "[Korali] Configuring with support for Python."
+python3 --version > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "[Korali] Configuring with support for Python3."
   pythonFlags="\$(shell python3 -m pybind11 --includes) -Wno-deprecated-declarations"
 else
-  echo "[Korali] Configuring without support for Python."
+  echo "[Korali] Configuring without support for Python3."
   PythonFlags=
 fi
 
@@ -169,7 +166,7 @@ echo "PREFIX = $PREFIX" >> common.mk
 echo "CXXFLAGS = -O3 -g" >> common.mk
 echo "#CXXFLAGS = -O0 -g" >> common.mk 
 echo "CXXFLAGS += -std=c++17 -Wall -Wfatal-errors \`gsl-config --cflags\` $pthreadFlags $openMPFlags $upcxxFlags $mpiFlags $pythonFlags" >> common.mk
-echo "LDFLAGS = \`gsl-config --libs\` -lm $openMPFlags $pthreadFlags" >> common.mk
+echo "LDFLAGS = \`gsl-config --libs\` -lm $openMPFlags $pthreadFlags $pythonFlags" >> common.mk
 echo "COMPILE.cxx = \$(CXX) \$(CXXFLAGS) -c -o \$@" >> common.mk
 echo "LINK.o      = \$(CXX) \$(LDFLAGS)  -o \$@" >> common.mk
 echo "%.o: %.cpp" >> common.mk

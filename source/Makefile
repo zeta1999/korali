@@ -9,8 +9,8 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 all: libkorali.so
 
-libkorali.so: $(OBJECTS)
-	$(CXX) -shared $^ -o $@
+libkorali.so: $(OBJECTS) 
+	$(CXX) -shared $^ -o $@ -Wl,-rpath=$(HOME)/usr/lib -lgsl -lgslcblas -L$(HOME)/usr/lib
 
 clean:; rm -rf *.a *.o $(OBJECTS)
 

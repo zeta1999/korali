@@ -1,5 +1,5 @@
 #!/usr/bin/env python
+import libkorali
 
-kmh = int(raw_input("Enter km/h: "))
-mph =  0.6214 * kmh
-print "Speed:", kmh, "KM/H = ", mph, "MPH"
+kmh = 25
+print ("Speed:", kmh)
