@@ -199,8 +199,12 @@ void Korali::Engine::loadState(std::string fileName)
 }
 
 PYBIND11_MODULE(libkorali, m) {
- pybind11::class_<Pet>(m, "Pet")
-     .def(pybind11::init<const std::string &>())
-     .def("setName", &Pet::setName)
-     .def("getName", &Pet::getName);
+ pybind11::class_<Korali::Engine>(m, "Engine")
+ .def(pybind11::init<>())
+ .def("__getitem__", &Korali::Engine::getItem)
+ .def("__setitem__", (void (Korali::Engine::*)(const std::string&, const std::string &)) &Korali::Engine::setItem)
+ .def("__setitem__", (void (Korali::Engine::*)(const std::string&, const double &)) &Korali::Engine::setItem)
+ .def("__setitem__", (void (Korali::Engine::*)(const std::string&, const int &)) &Korali::Engine::setItem)
+ .def("__setitem__", (void (Korali::Engine::*)(const std::string&, const bool &)) &Korali::Engine::setItem)
+ .def("run", &Korali::Engine::run);
 }

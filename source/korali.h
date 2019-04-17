@@ -35,7 +35,7 @@ class Engine {
  public:
 
  nlohmann::json  _js;
- nlohmann::json& operator [](std::string key) { return _js[key]; }
+ nlohmann::json& operator[](std::string key) { return _js[key]; }
 
  Korali::Conduit::Base* _conduit;
  Korali::Problem::Base* _problem;
@@ -57,6 +57,13 @@ class Engine {
  ~Engine();
 
  void run();
+ void getItem(int a){printf("%d\n", a);}
+
+ void setItem(const std::string& key, const std::string& val) { _js[key] = val; }
+ void setItem(const std::string& key, const double& val) { _js[key] = val; }
+ void setItem(const std::string& key, const int& val) { _js[key] = val; }
+ void setItem(const std::string& key, const bool& val) { _js[key] = val; }
+
  void loadState(std::string fileName);
  void saveState(std::string fileName);
  void saveState();
@@ -80,14 +87,5 @@ class Engine {
 extern Engine* _k;
 
 } // namespace Korali
-
-struct Pet {
-    Pet(const std::string &name) : name(name) { }
-    void setName(const std::string &name_) { name = name_; }
-    const std::string &getName() const { return name; }
-
-    std::string name;
-};
-
 
 #endif // _KORALI_H_
