@@ -1,5 +1,6 @@
 include ../common.mk
 CXXFLAGS += -fPIC
+CXXFLAGS += $(shell python3 -m pybind11 --includes)
 CXXFLAGS += -I.
 CXXFLAGS += -I../libs
 

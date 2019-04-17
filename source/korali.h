@@ -23,6 +23,7 @@
 #include "conduits/upcxx/upcxx.h"
 
 #include "koralijson/koralijson.h"
+#include "pybind11/pybind11.h"
 
 enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
 
