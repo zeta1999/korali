@@ -4,4 +4,4 @@ sys.path.append('/home/martiser/skorali/korali/lib')
 import libkorali as korali
 
 p = korali.Engine()
-p["Parameter"]["Hola"]["P"]["Car"]["KFL"] = "3";
+p["Pep"]["Parameter"] = "3";

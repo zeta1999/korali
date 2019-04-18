@@ -30,11 +30,22 @@ enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORAL
 namespace Korali
 {
 
+class KoraliJsonWrapper
+{
+ public:
+  nlohmann::json* _js;
+
+  KoraliJsonWrapper& getItem(const std::string& key){printf("Wrapper: getItem: %s\n", key.c_str()); return *this;}
+  void setItem(const std::string& key, const std::string& val) {printf("Wrapper: setItem: %s = %s\n", key.c_str(), val.c_str()); }
+};
+
 class Engine {
 
  public:
 
  nlohmann::json  _js;
+ KoraliJsonWrapper _wr;
+
  nlohmann::json& operator[](std::string key) { return _js[key]; }
 
  Korali::Conduit::Base* _conduit;
@@ -57,8 +68,8 @@ class Engine {
  ~Engine();
 
  void run();
- Engine& getItem(const std::string& key){printf("%s\n", key.c_str()); return *this;}
- void setItem(const std::string& key, const std::string& val) {printf("%s = %s\n", key.c_str(), val.c_str()); }
+ KoraliJsonWrapper& getItem(const std::string& key){printf("Engine: GetItem\n"); _wr._js = &(_js[key]); return _wr;}
+ void setItem(const std::string& key, const std::string& val) {printf("Engine: setItem: %s = %s\n", key.c_str(), val.c_str()); }
 
  void loadState(std::string fileName);
  void saveState(std::string fileName);

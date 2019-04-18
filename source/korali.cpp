@@ -204,4 +204,9 @@ PYBIND11_MODULE(libkorali, m) {
  .def("__getitem__", &Korali::Engine::getItem)
  .def("__setitem__", (Korali::Engine& (Korali::Engine::*)(const std::string&, const std::string &)) &Korali::Engine::setItem, pybind11::return_value_policy::reference)
  .def("run", &Korali::Engine::run);
+
+ pybind11::class_<Korali::KoraliJsonWrapper>(m, "__KoraliJsonWrapper")
+ .def(pybind11::init<>())
+ .def("__getitem__", &Korali::KoraliJsonWrapper::getItem)
+ .def("__setitem__", (Korali::KoraliJsonWrapper& (Korali::KoraliJsonWrapper::*)(const std::string&, const std::string &)) &Korali::KoraliJsonWrapper::setItem, pybind11::return_value_policy::reference);
 }
