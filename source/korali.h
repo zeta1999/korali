@@ -35,8 +35,11 @@ class KoraliJsonWrapper
  public:
   nlohmann::json* _js;
 
-  KoraliJsonWrapper& getItem(const std::string& key){printf("Wrapper: getItem: %s\n", key.c_str()); return *this;}
-  void setItem(const std::string& key, const std::string& val) {printf("Wrapper: setItem: %s = %s\n", key.c_str(), val.c_str()); }
+  KoraliJsonWrapper& getItem(const std::string& key){printf("Wrapper: getItem: %s\n", key.c_str()); _js = &((*_js)[key]); return *this;}
+  void setItem(const std::string& key, const std::string& val) {printf("WrapperString: setItem: %s = %s\n", key.c_str(), val.c_str()); (*_js)[key] = val; }
+  void setItem(const std::string& key, const double& val)      {printf("WrapperDouble: setItem: %s = %f\n", key.c_str(), val); (*_js)[key] = val; }
+  void setItem(const std::string& key, const int& val)         {printf("WrapperInt: setItem: %s = %d\n", key.c_str(), val); (*_js)[key] = val; }
+  void setItem(const std::string& key, const bool& val)        {printf("WrapperBool: setItem: %s = %d\n", key.c_str(), val); (*_js)[key] = val; }
 };
 
 class Engine {
@@ -69,7 +72,11 @@ class Engine {
 
  void run();
  KoraliJsonWrapper& getItem(const std::string& key){printf("Engine: GetItem\n"); _wr._js = &(_js[key]); return _wr;}
- void setItem(const std::string& key, const std::string& val) {printf("Engine: setItem: %s = %s\n", key.c_str(), val.c_str()); }
+
+ void setItem(const std::string& key, const std::string& val) {printf("EngineString: setItem: %s = %s\n", key.c_str(), val.c_str()); _js[key] = val; }
+ void setItem(const std::string& key, const double& val)      {printf("EngineDouble: setItem: %s = %f\n", key.c_str(), val); _js[key] = val; }
+ void setItem(const std::string& key, const int& val)         {printf("EngineInt: setItem: %s = %d\n", key.c_str(), val); _js[key] = val; }
+ void setItem(const std::string& key, const bool& val)        {printf("EngineBool: setItem: %s = %d\n", key.c_str(), val); _js[key] = val; }
 
  void loadState(std::string fileName);
  void saveState(std::string fileName);
