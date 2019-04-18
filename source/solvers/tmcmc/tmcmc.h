@@ -47,10 +47,10 @@ class TMCMC : public Korali::Solver::Base
  // TMCMC Status variables
  size_t  _nChains;
  size_t  _currentGeneration;
- double  _varianceCoefficient;
+ double  _coefficientOfVariation;
  double  _annealingRatio;
- size_t  _uniqueSelections;
- size_t  _uniqueEntries;
+ size_t  _uniqueSelections; /* unique samples after reslection */
+ size_t  _uniqueEntries;    /* accepted samples after proposal (TODO: not needed? (DW)) */
  double  _logEvidence;
  double  _acceptanceRate;
  double* _covarianceMatrix;
@@ -77,6 +77,10 @@ class TMCMC : public Korali::Solver::Base
  nlohmann::json getConfiguration();
  void setConfiguration(nlohmann::json& js);
  void setState(nlohmann::json& js);
+
+ // Print Methods
+ void printGeneration() const;
+ void printFinal() const;
 };
 
 } // namespace Korali

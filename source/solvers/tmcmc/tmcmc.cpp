@@ -56,7 +56,7 @@ Korali::Solver::TMCMC::TMCMC(nlohmann::json& js) : Korali::Solver::Base::Base(js
 
  _currentGeneration     = 0;
  databaseEntries        = 0;
- _varianceCoefficient   = 0;
+ _coefficientOfVariation   = 0;
  _annealingRatio        = 0;
  _uniqueSelections      = 0;
  _uniqueEntries         = _s;
@@ -105,7 +105,7 @@ nlohmann::json Korali::Solver::TMCMC::getConfiguration()
  // State Variables
  js["State"]["nChains"]             = _nChains;
  js["State"]["Current Generation"]  = _currentGeneration;
- js["State"]["VarianceCoefficient"] = _varianceCoefficient;
+ js["State"]["CVar"]                = _coefficientOfVariation;
  js["State"]["AnnealingRatio"]      = _annealingRatio;
  js["State"]["UniqueSelections"]    = _uniqueSelections;
  js["State"]["UniqueEntries"]       = _uniqueEntries;
@@ -139,15 +139,15 @@ void Korali::Solver::TMCMC::setState(nlohmann::json& js)
 {
  this->Korali::Solver::Base::setState(js);
 
- _nChains             = js["State"]["nChains"];
- _currentGeneration   = js["State"]["Current Generation"];
- _varianceCoefficient = js["State"]["VarianceCoefficient"];
- _annealingRatio      = js["State"]["AnnealingRatio"];
- _uniqueSelections    = js["State"]["UniqueSelections"];
- _uniqueEntries       = js["State"]["UniqueEntries"];
- _logEvidence         = js["State"]["LogEvidence"];
- _acceptanceRate      = js["State"]["AcceptanceRate"];
- databaseEntries      = js["State"]["Database Entries"];
+ _nChains                = js["State"]["nChains"];
+ _currentGeneration      = js["State"]["Current Generation"];
+ _coefficientOfVariation = js["State"]["CVar"];
+ _annealingRatio         = js["State"]["AnnealingRatio"];
+ _uniqueSelections       = js["State"]["UniqueSelections"];
+ _uniqueEntries          = js["State"]["UniqueEntries"];
+ _logEvidence            = js["State"]["LogEvidence"];
+ _acceptanceRate         = js["State"]["AcceptanceRate"];
+ databaseEntries         = js["State"]["Database Entries"];
 
  for (size_t i = 0; i < _k->N*_k->N; i++) _covarianceMatrix[i] = js["State"]["CovarianceMatrix"][i];
  for (size_t i = 0; i < _k->N; i++)       _meanTheta[i]        = js["State"]["MeanTheta"][i];
@@ -190,14 +190,15 @@ void Korali::Solver::TMCMC::run()
 
   t1 = std::chrono::system_clock::now();
 
-  if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Generation %ld - Annealing Ratio:  %.2f%% - Elapsed Time: %fs\n", _currentGeneration, _annealingRatio*100, std::chrono::duration<double>(t1-startTime).count());
+  printGeneration();
  }
 
  _k->saveState(); // Saving final state.
- auto endTime = std::chrono::system_clock::now();
 
- if (_currentGeneration == _maxGens) printf("[Korali] Finished (Max Generations Reached).\n");
- printf("[Korali] Total Time: %fs.\n", std::chrono::duration<double>(endTime-startTime).count());
+ endTime = std::chrono::system_clock::now();
+ 
+ printFinal();
+
 }
 
 void Korali::Solver::TMCMC::processSample(size_t c, double fitness)
@@ -252,12 +253,12 @@ void Korali::Solver::TMCMC::resampleGeneration()
  if (xmin > _prevAnnealingRatio)
  {
   _annealingRatio       = xmin;
-  _varianceCoefficient = sqrt(fmin) + _tolCOV;
+  _coefficientOfVariation = sqrt(fmin) + _tolCOV;
  }
  else
  {
-  _annealingRatio       = _prevAnnealingRatio + _minStep;
-  _varianceCoefficient = sqrt(tmcmc_objlogp(_annealingRatio, databaseFitness, databaseEntries, _prevAnnealingRatio, _tolCOV)) + _tolCOV;
+  _annealingRatio         = _prevAnnealingRatio + _minStep;
+  _coefficientOfVariation = sqrt(tmcmc_objlogp(_annealingRatio, databaseFitness, databaseEntries, _prevAnnealingRatio, _tolCOV)) + _tolCOV;
  }
 
  /* Compute weights and normalize*/
@@ -506,3 +507,56 @@ void Korali::Solver::TMCMC::minSearch(double const *fj, int fn, double pj, doubl
  gsl_vector_free(ss);
  gsl_multimin_fminimizer_free (s);
 }
+
+void Korali::Solver::TMCMC::printGeneration() const
+{
+  if ((_currentGeneration-1) % _k->_outputFrequency != 0) return;
+  if (_k->_verbosity >= KORALI_MINIMAL) 
+  {
+    printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"); 
+    printf("[Korali] Generation %ld - Annealing Ratio:  %.2f%% - Elapsed Time: %.2fs\n", _currentGeneration, _annealingRatio*100, std::chrono::duration<double>(t1-startTime).count());
+  
+  }
+  if (_k->_verbosity >= KORALI_NORMAL)
+  {
+    printf("[Korali] Acceptance Rate:  %.2f%%\n", _acceptanceRate);
+    printf("[Korali] Coefficient of Variation:  %.2f%%\n", _coefficientOfVariation);
+  }
+  if (_k->_verbosity >= KORALI_DETAILED)
+  {
+    printf("[Korali] Mean of Samples:\n\n");
+    for (size_t i = 0; i < _k->N; i++) printf("\t %g\n", _meanTheta[i]);
+    printf("\n[Korali] Covariance of Samples:\n");
+    for (size_t i = 0; i < _k->N; i++) 
+    {
+        for (size_t j = 0; j < i; j++) printf("\t%g\t",_covarianceMatrix[i*_k->N+j]);
+        printf("\n");
+    }
+  }
+}
+
+void Korali::Solver::TMCMC::printFinal() const
+{
+  if (_k->_verbosity >= KORALI_MINIMAL) 
+  {
+    printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"); 
+    if (_currentGeneration == _maxGens) printf("[Korali] Generation %ld - not converged (Max Generation reached, Annealing Ratio: %.2f%%)\n", _currentGeneration, _annealingRatio);
+    else printf("[Korali] Generation %ld - Finished (Annealing Ratio: %.2f%%)\n", _currentGeneration, _annealingRatio);
+    printf("[Korali] Total Time: %fs.\n", std::chrono::duration<double>(endTime-startTime).count());
+    printf("[Korali] logEvidence: %f.\n", _logEvidence);
+  }
+
+  if (_k->_verbosity >= KORALI_NORMAL)
+  {
+    printf("[Korali] Mean of Samples:\n\n");
+    for (size_t i = 0; i < _k->N; i++) printf("\t %g\n", _meanTheta[i]);
+    printf("\n[Korali] Covariance of Samples:\n");
+    for (size_t i = 0; i < _k->N; i++) 
+    {
+        for (size_t j = 0; j < i; j++) printf("\t%g\t",_covarianceMatrix[i*_k->N+j]);
+        printf("\n");
+    }
+    printf("\n");
+  }
+}
+

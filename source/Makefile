@@ -2,7 +2,7 @@ include ../common.mk
 CXXFLAGS += -I.
 CXXFLAGS += -I../libs
 
-SOURCES = $(shell find . | grep ".cpp")
+SOURCES = $(shell find . -name "*.cpp")
 OBJECTS = $(SOURCES:.cpp=.o)
 
 all: libkorali.a

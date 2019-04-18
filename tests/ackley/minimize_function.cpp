@@ -26,6 +26,5 @@ int main(int argc, char* argv[])
  korali["Solver"]["Lambda"] = 128;
 
  korali.run();
-
  return 0;
 }

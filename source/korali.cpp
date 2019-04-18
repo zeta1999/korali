@@ -48,7 +48,7 @@ nlohmann::json Korali::Engine::getConfiguration()
  if (_verbosity == KORALI_NORMAL)   js["Verbosity"] = "Normal";
  if (_verbosity == KORALI_DETAILED) js["Verbosity"] = "Detailed";
 
- js["Report Frequency"] = _reportFrequency;
+ js["Output Frequency"] = _outputFrequency;
 
  for (size_t i = 0; i < N; i++) js["Parameters"][i] = _parameters[i]->getConfiguration();
  js["Problem"] = _problem->getConfiguration();
@@ -72,7 +72,7 @@ void Korali::Engine::setConfiguration(nlohmann::json js)
  if (vString == "Normal")   _verbosity = KORALI_NORMAL;
  if (vString == "Detailed") _verbosity = KORALI_DETAILED;
 
- _reportFrequency = consume(js, { "Report Frequency" }, KORALI_NUMBER, "1");
+ _outputFrequency = consume(js, { "Output Frequency" }, KORALI_NUMBER, "1");
 
  // Configure Parameters
  std::vector<Korali::Parameter::Base*> tmp;

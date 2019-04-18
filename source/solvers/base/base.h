@@ -28,6 +28,10 @@ class Base {
  virtual nlohmann::json getConfiguration();
  virtual void setConfiguration(nlohmann::json& js);
  virtual void setState(nlohmann::json& js);
+
+ // Print Methods
+ virtual void printGeneration() const = 0;
+ virtual void printFinal() const = 0;
 };
 
 } // namespace Korali

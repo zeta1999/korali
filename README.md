@@ -7,6 +7,9 @@ Currently the code is under development and the repository is private.
 ## Install
 To install...
 
+## Tests
+TO test...
+
 ## Run
 To run...
 
@@ -22,4 +25,4 @@ To see the documentation site
 People working on korali:
 * Georgios Arampatzis, garampat at ethz.ch
 * Sergio Martin Miguel, martiser at ethz.ch
-* Daniel Waelchli, wadaniel at student.ethz.ch
+* Daniel Waelchli, wadaniel at ethz.ch

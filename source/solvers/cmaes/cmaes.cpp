@@ -18,7 +18,6 @@ Korali::Solver::CMAES::CMAES(nlohmann::json& js) : Korali::Solver::Base::Base(js
  rgxmean = (double*) calloc (sizeof(double), _k->N);
  rgxold = (double*) calloc (sizeof(double), _k->N);
  rgxbestever = (double*) calloc (sizeof(double), _k->N);
- rgout = (double*) calloc (sizeof(double), _k->N);
  rgD = (double*) calloc (sizeof(double), _k->N);
 
  rgFuncValue = (double*) calloc (sizeof(double), _s);
@@ -291,16 +290,14 @@ void Korali::Solver::CMAES::run()
   updateDistribution(_fitnessVector);
 
   t1 = std::chrono::system_clock::now();
-  if (_k->_verbosity >= KORALI_NORMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
+  printGeneration();
 
   _k->saveState();
  }
 
  endTime = std::chrono::system_clock::now();
 
- if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Finished - Reason: %s\n", _terminationReason);
- if (_k->_verbosity >= KORALI_MINIMAL)  for (size_t i = 0; i < _k->N; i++)  printf("[Korali] Best Value For \'%s\' = %g\n", _k->_parameters[i]->_name.c_str(), rgxbestever[i]);
- if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
+ printFinal();
 }
 
 void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)
@@ -309,10 +306,10 @@ void Korali::Solver::CMAES::processSample(size_t sampleId, double fitness)
  _finishedSamples++;
 }
 
-bool Korali::Solver::CMAES::isFeasible(double *pop)
+bool Korali::Solver::CMAES::isFeasible(const double *pop) const
 {
  for (size_t i = 0; i < _k->N; i++)
-  if (pop[i] < _k->_parameters[i]->_lowerBound || pop[i] > _k->_parameters[i]->_upperBound)  return false;
+  if (pop[i] < _k->_parameters[i]->_lowerBound || pop[i] > _k->_parameters[i]->_upperBound) return false;
  return true;
 }
 
@@ -395,7 +392,7 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  sorted_index(fitnessVector, index, _s);
 
  /* Test if function values are identical, escape flat fitness */
- if (rgFuncValue[index[0]] == rgFuncValue[index[(int)_s/2]]) {
+ if (rgFuncValue[index[0]] == rgFuncValue[index[(int)_mu]]) {
   sigma *= exp(0.2+_sigmaCumulationFactor/_dampFactor);
   fprintf(stderr, "[Korali] Error: Warning: sigma increased due to equal function values.\n");
   fprintf(stderr, "[Korali] Reconsider the formulation of the objective function\n");
@@ -404,6 +401,7 @@ void Korali::Solver::CMAES::updateDistribution(const double *fitnessVector)
  /* update function value history */
  prevFunctionValue = currentFunctionValue;
  currentFunctionValue = fitnessVector[index[0]];
+ prevBest = currentBest;
 
  /* update xbestever */
  if (currentBest > curBest[index[0]] || _currentGeneration == 1)
@@ -579,12 +577,12 @@ void Korali::Solver::CMAES::updateEigensystem(int flgforce)
  minEW = doubleRangeMin(rgD, _k->N);
  maxEW = doubleRangeMax(rgD, _k->N);
 
- for (size_t i = 0; i < _k->N; ++i)  rgD[i] = sqrt(rgD[i]);
+ for (size_t i = 0; i < _k->N; ++i) rgD[i] = sqrt(rgD[i]);
 
  flgEigensysIsUptodate = true;
 }
 
-void Korali::Solver::CMAES::eigen(size_t size,  double **C, double *diag, double **Q)
+void Korali::Solver::CMAES::eigen(size_t size, double **C, double *diag, double **Q) const
 {
  double* data = (double*) malloc (sizeof(double) * size * size);
 
@@ -616,7 +614,7 @@ void Korali::Solver::CMAES::eigen(size_t size,  double **C, double *diag, double
  free(data);
 }
 
-int Korali::Solver::CMAES::maxIdx(const double *rgd, int len)
+int Korali::Solver::CMAES::maxIdx(const double *rgd, int len) const
 {
  int i, res;
  for(i=1, res=0; i<len; ++i)
@@ -625,7 +623,7 @@ int Korali::Solver::CMAES::maxIdx(const double *rgd, int len)
  return res;
 }
 
-int Korali::Solver::CMAES::minIdx(const double *rgd, int len)
+int Korali::Solver::CMAES::minIdx(const double *rgd, int len) const
 {
  int i, res;
  for(i=1, res=0; i<len; ++i)
@@ -635,21 +633,21 @@ int Korali::Solver::CMAES::minIdx(const double *rgd, int len)
 }
 
 /* dirty index sort */
-void Korali::Solver::CMAES::sorted_index(const double *fitnessVector, int *iindex, int n)
+void Korali::Solver::CMAES::sorted_index(const double *fitnessVector, int *index, int n) const
 {
  int i, j;
- for (i=1, iindex[0]=0; i<n; ++i) {
+ for (i=1, index[0]=0; i<n; ++i) {
   for (j=i; j>0; --j) {
-   if (fitnessVector[iindex[j-1]] < fitnessVector[i])
+   if (fitnessVector[index[j-1]] < fitnessVector[i])
     break;
-   iindex[j] = iindex[j-1]; /* shift up */
+   index[j] = index[j-1]; /* shift up */
   }
-  iindex[j] = i; /* insert i */
+  index[j] = i; /* insert i */
  }
 }
 
 
-double Korali::Solver::CMAES::doubleRangeMax(const double *rgd, int len)
+double Korali::Solver::CMAES::doubleRangeMax(const double *rgd, int len) const
 {
  int i;
  double max = rgd[0];
@@ -658,11 +656,54 @@ double Korali::Solver::CMAES::doubleRangeMax(const double *rgd, int len)
  return max;
 }
 
-double Korali::Solver::CMAES::doubleRangeMin(const double *rgd, int len)
+double Korali::Solver::CMAES::doubleRangeMin(const double *rgd, int len) const
 {
  int i;
  double min = rgd[0];
  for (i = 1; i < len; ++i)
   min = (min > rgd[i]) ? rgd[i] : min;
  return min;
+}
+
+void Korali::Solver::CMAES::printGeneration() const
+{
+  if ((_currentGeneration-1) % _k->_outputFrequency != 0) return;
+  printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"); 
+  if (_k->_verbosity >= KORALI_MINIMAL) printf("[Korali] Generation %ld - Elapsed Time: %fs\n", _currentGeneration, std::chrono::duration<double>(t1-startTime).count());
+  if (_k->_verbosity >= KORALI_NORMAL) 
+  {
+    double reldiffpct = (currentBest/prevBest - 1.0)*100.0;
+    printf("[Korali] Current Function Value: %e - Best: %e (%.1f%%)\n", currentFunctionValue, currentBest, reldiffpct);
+    
+    printf("[Korali] Sigma: %e\n", sigma);
+    printf("[Korali] Min Diag C: %e - Max Diag C: %e\n", mindiagC, maxdiagC);
+    printf("[Korali] Min EW C: %e - Max EW C: %e\n", minEW, maxEW);
+  }
+
+  if (_k->_verbosity >= KORALI_DETAILED)
+  {
+    printf("\n[Korali] MeanX: \t\t BestX:\n");
+    for (size_t i = 0; i < _k->N; i++)  printf("\t %g \t\t %g\n", rgxmean[i], rgxbestever[i]);
+    
+    printf("\n[Korali] C:\n");
+    for (size_t i = 0; i < _k->N; i++) 
+    {
+        for (size_t j = 0; j < i; j++) printf("\t%g\t",C[i][j]);
+        printf("\n");
+    }
+  }
+}
+
+void Korali::Solver::CMAES::printFinal() const
+{
+ if (_k->_verbosity >= KORALI_MINIMAL) 
+ {  
+    printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"); 
+    printf("[Korali] Generation %ld - Finished\n", _currentGeneration);
+    printf("[Korali] Optimum found: %e\n", currentBest);
+    printf("[Korali] Optimum found at:\n\n");
+    for (size_t i = 0; i < _k->N; i++) printf("\t %g\n", rgxbestever[i]);
+    printf("\n[Korali] Stopping Criteria: %s\n", _terminationReason);
+    printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
+ }
 }

@@ -65,7 +65,7 @@ class Engine {
  size_t _computationalParameterCount;
  size_t _seed;
  int _verbosity;
- size_t _reportFrequency;
+ size_t _outputFrequency;
 
  char   _resultsDirName[64];
  size_t _currentState;

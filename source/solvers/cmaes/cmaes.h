@@ -32,24 +32,24 @@ class CMAES : public Korali::Solver::Base
  private:
 
  // Korali Runtime Variables
- double* _fitnessVector;
- double* _samplePopulation;
- size_t _currentGeneration;
+ double* _fitnessVector; /* objective function values [_s] */
+ double* _samplePopulation; /* sample coordinates [_s x _k->N] */
+ size_t _currentGeneration; /* generation count */
  bool* _initializedSample;
  char _terminationReason[500];
  char filepath[500];
 
  size_t _finishedSamples;
- size_t _s;
- size_t _mu;
- std::string _muType;
- double* _muWeights;
+ size_t _s; /* number of samples per generation */
+ size_t _mu; /* number of best samples for mean / cov update */
+ std::string _muType; /* linearDecreasing, Equal or Logarithmic */
+ double* _muWeights; /* weights for mu best samples */
  double _muEffective;
  double _muCovariance;
 
- double _sigmaCumulationFactor;
- double _dampFactor;
- double _cumulativeCovariance;
+ double _sigmaCumulationFactor; /* default calculated from muEffective and dimension */
+ double _dampFactor; /* dampening parameter determines controls step size adaption */
+ double _cumulativeCovariance; /* default calculated from dimension */
  double _covarianceMatrixLearningRate;
 
  size_t _diagonalCovarianceMatrixEvalFrequency;
@@ -62,52 +62,55 @@ class CMAES : public Korali::Solver::Base
  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
  double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
  double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
- size_t _maxGenenerations;
+ size_t _maxGenenerations; // Max number of generations.
 
  // Private CMAES-Specific Variables
  double sigma;  /* step size */
  Parameter::Gaussian* _gaussianGenerator;
 
- double currentBest;
- double *rgxmean;  /* mean x vector, "parent" */
- double *rgxbestever;
- double *curBest;
- int *index;       /* sorting index of sample pop. */
- double currentFunctionValue;
- double prevFunctionValue;
+ double currentBest; /* best ever fitness */
+ double prevBest; /* best ever fitness from previous generation */ 
+ double *rgxmean; /* mean "parent" */
+ double *rgxbestever; /* bestever vector */
+ double *curBest; /* holding all fitness values (fitnessvector) */ 
+ int *index; /* sorting index of current sample pop (index[0] idx of current best). */
+ double currentFunctionValue; /* best fitness current generation */
+ double prevFunctionValue; /* best fitness previous generation */
 
- double **C;  /* lower triangular matrix: i>=j for C[i][j] */
- double **B;  /* matrix with normalize eigenvectors in columns */
+ double **C; /* lower triangular matrix: i>=j for C[i][j] */
+ double **B; /* matrix with normalize eigenvectors in columns */
  double *rgD; /* axis lengths */
 
- double *rgpc;
- double *rgps;
- double *rgxold;
- double *rgout;
- double *rgBDz;   /* for B*D*z */
- double *rgdTmp;  /* temporary (random) vector used in different places */
- double *rgFuncValue;
+ double *rgpc; /* evolution path for cov update */
+ double *rgps; /* exponential for sigma update */
+ double *rgxold; /* mean "parent" previous generation */
+ double *rgBDz; /* for B*D*z */
+ double *rgdTmp; /* temporary (random) vector used in different places */
+ double *rgFuncValue; /* holding all fitness values (fitnessvector) */
 
  size_t countevals;
- double maxdiagC; /* repeatedly used for output */
- double mindiagC;
- double maxEW;
- double minEW;
+ double maxdiagC; /* max diagonal element of C (used for output) */
+ double mindiagC; /* min diagonal element of C (used for output) */
+ double maxEW; /* max Eigenwert of C (used for output) */
+ double minEW; /* min Eigenwert of C (used for output) */
 
  bool flgEigensysIsUptodate;
 
- // Private CMAES-Specific Methods
+ // Private CMA-ES-Specific Methods
  void reSampleSingle(size_t idx);
  void adaptC2(int hsig);
- double function_value_difference();
  void updateEigensystem(int flgforce);
- void eigen(size_t N,  double **C, double *diag, double **Q);
- int maxIdx(const double *rgd, int len);
- int minIdx(const double *rgd, int len);
- void sorted_index(const double *rgFunVal, int *iindex, int n);
- bool isFeasible(double *pop);
- double doubleRangeMax(const double *rgd, int len);
- double doubleRangeMin(const double *rgd, int len );
+ void eigen(size_t N, double **C, double *diag, double **Q) const;
+ int maxIdx(const double *rgd, int len) const;
+ int minIdx(const double *rgd, int len) const;
+ void sorted_index(const double *rgFunVal, int *index, int n) const;
+ bool isFeasible(const double *pop) const;
+ double doubleRangeMax(const double *rgd, int len) const;
+ double doubleRangeMin(const double *rgd, int len) const;
+
+ // Print Methods 
+ void printGeneration() const;
+ void printFinal() const;
 };
 
 } // namespace Korali
