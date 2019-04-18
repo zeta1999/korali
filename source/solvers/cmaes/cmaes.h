@@ -57,12 +57,16 @@ class CMAES : public Korali::Solver::Base
 
  // Stop conditions
  size_t _maxFitnessEvaluations;   // Defines maximum number of fitness evaluations
- double _stopFitnessEvalThreshold; // Defines minimum function value below which it stops
  double _stopFitnessDiffThreshold; // Defines minimum function value differences before stopping
  double _stopMinDeltaX; // Defines minimum delta of input parameters among generations before it stops.
- double _stopMaxStdDevXFactor; // Defines maximum standard deviation before it stops.
  double _stopMinFitness; // Defines the minimum fitness allowed, otherwise it stops
+ double _stopTolUpXFactor; // Defines the minimum fitness allowed, otherwise it stops
+ double _stopCovKond; // Defines the maximal condition number of the covariance matrix
  size_t _maxGenenerations; // Max number of generations.
+ std::string _ignorecriteria; /* Termination Criteria(s) to ignore: 
+    Fitness Value, Fitness Diff Threshold, Max Standard Deviation, 
+    Max Kondition Covariance, No Effect Axis, No Effect Standard Deviation, 
+    Max Model Evaluations, Max Generations */
 
  // Private CMAES-Specific Variables
  double sigma;  /* step size */
@@ -88,11 +92,12 @@ class CMAES : public Korali::Solver::Base
  double *rgdTmp; /* temporary (random) vector used in different places */
  double *rgFuncValue; /* holding all fitness values (fitnessvector) */
 
- size_t countevals;
- double maxdiagC; /* max diagonal element of C (used for output) */
- double mindiagC; /* min diagonal element of C (used for output) */
- double maxEW; /* max Eigenwert of C (used for output) */
- double minEW; /* min Eigenwert of C (used for output) */
+ size_t countevals; /* Number of function evaluations */
+ size_t countinfeasible; /* Number of samples outside of domain given by bounds */
+ double maxdiagC; /* max diagonal element of C */
+ double mindiagC; /* min diagonal element of C */
+ double maxEW; /* max Eigenwert of C */
+ double minEW; /* min Eigenwert of C */
 
  bool flgEigensysIsUptodate;
 
@@ -107,6 +112,7 @@ class CMAES : public Korali::Solver::Base
  bool isFeasible(const double *pop) const;
  double doubleRangeMax(const double *rgd, int len) const;
  double doubleRangeMin(const double *rgd, int len) const;
+ bool isStoppingCriteriaActive(const char *criteria) const;
 
  // Print Methods 
  void printGeneration() const;

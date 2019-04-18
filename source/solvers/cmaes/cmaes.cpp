@@ -107,6 +107,7 @@ Korali::Solver::CMAES::CMAES(nlohmann::json& js) : Korali::Solver::Base::Base(js
  flgEigensysIsUptodate = true;
 
  countevals = 0;
+ countinfeasible = 0;
  currentBest = 0.0;
  for (size_t i = 0; i < _s; ++i)  index[i] = i; /* should not be necessary */
 
@@ -170,10 +171,12 @@ nlohmann::json Korali::Solver::CMAES::getConfiguration()
  js["Termination Criteria"]["Max Generations"] = _maxGenenerations;
  js["Termination Criteria"]["Min Fitness"] = _stopMinFitness;
  js["Termination Criteria"]["Max Model Evaluations"] = _maxFitnessEvaluations;
- js["Termination Criteria"]["Fitness Eval Threshold"] = _stopFitnessEvalThreshold;
  js["Termination Criteria"]["Fitness Diff Threshold"] = _stopFitnessDiffThreshold;
  js["Termination Criteria"]["Min DeltaX"] = _stopMinDeltaX;
  js["Termination Criteria"]["Min Fitness"] = _stopMinFitness;
+ js["Termination Criteria"]["Max Standard Deviation"] = _stopTolUpXFactor;
+ js["Termination Criteria"]["Max Kondition Covariance"] = _stopCovKond;
+ js["Termination Criteria"]["Ignore"] = _ignorecriteria;
 
  // State Variables
  js["State"]["Current Generation"] = _currentGeneration;
@@ -188,6 +191,7 @@ nlohmann::json Korali::Solver::CMAES::getConfiguration()
  js["State"]["MinEigenvalue"] = minEW;
  js["State"]["EigenSystemUpToDate"] = flgEigensysIsUptodate;
  js["State"]["EvaluationCount"] = countevals;
+ js["State"]["InfeasibleCount"] = countinfeasible;
 
  for (size_t i = 0; i < _mu; i++)   js["State"]["MuWeights"] += _muWeights[i];
  for (size_t i = 0; i < _k->N; i++) js["State"]["CurrentMeanVector"] += rgxmean[i];
@@ -223,13 +227,15 @@ void Korali::Solver::CMAES::setConfiguration(nlohmann::json& js)
  _cumulativeCovariance          = consume(js, { "Covariance Matrix", "Cumulative Covariance" }, KORALI_NUMBER, std::to_string(-1));
  _covarianceMatrixLearningRate  = consume(js, { "Covariance Matrix", "Learning Rate" }, KORALI_NUMBER, std::to_string(-1));
 
- _maxGenenerations              = consume(js, { "Termination Criteria", "Max Generations" }, KORALI_NUMBER, std::to_string(200));
+ _maxGenenerations              = consume(js, { "Termination Criteria", "Max Generations" }, KORALI_NUMBER, std::to_string(2000));
  _stopMinFitness                = consume(js, { "Termination Criteria", "Min Fitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
  _maxFitnessEvaluations         = consume(js, { "Termination Criteria", "Max Model Evaluations" }, KORALI_NUMBER, std::to_string(std::numeric_limits<size_t>::max()));
- _stopFitnessEvalThreshold      = consume(js, { "Termination Criteria", "Fitness Eval Threshold" }, KORALI_NUMBER, std::to_string(std::numeric_limits<double>::min()));
  _stopFitnessDiffThreshold      = consume(js, { "Termination Criteria", "Fitness Diff Threshold" }, KORALI_NUMBER, std::to_string(1e-9));
  _stopMinDeltaX                 = consume(js, { "Termination Criteria", "Min DeltaX" }, KORALI_NUMBER, std::to_string(0.0));
  _stopMinFitness                = consume(js, { "Termination Criteria", "Min Fitness" }, KORALI_NUMBER, std::to_string(-std::numeric_limits<double>::max()));
+ _stopTolUpXFactor              = consume(js, { "Termination Criteria", "Max Standard Deviation" }, KORALI_NUMBER, std::to_string(1e18));
+ _stopCovKond                   = consume(js, { "Termination Criteria", "Max Kondition Covariance" }, KORALI_NUMBER, std::to_string(std::numeric_limits<double>::max()));
+ _ignorecriteria                = consume(js, { "Termination Criteria", "Ignore" }, KORALI_STRING, "Max Kondition Covariance");
 }
 
 void Korali::Solver::CMAES::setState(nlohmann::json& js)
@@ -248,6 +254,7 @@ void Korali::Solver::CMAES::setState(nlohmann::json& js)
  minEW                 = js["State"]["MinEigenvalue"] ;
  flgEigensysIsUptodate = js["State"]["EigenSystemUpToDate"];
  countevals            = js["State"]["EvaluationCount"];
+ countinfeasible       = js["State"]["InfeasibleCount"];
 
  for (size_t i = 0; i < _mu; i++) _muWeights[i]     = js["State"]["MuWeights"][i];
  for (size_t i = 0; i < _k->N; i++) rgxmean[i]      = js["State"]["CurrentMeanVector"][i];
@@ -354,7 +361,7 @@ void Korali::Solver::CMAES::prepareGeneration()
 
  _currentGeneration++;
 
- for(size_t i = 0; i < _s; ++i) while( !isFeasible(&_samplePopulation[i*_k->N] )) reSampleSingle(i);
+ for(size_t i = 0; i < _s; ++i) while( !isFeasible(&_samplePopulation[i*_k->N] )) { countinfeasible++; reSampleSingle(i); }
 
  _finishedSamples = 0;
  for (size_t i = 0; i < _s; i++) _initializedSample[i] = false;
@@ -494,16 +501,15 @@ bool Korali::Solver::CMAES::checkTermination()
  int flgdiag = ((_diagonalCovarianceMatrixEvalFrequency== 1) || (_diagonalCovarianceMatrixEvalFrequency>= _currentGeneration));
  bool terminate = false;
 
- /* function value reached */
- if (_currentGeneration > 1  &&   rgFuncValue[index[0]] <= _stopMinFitness)
+ if (_currentGeneration > 1 && rgFuncValue[index[0]] <= _stopMinFitness && isStoppingCriteriaActive("Fitness Value") )
  {
   terminate = true;
   sprintf(_terminationReason, "Fitness Value (%7.2e) < (%7.2e)",  rgFuncValue[index[0]], _stopMinFitness);
  }
 
- /* TolFun */
   double range = fabs(currentFunctionValue - prevFunctionValue);
-  if (_currentGeneration > 0 && range <= _stopFitnessDiffThreshold) {
+  if (_currentGeneration > 0 && range <= _stopFitnessDiffThreshold && isStoppingCriteriaActive("Fitness Diff Threshold") ) 
+ {
   terminate = true;
   sprintf(_terminationReason, "Function value differences (%7.2e) < (%7.2e)",  range, _stopFitnessDiffThreshold);
  }
@@ -514,35 +520,50 @@ bool Korali::Solver::CMAES::checkTermination()
   cTemp += (sigma * rgpc[i] < _stopMinDeltaX) ? 1 : 0;
  }
 
- if (cTemp == 2*_k->N) {
+ if (cTemp == 2*_k->N && isStoppingCriteriaActive("Min DeltaX") ) {
   terminate = true;
   sprintf(_terminationReason, "Object variable changes < %7.2e", _stopMinDeltaX);
  }
 
-  size_t iAchse = 0;
-  size_t iKoo = 0;
-  if (!flgdiag) {
-  for (iAchse = 0; iAchse < _k->N; ++iAchse)
-  {
-   fac = 0.1 * sigma * rgD[iAchse];
-   for (iKoo = 0; iKoo < _k->N; ++iKoo){
-    if (rgxmean[iKoo] != rgxmean[iKoo] + fac * B[iKoo][iAchse])
+ for(size_t i=0; i<_k->N; ++i)
+   if (sigma * sqrt(C[i][i]) > _stopTolUpXFactor * /* rgInitialStds[i] */ 1.0 && isStoppingCriteriaActive("Max Standard Deviation") ) 
+   {
+     terminate = true;
+     sprintf(_terminationReason, "Standard deviation increased by more than %7.2e, larger initial standard deviation recommended \n", _stopTolUpXFactor);
      break;
    }
-   if (iKoo == _k->N)
-   {
+
+  if (maxEW >= minEW * _stopCovKond && isStoppingCriteriaActive("Max Kondition Covariance") ) 
+  {
     terminate = true;
-    sprintf(_terminationReason, "Standard deviation 0.1*%7.2e in principal axis %ld without effect.", fac/0.1, iAchse);
-    break;
-   } /* if (iKoo == _k->N) */
+    sprintf(_terminationReason, "Maximal condition number %7.2e reached. maxEW=%7.2e, minEW=%7.2e, maxdiagC=%7.2e, mindiagC=%7.2e\n", 
+      _stopCovKond, maxEW, minEW, maxdiagC, mindiagC);
+  }
+
+  size_t iAchse = 0;
+  size_t iKoo = 0;
+  if (!flgdiag && isStoppingCriteriaActive("No Effect Axis") ) 
+  {
+    for (iAchse = 0; iAchse < _k->N; ++iAchse)
+    {
+    fac = 0.1 * sigma * rgD[iAchse];
+    for (iKoo = 0; iKoo < _k->N; ++iKoo){
+      if (rgxmean[iKoo] != rgxmean[iKoo] + fac * B[iKoo][iAchse])
+      break;
+    }
+    if (iKoo == _k->N)
+    {
+      terminate = true;
+      sprintf(_terminationReason, "Standard deviation 0.1*%7.2e in principal axis %ld without effect.", fac/0.1, iAchse);
+      break;
+    } /* if (iKoo == _k->N) */
   } /* for iAchse    */
  } /* if flgdiag */
 
  /* Component of rgxmean is not changed anymore */
  for (iKoo = 0; iKoo < _k->N; ++iKoo)
  {
-  if (rgxmean[iKoo] == rgxmean[iKoo] +
-    0.2*sigma*sqrt(C[iKoo][iKoo]))
+  if (rgxmean[iKoo] == rgxmean[iKoo] + 0.2*sigma*sqrt(C[iKoo][iKoo]) && isStoppingCriteriaActive("No Effect Standard Deviation") )
   {
    /* C[iKoo][iKoo] *= (1 + _covarianceMatrixLearningRate); */
    /* flg = 1; */
@@ -553,12 +574,13 @@ bool Korali::Solver::CMAES::checkTermination()
 
  } /* for iKoo */
 
- if(countevals >= _maxFitnessEvaluations)
+ if(countevals >= _maxFitnessEvaluations && isStoppingCriteriaActive("Max Model Evaluations") )
  {
   terminate = true;
-  sprintf(_terminationReason, "Conducted %lu function evaluations >= (%lu).", countevals, _maxFitnessEvaluations); }
+  sprintf(_terminationReason, "Conducted %lu function evaluations >= (%lu).", countevals, _maxFitnessEvaluations); 
+ }
 
- if(_currentGeneration >= _maxGenenerations)
+ if(_currentGeneration >= _maxGenenerations && isStoppingCriteriaActive("Max Generations") )
  {
   terminate = true;
   sprintf(_terminationReason, "Maximum number of Generations reached (%lu).", _maxGenenerations);
@@ -646,7 +668,6 @@ void Korali::Solver::CMAES::sorted_index(const double *fitnessVector, int *index
  }
 }
 
-
 double Korali::Solver::CMAES::doubleRangeMax(const double *rgd, int len) const
 {
  int i;
@@ -663,6 +684,13 @@ double Korali::Solver::CMAES::doubleRangeMin(const double *rgd, int len) const
  for (i = 1; i < len; ++i)
   min = (min > rgd[i]) ? rgd[i] : min;
  return min;
+}
+
+bool Korali::Solver::CMAES::isStoppingCriteriaActive(const char *criteria) const
+{
+    std::string c(criteria);
+    size_t found = _ignorecriteria.find(c);
+    return (found==std::string::npos);
 }
 
 void Korali::Solver::CMAES::printGeneration() const
@@ -691,6 +719,8 @@ void Korali::Solver::CMAES::printGeneration() const
         for (size_t j = 0; j < i; j++) printf("\t%g\t",C[i][j]);
         printf("\n");
     }
+    printf("\n[Korali] Number of Function Evaluations: %zu\n", countevals);
+    printf("[Korali] Number of Infeasible Samples: %zu\n", countinfeasible);
   }
 }
 
@@ -703,7 +733,9 @@ void Korali::Solver::CMAES::printFinal() const
     printf("[Korali] Optimum found: %e\n", currentBest);
     printf("[Korali] Optimum found at:\n\n");
     for (size_t i = 0; i < _k->N; i++) printf("\t %g\n", rgxbestever[i]);
-    printf("\n[Korali] Stopping Criteria: %s\n", _terminationReason);
+    printf("\n[Korali] Number of Function Evaluations: %zu\n", countevals);
+    printf("[Korali] Number of Infeasible Samples: %zu\n", countinfeasible);
+    printf("[Korali] Stopping Criteria: %s\n", _terminationReason);
     printf("[Korali] Total Elapsed Time: %fs\n", std::chrono::duration<double>(endTime-startTime).count());
  }
 }
