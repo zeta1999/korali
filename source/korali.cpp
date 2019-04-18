@@ -200,7 +200,8 @@ void Korali::Engine::loadState(std::string fileName)
 
 PYBIND11_MODULE(libkorali, m) {
  pybind11::class_<Korali::Engine>(m, "Engine")
- .def(pybind11::init<>())
+ .def(pybind11::init<const std::function<double(std::vector<double>&)>&>())
+ .def(pybind11::init<const std::function<double(std::vector<double>&, std::vector<double>&)>&>())
  .def("__getitem__", pybind11::overload_cast<const std::string&>(&Korali::Engine::getItem))
  .def("__getitem__", pybind11::overload_cast<const unsigned long int&>(&Korali::Engine::getItem))
  .def("__setitem__", pybind11::overload_cast<const std::string&, const std::string&>(&Korali::Engine::setItem), pybind11::return_value_policy::reference)

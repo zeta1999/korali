@@ -24,6 +24,8 @@
 
 #include "koralijson/koralijson.h"
 #include "pybind11/pybind11.h"
+#include "pybind11/functional.h"
+#include "pybind11/stl.h"
 
 enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
 
@@ -35,12 +37,12 @@ class KoraliJsonWrapper
  public:
   nlohmann::json* _js;
 
-  KoraliJsonWrapper& getItem(const std::string& key){printf("Wrapper: getItem: %s\n", key.c_str()); _js = &((*_js)[key]); return *this;}
-  KoraliJsonWrapper& getItem(const unsigned long int& key){printf("Wrapper: getItem: %lu\n", key); _js = &((*_js)[key]); return *this;}
-  void setItem(const std::string& key, const std::string& val) {printf("WrapperString: setItem: %s = %s\n", key.c_str(), val.c_str()); (*_js)[key] = val; }
-  void setItem(const std::string& key, const double& val)      {printf("WrapperDouble: setItem: %s = %f\n", key.c_str(), val); (*_js)[key] = val; }
-  void setItem(const std::string& key, const int& val)         {printf("WrapperInt: setItem: %s = %d\n", key.c_str(), val); (*_js)[key] = val; }
-  void setItem(const std::string& key, const bool& val)        {printf("WrapperBool: setItem: %s = %d\n", key.c_str(), val); (*_js)[key] = val; }
+  KoraliJsonWrapper& getItem(const std::string& key)           { _js = &((*_js)[key]); return *this;}
+  KoraliJsonWrapper& getItem(const unsigned long int& key)     { _js = &((*_js)[key]); return *this;}
+  void setItem(const std::string& key, const std::string& val) { (*_js)[key] = val; }
+  void setItem(const std::string& key, const double& val)      { (*_js)[key] = val; }
+  void setItem(const std::string& key, const int& val)         { (*_js)[key] = val; }
+  void setItem(const std::string& key, const bool& val)        { (*_js)[key] = val; }
 };
 
 class Engine {
@@ -60,11 +62,11 @@ class Engine {
  // Model Functions and constructors
  Engine();
 
- std::function<double (double*)> _modelSingle;
- Engine(std::function<double (double*)> model) : Engine::Engine() { _modelSingle = model; _js["Problem"]["Model"] = "Single"; }
+ std::function<double (std::vector<double>&)> _modelSingle;
+ Engine(std::function<double (std::vector<double>&)> model) : Engine::Engine() { _modelSingle = model; _js["Problem"]["Model"] = "Single"; }
 
- std::function<void (double*, double*)> _modelMultiple;
- Engine(std::function<void (double*, double*)> model) : Engine::Engine() { _modelMultiple = model; _js["Problem"]["Model"] = "Multiple"; }
+ std::function<void (std::vector<double>&, std::vector<double>&)> _modelMultiple;
+ Engine(std::function<void (std::vector<double>&, std::vector<double>&)> model) : Engine::Engine() { _modelMultiple = model; _js["Problem"]["Model"] = "Multiple"; }
 
  std::function<void (double*, double*, double*, double*)> _modelManifold;
  Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _js["Problem"]["Model"] = "Manifold"; }
@@ -72,12 +74,12 @@ class Engine {
  ~Engine();
 
  void run();
- KoraliJsonWrapper& getItem(const std::string& key){printf("Engine: GetItem\n"); _wr._js = &(_js[key]); return _wr;}
- KoraliJsonWrapper& getItem(const unsigned long int& key){printf("Engine: GetItem\n"); _wr._js = &(_js[key]); return _wr;}
- void setItem(const std::string& key, const std::string& val) {printf("EngineString: setItem: %s = %s\n", key.c_str(), val.c_str()); _js[key] = val; }
- void setItem(const std::string& key, const double& val)      {printf("EngineDouble: setItem: %s = %f\n", key.c_str(), val); _js[key] = val; }
- void setItem(const std::string& key, const int& val)         {printf("EngineInt: setItem: %s = %d\n", key.c_str(), val); _js[key] = val; }
- void setItem(const std::string& key, const bool& val)        {printf("EngineBool: setItem: %s = %d\n", key.c_str(), val); _js[key] = val; }
+ KoraliJsonWrapper& getItem(const std::string& key)           { _wr._js = &(_js[key]); return _wr;}
+ KoraliJsonWrapper& getItem(const unsigned long int& key)     { _wr._js = &(_js[key]); return _wr;}
+ void setItem(const std::string& key, const std::string& val) { _js[key] = val; }
+ void setItem(const std::string& key, const double& val)      { _js[key] = val; }
+ void setItem(const std::string& key, const int& val)         { _js[key] = val; }
+ void setItem(const std::string& key, const bool& val)        { _js[key] = val; }
 
  void loadState(std::string fileName);
  void saveState(std::string fileName);

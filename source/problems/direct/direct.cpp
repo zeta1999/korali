@@ -49,6 +49,9 @@ double Korali::Problem::Direct::evaluateFitness(double* sample)
   exit(-1);
  }
 
+ std::vector<double> vec;
+ for (size_t i = 0; i < _k->N; i++) vec.push_back(sample[i]);
+
  if (isSampleOutsideBounds(sample)) return -DBL_MAX;
- return _k->_modelSingle(sample);
+ return _k->_modelSingle(vec);
 }

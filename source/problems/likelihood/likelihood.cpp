@@ -67,7 +67,15 @@ double Korali::Problem::Likelihood::evaluateFitness(double* sample)
  double sigma = sample[_k->_computationalParameterCount];
  double fitnessData[_referenceDataSize];
 
- _k->_modelMultiple(sample, fitnessData);
+ std::vector<double> vec;
+ for (size_t i = 0; i < _k->N; i++) vec.push_back(sample[i]);
+
+ std::vector<double> vec2;
+ for (size_t i = 0; i < _referenceDataSize; i++) vec2.push_back(0);
+
+ _k->_modelMultiple(vec, vec2);
+
+ for (size_t i = 0; i < _referenceDataSize; i++) fitnessData[i] = vec2[i];
 
  return -Korali::Parameter::Gaussian::logLikelihood(sigma, _referenceDataSize, _referenceData, fitnessData);
 }

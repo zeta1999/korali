@@ -1,9 +1,23 @@
 #!/usr/bin/env python
 import sys
+import math
 sys.path.append('/home/martiser/skorali/korali/lib')
 import libkorali
 
-korali = libkorali.Engine()
+def ackley(x):
+ a = 20.0
+ b = 0.2
+ c = 2.*math.pi
+ s1 = 0.0
+ s2 = 0.0
+
+ for i in range(4):
+  s1 += x[i]*x[i]
+  s2 += math.cos(c*x[i])
+
+ return -(-a*math.exp(-b*math.sqrt(s1/4)) - math.exp(s2/4) + a + math.exp(1.))
+  
+korali = libkorali.Engine(ackley)
 
 korali["Verbosity"] = "Normal";
 
