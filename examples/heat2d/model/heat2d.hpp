@@ -2,12 +2,13 @@
 #define _HEAT2D_H_
 
 #include <stdlib.h>
+#include <vector>
+#include <korali.h>
 
 typedef struct pointsInfoStruct {
-  size_t nPoints;
-  double* xPos;
-  double* yPos;
-  double* refTemp;
+  std::vector<double> xPos;
+  std::vector<double> yPos;
+  std::vector<double> refTemp;
 } pointsInfo;
 
 typedef struct gridLevelStruct {
@@ -22,11 +23,11 @@ typedef struct gridLevelStruct {
 } gridLevel;
 
 // Main solver
-void heat2DSolver(double* pars, double* output);
+Korali::modelData heat2DSolver(Korali::modelData& d);
 
 // Helper Functions
-gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars);
-void heat2DInit(int argc, char* argv[]);
+gridLevel* generateInitialConditions(size_t N0, int gridCount, std::vector<double> pars);
+pointsInfoStruct& heat2DInit();
 void freeGrids(gridLevel* g, int gridCount);
 
 // Solver functions
@@ -35,7 +36,5 @@ void calculateResidual(gridLevel* g, int l);
 void applyRestriction(gridLevel* g, int l);
 void applyProlongation(gridLevel* g, int l);
 void calculateL2Norm(gridLevel* g, int l);
-
-extern pointsInfo p;
 
 #endif // _HEAT2D_H_

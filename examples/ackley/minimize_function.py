@@ -4,6 +4,8 @@ import math
 sys.path.append('/home/martiser/skorali/korali/lib')
 import libkorali
 
+# Defining Ackley Function
+
 def ackley(x):
  a = 20.0
  b = 0.2
@@ -12,10 +14,15 @@ def ackley(x):
  s2 = 0.0
 
  for i in range(4):
-  s1 += x[i]*x[i]
-  s2 += math.cos(c*x[i])
+  s1 += x.getParameter(i)*x.getParameter(i)
+  s2 += math.cos(c*x.getParameter(i))
 
- return -(-a*math.exp(-b*math.sqrt(s1/4)) - math.exp(s2/4) + a + math.exp(1.))
+ result = -(-a*math.exp(-b*math.sqrt(s1/4)) - math.exp(s2/4) + a + math.exp(1.))
+ x.addResult(result)
+ 
+ return x
+
+# Starting Korali Program
   
 korali = libkorali.Engine(ackley)
 

@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
- heat2DInit(argc, argv);
+ auto p = heat2DInit();
 
  auto korali = Korali::Engine(heat2DSolver);
 
@@ -35,7 +35,8 @@ int main(int argc, char* argv[])
  korali["Parameters"][3]["Maximum"] = 20.0;
 
  korali["Problem"]["Objective"] = "Likelihood";
- for (size_t i = 0; i < p.nPoints; i++) korali["Problem"]["Reference Data"][i] = p.refTemp[i];
+ for (size_t i = 0; i < p.refTemp.size(); i++)
+	 korali["Problem"]["Reference Data"][i] = p.refTemp[i];
 
  korali["Solver"]["Method"] = "CMA-ES";
  korali["Solver"]["Termination Criteria"]["Min DeltaX"] = 1e-7;

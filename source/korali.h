@@ -32,6 +32,25 @@ enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORAL
 namespace Korali
 {
 
+class modelData
+{
+ public:
+	double getParameter(size_t i)
+	{
+		if (i > _parameters.size())
+		{
+		   fprintf(stderr, "[Korali] Error: Trying to access parameter %lu, when only %lu are provided.\n", i, _parameters.size());
+		   exit(-1);
+	  }
+		return _parameters[i];
+	}
+
+	void addResult(double x) {_result.push_back(x); }
+
+  std::vector<double> _parameters;
+  std::vector<double> _result;
+};
+
 class KoraliJsonWrapper
 {
  public:
@@ -43,6 +62,10 @@ class KoraliJsonWrapper
   void setItem(const std::string& key, const double& val)      { (*_js)[key] = val; }
   void setItem(const std::string& key, const int& val)         { (*_js)[key] = val; }
   void setItem(const std::string& key, const bool& val)        { (*_js)[key] = val; }
+  void setItem(const int& key, const std::string& val)         { (*_js)[key] = val; }
+  void setItem(const int& key, const double& val)              { (*_js)[key] = val; }
+  void setItem(const int& key, const int& val)                 { (*_js)[key] = val; }
+  void setItem(const int& key, const bool& val)                { (*_js)[key] = val; }
 };
 
 class Engine {
@@ -54,6 +77,7 @@ class Engine {
 
  nlohmann::json& operator[](std::string key) { return _js[key]; }
 
+ std::function<modelData(modelData&)> _model;
  Korali::Conduit::Base* _conduit;
  Korali::Problem::Base* _problem;
  Korali::Solver::Base*  _solver;
@@ -61,16 +85,7 @@ class Engine {
 
  // Model Functions and constructors
  Engine();
-
- std::function<double (std::vector<double>&)> _modelSingle;
- Engine(std::function<double (std::vector<double>&)> model) : Engine::Engine() { _modelSingle = model; _js["Problem"]["Model"] = "Single"; }
-
- std::function<void (std::vector<double>&, std::vector<double>&)> _modelMultiple;
- Engine(std::function<void (std::vector<double>&, std::vector<double>&)> model) : Engine::Engine() { _modelMultiple = model; _js["Problem"]["Model"] = "Multiple"; }
-
- std::function<void (double*, double*, double*, double*)> _modelManifold;
- Engine(std::function<void (double*, double*, double*, double*)> model) : Engine::Engine() { _modelManifold = model; _js["Problem"]["Model"] = "Manifold"; }
-
+ Engine(std::function<modelData(modelData&)> model) : Engine::Engine() { _model = model; }
  ~Engine();
 
  void run();

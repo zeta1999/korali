@@ -12,9 +12,17 @@
 //#include "mpi.h"
 #include "string.h"
 
-pointsInfo p;
+PYBIND11_MODULE(libheat2d, m) {
+  pybind11::class_<pointsInfoStruct>(m, "pointsInfoStruct")
+   .def(pybind11::init<>())
+   .def_readwrite("refTemp", &pointsInfoStruct::refTemp);
+	m.def("heat2DInit", &heat2DInit, "");
+	m.def("heat2DSolver", &heat2DSolver, "");
+}
 
-void heat2DSolver(double* pars, double* output)
+pointsInfo __p;
+
+Korali::modelData heat2DSolver(Korali::modelData& d)
 {
  double tolerance = 1e-8; // L2 Difference Tolerance before reaching convergence.
  size_t N0 = 7; // 2^N0 + 1 elements per side
@@ -23,6 +31,9 @@ void heat2DSolver(double* pars, double* output)
  int gridCount       = 6;     // Number of Multigrid levels to use
  int downRelaxations = 4; // Number of Relaxations before restriction
  int upRelaxations   = 1;   // Number of Relaxations after prolongation
+
+ std::vector<double> pars;
+ for (int i = 0; i < 3; i++) pars.push_back(d.getParameter(i));
 
  gridLevel* g = generateInitialConditions(N0, gridCount, pars);
 
@@ -49,13 +60,15 @@ void heat2DSolver(double* pars, double* output)
 
  // Saving the value of temperatures at specified points
  double h = 1.0/(g[0].N-1);
- for(size_t i = 0; i < p.nPoints; i++)
+ for(size_t i = 0; i < __p.refTemp.size(); i++)
  {
-  int k = ceil(p.xPos[i]/h); int l = ceil(p.yPos[i]/h);
-  output[i] = g[0].U[k][l];
+  int k = ceil(__p.xPos[i]/h); int l = ceil(__p.yPos[i]/h);
+  d.addResult(g[0].U[k][l]);
  }
 
  freeGrids(g, gridCount);
+
+ return d;
 }
 
 void applyGaussSeidel(gridLevel* g, int l, int relaxations)
@@ -127,7 +140,7 @@ void applyProlongation(gridLevel* g, int l)
    g[l-1].U[2*i-1][2*j-1] += ( g[l].U[i-1][j-1] + g[l].U[i-1][j] + g[l].U[i][j-1] + g[l].U[i][j] ) *0.25;
 }
 
-gridLevel* generateInitialConditions(size_t N0, int gridCount, double* pars)
+gridLevel* generateInitialConditions(size_t N0, int gridCount, std::vector<double> pars)
 {
  // Problem Parameters
  double intensity = pars[0];
@@ -191,7 +204,7 @@ void freeGrids(gridLevel* g, int gridCount)
  free(g);
 }
 
-void heat2DInit(int argc, char* argv[])
+pointsInfoStruct& heat2DInit()
 {
  // MPI_Init(&argc, &argv);
  //  int myRank, rankCount;
@@ -199,8 +212,10 @@ void heat2DInit(int argc, char* argv[])
  //  MPI_Comm_size(MPI_COMM_WORLD, &rankCount);
 
  int problemNumber = 1;
- for (int i = 0; i < argc; i++) if(!strcmp(argv[i], "-p")) problemNumber = atoi(argv[++i]);
+// for (int i = 0; i < argc; i++) if(!strcmp(argv[i], "-p")) problemNumber = atoi(argv[++i]);
  FILE *problemFile;
+
+ size_t nPoints = 0;
 
  //  if (myRank == 0)
  {
@@ -209,24 +224,23 @@ void heat2DInit(int argc, char* argv[])
  sprintf(pfile, "problem%d.in", problemNumber);
  printf("Running problem from file %s... \n", pfile);
  problemFile = fopen(pfile, "r");
- fscanf(problemFile, "%lu", &p.nPoints);
+ fscanf(problemFile, "%lu", &nPoints);
  }
 
  //  MPI_Bcast(&p.nPoints, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
- p.xPos    = (double*) calloc (sizeof(double), p.nPoints);
- p.yPos    = (double*) calloc (sizeof(double), p.nPoints);
- p.refTemp = (double*) calloc (sizeof(double), p.nPoints);
-
  //  if (myRank == 0)
- for (size_t i = 0; i < p.nPoints; i++)
+ for (size_t i = 0; i < nPoints; i++)
  {
-  fscanf(problemFile, "%le ", &p.xPos[i]);
-  fscanf(problemFile, "%le ", &p.yPos[i]);
-  fscanf(problemFile, "%le ", &p.refTemp[i]);
+	double val;
+  fscanf(problemFile, "%le ", &val); __p.xPos.push_back(val);
+  fscanf(problemFile, "%le ", &val); __p.yPos.push_back(val);
+  fscanf(problemFile, "%le ", &val); __p.refTemp.push_back(val);
  }
 
  //  MPI_Bcast(p.xPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
  //  MPI_Bcast(p.yPos,    p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
  //  MPI_Bcast(p.refTemp, p.nPoints, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+ return __p;
 }
