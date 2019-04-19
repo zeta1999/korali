@@ -19,8 +19,7 @@ def ackley(x):
 
  result = -(-a*math.exp(-b*math.sqrt(s1/4)) - math.exp(s2/4) + a + math.exp(1.))
  x.addResult(result)
- 
- return x
+
 
 # Starting Korali Program
   

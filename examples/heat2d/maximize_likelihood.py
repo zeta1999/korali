@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 import sys
-import math
 sys.path.append('./model')
-import libheat2d
 sys.path.append('/home/martiser/skorali/korali/lib')
+import libheat2d
 import libkorali
  
-p = libheat2d.heat2DInit();
-
 korali = libkorali.Engine(libheat2d.heat2DSolver)
 
 korali["Seed"] = 0xC0FFEE;
@@ -38,6 +35,8 @@ korali["Parameters"][3]["Minimum"] = 0.0;
 korali["Parameters"][3]["Maximum"] = 20.0;
 
 korali["Problem"]["Objective"] = "Likelihood";
+
+p = libheat2d.heat2DInit();
 for i in range(len(p.refTemp)):
  korali["Problem"]["Reference Data"][i] = p.refTemp[i];
 

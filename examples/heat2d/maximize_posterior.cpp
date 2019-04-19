@@ -3,8 +3,6 @@
 
 int main(int argc, char* argv[])
 {
- auto p = heat2DInit();
-
  auto korali = Korali::Engine(heat2DSolver);
 
  korali["Seed"] = 0xC0FFEE;
@@ -35,6 +33,8 @@ int main(int argc, char* argv[])
  korali["Parameters"][3]["Maximum"] = 20.0;
 
  korali["Problem"]["Objective"] = "Posterior";
+
+ auto p = heat2DInit();
  for (size_t i = 0; i < p.refTemp.size(); i++)
 	 korali["Problem"]["Reference Data"][i] = p.refTemp[i];
 
