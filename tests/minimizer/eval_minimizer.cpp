@@ -27,14 +27,17 @@ int main(int argc, char* argv[]) {
   int count1 = 0;
   int count2 = 0;
   int count3 = 0;
+  int count4 = 0;
 
   double err1 = 0;
   double err2 = 0;
   double err3 = 0;
+  double err4 = 0;
 
   int failed1 = 0;
   int failed2 = 0;
   int failed3 = 0;
+  int failed4 = 0;
 
   int run = 0;
   for(auto n : ns) {
@@ -64,12 +67,20 @@ int main(int argc, char* argv[]) {
 
   if (verbose) printf("it2: %d, xmin: %f, fmin: %f\n", it2, xmin, fmin);
 
-  int it3 = test_minimizer(fj, n, r, c, &xmin, &fmin, 3);  
+   int it3 = test_minimizer(fj, n, r, c, &xmin, &fmin, 3);  
   count3 += it3;
   err3   += fmin;
   if(xmin<r) failed3++;
 
   if (verbose) printf("it3: %d, xmin: %f, fmin: %f\n", it3, xmin, fmin);
+
+  /*
+  int it4 = test_minimizer(fj, n, r, c, &xmin, &fmin, 4); 
+  count4 += it4;
+  err4   += fmin;
+  if(xmin<r) failed4++;
+  if (verbose) printf("it4: %d, xmin: %f, fmin: %f\n", it4, xmin, fmin);
+  */
 
   }}
   
@@ -80,6 +91,7 @@ int main(int argc, char* argv[]) {
   printf("gsl_multimin_fminimizer_nmsimplex: total it1: %d, failed: %d, err: %e\n", count1, failed1, err1);
   printf("gsl_multimin_fminimizer_nmsimplex2: total it2: %d, failed: %d, err: %e\n", count2, failed2, err2);
   printf("gsl_multimin_fminimizer_nmsimplex2rand: atotal it3: %d, failed: %d, err: %e\n", count3, failed3, err3);
+  printf("gsl_min_fminimizer_brent: atotal it4: %d, failed: %d, err: %e\n", count4, failed4, err4);
 }
 
 
@@ -120,7 +132,7 @@ int test_minimizer( const double *fj, int N, double rho, double covtol, double *
  fp.fj = fj;
  fp.fn = fn;
  fp.pj = pj;
- fp.tol = objTol;
+ fp.cov = objTol;
 
  x = gsl_vector_alloc (1);
  gsl_vector_set (x, 0, pj);
@@ -138,6 +150,7 @@ int test_minimizer( const double *fj, int N, double rho, double covtol, double *
    case 1: T = gsl_multimin_fminimizer_nmsimplex; break;
    case 2: T = gsl_multimin_fminimizer_nmsimplex2; break;
    case 3: T = gsl_multimin_fminimizer_nmsimplex2rand; break;
+   //case 4: T = gsl_min_fminimizer_brent; break;
    default: printf("select minimizer 1,2 or 3!!!"); abort();
  }
  

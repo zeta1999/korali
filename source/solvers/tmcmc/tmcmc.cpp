@@ -561,6 +561,7 @@ void Korali::Solver::TMCMC::printFinal() const
 
   if (_k->_verbosity >= KORALI_NORMAL)
   {
+    printf("[Korali] Coefficient of Variation:  %.2f%%\n", _coefficientOfVariation);
     printf("[Korali] Mean of Samples:\n\n");
     for (size_t i = 0; i < _k->N; i++) printf("\t %g\n", _meanTheta[i]);
     printf("\n[Korali] Covariance of Samples:\n");
