@@ -22,7 +22,7 @@ PYBIND11_MODULE(libheat2d, m) {
 
 pointsInfo __p;
 
-Korali::modelData heat2DSolver(Korali::modelData& d)
+void heat2DSolver(Korali::modelData& d)
 {
  double tolerance = 1e-8; // L2 Difference Tolerance before reaching convergence.
  size_t N0 = 7; // 2^N0 + 1 elements per side
@@ -67,8 +67,6 @@ Korali::modelData heat2DSolver(Korali::modelData& d)
  }
 
  freeGrids(g, gridCount);
-
- return d;
 }
 
 void applyGaussSeidel(gridLevel* g, int l, int relaxations)

@@ -35,18 +35,22 @@ namespace Korali
 class modelData
 {
  public:
+
+	modelData() { _self = this; }
+
 	double getParameter(size_t i)
 	{
-		if (i > _parameters.size())
+		if (i > _self->_parameters.size())
 		{
-		   fprintf(stderr, "[Korali] Error: Trying to access parameter %lu, when only %lu are provided.\n", i, _parameters.size());
+		   fprintf(stderr, "[Korali] Error: Trying to access parameter %lu, when only %lu are provided.\n", i, _self->_parameters.size());
 		   exit(-1);
 	  }
-		return _parameters[i];
+		return _self->_parameters[i];
 	}
 
-	void addResult(double x) {_result.push_back(x); }
+	void addResult(double x) {_self->_result.push_back(x); }
 
+	modelData* _self;
   std::vector<double> _parameters;
   std::vector<double> _result;
 };
@@ -77,7 +81,7 @@ class Engine {
 
  nlohmann::json& operator[](std::string key) { return _js[key]; }
 
- std::function<modelData(modelData&)> _model;
+ std::function<void(modelData&)> _model;
  Korali::Conduit::Base* _conduit;
  Korali::Problem::Base* _problem;
  Korali::Solver::Base*  _solver;
@@ -85,7 +89,7 @@ class Engine {
 
  // Model Functions and constructors
  Engine();
- Engine(std::function<modelData(modelData&)> model) : Engine::Engine() { _model = model; }
+ Engine(std::function<void(modelData&)> model) : Engine::Engine() { _model = model; }
  ~Engine();
 
  void run();

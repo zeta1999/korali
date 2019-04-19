@@ -47,7 +47,7 @@ double Korali::Problem::Direct::evaluateFitness(double* sample)
 
  modelData d;
  for (size_t i = 0; i < _k->N; i++) d._parameters.push_back(sample[i]);
- d = _k->_model(d);
+ _k->_model(d);
 
  if (d._result.size() != 1)
  {

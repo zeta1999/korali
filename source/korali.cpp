@@ -205,7 +205,7 @@ PYBIND11_MODULE(libkorali, m) {
   .def("addResult", &Korali::modelData::addResult);
 
  pybind11::class_<Korali::Engine>(m, "Engine")
- .def(pybind11::init<const std::function<Korali::modelData(Korali::modelData&)>&>())
+ .def(pybind11::init<const std::function<void(Korali::modelData&)>&>())
  .def("__getitem__", pybind11::overload_cast<const std::string&>(&Korali::Engine::getItem), pybind11::return_value_policy::reference)
  .def("__getitem__", pybind11::overload_cast<const unsigned long int&>(&Korali::Engine::getItem), pybind11::return_value_policy::reference)
  .def("__setitem__", pybind11::overload_cast<const std::string&, const std::string&>(&Korali::Engine::setItem), pybind11::return_value_policy::reference)

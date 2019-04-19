@@ -23,7 +23,7 @@ typedef struct gridLevelStruct {
 } gridLevel;
 
 // Main solver
-Korali::modelData heat2DSolver(Korali::modelData& d);
+void heat2DSolver(Korali::modelData& d);
 
 // Helper Functions
 gridLevel* generateInitialConditions(size_t N0, int gridCount, std::vector<double> pars);
