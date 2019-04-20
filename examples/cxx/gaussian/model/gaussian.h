@@ -1,9 +1,9 @@
 #ifndef _GAUSSIAN_H_
 #define _GAUSSIAN_H_
 
-#define NDIMS 4
+#include "korali.h"
 
-double gaussian(double *x);
-void gaussian_init();
+void gaussian(Korali::modelData& x);
+void gaussian_init(size_t nPars);
 
 #endif

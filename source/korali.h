@@ -38,6 +38,9 @@ class modelData
 
 	modelData() { _self = this; }
 
+	size_t getParameterCount() { return _self->_parameters.size(); }
+	double* getParameterArray() { return _self->_parameters.data(); }
+
 	double getParameter(size_t i)
 	{
 		if (i > _self->_parameters.size())

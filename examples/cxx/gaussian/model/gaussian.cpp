@@ -7,28 +7,29 @@
 gsl_vector_view mean_view;
 gsl_matrix *L;
 
-double gaussian(double *x)
+void gaussian(Korali::modelData& x)
 {
- double work[NDIMS];
- gsl_vector_view work_view = gsl_vector_view_array(work, NDIMS);
- gsl_vector_view vals_view = gsl_vector_view_array(x, NDIMS);
+ size_t nPars = x.getParameterCount();
+ double work[nPars];
+ gsl_vector_view work_view = gsl_vector_view_array(work, nPars);
+ gsl_vector_view vals_view = gsl_vector_view_array(x.getParameterArray(), nPars);
  double res = 0.0;
  gsl_ran_multivariate_gaussian_log_pdf(&vals_view.vector, &mean_view.vector, L, &res, &work_view.vector);
- return res;
+ x.addResult(res);
 }
 
 
-void gaussian_init()
+void gaussian_init(size_t nPars)
 {
- double* mean = (double*) calloc (NDIMS, sizeof(double));
- double* sigma = (double*) calloc (NDIMS*NDIMS, sizeof(double));
+ double* mean = (double*) calloc (nPars, sizeof(double));
+ double* sigma = (double*) calloc (nPars*nPars, sizeof(double));
 
- for (int i = 0; i < NDIMS; i++) mean[i] = -3.0;
- for (int i = 0; i < NDIMS; i++) sigma[i*NDIMS+i] = 5.0;
+ for (size_t i = 0; i < nPars; i++) mean[i] = -3.0;
+ for (size_t i = 0; i < nPars; i++) sigma[i*nPars+i] = 5.0;
 
- mean_view  = gsl_vector_view_array(mean, NDIMS);
- gsl_matrix_view sigma_view  = gsl_matrix_view_array(sigma, NDIMS,NDIMS);
- L = gsl_matrix_alloc(NDIMS,NDIMS);
+ mean_view  = gsl_vector_view_array(mean, nPars);
+ gsl_matrix_view sigma_view  = gsl_matrix_view_array(sigma, nPars,nPars);
+ L = gsl_matrix_alloc(nPars,nPars);
  gsl_matrix_memcpy(L, &sigma_view.matrix);
  gsl_linalg_cholesky_decomp(L);
 }
