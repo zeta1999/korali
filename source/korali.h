@@ -21,11 +21,7 @@
 
 #include "conduits/sequential/sequential.h"
 #include "conduits/upcxx/upcxx.h"
-
 #include "koralijson/koralijson.h"
-#include "pybind11/pybind11.h"
-#include "pybind11/functional.h"
-#include "pybind11/stl.h"
 
 enum verbosity { KORALI_SILENT = 0, KORALI_MINIMAL = 1, KORALI_NORMAL = 2, KORALI_DETAILED = 3 };
 
@@ -58,30 +54,11 @@ class modelData
   std::vector<double> _results;
 };
 
-class KoraliJsonWrapper
-{
- public:
-  nlohmann::json* _js;
-
-  KoraliJsonWrapper& getItem(const std::string& key)           { _js = &((*_js)[key]); return *this;}
-  KoraliJsonWrapper& getItem(const unsigned long int& key)     { _js = &((*_js)[key]); return *this;}
-  void setItem(const std::string& key, const std::string& val) { (*_js)[key] = val; }
-  void setItem(const std::string& key, const double& val)      { (*_js)[key] = val; }
-  void setItem(const std::string& key, const int& val)         { (*_js)[key] = val; }
-  void setItem(const std::string& key, const bool& val)        { (*_js)[key] = val; }
-  void setItem(const int& key, const std::string& val)         { (*_js)[key] = val; }
-  void setItem(const int& key, const double& val)              { (*_js)[key] = val; }
-  void setItem(const int& key, const int& val)                 { (*_js)[key] = val; }
-  void setItem(const int& key, const bool& val)                { (*_js)[key] = val; }
-};
-
 class Engine {
 
  public:
 
  nlohmann::json  _js;
- KoraliJsonWrapper _wr;
-
  nlohmann::json& operator[](std::string key) { return _js[key]; }
 
  std::function<void(modelData&)> _model;
@@ -96,6 +73,9 @@ class Engine {
  ~Engine();
 
  void run();
+
+ // Python Configuration Binding Methods
+ KoraliJsonWrapper _wr;
  KoraliJsonWrapper& getItem(const std::string& key)           { _wr._js = &(_js[key]); return _wr;}
  KoraliJsonWrapper& getItem(const unsigned long int& key)     { _wr._js = &(_js[key]); return _wr;}
  void setItem(const std::string& key, const std::string& val) { _js[key] = val; }

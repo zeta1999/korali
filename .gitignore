@@ -1,4 +1,5 @@
 korali/
+__pycache__
 *.tar.gz
 *.cfg
 *.o

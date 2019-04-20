@@ -148,14 +148,14 @@ else
   openMPFlags=
 fi
 
-echo "[Korali] Detecting Python3 using \"pkg-config python3\"."
+echo "[Korali] Detecting Python 3.x using \"pkg-config python3\"."
 pkg-config python3 > /dev/null 2>&1
 if [ $? -eq 0 ]; then
-  echo "[Korali] Configuring with support for Python3."
-  pythonCXXFlags="`pkg-config python3 --cflags` -Wno-deprecated-declarations"
+  echo "[Korali] Configuring with support for Python 3.x."
+  pythonCXXFlags="`pkg-config python3 --cflags` -Wno-deprecated-declarations -D_KORALI_USE_PYTHON"
   pythonLDFlags="`pkg-config python3 --libs`"
 else
-  echo "[Korali] Configuring without support for Python3."
+  echo "[Korali] Configuring without support for Python 3.x."
   pythonCXXFlags=
   pythonLDFlags=
 fi
