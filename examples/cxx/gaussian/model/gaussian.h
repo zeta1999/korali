@@ -1,9 +1,10 @@
 #ifndef _GAUSSIAN_H_
 #define _GAUSSIAN_H_
 
-#include "korali.h"
+#include <vector>
+#include <stdlib.h>
 
-void gaussian(Korali::modelData& x);
+void gaussian(std::vector<double>& pars, std::vector<double>& result);
 void gaussian_init(size_t nPars);
 
 #endif

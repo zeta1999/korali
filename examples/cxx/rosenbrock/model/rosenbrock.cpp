@@ -1,12 +1,14 @@
 #include "rosenbrock.h"
-#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
-double rosenbrock(double *x)
+void rosenbrock(std::vector<double>& pars, std::vector<double>& result)
 {
- double s = 0.;
- for (int i = 0; i < NDIMS-1; i++)
-  s += 100.*pow(x[i+1]-x[i]*x[i], 2) + pow(x[i]-1., 2);
+ size_t nPars = pars.size();
 
- return s;
+ double s = 0.;
+ for (size_t i = 0; i < nPars-1; i++)
+  s += 100.*pow(pars[i+1]-pars[i]*pars[i], 2) + pow(pars[i]-1., 2);
+
+ result.push_back(-s);
 }

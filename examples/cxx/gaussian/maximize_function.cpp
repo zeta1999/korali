@@ -3,15 +3,14 @@
 
 int main(int argc, char* argv[])
 {
- size_t nPars = 4;
-
- gaussian_init(nPars);
-
- auto korali = Korali::Engine(gaussian);
+ auto korali = Korali::Engine([](Korali::modelData& d) {
+	 gaussian(d.getParameters(), d.getResults());
+ });
 
  korali["Seed"] = 0xC0FFEE;
  korali["Verbosity"] = "Normal";
 
+ size_t nPars = 4;
  for (size_t i = 0; i < nPars; i++)
  {
   korali["Parameters"][i]["Name"] = "X" + std::to_string(i);
@@ -26,6 +25,7 @@ int main(int argc, char* argv[])
  korali["Solver"]["Termination Criteria"]["Min DeltaX"] = 1e-11;
  korali["Solver"]["Lambda"] = 128;
 
+ gaussian_init(nPars);
  korali.run();
 
  return 0;

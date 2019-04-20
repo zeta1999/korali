@@ -1,9 +1,7 @@
-CXX = korali-cxx
-
 all: gaussian.o
 
 gaussian.o: gaussian.cpp
-	$(CXX) -c $< -O3 
+	$(CXX) -c $< -O3 `gsl-config --cflags`
 
 clean:; rm -rf $(TARGET) *.o
 

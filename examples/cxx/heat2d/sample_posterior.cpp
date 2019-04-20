@@ -3,7 +3,9 @@
 
 int main(int argc, char* argv[])
 {
- auto korali = Korali::Engine(heat2DSolver);
+ auto korali = Korali::Engine([](Korali::modelData& d) {
+	 heat2DSolver (d.getParameters(), d.getResults());
+ });
 
  korali["Seed"] = 0xC0FFEE;
  korali["Verbosity"] = "Normal";

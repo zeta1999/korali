@@ -3,12 +3,14 @@
 
 int main(int argc, char* argv[])
 {
- auto korali = Korali::Engine([](double *x) {return -rosenbrock(x);});
+ auto korali = Korali::Engine([](Korali::modelData& d) {
+	 rosenbrock(d.getParameters(), d.getResults());
+ });
 
  korali["Seed"] = 0xC0FFEE;
  korali["Verbosity"] = "Normal";
 
- for (int i = 0; i < NDIMS; i++)
+ for (int i = 0; i < 2; i++)
  {
   korali["Parameters"][i]["Name"] = "X" + std::to_string(i);
   korali["Parameters"][i]["Distribution"] = "Uniform";

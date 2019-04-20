@@ -7,15 +7,15 @@
 gsl_vector_view mean_view;
 gsl_matrix *L;
 
-void gaussian(Korali::modelData& x)
+void gaussian(std::vector<double>& pars, std::vector<double>& result)
 {
- size_t nPars = x.getParameterCount();
+ size_t nPars = pars.size();
  double work[nPars];
  gsl_vector_view work_view = gsl_vector_view_array(work, nPars);
- gsl_vector_view vals_view = gsl_vector_view_array(x.getParameterArray(), nPars);
+ gsl_vector_view vals_view = gsl_vector_view_array(pars.data(), nPars);
  double res = 0.0;
  gsl_ran_multivariate_gaussian_log_pdf(&vals_view.vector, &mean_view.vector, L, &res, &work_view.vector);
- x.addResult(res);
+ result.push_back(res);
 }
 
 

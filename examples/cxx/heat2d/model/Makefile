@@ -1,11 +1,10 @@
-all: libheat2d.so
+all: heat2d.o
 
-CXX = korali-cxx
-CXXFLAGS += -shared -march=native -D NOALIAS -O3 -fPIC -I../../../libs/  $(shell python3 -m pybind11 --includes)
+CXXFLAGS += -march=native -D NOALIAS -O3 -g
 
-libheat2d.so: heat2d.cpp 
-	$(CXX) $^ -o $@ $(CXXFLAGS) 
+heat2d.o: heat2d.cpp 
+	$(CXX) -c $< $(CXXFLAGS) 
 
-clean:; rm -rf $(TARGET) *.so
+clean:; rm -rf $(TARGET) *.o
 
 .PHONY: clean all

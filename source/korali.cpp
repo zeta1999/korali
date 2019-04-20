@@ -201,8 +201,11 @@ void Korali::Engine::loadState(std::string fileName)
 PYBIND11_MODULE(libkorali, m) {
  pybind11::class_<Korali::modelData>(m, "modelData")
   .def(pybind11::init<>())
-	.def("getParameter", &Korali::modelData::getParameter)
-  .def("addResult", &Korali::modelData::addResult);
+	.def("getParameter", &Korali::modelData::getParameter, pybind11::return_value_policy::reference)
+	.def("getParameterCount", &Korali::modelData::getParameterCount, pybind11::return_value_policy::reference)
+	.def("getParameters", &Korali::modelData::getParameters, pybind11::return_value_policy::reference)
+	.def("getResults", &Korali::modelData::getResults, pybind11::return_value_policy::reference)
+  .def("addResult", &Korali::modelData::addResult, pybind11::return_value_policy::reference);
 
  pybind11::class_<Korali::Engine>(m, "Engine")
  .def(pybind11::init<const std::function<void(Korali::modelData&)>&>())

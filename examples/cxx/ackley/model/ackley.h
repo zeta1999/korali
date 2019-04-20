@@ -1,8 +1,8 @@
 #ifndef _ACKLEY_H_
 #define _ACKLEY_H_
 
-#define NDIMS 4
+#include <vector>
 
-double ackley(double *x);
+void ackley(std::vector<double>& pars, std::vector<double>& result);
 
 #endif

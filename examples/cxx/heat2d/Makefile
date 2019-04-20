@@ -1,5 +1,5 @@
 BINARIES = maximize_likelihood maximize_posterior sample_likelihood sample_posterior
-OBJECTS = model/libheat2d.so
+OBJECTS = model/heat2d.o
 CXX = korali-cxx
 
 .SECONDARY:
@@ -9,7 +9,7 @@ all: $(BINARIES)
 $(BINARIES) : % : %.o $(OBJECTS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-model/%.so: 
+model/%.o: 
 	$(MAKE) -C model all 
 
 %.o: %.cpp

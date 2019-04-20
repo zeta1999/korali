@@ -38,8 +38,10 @@ class modelData
 
 	modelData() { _self = this; }
 
+	void addResult(double x) {_self->_results.push_back(x); }
 	size_t getParameterCount() { return _self->_parameters.size(); }
-	double* getParameterArray() { return _self->_parameters.data(); }
+	std::vector<double>& getParameters() { return _self->_parameters; }
+	std::vector<double>& getResults() { return _self->_results; }
 
 	double getParameter(size_t i)
 	{
@@ -51,11 +53,9 @@ class modelData
 		return _self->_parameters[i];
 	}
 
-	void addResult(double x) {_self->_result.push_back(x); }
-
 	modelData* _self;
   std::vector<double> _parameters;
-  std::vector<double> _result;
+  std::vector<double> _results;
 };
 
 class KoraliJsonWrapper

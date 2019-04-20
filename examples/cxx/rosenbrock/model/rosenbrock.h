@@ -1,8 +1,8 @@
 #ifndef _ROSENBROCK_H_
 #define _ROSENBROCK_H_
 
-#define NDIMS 2
+#include <vector>
 
-double rosenbrock(double *x);
+void rosenbrock(std::vector<double>& pars, std::vector<double>& result);
 
 #endif

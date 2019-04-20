@@ -65,14 +65,14 @@ double Korali::Problem::Likelihood::evaluateFitness(double* sample)
  for (size_t i = 0; i < _k->N; i++) d._parameters.push_back(sample[i]);
  _k->_model(d);
 
- if (d._result.size() != _referenceDataSize)
+ if (d._results.size() != _referenceDataSize)
  {
   fprintf(stderr, "[Korali] Error: This likelihood problem requires a %lu-sized result array.\n", _referenceDataSize);
-  fprintf(stderr, "[Korali]        Provided: %lu.\n", d._result.size());
+  fprintf(stderr, "[Korali]        Provided: %lu.\n", d._results.size());
   exit(-1);
  }
 
- for (size_t i = 0; i < _referenceDataSize; i++) fitnessData[i] = d._result[i];
+ for (size_t i = 0; i < _referenceDataSize; i++) fitnessData[i] = d._results[i];
 
  return -Korali::Parameter::Gaussian::logLikelihood(sigma, _referenceDataSize, _referenceData, fitnessData);
 }
