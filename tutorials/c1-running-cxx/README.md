@@ -22,8 +22,8 @@ This should output information about the process and result of the optimization.
 This explanation steps through the example in [run-cmaes.cpp](run-cmaes.cpp) and
 also explains part of the functions in [heat2d.cpp](model/heat2d.cpp).
 The problem to be solved is a static heat conduction problem, with
-a candle as static heat source. For a more extensive description, the problem
-described [here](https://web.calpoly.edu/~kshollen/ME554/Labs/ME554_Lab_2.pdf) looks similar; it might help to have a look there.  
+a candle as static heat source. <!-- For a more extensive description, the problem
+described [here](https://web.calpoly.edu/~kshollen/ME554/Labs/ME554_Lab_2.pdf) looks similar; it might help to have a look there.  -->
 The variables `Intensity` , `PosX`, `PosY` are position and intensity
  of the candle. `Sigma` is the standard deviation of the noise in the
  `Additive Normal` noise model - the noise $\epsilon$ that is added to the function
