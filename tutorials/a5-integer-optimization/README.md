@@ -1,6 +1,7 @@
 # A.5 - Model Optimization with Discrete (Integer) Variables
 
-In this tutorial we show how to optimize a function with discrete input parameters.
+In this tutorial we show how to optimize a function with discrete input parameters,
+ along with continuous ones.
 
 
 ## Problem Setup
@@ -8,9 +9,12 @@ In this tutorial we show how to optimize a function with discrete input paramete
 We want to minimize the following function:
 
 $$ f(x_1, ... x_{10}) = \sum_{i=1}^{10} 10^{6*i/10} * x_i^2 $$ ,
-where $x_1, x_2, x_4, x_7 \in \mathbb{Z}$, $x_3, x_5, x_6, x_9, x_{10} \in \mathbb{R}$,
-given constraints:
-$$ $$
+where $x_1, x_2, x_4, x_7 \in \mathbb{Z}$, $x_3, x_5, x_6, x_9, x_{10} \in \mathbb{R}$.
+
+We do not set constraints in this problem. <!-- Maybe as soon as CCMAES is
+implemented, we could add constraints? Not sure but this seems to be the point
+of CCMAES, in comparison to CMAES. -->
+
 
 ##  The Objective Function
 We create a folder `model`, and inside a file `model.py`, where we define the
@@ -122,4 +126,6 @@ python3 -m korali.plotter
 ## Optimization with CCMA-ES
 
 Explain [CCMA-ES](https://dl.acm.org/doi/10.1145/3324989.3325725)?   
-This might not be implemented yet.
+This might not be implemented yet. To see whether it is implemented by now, you
+can check for "Optimizer/CCMAES" or similar in the source file
+[module.cpp](../../source/module.cpp).
