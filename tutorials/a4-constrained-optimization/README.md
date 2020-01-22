@@ -71,7 +71,7 @@ def g4(k):
 
 ```
 
-## Optimization with (C)CMA-ES
+## Optimization with CCMA-ES
 
 First, open a file and import the korali module
 ```python
@@ -119,7 +119,9 @@ for i in range(7) :
 
 
 ###  The Solver
-We choose the solver `CMA-ES`,
+We choose the solver `CMA-ES`. Korali will detect that our problem
+has constraints and will automatically resort to `CCMA-ES`. `CCMA-ES` is a variant
+ of `CMA-ES` for constrained optimization problems.  
 
 ```python
 e["Solver"]["Type"] = "Optimizer/CMAES"
@@ -147,7 +149,8 @@ e["Console"]["Frequency"] = 50
 
 ```
 
-Finally, we need to create a Korali `Engine` object add a call to its run() routine, to start the engine.
+Finally, we need to create a Korali `Engine` object and add a call to its run()
+ routine, to start the engine.
 
 ```python
 k = korali.Engine()

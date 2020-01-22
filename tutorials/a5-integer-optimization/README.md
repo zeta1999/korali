@@ -123,9 +123,9 @@ python3 -m korali.plotter
 ```
 
 
-## Optimization with CCMA-ES
+<!-- ## Optimization with CCMA-ES
 
 Explain [CCMA-ES](https://dl.acm.org/doi/10.1145/3324989.3325725)?   
 This might not be implemented yet. To see whether it is implemented by now, you
 can check for "Optimizer/CCMAES" or similar in the source file
-[module.cpp](../../source/module.cpp).
+[module.cpp](../../source/module.cpp). -->
