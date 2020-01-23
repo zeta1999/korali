@@ -75,7 +75,7 @@ We [see](setup/model/model.py) that the data is then generated according to a no
 
 
 
-## Phase 1
+## Phase 1: Sampling the Parameters Theta (our `V`)
 In [phase 1](phase1.py), we run 5 experiments; one for each dataset created in
 phase 0. We set the problem type to `Evaluation/Bayesian/Inference/Approximate`,
 the likelihood model to `Normal` and use as solver `Sampler/TMCMC`,
@@ -110,19 +110,24 @@ After running `phase1.py`, samples will be stored in folder `setup/results_phase
 
 
 
-## Phase 2 -- TODO: Reformulate
+## Phase 2: Sampling Hyperparameters Psi -- TODO: Reformulate
 
 In [phase 2](phase2.py), we generate samples of the hyperparameters $\psi$,
 given the samples of parameters `V` from phase 1.  
 
 We have four hyperparameters $\psi$, or `Psi`:  
-`V1` were drawn from a normal distribution with mean `Psi 1 == 10` and sd `Psi 2 == 4`;
+When generating the datasets in pahse 0, `V1` were drawn from a normal
+ distribution with mean `Psi 1 == 10` and sd `Psi 2 == 4`;
 `V2` was log-normally distributed with `log(V2)` having mean `Psi 3 == 0` and sd
-`Psi 4 == 1`.
+`Psi 4 == 1`. (Comparing to the range of uniform priors of each variable,
+we see that range each includes the "true" hyperparameter. For example `Psi 1`: 4 lies
+in [0,20]. We guessed our priors well, didn't we!  )  
+
+-- Has subproblems
 
 -- Todo: continue reformulating below here
 
-psi1, psi2, psi3, psi4: mean and sd of the normal and lognormal distributions, so
+<!-- psi1, psi2, psi3, psi4: mean and sd of the normal and lognormal distributions, so
 psi-i are the hyperparameters to be estimated; `V2` had a log-normal distribution.
 
 Interesting priors for the psi's:
@@ -131,6 +136,26 @@ psi2: actual: 4 prior:  [0, 20]
 psi3: actual 0, prior: [-2, +2]
 psi4: actual 1, prior:  [0,  5]
 okay, works
+-->
+
+We tell Korali our models for the `Conditional Priors`, which ??are the distributions
+of our parameters depending on hyperparameters??. We have two conditional priors:
+One for the mean `V1`, which we know is normally distributed, and one for the sd `V2`,
+with a log-normal distribution:
+
+```python
+e["Problem"]["Conditional Priors"] = [ "Conditional 0", "Conditional 1" ]
+
+e["Distributions"][0]["Name"] = "Conditional 0"
+e["Distributions"][0]["Type"] = "Univariate/Normal"
+e["Distributions"][0]["Mean"] = "Psi 1"
+e["Distributions"][0]["Standard Deviation"] = "Psi 2"
+
+e["Distributions"][1]["Name"] = "Conditional 1"
+e["Distributions"][1]["Type"] = "Univariate/LogNormal"
+e["Distributions"][1]["Mu"]    = "Psi 3"
+e["Distributions"][1]["Sigma"] = "Psi 4"
+```
 
 "Conditional priors" are the two distributions for `V1` and `V2`, so the psi's
 define the *prior* distribution of V only.
@@ -160,7 +185,7 @@ will be stored to files in folder `setup/results_phase_2/`.
 ```
 
 
-## Phase 3a
+## Phase 3a: "ThetaNew"
 In [phase 3 a](phase3a.py), we again sample parameters `Theta` (our `V`) a
  second time. But this time, sampling is based entirely on our samples of the four `Psi`
  variables generated in phase 2, and uniform priors for `V`.
@@ -170,6 +195,10 @@ In [phase 3 a](phase3a.py), we again sample parameters `Theta` (our `V`) a
   # ...
   e["Solver"]["Type"] = "Sampler/TMCMC"
  ```
+
+ The purpose of doing this ?? is resampling new datasets for simulation.
+ For example, if each of our datasets corresponded to one individual, we now simulate
+ additional individuals, given our inferred population hyperparameters. ??
 
 `?? There might be additional special treatment for this case, because
  otherwise we would not need the special problem type
@@ -203,12 +232,12 @@ and `sigma`.
 ?? Statistics of the TMCMC runs are stored in folder `setup/results_phase_3a/`. ??
 
 
-## Phase 3b
+## Phase 3b: "Theta"
 
 [Phase 3 b](phase3b.py) combines sampled `Phi` hyperparameter values from phase
 2 with our samples of `V` (that is, `mu` and `sigma`) generated in phase 1.
 
-This is again a problem of type `Evaluation/Bayesian/Hierarchical/Theta`, the
+This is a problem of type `Evaluation/Bayesian/Hierarchical/Theta`, the
 same as in phase ... Ah, no, we didn't have that one yet.
 "Theta" --> This step will also try to sample Theta. But how?
 
@@ -222,6 +251,62 @@ sub-problems need to be of type 'Evaluation/Bayesian/Inference'
 
 ????? What does phase 3b do? ?????
 
+-----------------------------
+
+## C++ Code: Phase 3a "ThetaNew"
+- Takes as input a Psi Problem Engine (from phase 2), loaded from disk
+
+Three main functions:  
+```C++
+void evaluateLogLikelihood(korali::Sample& sample) override;
+void evaluateThetaLikelihood(korali::Sample& sample);
+void initialize() override;
+```
+**Open questions**:  
+- Does this use the fact that we know the form of p(theta | psi)?
+These are called "conditional priors" it seems.
+- How can we use these three functions to generate samples? Sampler `TMCMC` might
+be accessing the function `evaluateLogLikelihood`. Checked: No, it doesnt use this.
+Nor evaluateThetaLikelihood.
+
+
+What `initialize()` does:
+- initialize a "Hierarchical Bayes" problem (the "main" problem?)
+- initializes a "Psi Problem Engine", which must have type "Psi"
+- the Psi Problem Engine has to have one conditional prior for each variable (
+  variables here are Theta / `V`)
+  ...
+
+
+## C++ Code: Phase 3b "Theta"
+```c++
+// Theta Problem's "Evaluate Log-Likelihood"
+void korali::problem::evaluation::bayesian::hierarchical::Theta::evaluateLogLikelihood(korali::Sample& sample)
+{
+ double logLikelihood = 0.0;
+
+ std::vector<double> logValues;
+ logValues.resize(_psiProblemSampleCount);
+
+/* We use all samples of Psi.
+   In initialize(), we loaded the complete Problem objects from phases 1 () and 2 () */
+ for (size_t i = 0; i < _psiProblemSampleCount; i++)
+ {
+   korali::Sample psiSample;
+   psiSample["Parameters"] = _psiProblemSampleCoordinates[i];
+
+   _psiProblem->updateConditionalPriors(psiSample);
+
+   double logConditionalPrior = 0.;
+   for (size_t k = 0; k < _thetaVariableCount; k++)
+     logConditionalPrior += _psiProblemEngine._distributions[_psiProblem->_conditionalPriorIndexes[k]]->getLogDensity(sample["Parameters"][k]);
+
+   logValues[i] = logConditionalPrior - _precomputedLogDenominator[i];
+ }
+
+ sample["logLikelihood"] = -log(_psiProblemSampleCount) + logSumExp(logValues);
+}
+```
 
 ```python
 ```
@@ -240,4 +325,6 @@ The results are saved in sub dirs of the folder `/setup`.
 
 ## References
 
+TMCMC paper: [Ching2007](https://ascelibrary.org/doi/abs/10.1061/%28ASCE%290733-9399%282007%29133%3A7%28816%29)
 [Slides on TMCMC](https://www.cse-lab.ethz.ch/wp-content/uploads/2014/09/HPCSE_II-week7b.pdf)
+[Readme in Korali describing TMCMC](../../source/solver/sampler/TMCMC/README.md)
