@@ -2,7 +2,7 @@
 import pdb
 
 import numpy as np
-from scipy.stats import multivariate_normal
+#from scipy.stats import multivariate_normal
 
 import korali
 
@@ -85,8 +85,8 @@ class MCMCLatentSampler:
 
         # Configuring the MCMC sampler parameters
         e["Solver"]["Type"]  = "MCMC"
-        e["Solver"]["Burn In"] = 500
-        e["Solver"]["Termination Criteria"]["Max Samples"] = 5000
+        e["Solver"]["Burn In"] = 400
+        e["Solver"]["Termination Criteria"]["Max Samples"] = 1000
 
         # Configuring output settings
         e["File Output"]["Frequency"] = 0

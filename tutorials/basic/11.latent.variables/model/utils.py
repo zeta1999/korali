@@ -30,7 +30,7 @@ def univariate_gaussian_probability(mu, sigma:float, point):
     squared_distance = np.inner(distance, distance)
     exponent = - squared_distance / (2.0 * sigma ** 2)
     denominator = (np.sqrt(2.0 * np.pi) * sigma) ** n
-    probability =  np.exp(exponent) / denominator
+    probability =   np.exp(exponent) / denominator
     return probability
 
 
