@@ -145,7 +145,7 @@ class ExampleDistribution2(ExponentialFamilyDistribution):
 
         sigma = hyperparams[self._p.nClusters * self._p.nDimensions]
 
-       # log(sigma*sqrt(pi*2))
+       # dim * N * log(sigma*sqrt(pi*2))
         sample["zeta"] = self._p.nDimensions * self._p.nPoints * np.log(sigma*np.sqrt(2*np.pi))
 
 

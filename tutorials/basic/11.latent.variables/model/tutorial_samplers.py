@@ -1,9 +1,4 @@
-
-import pdb
-
 import numpy as np
-#from scipy.stats import multivariate_normal
-
 import korali
 
 from utils import univariate_gaussian_probability
@@ -141,9 +136,6 @@ class MultimodalGaussianSampler():
             probabilities = np.zeros((self.nClusters,))
             for j in range(self.nClusters):
                 mu = mus[j]
-                # cov = sigma ** 2 * np.eye(len(mu))
-                # mv = multivariate_normal(mean=mu, cov=cov)
-                # p = mv.pdf(self.points[i])
                 p = univariate_gaussian_probability(mu, sigma, self.points[i])
                 probabilities[j] = p
 
