@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
  //e["Variables"][0]["Initial Standard Deviation"] = 5.0;
  e["Variables"][0]["Initial Value"] = 5.0; // Initial hyperparameter value
  e["Variables"][0]["Upper Bound"] = 15;
- e["Variables"][0]["Lower Bound"] = -15;
+ e["Variables"][0]["Lower Bound"] = 0;
 
 
  for (size_t i = 0; i < distrib1._p.nDimensions; i++){

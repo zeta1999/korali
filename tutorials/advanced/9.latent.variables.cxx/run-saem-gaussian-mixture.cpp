@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
  }
 
 
- e["File Output"]["Frequency"] = 50;
+ e["File Output"]["Frequency"] = 1;
  e["Console Output"]["Frequency"] = 10;
  e["Console Output"]["Verbosity"] = "Detailed";
 
