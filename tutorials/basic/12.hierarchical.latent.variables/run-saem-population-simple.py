@@ -1,0 +1,84 @@
+
+import sys
+sys.path.append('./model')
+from model import *
+from tutorial_samplers import *
+
+import numpy as np
+import korali
+
+
+def main():
+    # Initialize the distribution
+    distrib3 = ExampleDistribution3()
+
+    distrib3_S = lambda s: distrib3.S(s)
+    distrib3_zeta = lambda s: distrib3.zeta(s)
+    distrib3_phi = lambda s: distrib3.phi(s)
+
+    d3_numberLatentVars = distrib3._p.nIndividuals
+    d3_numberHyperparams = 1
+
+    d3_initialLatentValues = np.random.normal(0.5, 0.5, (d3_numberLatentVars))
+    d3_initialHyperparams = np.random.normal(0, 1, (d3_numberHyperparams))
+
+    sampler = lambda s: distrib3.sampleLatent(s)
+
+    k = korali.Engine()
+    e = korali.Experiment()
+
+    e["Problem"]["Type"] = "Bayesian/Latent"
+    e["Problem"]["S Of Likelihood Model"] = distrib3_S
+    e["Problem"]["Zeta Of Likelihood Model"] = distrib3_zeta
+    e["Problem"]["Phi Of Likelihood Model"] = distrib3_phi
+    e["Problem"]["S Dimension"] = distrib3.sufficientStatisticsDimension
+    e["Problem"]["Latent Variable Sampler"] = sampler
+
+    e["Solver"]["Type"] = "SAEM"
+    e["Solver"]["Number Samples Per Step"] = 100
+    e["Solver"]["Termination Criteria"]["Max Generations"] = 100
+
+    e["Distributions"][0]["Name"] = "Uniform 0"
+    e["Distributions"][0]["Type"] = "Univariate/Uniform"
+    e["Distributions"][0]["Minimum"] = -100
+    e["Distributions"][0]["Maximum"] = 100
+
+    e["Distributions"][1]["Name"] = "Uniform 1"
+    e["Distributions"][1]["Type"] = "Univariate/Uniform"
+    e["Distributions"][1]["Minimum"] = -100
+    e["Distributions"][1]["Maximum"] = 100
+
+    # * Define which hyperparameters we use (only theta)
+    e["Variables"][0]["Name"] = "hyperparameter"
+    e["Variables"][0]["Bayesian Type"] = "Hyperparameter"
+    e["Variables"][0]["Prior Distribution"] = "Uniform 1"  # not used (?) but required
+    e["Variables"][0]["Initial Value"] = d3_initialHyperparams[0]
+    e["Variables"][0]["Upper Bound"] = e["Distributions"][1]["Maximum"]
+    e["Variables"][0]["Lower Bound"] = e["Distributions"][1]["Minimum"]
+
+    # * Latent variables
+    latent_counter = 0
+    for i in range(distrib3._p.nIndividuals):
+        e["Variables"][i + 1]["Name"] = "individual_mean_" + str(latent_counter)
+        e["Variables"][i + 1]["Bayesian Type"] = "Latent"
+        e["Variables"][i + 1]["Prior Distribution"] = "Uniform 0"
+        e["Variables"][i + 1]["Initial Value"] = d3_initialLatentValues[latent_counter]
+        latent_counter += 1
+
+    e["File Output"]["Frequency"] = 50
+    e["Console Output"]["Frequency"] = 10
+    e["Console Output"]["Verbosity"] = "Detailed"
+
+    k.run(e)
+
+
+
+
+if __name__ == '__main__':
+    # ** For debugging, try this: **
+    # import sys, trace
+    # sys.stdout = sys.stderr
+    # tracer = trace.Trace(trace=1, count=0, ignoredirs=["/usr", sys.prefix])
+    # tracer.runfunc(main)
+    # ** Else: **
+    main()
