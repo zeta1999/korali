@@ -46,8 +46,9 @@ class ExampleDistribution3(ExponentialFamilyDistribution):
         self.numberLatent = self.N
         self.numberHyperparameters = 1
 
+        if isinstance(self._p.data, np.ndarray):
+            self._p.data = self._p.data.flatten()
         assert self.numberLatent == len(self._p.data)
-        assert type(self._p.data) == list or (self.numberLatent == len(self._p.data.flatten()))
 
     def sampleLatent(self, k):
         # /*
@@ -78,15 +79,16 @@ class ExampleDistribution3(ExponentialFamilyDistribution):
         assert len(individual_latent_vars) == self.N
         sample["S"] = [ np.sum(individual_latent_vars**2),
                         np.sum(individual_latent_vars),
-                        np.dot(individual_latent_vars , self._p.data)  ]
+                        np.dot(individual_latent_vars , self._p.data )  ]
 
 
     def zeta(self, sample):
         '''  zeta(theta) = log(2 * pi * sigma * omega) + sum_i[yi**2 / (2 * sigma**2)] - N*theta**2  '''
         hyperparams = sample["Hyperparameters"]
         hyperparam = hyperparams[0]
-        sample["zeta"] = np.log(2 * np.pi * self._p.sigma * self._p.omega) + np.sum(self._p.data**2) / (2 * self._p.sigma**2) - \
-                self.N * hyperparam **2
+        sample["zeta"] = np.log(2 * np.pi * self._p.sigma * self._p.omega) + \
+                           np.sum(self._p.data **2) / (2 * self._p.sigma**2) - \
+                           self.N * hyperparam **2
 
 
     def phi(self, sample):

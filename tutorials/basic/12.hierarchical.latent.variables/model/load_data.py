@@ -21,7 +21,9 @@ class SimplePopulationData():
 
        print("Loading data from data_925.in ... \n")
        with open("model/data_925.in", "r") as fd:
-           self.nIndividuals, self.nSamplesEach, self.sigma, self.omega = extr(fd.readline())
+           firstline = fd.readline().strip("\n ").split(" ")
+           self.nIndividuals, self.nSamplesEach = map(int, firstline[:2])
+           self.sigma, self.omega = map(float, firstline[2:])
            for i in range(self.nIndividuals):
                values = extr(fd.readline(), tofloat=True)
                self.data.append(values)
