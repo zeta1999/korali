@@ -10,25 +10,30 @@ def extr(line, toint=True, tofloat=False):
         result = [int(r) for r in result]
     return result
 
+
 class SimplePopulationData():
-   def __init__(self):
+    def __init__(self):
+        self.nIndividuals = None
+        self.sigma = None
+        self.omega = None
+        self.nSamplesEach = 1
+        self.data = []
 
-       self.nIndividuals = None
-       self.sigma = None
-       self.omega = None
-       self.nSamplesEach = 1
-       self.data = []
+        print("Loading data from data_925.in ... \n")
+        with open("model/data_925.in", "r") as fd:
+            firstline = fd.readline().strip("\n ").split(" ")
+            self.nIndividuals, self.nSamplesEach = map(int, firstline[:2])
+            self.sigma, self.omega = map(float, firstline[2:])
+            for i in range(self.nIndividuals):
+                values = extr(fd.readline(), tofloat=True)
+                self.data.append(values)
 
-       print("Loading data from data_925.in ... \n")
-       with open("model/data_925.in", "r") as fd:
-           firstline = fd.readline().strip("\n ").split(" ")
-           self.nIndividuals, self.nSamplesEach = map(int, firstline[:2])
-           self.sigma, self.omega = map(float, firstline[2:])
-           for i in range(self.nIndividuals):
-               values = extr(fd.readline(), tofloat=True)
-               self.data.append(values)
+        self.data = np.array(self.data)
 
-       self.data = np.array(self.data)
-
-
-
+    def reset_to(self, nIndividuals, sigma, omega, data, nSamplesEach=1):
+        self.data = np.array(data).flatten()
+        self.nIndividuals = nIndividuals
+        self.sigma = sigma
+        self.omega = omega
+        self.nSamplesEach = nSamplesEach
+        assert len(data) == nIndividuals

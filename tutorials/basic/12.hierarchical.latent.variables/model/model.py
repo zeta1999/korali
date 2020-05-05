@@ -39,22 +39,34 @@ class ExampleDistribution3(ExponentialFamilyDistribution):
         self._p = load_data.SimplePopulationData()
         self.sufficientStatisticsDimension = 3
         self.cur_hyperparameter = 0
-
-        self.N = self._p.nIndividuals
-        self.a = self._p.sigma ** 2 / (self._p.sigma ** 2 + self._p.omega ** 2) # alpha
-        self.gamma = np.sqrt(1 / (1 / self._p.sigma ** 2 + 1 / self._p.omega ** 2))
-        self.numberLatent = self.N
         self.numberHyperparameters = 1
 
         if isinstance(self._p.data, np.ndarray):
             self._p.data = self._p.data.flatten()
         assert self.numberLatent == len(self._p.data)
 
+    # In case we reset the underlying data, we cannot directly define these variables but need to use properties
+    # (so that these variables change whenever the data, self._p, is changed)
+    @property
+    def numberLatent(self):
+      return self._p.nIndividuals
+
+    @property
+    def N(self):
+      return self._p.nIndividuals
+
+    @property
+    def a(self):
+      ''' alpha'''
+      return self._p.sigma ** 2 / (self._p.sigma ** 2 + self._p.omega ** 2)
+
+    @property
+    def gamma(self):
+      return np.sqrt(1 / (1 / self._p.sigma ** 2 + 1 / self._p.omega ** 2))
+
     def sampleLatent(self, k):
-        # /*
-        #  * probability to sample from:
-        #  * p(x, z | theta) = N(a*theta + (1-a)*x_i, gamma**2)
-        #
+        ''' probability to sample from:
+              p(x, z | theta) = N(a*theta + (1-a)*x_i, gamma**2) '''
 
         hyperparameters = k["Hyperparameters"]
         theta = hyperparameters[0]
@@ -63,8 +75,8 @@ class ExampleDistribution3(ExponentialFamilyDistribution):
             raise ValueError(
                 "Implementation error, number of latent variables at initialization does not fit to what was passed as variable")
 
-        samples = np.zeros((self.N, numberSamples))
-        for i in range(self.N):
+        samples = np.zeros((self._p.nIndividuals, numberSamples))
+        for i in range(self._p.nIndividuals):
             mean = self.a * theta + (1 - self.a) * self._p.data[i]
             sdev = self.gamma
             samples[i][:] = np.random.normal(mean, sdev, size=(numberSamples,))
@@ -76,7 +88,7 @@ class ExampleDistribution3(ExponentialFamilyDistribution):
     def S(self, sample):
         ''' S(psi) = (sum_i[psi_i ** 2], sum_i[psi_i], sum_i[yi * psi_i])  '''
         individual_latent_vars = np.array(sample["Latent Variables"])
-        assert len(individual_latent_vars) == self.N
+        assert len(individual_latent_vars) == self._p.nIndividuals
         sample["S"] = [ np.sum(individual_latent_vars**2),
                         np.sum(individual_latent_vars),
                         np.dot(individual_latent_vars , self._p.data )  ]
@@ -86,9 +98,9 @@ class ExampleDistribution3(ExponentialFamilyDistribution):
         '''  zeta(theta) = log(2 * pi * sigma * omega) + sum_i[yi**2 / (2 * sigma**2)] - N*theta**2  '''
         hyperparams = sample["Hyperparameters"]
         hyperparam = hyperparams[0]
-        sample["zeta"] = np.log(2 * np.pi * self._p.sigma * self._p.omega) + \
-                           np.sum(self._p.data **2) / (2 * self._p.sigma**2) - \
-                           self.N * hyperparam **2
+        sample["zeta"] = self.N * np.log(2 * np.pi * self._p.sigma * self._p.omega) + \
+                           np.sum(self._p.data **2) / (2 * self._p.sigma**2) + \
+                           self.N * hyperparam **2 / (2 * self._p.omega**2)
 
 
     def phi(self, sample):
