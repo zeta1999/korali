@@ -77,13 +77,13 @@ void korali::problem::bayesian::latent::ExponentialLatent::evaluateZeta(korali::
 }
 
 /* @brief Not implemented */
-void korali::problem::bayesian::Latent::evaluateLogLikelihoodGradient(korali::Sample& sample)
+void korali::problem::bayesian::latent::ExponentialLatent::evaluateLogLikelihoodGradient(korali::Sample& sample)
 {
   _k->_logger->logError("Gradient not yet implemented for selected bayesian problem ('ExponentialLatent') and log likelihood model.");
 }
 
 /* @brief Not implemented */
-void korali::problem::bayesian::Latent::evaluateFisherInformation(korali::Sample& sample)
+void korali::problem::bayesian::latent::ExponentialLatent::evaluateFisherInformation(korali::Sample& sample)
 {
   _k->_logger->logError("Fisher information not yet implemented for selected bayesian problem ('ExponentialLatent') and log likelihood model.");
 }

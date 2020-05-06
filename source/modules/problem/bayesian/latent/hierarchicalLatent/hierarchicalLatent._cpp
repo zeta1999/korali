@@ -1,11 +1,11 @@
-#include "modules/problem/HierarchicalLatent/HierarchicalLatent.hpp"
+#include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
 
-void korali::problem::HierarchicalLatent::initialize()
+void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
  // Initializing Problem Configuration
 }
 
-void korali::problem::HierarchicalLatent::evaluate(korali::Sample& sample)
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluate(korali::Sample& sample)
 {
  // Evaluating Sample
  sample["Evaluation"] = 1.0;
@@ -20,6 +20,28 @@ void korali::problem::HierarchicalLatent::evaluate(korali::Sample& sample)
 /* @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
         Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
         sample is expected to contain parameter 'Latent Variables' */
-void korali::problem::bayesian::Latent::evaluateS(korali::Sample& sample){
-  NOT sample.run(_sOfLikelihoodModel);
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateS(korali::Sample& sample){
+  //sample.run(_sOfLikelihoodModel); // TODO
+}
+
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLoglikelihood(korali::Sample& sample){
+  //sample.run(_sOfLikelihoodModel); // TODO
+}
+
+/* @brief TODO */
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihood(korali::Sample& sample)
+{
+  _k->_logger->logError("TODO.");
+}
+
+/* @brief Not implemented */
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoodGradient(korali::Sample& sample)
+{
+  _k->_logger->logError("Gradient not yet implemented for selected bayesian problem ('HierarchicalLatent') and log likelihood model.");
+}
+
+/* @brief Not implemented */
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateFisherInformation(korali::Sample& sample)
+{
+  _k->_logger->logError("Fisher information not yet implemented for selected bayesian problem ('HierarchicalLatent') and log likelihood model.");
 }

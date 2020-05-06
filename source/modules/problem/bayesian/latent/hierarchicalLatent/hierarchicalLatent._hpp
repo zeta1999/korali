@@ -1,20 +1,27 @@
 #ifndef _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
 #define _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
 
-#include "modules/problem/problem.hpp"
+#include "modules/problem/bayesian/latent/latent.hpp"
 
-namespace korali { namespace problem {
+namespace korali { namespace problem { namespace bayesian { namespace latent {
 
-class HierarchicalLatent : public korali::Problem
+class HierarchicalLatent : public korali::problem::bayesian::Latent
 {
  public:
 
  void initialize() override;
  void evaluate(korali::Sample& sample);
 
+ void evaluateLogLikelihood(korali::Sample& sample) override;
+ void evaluateFisherInformation(korali::Sample& sample) override;
+ void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
+
+ void evaluateS(korali::Sample& sample);
+ void evaluateConditionalLoglikelihood(korali::Sample& sample);
+
 };
 
-} } // namespace korali::problem
+} } } } // namespace korali::problem::bayesian::latent
 
 
 #endif // _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_

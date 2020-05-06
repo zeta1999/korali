@@ -238,7 +238,7 @@ void korali::solver::SAEM::QFunction(korali::Sample& sample)
  _engineStack.push(currentEngine);
 
  auto solver = dynamic_cast<korali::solver::SAEM*>(experiment->_solver);
- auto problem = dynamic_cast<korali::problem::bayesian::Latent*>(experiment->_problem);
+ auto problem = dynamic_cast<korali::problem::bayesian::latent::ExponentialLatent*>(experiment->_problem);
 
  sample["Hyperparameters"] = sample["Parameters"];
  sample.run(problem->_zetaOfLikelihoodModel);
