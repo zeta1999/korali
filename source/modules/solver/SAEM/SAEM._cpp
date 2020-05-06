@@ -15,10 +15,10 @@
 /* @brief This is always run before (re-)starting the solver */
 void korali::solver::SAEM::initialize()
 {
- if( _k->_problem->getType() != "Bayesian/Latent")
-   _k->_logger->logError("SAEM can only optimize problems of type 'Bayesian/Latent' .\n");
+ if( _k->_problem->getType() != "Bayesian/Latent/ExponentialLatent")
+   _k->_logger->logError("SAEM can only optimize problems of type 'Bayesian/Latent/ExponentialLatent' .\n");
 
-  _latentProblem = dynamic_cast<korali::problem::bayesian::Latent*>(_k->_problem); // .get<korali::problem::bayesian::Latent>()
+  _latentProblem = dynamic_cast<korali::problem::bayesian::latent::ExponentialLatent*>(_k->_problem);
 
  _numberVariables = _k->_variables.size();
  _numberLatent = _latentProblem->_latentVariableIndices.size();

@@ -30,7 +30,7 @@ def main():
     k = korali.Engine()
     e = korali.Experiment()
 
-    e["Problem"]["Type"] = "Bayesian/Latent"
+    e["Problem"]["Type"] = "Bayesian/Latent/ExponentialLatent"
     e["Problem"]["S Of Likelihood Model"] = distrib2_S
     e["Problem"]["Zeta Of Likelihood Model"] = distrib2_zeta
     e["Problem"]["Phi Of Likelihood Model"] = distrib2_phi

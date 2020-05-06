@@ -8,16 +8,8 @@ namespace korali { namespace problem { namespace bayesian {
 class Latent : public korali::problem::Bayesian
 {
  public:
-//  std::vector<size_t> _latentVariableIndices;
-//  std::vector<size_t> _hyperparameterVariableIndices;
-
-
- void evaluateLogLikelihood(korali::Sample& sample) override;
+ // void evaluateLogLikelihood(korali::Sample& sample) override;
  void evaluateFisherInformation(korali::Sample& sample) override;
- void sampleLatent(korali::Sample& sample);
- void evaluateS(korali::Sample& sample);
- void evaluatePhi(korali::Sample& sample);
- void evaluateZeta(korali::Sample& sample);
  void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
  // void evaluateLogPrior(korali::Sample& sample) override;
  // void evaluateLogPosterior(korali::Sample& sample) override;

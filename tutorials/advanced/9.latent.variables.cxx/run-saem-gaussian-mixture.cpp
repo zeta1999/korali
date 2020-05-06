@@ -81,15 +81,12 @@ int main(int argc, char* argv[])
   auto k = korali::Engine();
   auto e = korali::Experiment();
 
- //auto p = heat2DInit(&argc, &argv);
-
- e["Problem"]["Type"] = "Bayesian/Latent";
+ e["Problem"]["Type"] = "Bayesian/Latent/ExponentialLatent";
  e["Problem"]["S Of Likelihood Model"] = distrib2_S;
  e["Problem"]["Zeta Of Likelihood Model"] = distrib2_zeta;
  e["Problem"]["Phi Of Likelihood Model"] = distrib2_phi;
  e["Problem"]["S Dimension"] = distrib2.sufficientStatisticsDimension;
  e["Problem"]["Latent Variable Sampler"] = multimodal_gaussian_sampler;
- // e["Problem"]["Latent Variable Sampler"] = &dummySampler;
 
  e["Solver"]["Type"] = "SAEM";
  e["Solver"]["Number Samples Per Step"] = 100;

@@ -1,20 +1,29 @@
-#ifndef _KORALI_PROBLEM_EXPONENTIAL_HPP_
-#define _KORALI_PROBLEM_EXPONENTIAL_HPP_
+#ifndef _KORALI_PROBLEM_EXPONENTIALLATENT_HPP_
+#define _KORALI_PROBLEM_EXPONENTIALLATENT_HPP_
 
-#include "modules/problem/problem.hpp"
+#include "modules/problem/bayesian/latent/latent.hpp"
 
-namespace korali { namespace problem {
 
-class Exponential : public korali::Problem
+namespace korali { namespace problem { namespace bayesian { namespace latent {
+
+class ExponentialLatent : public korali::problem::bayesian::Latent
 {
  public:
 
+ void evaluateLogLikelihood(korali::Sample& sample) override;
+ void evaluateFisherInformation(korali::Sample& sample) override;
+ void sampleLatent(korali::Sample& sample);
+ void evaluateS(korali::Sample& sample);
+ void evaluatePhi(korali::Sample& sample);
+ void evaluateZeta(korali::Sample& sample);
+ void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
+ // void evaluateLogPrior(korali::Sample& sample) override;
+ // void evaluateLogPosterior(korali::Sample& sample) override;
  void initialize() override;
- void evaluate(korali::Sample& sample);
 
 };
 
-} } // namespace korali::problem
+} } } } // namespace korali::problem::evaluation::bayesian::latent::exponentialLatent
 
 
-#endif // _KORALI_PROBLEM_EXPONENTIAL_HPP_
+#endif // _KORALI_PROBLEM_EXPONENTIALLATENT_HPP_

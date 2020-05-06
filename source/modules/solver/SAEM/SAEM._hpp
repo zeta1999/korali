@@ -4,7 +4,7 @@
 #include <vector>
 #include "engine.hpp"
 #include "modules/solver/solver.hpp"
-#include "modules/problem/bayesian/latent/latent.hpp"
+#include "modules/problem/bayesian/latent/exponentialLatent/exponentialLatent.hpp"
 
 namespace korali { namespace solver {
 
@@ -17,7 +17,7 @@ class SAEM : public korali::Solver
  korali::Engine _engine;
  korali::Experiment _experiment;
 
- korali::problem::bayesian::Latent* _latentProblem;
+ korali::problem::bayesian::latent::ExponentialLatent* _latentProblem;
  void sampleLatent();
  void calculateSampleSVectors();
  void updateS();

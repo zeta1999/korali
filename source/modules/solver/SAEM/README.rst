@@ -32,7 +32,7 @@ Usage:
 ======
 See tutorial `basic/11.latent.variables` for an example. 
 
-SAEM can so far only be used with problems of type 'Bayesian/Latent', which imposes the exponential family type for the distribution.
+SAEM can so far only be used with problems of type 'Bayesian/Latent/ExponentialLatent', which imposes the exponential family type for the distribution.
 
 Configuration and Solver Settings
 ---------------------------------
@@ -43,7 +43,7 @@ Configuration and Solver Settings
   k = korali.Engine()
   e = korali.Experiment()
 
-  e["Problem"]["Type"] = "Bayesian/Latent"
+  e["Problem"]["Type"] = "Bayesian/Latent/ExponentialLatent"
   e["Problem"]["S Of Likelihood Model"] = ... # a function
   e["Problem"]["Zeta Of Likelihood Model"] = ... # a function
   e["Problem"]["Phi Of Likelihood Model"] = ... # a function
@@ -60,16 +60,16 @@ Configuration and Solver Settings
 
 
 
-See `Latent <../../problem/bayesian/latent/README.rst>`_ for details of the problem parameters.
+See `ExponentialLatent <../../problem/bayesian/latent/exponentialLatent/README.rst>`_ for details of the problem parameters.
 
 Variable-Specific Settings
 --------------------------
 
 - Each variable needs an `initial value`.
 
-- As `Latent` is a `Bayesian` problem, each variable requires a prior distribution, although this would not be necessary for SAEM. SAEM throughout uses (log-) likelihood, not the (log-) posterior, therefore your choice of prior should not have any influence on the result.
+- As `ExponentialLatent` is a `Bayesian` problem, each variable requires a prior distribution, although this would not be necessary for SAEM. SAEM throughout uses (log-) likelihood, not the (log-) posterior, therefore your choice of prior should not have any influence on the result.
   *Note, in case this behavior is ever changed: To ensure that the choice of prior does not influence results, choose a uniform distribution for hyperparameters. (You need to specify lower and upper bounds for them anyway.) Priors for latent variables are not part of the latent variable distribution and will/should always be ignored.* 
-- Other parameters required for the `Latent` problem: `Bayesian Type` to mark variables as latent vs. hyperparameter; and `upper bound`, `lower bound` for hyperparameter variables.
+- Other parameters required for the `ExponentialLatent` problem: `Bayesian Type` to mark variables as latent vs. hyperparameter; and `upper bound`, `lower bound` for hyperparameter variables.
 
 Termination Criteria
 --------------------

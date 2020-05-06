@@ -11,3 +11,15 @@ void korali::problem::HierarchicalLatent::evaluate(korali::Sample& sample)
  sample["Evaluation"] = 1.0;
 }
 
+
+
+
+
+
+
+/* @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
+        sample is expected to contain parameter 'Latent Variables' */
+void korali::problem::bayesian::Latent::evaluateS(korali::Sample& sample){
+  NOT sample.run(_sOfLikelihoodModel);
+}
