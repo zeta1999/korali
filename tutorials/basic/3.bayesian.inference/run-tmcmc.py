@@ -18,7 +18,6 @@ e["Problem"]["Type"] = "Bayesian/Reference"
 e["Problem"]["Likelihood Model"] = "Additive Normal"
 e["Problem"]["Reference Data"] = getReferenceData()
 e["Problem"]["Computational Model"] = lambda sampleData: model(sampleData, getReferencePoints())
-
 # Configuring TMCMC parameters
 e["Solver"]["Type"] = "TMCMC"
 e["Solver"]["Population Size"] = 5000

@@ -98,16 +98,16 @@ function toggleBIBTex(input) {
         <h2 id="download">Download</h2> 
     
         <h3>Latest Release <span style="font-weight: 300">(Build Status: &nbsp;<a href="https://github.com/cselab/korali/tree/latest"><img style="vertical-align: middle" alt="CircleCI" src="https://circleci.com/gh/cselab/korali/tree/latest.svg?style=svg&amp;circle-token=d73f56a4d14073880f8fe1140964afb58f2b1c35" /></a>) </span></h3>
-        (02/04/2020) <b>Korali v1.0.3</b> - <a href="docs/using/install.html">Download</a> / <a href="https://github.com/cselab/korali/blob/latest/docs/RELEASE-NOTES">Release Notes</a> / <a href="docs/">Documentation</a> / <a href="docs/tutorials/basic.html">Tutorials</a>
+        (03/05/2020) <b>Korali v1.0.4</b> - <a href="docs/using/install.html">Download</a> / <a href="https://github.com/cselab/korali/blob/latest/docs/RELEASE-NOTES">Release Notes</a> / <a href="docs/">Documentation</a> / <a href="docs/tutorials/basic.html">Tutorials</a>
         
         
         <br /> <br /><hr />
     
         <h2 id="features">What Korali Does</h2>
         
-        <h3>Model Optimization</h3>
+        <h3>Optimization</h3>
     
-        Given any objective function, Korali can search its optimum using derivative-free or gradient-based methods.
+        Given any objective function, Korali can search its optimum using stochastic (derivative-free) or gradient-based methods.
      
         <br />
         
@@ -130,16 +130,17 @@ function toggleBIBTex(input) {
         <h3>Surrogate Modeling</h3>
 
         Korali can fit and evaluate Gaussian Processes at scale.
-        
+                         
         <br />
+   
 
-        <h3>Dynamic Programming / Control Theory</h3>
+        <h3>Numerical Integration</h3>
 
-        Korali can find the optimal policy for problems where a cost function needs to be maximized, minimized (or other operations) through recursion and are subject to contraints.  
-                  
+        Performing numerical approximation of integrals using Numerical Quadrature and Monte Carlo Integration.
+
         <br /><hr />
-    
-        <h2 id="principles">Design Principles</h2>
+
+	<h2 id="principles">Design Principles</h2>
     
         <h3>High-Performance</h3>
          The Korali work distribution engine has been optimized to fully harness computational resources of large-scale supercomputers, maximizing throughput and minimizing workload imbalance. Furthermore, Korali supports the execution of parallel (OpenMP, Pthreads), distributed (MPI, UPC++), and GPU-based (CUDA) models.
@@ -230,6 +231,7 @@ year = {2019}
         <ul>
             <li> Ivica Kicic (ETH Zürich) </li>
             <li> Lucas Amoudruz (ETH Zürich) </li>
+            <li> Pascal Weber (ETH Zürich) </li>
             <li> Susanne Keller (ETH Zürich)</li>
             <li> Mark Martori (ETH Zürich)</li>
         </ul> 
