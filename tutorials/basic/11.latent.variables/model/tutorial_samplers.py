@@ -80,16 +80,18 @@ class MCMCLatentSampler:
 
         # Configuring the MCMC sampler parameters
         e["Solver"]["Type"]  = "MCMC"
-        e["Solver"]["Burn In"] = 400
-        e["Solver"]["Termination Criteria"]["Max Samples"] = 1000
+        e["Solver"]["Burn In"] = 100
+        e["Solver"]["Termination Criteria"]["Max Samples"] = 200
 
         # Configuring output settings
         e["File Output"]["Frequency"] = 0
         e["Console Output"]["Frequency"] = 0
         e["Console Output"]["Verbosity"] = "Silent"
 
+        #k["Conduit"]["Type"] = "Concurrent"
+        #k["Conduit"]["Concurrent Jobs"] = 2
         k.run(e)
-
+        
         db = e["Solver"]["Sample Database"]
         samples = db[-numberSamples : ] # take samples from the end
 

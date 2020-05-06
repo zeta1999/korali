@@ -25,7 +25,7 @@ class TMCMC : public korali::Solver
  void prepareGeneration();
 
  /*
-  * @brief Process evaluation, main TMCMC loop
+  * @brief Process Generation after receiving all results.
   */
  void processGeneration();
 
@@ -41,9 +41,34 @@ class TMCMC : public korali::Solver
  void minSearch(double const *fj, size_t fn, double pj, double objTol, double& xmin, double& fmin);
 
  /*
-  * @brief Does sample evaluation.
+  * @brief Collects results after sampleevaluation.
   */
- void processEvaluation(const size_t sampleId);
+ void processCandidate(const size_t sampleId);
+ 
+ /* 
+  * @brief Calculate gradients of loglikelihood (only relevant for mTMCMC).
+  */
+ void calculateGradients(std::vector<korali::Sample>& samples);
+ 
+ /* 
+  * @brief Calculate sample wise proposal distributions (only relevant for mTMCMC).
+  */
+ void calculateProposals(std::vector<korali::Sample>& samples);
+ 
+ /* 
+  * @brief Generate candidate from leader.
+  */
+ void generateCandidate(const size_t sampleId);
+
+ /* 
+  * @brief Add leader into sample database.
+  */
+ void updateDatabase(const size_t sampleId);
+
+ /* 
+  * @brief Calculate acceptance probability.
+  */
+ double calculateAcceptanceProbability(const size_t sampleId);
 
  /*
   * @brief Helper function to calculate objective (CVaR) for min search.
@@ -68,7 +93,7 @@ class TMCMC : public korali::Solver
  void setInitialConfiguration() override;
 
  /**
- * @brief Executes sampling & evaluation generation.
+ * @brief Main solver loop.
  */
  void runGeneration() override;
  

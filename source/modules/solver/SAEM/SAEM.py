@@ -88,7 +88,6 @@ def plotVariables(genList):
 
 
 
-
 def plot(genList):
 
     fig, ax = plotVariables(genList)

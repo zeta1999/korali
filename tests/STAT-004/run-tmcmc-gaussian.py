@@ -14,15 +14,13 @@ import korali
 k = korali.Engine()
 e = korali.Experiment()
 
-e["File Output"]["Path"] = "_result_run-tmcmc"
-
 # Setting up custom likelihood for the Bayesian Problem
 e["Problem"]["Type"] = "Bayesian/Custom"
 e["Problem"]["Likelihood Model"] = lgaussianCustom
 
 # Configuring TMCMC parameters
 e["Solver"]["Type"] = "TMCMC"
-e["Solver"]["Population Size"] = 20000
+e["Solver"]["Population Size"] = 5000
 
 # Configuring the problem's random distributions
 e["Distributions"][0]["Name"] = "Uniform 0"
@@ -34,9 +32,11 @@ e["Distributions"][0]["Maximum"] = +15.0
 e["Variables"][0]["Name"] = "a"
 e["Variables"][0]["Prior Distribution"] = "Uniform 0"
 
+e["File Output"]["Frequency"] = 0
+
 # Running Korali
-e["Random Seed"] = 5467
+e["Random Seed"] = 1337
 k.run(e)
 
-verifyMean(e, [-2.0], 0.05)
-verifyStd(e, [3.0], 0.05)
+verifyMean(e["Solver"]["Sample Database"], [-2.0], 0.05)
+verifyStd(e["Solver"]["Sample Database"], [3.0], 0.05)

@@ -80,6 +80,7 @@ void korali::Engine::run()
 
  if (_conduit->isRoot())
  {
+
   // Adding engine to the stack
   _conduit->stackEngine(this);
 
@@ -146,13 +147,25 @@ void korali::Engine::saveProfilingInfo(bool forceSave)
 
 void korali::Engine::run(korali::Experiment& experiment)
 {
+ experiment._k->_js["Current Generation"] = 0;
+ resume(experiment);
+}
+
+void korali::Engine::run(std::vector<korali::Experiment>& experiments)
+{
+ for (size_t i = 0; i < experiments.size(); i++) experiments[i]._k->_js["Current Generation"] = 0;
+ resume(experiments);
+}
+
+void korali::Engine::resume(korali::Experiment& experiment)
+{
  _experimentVector.clear();
  _experimentVector.push_back(experiment._k);
  initialize();
  run();
 }
 
-void korali::Engine::run(std::vector<korali::Experiment>& experiments)
+void korali::Engine::resume(std::vector<korali::Experiment>& experiments)
 {
  _experimentVector.clear();
  for (size_t i = 0; i < experiments.size(); i++) _experimentVector.push_back(experiments[i]._k);
@@ -204,6 +217,8 @@ PYBIND11_MODULE(libkorali, m)
   .def(pybind11::init<>())
   .def("run", pybind11::overload_cast<korali::Experiment&>(&korali::Engine::run))
   .def("run", pybind11::overload_cast<std::vector<korali::Experiment>&>(&korali::Engine::run))
+  .def("resume", pybind11::overload_cast<korali::Experiment&>(&korali::Engine::resume))
+  .def("resume", pybind11::overload_cast<std::vector<korali::Experiment>&>(&korali::Engine::resume))
   .def("__getitem__", pybind11::overload_cast<pybind11::object>(&korali::Engine::getItem), pybind11::return_value_policy::reference)
   .def("__setitem__", pybind11::overload_cast<pybind11::object, pybind11::object>(&korali::Engine::setItem), pybind11::return_value_policy::reference);
 
@@ -213,7 +228,8 @@ PYBIND11_MODULE(libkorali, m)
 
  pybind11::class_<korali::Sample>(m, "Sample")
   .def("__getitem__", pybind11::overload_cast<pybind11::object>(&korali::Sample::getItem), pybind11::return_value_policy::reference)
-  .def("__setitem__", pybind11::overload_cast<pybind11::object, pybind11::object>(&korali::Sample::setItem), pybind11::return_value_policy::reference);
+  .def("__setitem__", pybind11::overload_cast<pybind11::object, pybind11::object>(&korali::Sample::setItem), pybind11::return_value_policy::reference)
+  .def("update", &korali::Sample::update);
 
  pybind11::class_<korali::Experiment>(m, "Experiment")
    .def(pybind11::init<>())
