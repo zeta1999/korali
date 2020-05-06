@@ -205,12 +205,13 @@ def printdata(self,line, texto, description, fakedescription, r, c,cont,options)
     if cont == 2:
         color = 'floralwhite'
         res = results[cont][selectedtab2]
-    elif cont ==3:
-        color = 'white'
-        res = results[cont]
-    else:
+    elif cont ==0 or cont == 1:
         color = 'azure'
         res = results[cont]
+    else:
+        color = 'white'
+        res = results[cont]
+
     
     double_Var = tk.DoubleVar()
     num = tk.IntVar()
@@ -232,7 +233,7 @@ def printdata(self,line, texto, description, fakedescription, r, c,cont,options)
                 res[texto].config(validate = 'focus',validatecommand = (self.corrector,'%P')) # %P represents the parameter we want to pass to validate.
             else:
                 stringVar[texto] = tk.StringVar()
-                stringVar[texto].set("Choose ...") # default value
+                stringVar[texto].set("default") # default value
                 listoptions = []
                 for option in options:
                     listoptions.append(option['Value'])
@@ -257,7 +258,7 @@ def printdata(self,line, texto, description, fakedescription, r, c,cont,options)
             self.label=tk.Label(self, text=texto, width = 17,justify='left',bg=color, anchor="w", font="Arial 12")
             self.label.grid(row=r, column=c,pady = 2,padx=6, sticky='w')
             stringVar[texto] = tk.StringVar()
-            stringVar[texto].set("Choose ...") # default value
+            stringVar[texto].set("default") # default value
             om = OptionMenu(self, stringVar[texto],"Yes", "No")#,command = lambda _:getValOptionMenu(stringVar[texto]))
             om.grid(row=r, column = c+1, pady=2, padx=6)
             res[texto] = stringVar[texto]
@@ -399,6 +400,7 @@ def printConfig(directorio,DB, cont):
     global selectedtab
     global experiments
 
+    print('REACHED')
     # From which cascade do we come from? Problem, Solver or Variable?
     if cont == 0:
         self = experiments[selectedtab]['rightFrame']
@@ -411,16 +413,21 @@ def printConfig(directorio,DB, cont):
     ## DELETE ANY WIDGET THAT WAS THERE BEFORE:
     for widget in self.winfo_children():
         widget.destroy()
-    
+    results = experiments[selectedtab]['results']
+    results[cont] = {}
     # Set variables:
     r = 0
     c = 0
-    results = experiments[selectedtab]['results']
-    results[cont]={}
+
 
     # Start reading and printing on screen: # DON'T DELETE THIS COMMENT -> TITULO FRAMES : list(DB.keys())[0]
     self.titulo=tk.Label(self, text=directorio,justify='left', anchor="w", font="Arial 18", bg = 'darkcyan', fg='white')
     self.titulo.grid(row=r, column=c,pady = 10 ,padx=20, sticky='w', columnspan = 2)
+
+
+    chosen = self.titulo.cget('text')
+    results[cont]['Type']= chosen
+
     config = DB[directorio]['herencia']
     conf_sett = 'Configuration Settings'
     
@@ -467,7 +474,6 @@ def printConfig(directorio,DB, cont):
                 canvas.pack(side=LEFT,expand=True,fill=BOTH)
                 canvas.pack_propagate(0)
     '''
-                                    
 ##########################
 ########################## MAIN FUNCTIONS:
 def importFile():
@@ -477,7 +483,6 @@ def importFile():
     global files
 
     filename = askopenfilename(filetypes=files)
-    print(filename)
     parsedFile = ''
     try:
         file = open(filename,'r')
@@ -527,6 +532,7 @@ def importFile():
                         else:
                             e.insert(END,valuesSolver[numofentry])
                     numofentry+=1
+                
             elif 'variabl' in directorio or 'Variabl' in directorio:
                 cont = 2
                 numofentry = 0
@@ -560,6 +566,7 @@ def importFile():
     else:
         popupmsgwarning('Could not import the file')
             
+         
         
         '''
         for frame in parsedFile.keys():
@@ -589,20 +596,67 @@ def createConfig():
     for key in results:
          results2[key] = results[key].copy()
          
-    results2[rightFr.titulo.cget('text')] = results2.pop(0)
-    results2[bottomleftFr.titulo.cget('text')] = results2.pop(1)
+    results2['Problem'] = results2.pop(0)
+    results2['Solver'] = results2.pop(1)
     results2['Variables'] = results2.pop(2)
     
     for frame in results2.keys():
         for texto in results2[frame]:
             w = results2[frame][texto]
-            if isinstance(w,dict):
+            if texto == 'Random Seed':
+                val = w.get()
+                results2[frame] = val
+                print('Random seed :',val)
+            elif isinstance(w,dict):
                 results2[frame][texto] = []
                 for key in w:
                     val = w[key].get()
                     d = {key:val}
                     results2[frame][texto].append(d)
 ##                    print(results2[frame][texto])
+            elif isinstance(w,str):
+                results2[frame][texto] = w
+                print('STRING is :',w)
+            else:
+                val = w.get()
+                results2[frame][texto] = val
+
+    #### ASK TO DOWNLOAD AND SAVE THE FILE:
+    filesaved = asksaveasfile(filetypes = files, defaultextension = files)
+    json.dump(results2, filesaved, indent = 3)
+    filesaved.close()
+
+    '''
+    problem = rightFr.titulo.cget('text')
+    solver = bottomleftFr.titulo.cget('text')
+    
+    results2['Problem'] = results2.pop(0)
+    results2['Solver'] = results2.pop(1)
+    results2['Variables'] = results2.pop(2)
+    
+    for frame in results2.keys():
+        if frame == 'Problem':
+            results2[frame]['Type'] = problem
+        elif frame == 'Solver':
+            results2[frame]['Type'] = solver
+        print(results2[frame].keys())
+        for texto in results2[frame]:
+        ## FRAME '2' == variables, already written.                    
+            w = results2[frame][texto]
+            if texto == 'Random Seed':
+                results2[frame] = w
+                
+            elif isinstance(w,str):
+                print('IS A STRING :',w)
+                val = w
+                results2[frame]['Type'] = val
+            elif isinstance(w,dict):
+                results2[frame][texto] = []
+                for key in w:
+                    val = w[key].get()
+                    d = {key:val}
+                    results2[frame][texto].append(d)
+            ##                    print(results2[frame][texto])
             else:
                 val = w.get()
                 results2[frame][texto] = val
@@ -614,6 +668,7 @@ def createConfig():
     filesaved = asksaveasfile(filetypes = files, defaultextension = files)
     json.dump(results2, filesaved, indent = 3)
     filesaved.close()
+    '''
 
 def recursiveUpdate(dest, defaults):
  if (isinstance(defaults, dict)):               # Si default es un diccionario...
@@ -820,14 +875,68 @@ def crearFrameVariables():
                                         fakedescription = str(description[0:42])+'...'
                                     else:
                                         fakedescription = description
-                                    printdata(self,line, texto, description,fakedescription, ro, co, cont)
+                                    options = 'None'
+                                    printdata(self,line, texto, description,fakedescription, ro, co, cont,options)
                             ro+=1
                     ## IT ALREADY ADDS THE NEW VARIABLE TO THE DICTIONARY OF RESULTS BY USING THE FUNCTION PRNTDATA.
             else:
                 popupmsgwarning('Number of Variables exceeded!')
             contadorVariables+=1
-            
-## Crea los tabs de uno en uno
+
+def crearMainConfiguration(configuration,r,c,cont):
+    global selectedtab
+    
+    mainConf = experiments[selectedtab]['mainConf']
+    expFrame = experiments[selectedtab]['expFrame']
+    results = experiments[selectedtab]['results']
+
+    titulos = []
+    for key in mainConf.keys():
+        if key == configuration:
+            lista = mainConf[key]
+            for dicc in lista:
+                if type(dicc) == dict:
+                    if 'Type' not in dicc.keys():
+                        popupmsgwarning("No 'Type' field found")
+                        break
+                    else:
+                        for key2 in dicc.keys():
+                            texto = dicc['Name']
+                            if texto == 'Random Seed':
+                                cont == 'Random Seed'
+                            if len(texto)>1: 
+                                titulo = texto[0]
+                                texto = texto[1]
+                                if titulo not in titulos:
+                                    e2 =tk.Label(expFrame, text=titulo,justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
+                                    e2.grid(row=r, column=c,columnspan= 1,pady = 25 ,padx=4, sticky='w')
+                                    titulos.append(titulo)
+                                    cont=titulo
+                                    results[cont] = {}
+                            else:
+                                texto = texto[0] # Get the element inside list.
+                            if texto in forbidden: # IFF Problem, Solver or Variables... skip
+                                break
+                            else:
+                                if key2 == 'Type':
+                                    # key2 son las llaves del diccionario, por ejemplo: Type, Function, Description, Produced By...
+                                    description = dicc['Description']
+                                    try:
+                                        options = dicc['Options'] # options = list of diccionaries.
+                                    except:
+                                        options = 'None'
+                                    fakedescription = description
+                                    printdata(expFrame,dicc[key2], texto, description,fakedescription, r, c,cont,options)                                    
+                                r+=1
+                                
+##        stringVar[texto] = tk.StringVar()
+##        res[texto] = tk.Entry(self,width=10,font='Arial 12',textvariable = stringVar[texto])
+##        res[texto].grid(row=r, column=c+1, pady= 2,padx=6, sticky = 'w')
+##        self.corrector = self.register(validarstring)
+##        res[texto].config(validate = 'focus',validatecommand = (self.corrector,'%P')) # %P represents the parameter we want to pass to validate.
+##        "Name", "Type", "Random Seed", y "Range"
+                                
+    ## Crea los tabs de uno en uno
 def crearTab(self,totalTabs):
     global contador
     global selectedtab
@@ -879,7 +988,7 @@ def crearTab(self,totalTabs):
                 self.expFrame = tk.Frame(self.bottomleftFrame, background = 'white', width = 550, height = 850)#width = 950, height = 850
                 self.expFrame.grid(column = 1, row = 1, sticky = 'nsew')
                 self.expFrame.grid_propagate(0)
-                self.e =tk.Label(self.expFrame, text='Main Configuration',justify='left', anchor="w", font="Arial 15", fg='black') #bg = 'darkcyan', fg='white')
+                self.e =tk.Label(self.expFrame, text='Main Configuration',justify='left', anchor="w", font="Arial 15", fg='black', bg='white') #bg = 'darkcyan', fg='white')
                 self.e.grid(row=0, column=0,columnspan= 1,pady = 40 ,padx=4, sticky='w')
                 
 
@@ -943,6 +1052,8 @@ def crearTab(self,totalTabs):
                 expElements['bottomrightFrame'] = self.bottomrightFrame
                 expElements['bottomleftFrame'] = self.bottomleftFrame
                 expElements['canvas'] = self.canvas
+                expElements['expFrame'] = self.expFrame
+
 
                 self.totalTabs2 = ttk.Notebook(self.bottomrightFrame)
                 self.totalTabs2.pack(expand = 1, fill = "both")
@@ -962,8 +1073,8 @@ def crearTab(self,totalTabs):
 
                 try: # Read experiment.config 
                     file = open('../../source/modules/experiment/experiment.config','r')
-                    expFile = json.load(file)
-                    cont = 3
+                    mainConf = json.load(file)
+                    cont = 'Random Seed'
                     results = experiments[selectedtab]['results']
                     results[cont] = {}
                 except:
@@ -971,39 +1082,17 @@ def crearTab(self,totalTabs):
                 finally:
                     file.close()
 
-                c = 0
-                r = 0                
-                for key in expFile.keys():
-                    if key == "Configuration Settings":
-                        lista = expFile[key]
-                        for dicc in lista:
-                            if type(dicc) == dict:
-                                if 'Type' not in dicc.keys():
-                                    popupmsgwarning("No 'Type' field found")
-                                    break
-                                else:
-                                    for key2 in dicc.keys():
-                                        texto = dicc['Name']
-                                        if len(texto)>1: 
-                                            res = texto[0]
-                                            res1 = texto[1]
-                                            texto = res+res1
-                                        else:
-                                            texto = texto[0] # Get the element inside list.
-                                        if texto in forbidden: # IFF Problem, Solver or Variables... skip
-                                            break
-                                        else:
-                                            if key2 == 'Type':
-                                                # key2 son las llaves del diccionario, por ejemplo: Type, Function, Description, Produced By...
-                                                description = dicc['Description']
-                                                try:
-                                                    options = dicc['Options'] # options = list of diccionaries.
-                                                except:
-                                                    options = 'None'
+                expElements['mainConf'] = mainConf
 
-                                                fakedescription = description
-                                                printdata(self.expFrame,dicc[key2], texto, description,fakedescription, r, c,cont,options)                                    
-                                            r+=1
+                self.e =tk.Label(self.expFrame, text='Main Configuration',justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
+                self.e.grid(row=0, column=0,columnspan= 1,pady = 25 ,padx=4, sticky='w')
+
+                c = 0
+                r = 0
+                configuration = "Configuration Settings"
+                crearMainConfiguration(configuration,r,c,cont)
+##                configuration = 'Distribution'
+                
 
                 
                 #############################################################

@@ -1,6 +1,60 @@
 Mark Martori Lopez
 
 
+Wednesday 6 May 2020
+
+Tasks:
+
+1- [Solved] Experiment Configuration added.
+
+
+2-[Solved] Readapt the frames of the main window. Add one more in order to set the Main Configurations such as Random Seed, File Output and Console Output.
+
+
+3- [Solved] Exported file changed
+
+from:
+{
+   "reference": {
+      "Computational Model": "Hola",
+      "Reference Data": "que",
+      "Likelihood Model": "tal"
+   },
+   "CMAES": {
+      "Population Size": "1000",
+      "Mu Value": "constant",
+      "Mu Type": "default",
+       .
+       .
+       .
+
+to:
+{
+   "Random Seed": "0",
+   "File Output": {
+      "Path": "",
+      "Enabled": "Default",
+      "Frequency": "",
+      "Store Sample Information": "Default"
+   },
+   "Console Output": {
+      "Verbosity": "Default",
+      "Frequency": ""
+   },
+   "Problem": {
+      "Type": "sampling",
+      "Probability Function": "aaa"
+   },
+   "Solver": {
+      "Type": "LMCMAES",
+      "Population Size": "100",
+      "Mu Value": "",
+      "Mu Type": "Default",
+
+
+4- [Semi-Solved] Distribution added to exported file.
+
+-----------------------------------------------------
 Tuesday 5 May 2020
 
 Tasks:
