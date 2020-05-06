@@ -1,0 +1,13 @@
+#include "modules/problem/HierarchicalLatent/HierarchicalLatent.hpp"
+
+void korali::problem::HierarchicalLatent::initialize()
+{
+ // Initializing Problem Configuration
+}
+
+void korali::problem::HierarchicalLatent::evaluate(korali::Sample& sample)
+{
+ // Evaluating Sample
+ sample["Evaluation"] = 1.0;
+}
+

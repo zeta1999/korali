@@ -1,0 +1,13 @@
+#include "modules/problem/Exponential/Exponential.hpp"
+
+void korali::problem::Exponential::initialize()
+{
+ // Initializing Problem Configuration
+}
+
+void korali::problem::Exponential::evaluate(korali::Sample& sample)
+{
+ // Evaluating Sample
+ sample["Evaluation"] = 1.0;
+}
+
