@@ -64,22 +64,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
    }
  }
 
-
 }
-
-
-
-
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluate(korali::Sample& sample)
-{
- // Evaluating Sample
- sample["Evaluation"] = 1.0;
-}
-
-
-
-
-
 
 
 /*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
@@ -89,13 +74,19 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateS(korali::Sa
   //sample.run(_sOfLikelihoodModel); // TODO
 }
 
+/*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
+           values for the latent variables. See the description of this function for more information.
+           (It will set "Conditional logLikelihood" and use "Latent Variables".) */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLoglikelihood(korali::Sample& sample){
-  //sample.run(_sOfLikelihoodModel); // TODO
+  sample.run(_conditionalLogLikelihood);
 }
 
 /*! @brief TODO */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihood(korali::Sample& sample)
 {
+  // calculate log[ p(latent | hyperparams) ]:
+  // -- need a multivariate log-gaussian function for this
+  // += conditional log-llh (log[p(data | latent)])
   _k->_logger->logError("TODO.");
 }
 
