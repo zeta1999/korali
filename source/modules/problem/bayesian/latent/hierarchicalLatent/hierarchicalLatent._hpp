@@ -2,6 +2,7 @@
 #define _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
 
 #include "modules/problem/bayesian/latent/latent.hpp"
+#include "modules/problem/bayesian/bayesian.hpp"
 
 namespace korali { namespace problem { namespace bayesian { namespace latent {
 

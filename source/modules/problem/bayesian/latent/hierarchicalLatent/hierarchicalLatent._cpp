@@ -1,9 +1,74 @@
 #include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
 
+
+/*! @brief The problem initialization; here, create hyperparameter variables and set up index lists to
+           find both types of variables */
 void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
- // Initializing Problem Configuration
+  korali::problem::bayesian::Latent::initialize();
+
+  // Just for convenience. The hyperparameters will all come after the latent variables
+ _latentVariableIndices.clear();
+ _hyperparameterVariableIndices.clear();
+
+ _normalLatentIndices.clear();
+ _lognormalLatentIndices.clear();
+ _logitnormalLatentIndices.clear();
+
+ std::vector<korali::Variable> _hyperparameters;
+ _hyperparameters.clear();
+
+ for (size_t i = 0; i < _k->_variables.size(); i++)
+ {
+  // Check variables type
+  std::string typeString = _k->_variables[i]->_bayesianType;
+  if (typeString == "Latent")   { _latentVariableIndices.push_back(i); }
+  else { if (typeString == "Latent")
+            {_k->_logger->logError("Please only define Latent variables and their distribution type. Korali will automatically generate the hyperparameters. \n");}
+         else _k->_logger->logError("Unrecognized Variable Type %s \n", typeString.c_str());   }
+
+  // Check distributions and sort latent variables by distribution
+  bool recognizedDistribution = false;
+  std::string distribString = _k->_variables[i]->_latentVariableDistributionType;
+  if (distribString == "Normal")   { _normalLatentIndices.push_back(i);   recognizedDistribution = true; }
+  if (distribString == "Log-Normal")   { _lognormalLatentIndices.push_back(i);   recognizedDistribution = true; }
+  if (distribString == "Logit-Normal")   { _logitnormalLatentIndices.push_back(i);   recognizedDistribution = true; }
+  if (distribString == "NA")   {
+    _latentVariableIndices.push_back(i);   recognizedDistribution = true;
+    _k->_logger->logError("Each latent variable must be either normally, log-normally or logit-normally distributed. NA is only for internal use.", typeString);
+   }
+  if (recognizedDistribution == false) _k->_logger->logError("Unrecognized distribution type: %s.\n", distribString.c_str());
+ }
+
+ // * Now, generate the hyperparameters:
+ // 1. means - one mean per latent variable.
+ //     Each mean is for whichever transformed version of the variable that is normally distributed.
+ for (size_t i = 0; i < _k->_variables.size(); i++){
+   korali::Variable new_hyperparam();
+   new_hyperparam._latentVariableDistributionType = "NA";
+   new_hyperparam._bayesianType = "Hyperparameter";
+   new_hyperparam._name = "Mean of "+_k->_variables[i]._name;
+   // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
+ }
+
+ // 2. covariance matrices - we use Cholesky decomposition to ensure positive definiteness.
+ // Note: If ever required, could add 'groups' of variables that share a covariance matrix, while groups are independent of each other.
+ // Degrees of freedom of the lower-triangular matrix L: n*(n+1)/2
+ for (size_t i = 0; i < _k->_variables.size(); i++){
+   for (size_t j = i; j < _k->_variables.size(); j++){
+     korali::Variable new_hyperparam();
+     new_hyperparam._latentVariableDistributionType = "NA";
+     new_hyperparam._bayesianType = "Hyperparameter";
+     new_hyperparam._name = "L["+std::to_string(i)+", "+std::to_string(j)+"] of Covariance LL'";   // L[i][j]
+     // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
+   }
+ }
+
+
 }
+
+
+
 
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluate(korali::Sample& sample)
 {
@@ -17,7 +82,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluate(korali::Sam
 
 
 
-/* @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+/*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
         Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
         sample is expected to contain parameter 'Latent Variables' */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateS(korali::Sample& sample){
@@ -28,19 +93,19 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalL
   //sample.run(_sOfLikelihoodModel); // TODO
 }
 
-/* @brief TODO */
+/*! @brief TODO */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihood(korali::Sample& sample)
 {
   _k->_logger->logError("TODO.");
 }
 
-/* @brief Not implemented */
+/*! @brief Not implemented */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoodGradient(korali::Sample& sample)
 {
   _k->_logger->logError("Gradient not yet implemented for selected bayesian problem ('HierarchicalLatent') and log likelihood model.");
 }
 
-/* @brief Not implemented */
+/*! @brief Not implemented */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateFisherInformation(korali::Sample& sample)
 {
   _k->_logger->logError("Fisher information not yet implemented for selected bayesian problem ('HierarchicalLatent') and log likelihood model.");

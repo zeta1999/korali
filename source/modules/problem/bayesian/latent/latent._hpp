@@ -8,7 +8,7 @@ namespace korali { namespace problem { namespace bayesian {
 class Latent : public korali::problem::Bayesian
 {
  public:
- // void evaluateLogLikelihood(korali::Sample& sample) override;
+ void evaluateLogLikelihood(korali::Sample& sample) override;
  void evaluateFisherInformation(korali::Sample& sample) override;
  void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
  // void evaluateLogPrior(korali::Sample& sample) override;

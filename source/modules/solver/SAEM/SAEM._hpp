@@ -21,7 +21,6 @@ class SAEM : public korali::Solver
  void sampleLatent();
  void calculateSampleSVectors();
  void updateS();
- void updateQFunction();
  void updateHyperparameters();
 
  bool isLatent(int idx);
