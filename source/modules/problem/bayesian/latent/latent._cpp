@@ -8,7 +8,7 @@ void korali::problem::bayesian::Latent::initialize()
 }
 
 /* @brief Class considered abstract; do not use. */
-void evaluateLogLikelihood(korali::Sample& sample){
+void korali::problem::bayesian::Latent::evaluateLogLikelihood(korali::Sample& sample){
   _k->_logger->logError("'Latent' is an abstract class; use 'Exponential Latent' or 'Hierarchical Latent'.");
 }
 
