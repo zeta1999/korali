@@ -1,7 +1,11 @@
 
 
 import load_data
+import utils
+
 import numpy as np
+import pdb
+
 
 
 # Model 3:
@@ -138,74 +142,31 @@ class ExampleDistribution3(ExponentialFamilyDistribution):
         # */
 
 
-class ExampleDistribution2(ExponentialFamilyDistribution):
+class ConditionalDistribution4():
+    ''' Same hierarchical model as above, but here we only know the part p(data | latent), which is a product
+        of Gaussians:
+        #
+        #  Model 3:
+        #    draw psi_i ~ N(theta, omega**2)
+        #    draw x_i ~ N(psi_i, sigma**2)
+        '''
 
     def __init__(self):
-        self._p = load_data.MultivariateData();
-        self.sufficientStatisticsDimension = 1 + self._p.nClusters + self._p.nClusters * self._p.nDimensions;
+        self._p = load_data.SimplePopulationData()
 
-    def S(self, sample):
-        # /* For two clusters:
-        #     S(x1, c(1), ... xN, c(N))
-        #                     = sum_i [- vec(|x_i|^2, delta(ci=1), delta(ci=2), x_i * delta(ci=1), x_i * delta(ci=2) ) ]*/
-        assignments = sample["Latent Variables"]
-        if (len(assignments) != self._p.nPoints):
-            raise ValueError("Latent variables should be exactly the cluster assignments, so there is one for each point in the sample.")
+    def conditional_p(self, sample):
 
-        S_dim = 1 + self._p.nDimensions * self._p.nClusters + self._p.nClusters
-        S_vec = np.zeros((S_dim,), float)
-        in_valid_range = True
-        for a in assignments:
-            if (a <= -0.5 or a >= self._p.nClusters - 0.51):
-                in_valid_range = False
-                S_vec[0] = np.array([-np.inf])
-                sample["S"] = S_vec.tolist()
-                return
+        latent_vars = sample["Latent Variables"]
+        mean = latent_vars[0]
+        sigma = self._p.sigma
 
+        # log(p(data | mean, sigma ))
+        logp = 0
         for i in range(self._p.nPoints):
-            pt = self._p.points[i]
-            S_vec[0] -= np.inner(pt, pt)
-            cluster = int(np.round(assignments[i]))
-            S_vec[cluster + 1] += 1
+            pt = self._p.data[i]
+            pdb.set_trace()
+            logp += np.log(utils.univariate_gaussian_probability(mean, sigma, pt))
 
-            mu_ci_location = self._p.nClusters + 1 + cluster * self._p.nDimensions
-            S_vec[mu_ci_location : mu_ci_location + self._p.nDimensions] += pt
-        sample["S"] = S_vec.tolist()
+        sample['Conditional LogLikelihood'] = logp
 
 
-    def zeta(self, sample):
-        hyperparams = sample["Hyperparameters"]
-        if (len(hyperparams) != self._p.nDimensions * self._p.nClusters + 1):
-            raise ValueError("Hyperparameters should be one mean vector per cluster, plus a 1D variable sigma. The dimension of the hyperparameter vector did not match this.")
-
-        sigma = hyperparams[self._p.nClusters * self._p.nDimensions]
-
-       # dim * N * log(sigma*sqrt(pi*2))
-        sample["zeta"] = self._p.nDimensions * self._p.nPoints * np.log(sigma*np.sqrt(2*np.pi))
-
-
-    def phi(self, sample):
-        hyperparams = sample["Hyperparameters"]
-        sigma = hyperparams[self._p.nClusters * self._p.nDimensions]
-
-        if (len(hyperparams) != self._p.nDimensions * self._p.nClusters + 1):
-            raise ValueError("Hyperparameters should be one mean vector per cluster, plus a 1D variable sigma. The dimension of the hyperparameter vector did not match this.")
-
-        mus = []
-        for i in range(self._p.nClusters):
-            mu = hyperparams[i * self._p.nDimensions : (i + 1) * self._p.nDimensions]
-            mus.append(mu)
-
-          # /* For two variables:
-          #       phi(sigma, mu1, mu2) = vec(1, -|mu1|^2, -|mu2|^2, mu1^T, mu2^T) * 1/(2*sigma)  */
-        phi_dim = 1 + self._p.nDimensions * self._p.nClusters + self._p.nClusters
-        phi = np.zeros((phi_dim,))
-        phi[0] = 1.0
-        for i in range(self._p.nClusters):
-            phi[i + 1] = - np.inner(mus[i], mus[i])
-            start_idx = 1 + self._p.nClusters + i * self._p.nDimensions
-            phi[start_idx : start_idx + len(mus[0]) ] = np.array(mus[i]) * 2
-
-        phi *= 1. / (2 * sigma ** 2)
-
-        sample["phi"] = phi.tolist()

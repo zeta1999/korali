@@ -48,6 +48,11 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
  */
  void evaluateConditionalLoglikelihood(korali::Sample& sample);
 
+};  /**
+  * @brief Just for testing
+ */
+  void execute(korali::Sample& sample);
+
 };
 
 } // namespace latent

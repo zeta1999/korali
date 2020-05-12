@@ -8,12 +8,12 @@
 
 
 /* The problem initialization; here, create hyperparameter variables and set up index lists to
-           find both types of variables */
+         find both types of variables */
 void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
   korali::problem::bayesian::Latent::initialize();
 
-  // Just for convenience. The hyperparameters will all come after the latent variables
+  // Just for convenience. The hyperparameters will all have indices higher than those of the latent variables
  _latentVariableIndices.clear();
  _hyperparameterVariableIndices.clear();
 
@@ -70,6 +70,10 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
    }
  }
 
+}
+
+void korali::problem::bayesian::latent::HierarchicalLatent::execute(korali::Sample& sample){
+  evaluateLoglikelihood(sample);
 }
 
 

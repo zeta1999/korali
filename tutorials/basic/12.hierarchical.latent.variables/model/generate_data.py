@@ -4,7 +4,7 @@ import numpy as np
 #
 #  Model 3:
 #    draw psi_i ~ N(theta, omega**2)
-#    draw x_i ~ N(psi_i, sigma**2
+#    draw x_i ~ N(psi_i, sigma**2)
 #
 
 
