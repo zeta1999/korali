@@ -4,24 +4,56 @@
 #include "modules/problem/bayesian/latent/latent.hpp"
 #include "modules/problem/bayesian/bayesian.hpp"
 
-namespace korali { namespace problem { namespace bayesian { namespace latent {
+namespace korali {
+namespace problem {
+namespace bayesian {
+namespace latent {
 
 class HierarchicalLatent : public korali::problem::bayesian::Latent
 {
  public:
 
+ /**
+  * @brief The problem initialization; here, create hyperparameter variables and set up index lists to
+           find both types of variables
+ */
  void initialize() override;
 
+ /**
+  * @brief TODO
+ */
  void evaluateLogLikelihood(korali::Sample& sample) override;
+
+  /**
+  * @brief TODO
+ */
  void evaluateFisherInformation(korali::Sample& sample) override;
+
+  /**
+  * @brief TODO
+ */
  void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
 
+ /**
+  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
+        sample is expected to contain parameter 'Latent Variables'
+ */
  void evaluateS(korali::Sample& sample);
+
+  /**
+  * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
+           values for the latent variables. See the description of this function for more information.
+           (It will set "Conditional logLikelihood" and use "Latent Variables".)
+ */
  void evaluateConditionalLoglikelihood(korali::Sample& sample);
 
 };
 
-} } } } // namespace korali::problem::bayesian::latent
+} // namespace latent
+} // namespace bayesian
+} // namespace problem
+} // namespace korali
 
 
 #endif // _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_

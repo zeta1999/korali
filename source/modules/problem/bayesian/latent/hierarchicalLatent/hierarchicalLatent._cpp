@@ -1,7 +1,13 @@
 #include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
 
+#include <math.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
 
-/*! @brief The problem initialization; here, create hyperparameter variables and set up index lists to
+
+/* The problem initialization; here, create hyperparameter variables and set up index lists to
            find both types of variables */
 void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
@@ -81,13 +87,82 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalL
   sample.run(_conditionalLogLikelihood);
 }
 
-/*! @brief TODO */
+/*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
+                    a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
+                    Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
+
+         TODO: Move calculation of cholesky decomposition out of this function, and into hSAEM. Don't want to
+                re-calculate this for every latent variable sample.
+         TODO: But first, test it.
+ */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihood(korali::Sample& sample)
 {
   // calculate log[ p(latent | hyperparams) ]:
   // -- need a multivariate log-gaussian function for this
   // += conditional log-llh (log[p(data | latent)])
-  _k->_logger->logError("TODO.");
+
+
+  auto latentVariables = sample["Latent Variables"].get<std::vector<double>>();
+  auto mean = sample["Mean"].get<std::vector<double>>();
+  int N = mean.size(); // Number of latent variables
+  // auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
+//  assert (N == covMatrix.size());
+//  for (v : covMatrix)
+//    assert (v.size() == N)
+  gsl_matrix* covMatrixGSL = sample["Covariance Matrix"].get<gsl_matrix*>(); // todo: does this work?
+  assert (covMatrixGSL.size1 == N);
+  assert (covMatrixGSL.size2 == N);
+
+  // gsl_matrix* covMatrixGSL = gsl_matrix_alloc(N, N);
+  // covMatrixGSL.data = &covMatrix; // todo does this work?
+
+
+  // First, calculate the cholesky decomposition, cov = L'*L
+  gsl_matrix* chol = gsl_matrix_alloc(N, N);
+  gsl_matrix_memcpy(chol, covMatrixGSL);
+  int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+
+  // --> log(det(covariance)) = sum(log( diag(L) ))
+  double logdet = 0;
+  for (size_t i = 0; i < N; i++){
+    logdet += log(gsl_matrix_get(chol, i, i));
+  }
+
+  // Then, invert the covariance matrix using the cholesky decomposition cov = L'*L
+
+  // for inversion/solving a linear eqation, could add a small positive diagonal matrix
+//  double eps = 1.e-10;
+//  gsl_matrix* epsMatrix = gsl_matrix_alloc(N, N);
+//  gsl_matrix_set_identity(epsMatrix);
+//  gsl_matrix_scale(epsMatrix, eps);
+
+  //gsl_vector* b = gsl_vector_alloc(N);
+  gsl_vector *latent_minus_mean  = gsl_vector_alloc(N);
+  latent_minus_mean.data = &latentVariables;
+  gsl_vector_const_view mean_view(&mean, N);
+  gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
+  //std::vector<double> latent_minus_mean(latentVariables); // should copy -?
+  //std::transform(latent_minus_mean.begin(), latent_minus_mean.end(), mean.begin(), latent_minus_mean.begin(), std::minus<double>());
+
+  //gsl_vector_const_view b(&latent_minus_mean, N);
+  gsl_vector* x = gsl_vector_alloc(N);
+  gsl_linalg_cholesky_solve(chol, latent_minus_mean, x); // -> x = L^-1 * (latent - mean)
+
+  // --> log(p( latent | mean, cov )) = || (latent - mean)*L^-1 ||^2 / 2
+  //                                  = (latent - mean)^T * cov^-1 / 2 * (latent - mean)
+  double lllh;
+  gsl_blas_ddot (x, x, &lllh);
+  lllh = - lllh / 2.;
+
+  // add the log of the normalization factor:
+  lllh -= 1./2. * (log(2*M_PI) + logdet);
+
+  evaluateConditionalLoglikelihood(sample);
+  //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
+  sample["LogLikelihood"] = sample["Conditional LogLikelihood"] + lllh;
+
+
 }
 
 /*! @brief Not implemented */
