@@ -1,6 +1,70 @@
 Mark Martori Lopez
 
+Tuesday 12 May 2020
 
+Tasks:
+
+1- [Solved] Distribution added to exported file.
+
+2- [Solved] CURRENT GOAL: - All parts must be solved for both, importation and exportation options.
+	
+Ending up with:
+
+{
+   "Random Seed": "1",
+   "File Output": {
+      "Path": "Escritorio/Korali",
+      "Enabled": "No",
+      "Frequency": "10",
+      "Store Sample Information": "Yes"
+   },
+   "Console Output": {
+      "Verbosity": "Detailed",
+      "Frequency": "20"
+   },
+   "Problem": {
+      "Type": "execute",
+      "Gaussian Process Json File": "gaussian.json",
+      "X Data": "[0,1,2,3,4]",
+      "Y Data": "[10,9,8,7,6]"
+   },
+   "Solver": {
+      "Type": "SAEM",
+      "Alpha 1": "1",
+      "Alpha 2": "7",
+      "M Step Solver Type": "CMAES"
+   },
+   "Variables": [
+      {
+         "Parameter List": "[0,2,4,6,8]",
+         "Name": "Initial Guess",
+         "Initial Value": "0"
+      },
+      {
+         "Parameter List": "[2,4,6,8,10]",
+         "Name": "Second Guess",
+         "Initial Value": "2"
+      }
+   ],
+   "Distributions": [
+      {
+         "Name": "Uniform 0",
+         "Type": "Univariate",
+         "Maximum": "100",
+         "Minimum": "0",
+         "Random Seed": "1"
+      },
+      {
+         "Name": "Uniform 1",
+         "Type": "Univariate/uniform",
+         "Maximum": "50",
+         "Minimum": "10",
+         "Random Seed": "0"
+      }
+   ]
+}
+
+-----------------------------------------------------
 Wednesday 6 May 2020
 
 Tasks:

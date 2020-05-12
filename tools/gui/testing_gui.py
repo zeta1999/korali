@@ -29,6 +29,8 @@ default = False # readirs function.
 contador = 1 # Counts the number of experiments.
 cont = 0     # Which frame are we in. Problem, Solver or Variables.
 decision = '' # Yes or No in MenuOption
+times_distr = 1 # Number of Distribution num1
+configuration = "Configuration Settings"  # crearMainConfiguration parameter.
 
 contadorVariables = 1 # Counts the number of variables.
 linktoVariables = []  # Stores the information coming from Problem and Solver to update the Variable Frame.
@@ -476,11 +478,36 @@ def printConfig(directorio,DB, cont):
     '''
 ##########################
 ########################## MAIN FUNCTIONS:
+def insertValues(results,cont,values):
+    
+    numofentry = 0
+    for key in results[cont].keys():
+        e = results[cont][key]
+        if isinstance(e,str):
+            del values[numofentry]
+            continue
+        if isinstance(e,BooleanVar):
+            value = values[numofentry]
+            e.set(value)
+        elif isinstance(e,StringVar):
+            value = values[numofentry]
+            e.set(value)
+        else:
+            default = e.get()
+            if default == '0':
+                e.delete(0,tk.END)
+                e.insert(END,values[numofentry])
+            else:
+                e.insert(END,values[numofentry])
+        numofentry+=1
+                 
+    
 def importFile():
     global experiments
     global configTreeDB
     global solverDB
     global files
+    global times_distr
 
     filename = askopenfilename(filetypes=files)
     parsedFile = ''
@@ -492,8 +519,8 @@ def importFile():
     finally:
         file.close()
     bottomrightFrame = experiments[selectedtab]['bottomrightFrame']
-    if parsedFile != '':
-        
+    
+    if parsedFile != '': # If file is readable
         valuesProblem = []
         valuesSolver = []
         valuesVariables = {}
@@ -501,42 +528,95 @@ def importFile():
         results = experiments[selectedtab]['results']
         
         for directorio in parsedFile.keys(): # Loop through the keys of the config file.
-            if directorio in listofproblems:
+            if directorio == 'Problem': # PROBLEM IMPORT
                 cont = 0
-                printConfig(directorio,configTreeDB,cont)
-                printVariables(bottomrightFrame.tab2,directorio,configTreeDB,cont)
+                texto = parsedFile[directorio]['Type']
+                printConfig(texto,configTreeDB,cont)
+                printVariables(bottomrightFrame.tab2,texto,configTreeDB,cont)
                 for key2 in parsedFile[directorio]:
                     valuesProblem.append(parsedFile[directorio][key2])
-                numofentry = 0
-                for key in results[cont].keys():
-                    e = results[cont][key]
-                    e.insert(0,valuesProblem[numofentry])
-                    numofentry+=1
-            elif directorio in listofsolvers:
+                insertValues(results,cont,valuesProblem)
+                
+            elif directorio == 'Solver':     # SOLVER IMPORT
                 cont = 1
-                printConfig(directorio,solverDB,cont)
-                printVariables(bottomrightFrame.tab2,directorio,solverDB,cont)
+                texto = parsedFile[directorio]['Type']
+                printConfig(texto,solverDB,cont)
+                printVariables(bottomrightFrame.tab2,texto,solverDB,cont)
                 for key2 in parsedFile[directorio]:
                     valuesSolver.append(parsedFile[directorio][key2])
-                numofentry = 0
-                for key in results[cont].keys():
-                    e = results[cont][key]
-                    if isinstance(e,BooleanVar):
-                        value = valuesSolver[numofentry]
-                        e.set(value)
-                    else:
-                        default = e.get()
-                        if default == '0':
-                            e.delete(0,tk.END)
-                            e.insert(END,valuesSolver[numofentry])
-                        else:
-                            e.insert(END,valuesSolver[numofentry])
-                    numofentry+=1
-                
-            elif 'variabl' in directorio or 'Variabl' in directorio:
+                insertValues(results,cont,valuesSolver)
+                   
+            elif 'ariable' in directorio:  # VARIABLES IMPORT avoiding v in case there is also a V, same with ending (-s).
+                valuesVariables = []
                 cont = 2
                 numofentry = 0
-                if len(parsedFile[directorio].keys()) >1:
+                v = 0 # If there are several Variables Tabs in the imported file...
+                for dictionary in parsedFile[directorio]:
+                    if v>0:
+                        crearFrameVariables() # Create as many Variable Frames as necessary.
+                        v+=1
+                    v+=1
+                    for key in dictionary.keys():
+                        valuesVariables.append(dictionary[key])
+                numofentry = 0       
+                for key in results[cont].keys():
+                    for key2 in results[cont][key]:
+                        e = results[cont][key][key2]
+                        e.insert(0,valuesVariables[numofentry])
+                        numofentry+=1
+             
+            else:                                       ## expFrame
+                if directorio == 'Distributions':       ## MAIN CONFIGURATION AND DISTRIBUTION IMPORT
+                    r= 40
+                    valuesDistr = []
+                    times_distr = 1
+                    for distribution in parsedFile[directorio]:
+                        crearDistribution(r)
+                        r+=6
+                        for key in distribution.keys():
+                            valuesDistr.append(distribution[key])
+                    cont = 4
+                    numofentry = 0
+                    for key2 in results[cont].keys():
+                        for key3 in results[cont][key2]:
+                            e = results[cont][key2][key3]
+                            default = e.get()
+                            if default == '0':
+                                e.delete(0,tk.END)
+                            e.insert(0,valuesDistr[numofentry])
+                            numofentry+=1
+ 
+                elif directorio == 'Random Seed':
+                    valuesRS = ''
+                    valueRS = parsedFile[directorio]
+                    cont = directorio
+                    e = results[cont][directorio]
+                    e.insert(0,valueRS)
+                
+                elif directorio == 'Console Output' or directorio == 'File Output':
+                    valuesCO_FO = []
+                    for key in parsedFile[directorio]:
+                        valuesCO_FO.append(parsedFile[directorio][key])
+                    numofentry = 0
+                    cont = directorio
+                    for key2 in results[cont].keys():
+                        e = results[cont][key2]
+                        if isinstance(e,StringVar):
+                            value = valuesCO_FO[numofentry]
+                            e.set(value)
+                            numofentry+=1
+                        else:
+                            e.insert(0,valuesCO_FO[numofentry])
+                            numofentry+=1
+               
+    else:
+        popupmsgwarning('Could not import the file')
+
+        '''   
+            elif 'ariable' in directorio:  # VARIABLES IMPORT avoiding v in case there is also a V, same with ending (-s).
+                cont = 2
+                numofentry = 0
+                if len(parsedFile[directorio]) >1:
                     v = 0 # If there are several Variables Tabs in the imported file...
                     for variableTab in parsedFile[directorio].keys():
                         if v>0:
@@ -548,13 +628,15 @@ def importFile():
                         for dictionary in line:
                             for key in dictionary:
                                 valuesVariables[variableTab].append(dictionary[key])
+            
                 else:
                     for variableTab in parsedFile[directorio].keys():
                         valuesVariables[variableTab] = []
                         line = parsedFile[directorio][variableTab]
                         for dictionary in line:
                             for key in dictionary:
-                                valuesVariables[variableTab].append(dictionary[key])                       
+                                valuesVariables[variableTab].append(dictionary[key])
+                                
                 for key in results[cont].keys():
                     for varkey in valuesVariables.keys():
                             if key == varkey:
@@ -563,9 +645,7 @@ def importFile():
                                     e = results[cont][key][key2]
                                     e.insert(0,valuesVariables[varkey][numofentry])
                                     numofentry+=1
-    else:
-        popupmsgwarning('Could not import the file')
-            
+        '''          
          
         
         '''
@@ -599,76 +679,38 @@ def createConfig():
     results2['Problem'] = results2.pop(0)
     results2['Solver'] = results2.pop(1)
     results2['Variables'] = results2.pop(2)
+    results2['Distributions'] = results2.pop(4)
     
     for frame in results2.keys():
-        for texto in results2[frame]:
-            w = results2[frame][texto]
-            if texto == 'Random Seed':
-                val = w.get()
-                results2[frame] = val
-                print('Random seed :',val)
-            elif isinstance(w,dict):
-                results2[frame][texto] = []
-                for key in w:
-                    val = w[key].get()
-                    d = {key:val}
-                    results2[frame][texto].append(d)
-##                    print(results2[frame][texto])
-            elif isinstance(w,str):
-                results2[frame][texto] = w
-                print('STRING is :',w)
-            else:
-                val = w.get()
-                results2[frame][texto] = val
-
-    #### ASK TO DOWNLOAD AND SAVE THE FILE:
-    filesaved = asksaveasfile(filetypes = files, defaultextension = files)
-    json.dump(results2, filesaved, indent = 3)
-    filesaved.close()
-
-    '''
-    problem = rightFr.titulo.cget('text')
-    solver = bottomleftFr.titulo.cget('text')
-    
-    results2['Problem'] = results2.pop(0)
-    results2['Solver'] = results2.pop(1)
-    results2['Variables'] = results2.pop(2)
-    
-    for frame in results2.keys():
-        if frame == 'Problem':
-            results2[frame]['Type'] = problem
-        elif frame == 'Solver':
-            results2[frame]['Type'] = solver
-        print(results2[frame].keys())
-        for texto in results2[frame]:
-        ## FRAME '2' == variables, already written.                    
-            w = results2[frame][texto]
-            if texto == 'Random Seed':
-                results2[frame] = w
+        if frame == 'Distributions' or frame == 'Variables':
+            res = []
+            for distr in results2[frame]:
+                for texto in results2[frame][distr]:
+                    w = results2[frame][distr][texto]
+                    val = w.get()
+                    results2[frame][distr][texto] =val
+                distribution = results2[frame][distr]
+                res.append(distribution)
                 
-            elif isinstance(w,str):
-                print('IS A STRING :',w)
-                val = w
-                results2[frame]['Type'] = val
-            elif isinstance(w,dict):
-                results2[frame][texto] = []
-                for key in w:
-                    val = w[key].get()
-                    d = {key:val}
-                    results2[frame][texto].append(d)
-            ##                    print(results2[frame][texto])
-            else:
-                val = w.get()
-                results2[frame][texto] = val
-##    cwd = os.getcwd()
-##    file = open(cwd+"/filename.config", "w")
-    #file.write('### .config File obtained from Korali### \n \n'+selectedtab+' {\n')
+##                if results2[frame] == distr:
+##                    results2[frame] == di
+            results2[frame] = res
+        else:
+            for texto in results2[frame]:
+                w = results2[frame][texto]
+                if texto == 'Random Seed':
+                    val = w.get()
+                    results2[frame] = val
+                elif isinstance(w,str):
+                    results2[frame][texto] = w
+                else:
+                    val = w.get()
+                    results2[frame][texto] = val
 
     #### ASK TO DOWNLOAD AND SAVE THE FILE:
     filesaved = asksaveasfile(filetypes = files, defaultextension = files)
     json.dump(results2, filesaved, indent = 3)
     filesaved.close()
-    '''
 
 def recursiveUpdate(dest, defaults):
  if (isinstance(defaults, dict)):               # Si default es un diccionario...
@@ -928,14 +970,66 @@ def crearMainConfiguration(configuration,r,c,cont):
                                     fakedescription = description
                                     printdata(expFrame,dicc[key2], texto, description,fakedescription, r, c,cont,options)                                    
                                 r+=1
-                                
-##        stringVar[texto] = tk.StringVar()
-##        res[texto] = tk.Entry(self,width=10,font='Arial 12',textvariable = stringVar[texto])
-##        res[texto].grid(row=r, column=c+1, pady= 2,padx=6, sticky = 'w')
-##        self.corrector = self.register(validarstring)
-##        res[texto].config(validate = 'focus',validatecommand = (self.corrector,'%P')) # %P represents the parameter we want to pass to validate.
-##        "Name", "Type", "Random Seed", y "Range"
-                                
+def crearDistribution(r):
+    global selectedtab
+    global experiments
+    global times_distr
+
+    expFrame = experiments[selectedtab]['expFrame']
+    results = experiments[selectedtab]['results']
+    results[4][times_distr]={}
+    res = results[4][times_distr]
+    stringVar = {}
+
+    texto = 'Distribution '+str(times_distr)
+    l1 =tk.Label(expFrame, text=texto,justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
+    l1.grid(row=r, column=0,columnspan= 1,pady = 24 ,padx=4, sticky='w')
+    
+    texto1 = 'Name'
+    l2 = tk.Label(expFrame, text = texto1,  width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
+    l2.grid(row=r+1, column=0,columnspan= 1,pady = 2 ,padx=4, sticky='w')
+    stringVar[texto1] = tk.StringVar()
+    res[texto1] = tk.Entry(expFrame,width=10,font='Arial 12',textvariable = stringVar[texto1])
+    res[texto1].grid(row=r+1, column=1, pady= 2,padx=4, sticky = 'w')
+    
+    texto2 = 'Type'
+    l3 = tk.Label(expFrame, text = texto2, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
+    l3.grid(row=r+2, column=0,columnspan= 1,pady = 2 ,padx=4, sticky='w')
+    stringVar[texto2] = tk.StringVar()
+    res[texto2] = tk.Entry(expFrame,width=10,font='Arial 12',textvariable = stringVar[texto2])
+    res[texto2].grid(row=r+2, column=1, pady= 2,padx=4, sticky = 'w')
+    
+    texto3 = 'Maximum'
+    l4=tk.Label(expFrame, text=texto3, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
+    l4.grid(row=r+3, column=0,pady = 2,padx=6, sticky='w')
+    num3 = tk.IntVar()
+    res[texto3] = Spinbox(expFrame, width=10, from_=0,font='Arial 12', to=9999, wrap=True, textvariable=num3, state='normal')
+    res[texto3].grid(row=r+3, column=1, pady= 2,padx=6)
+    corrector = expFrame.register(validardigit)
+    res[texto3].config(validate = 'key',validatecommand = (corrector,'%P')) # %P represents the parameter we want to pass to validate.
+
+    texto4 = 'Minimum'
+    l5=tk.Label(expFrame, text=texto4, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
+    l5.grid(row=r+4, column=0,pady = 2,padx=6, sticky='w')
+    num4 = tk.IntVar()
+    res[texto4] = Spinbox(expFrame, width=10, from_=0,font='Arial 12', to=9999, wrap=True, textvariable=num4, state='normal')
+    res[texto4].grid(row=r+4, column=1, pady= 2,padx=6)
+    corrector = expFrame.register(validardigit)
+    res[texto4].config(validate = 'key',validatecommand = (corrector,'%P')) # %P represents the parameter we want to pass to validate.
+    
+    texto5 = 'Random Seed'
+    l6=tk.Label(expFrame, text=texto5, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
+    l6.grid(row=r+5, column=0,pady = 2,padx=6, sticky='w')
+    num5 = tk.IntVar()
+    res[texto5] = Spinbox(expFrame, width=10, from_=0,font='Arial 12', to=9999, wrap=True, textvariable=num5, state='normal')
+    res[texto5].grid(row=r+5, column=1, pady= 2,padx=6)
+    corrector = expFrame.register(validardigit)
+    res[texto5].config(validate = 'key',validatecommand = (corrector,'%P')) # %P represents the parameter we want to pass to validate.
+
+    times_distr +=1
+
+
+                         
     ## Crea los tabs de uno en uno
 def crearTab(self,totalTabs):
     global contador
@@ -943,6 +1037,7 @@ def crearTab(self,totalTabs):
     global experiments
     global linktoVariables
     global forbidden
+    global times_distr
         
     linktoVariables = []
 
@@ -998,49 +1093,20 @@ def crearTab(self,totalTabs):
 
                 ## CANVAS + SCROLLBAR
 
-                ## Good One:
-                '''
-                yscrollbar = tk.Scrollbar(self.bottomleftFrame1, bg = 'darkcyan',orient = 'vertical', width = 10)
-                self.canvas = tk.Canvas(self.bottomleftFrame1, bg = 'azure',
-                yscrollcommand=yscrollbar.set, width = 930, height = 840)
-                self.canvas.grid(sticky='nsew')
-                yscrollbar.config(command = self.canvas.yview)
-                yscrollbar.grid(row=0, column=10, sticky=N+S)
-
-                self.canvas.configure(scrollregion=(0,0,2000,2000))
-                #self.bottomleftFrame1.config(scrollregion=self.canvas.bbox("all"))
-                '''
-                
                 self.canvas=Canvas(self.bottomleftFrame1,width = 650, height = 850,bg = 'azure', scrollregion= (0,0,1500,1500)) #yscrollcommand = vbar.set
                 #self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
-                hbar=Scrollbar(self.bottomleftFrame1,orient=HORIZONTAL)
-                hbar.pack(side=BOTTOM,fill=X)
-                hbar.config(command=self.canvas.xview)
-                vbar=Scrollbar(self.bottomleftFrame1,orient=VERTICAL)
-                vbar.pack(side=RIGHT,fill=Y)
-                vbar.config(command=self.canvas.yview)
+                #hbar=Scrollbar(self.bottomleftFrame1,orient=HORIZONTAL)
+                #hbar.pack(side=BOTTOM,fill=X)
+                #hbar.config(command=self.canvas.xview)
+                #vbar=Scrollbar(self.bottomleftFrame1,orient=VERTICAL)
+                #vbar.pack(side=RIGHT,fill=Y)
+                #vbar.config(command=self.canvas.yview)
                 self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
-                self.canvas.config(width=650,height=850)
-                self.canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
+                #self.canvas.config(width=650,height=850)
+                #self.canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
 
                 
                 self.canvas.grid_propagate(0)
-                
-                
-                #self.canvas.pack_propagate(0)
-                
-                '''
-                vbar=Scrollbar(self.bottomleftFrame1,orient=VERTICAL,bg = 'darkcyan', width = 10)
-                vbar.pack(side=RIGHT,fill=Y)
-                self.canvas=Canvas(self.bottomleftFrame1, yscrollcommand = vbar.set,width = 950, height = 850, bg = 'azure', scrollregion= (0,0,2000,2000))
-                self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
-                #self.canvas.config(width=300,height=300)
-                vbar.config(command=self.canvas.yview)
-                self.canvas.config(yscrollcommand=vbar.set, scrollregion = self.canvas.bbox("all"))
-                '''
-                ## END CANVAS + SCROLLBAR
-
-
                 
                 # STORE A DICTIONARY WITH ALL THE FRAMES ON IT TO BE CALLED ON ANY FUNCTION AND AVOID PASSING FRAMES.
                 expElements = {}
@@ -1068,7 +1134,6 @@ def crearTab(self,totalTabs):
                 self.bottomrightFrame.grid_propagate(0)
                 self.bottomleftFrame.grid_propagate(0)
                 
-
                 #############################################################
 
                 try: # Read experiment.config 
@@ -1089,12 +1154,17 @@ def crearTab(self,totalTabs):
 
                 c = 0
                 r = 0
-                configuration = "Configuration Settings"
                 crearMainConfiguration(configuration,r,c,cont)
-##                configuration = 'Distribution'
-                
+##                print(experiments[selectedtab]['results']['Random Seed'])
 
-                
+                ######  DISTRIBUTIONS ######
+                r=40
+                results[4]={}
+                crearDistribution(r)
+                r+= 6
+                self.distr_button = tk.Button(self.expFrame, text = 'Add distribution', command = lambda:crearDistribution(r))
+                self.distr_button.grid(row=100,column=0, pady = 6, padx = 2)
+
                 #############################################################
                # LEFT SIDE OF TAB1:
                 
@@ -1129,8 +1199,7 @@ class KORALI(tk.Tk): #Inherited tk.tk
 
         container = tk.Frame(self) # Edge of the window.
         container.pack(side = "top", fill = "both", expand = True) # Fill the entire space. Expand = If there is white space, you can expand it.
-##        container.grid_rowconfigure(0, weight=1) # The minimum is 0. weight is the priority... who goes first...
-##        container.grid_columnconfigure(0, weight=1)
+
 
         
         # Barra de arriba:
@@ -1166,6 +1235,14 @@ class KORALI(tk.Tk): #Inherited tk.tk
         
 
         tk.Tk.config(self, menu = self.menubar)
+
+
+        self.totalTabs = ttk.Notebook(self)
+        self.totalTabs.pack(expand = 1, fill = "both")
+        
+        # Call the function crearTab to create as many tabs as the user wants:       
+        crearTab(self,self.totalTabs)
+
         ###################################       
         # DOWN-TOOLBAR
         self.toolbar = tk.Frame(self, background='darkcyan')
@@ -1177,15 +1254,7 @@ class KORALI(tk.Tk): #Inherited tk.tk
         
         self.toolbar.pack(side='bottom', fill='x')
         #self.toolbar.pack_propagate(0)
-
-        # ************** TABS **********************
-        # Create the TABS BAR
-##        self.totalTabs = ttk.Notebook(self)
-##        self.totalTabs.pack(expand = 1, fill = "both")
-
-        # Call the function crearTab to create as many tabs as the user wants:       
-##        crearTab(self,self.totalTabs)
-
+'''
         ####################################
         self.frames = {} # Dictionary.
 
@@ -1205,7 +1274,6 @@ class KORALI(tk.Tk): #Inherited tk.tk
 class KORALI_Page(tk.Frame): # Page with Graphs.
     def __init__(self,parent,controller):
         tk.Frame.__init__(self,parent)
-
         # Create the TABS BAR
         self.totalTabs = ttk.Notebook(self)
         self.totalTabs.pack(expand = 1, fill = "both")
@@ -1216,24 +1284,20 @@ class KORALI_Page(tk.Frame): # Page with Graphs.
 class KORALI_Graph(tk.Frame): # Page with Graphs.
     def __init__(self,parent,controller):
         tk.Frame.__init__(self,parent)
-
-
         button2 = tk.Label(self, text = "This is the frame for the next part", width = 150, height = 10, relief=tk.RAISED)
         button2.pack(padx = 1, pady = 50 )
-
 
 
 class StartPage(tk.Frame): # inherit everything from tk.Frame
     def __init__(self,parent,controller):
         tk.Frame.__init__(self,parent) #Parent = KORALI
-        #tk.Frame.config(self,bg='aliceblue') # COLORES
         # Button to allow the user to navigate through windows:
         button1 = tk.Button(self, text = "Welcome to KORALI", font = HUGE_FONT,
                                 command = lambda: controller.show_frame(KORALI_Page)) # lambda creates a quick thronaway function.
         button1.config(borderwidth = 2,activeforeground = 'darkcyan',relief = 'groove')
         button1.pack(side = 'top', pady=400)
 
-    
+ '''   
 
 ## --------------- END OF CLASSES ------------------------    
 ########################################################    
