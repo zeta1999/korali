@@ -46,14 +46,15 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
            values for the latent variables. See the description of this function for more information.
            (It will set "Conditional logLikelihood" and use "Latent Variables".)
  */
- void evaluateConditionalLoglikelihood(korali::Sample& sample);
+ void evaluateConditionalLogLikelihood(korali::Sample& sample);
 
-};  /**
+   /**
   * @brief Just for testing
  */
   void execute(korali::Sample& sample);
 
 };
+
 
 } // namespace latent
 } // namespace bayesian

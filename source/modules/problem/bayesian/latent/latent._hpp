@@ -3,7 +3,9 @@
 
 #include "modules/problem/bayesian/bayesian.hpp"
 
-namespace korali { namespace problem { namespace bayesian {
+namespace korali {
+namespace problem {
+namespace bayesian {
 
 class Latent : public korali::problem::Bayesian
 {
@@ -17,7 +19,9 @@ class Latent : public korali::problem::Bayesian
 
 };
 
-} } } // namespace korali::problem::evaluation::bayesian::Inference
+}  // namespace bayesian
+}  // namespace problem
+}  // namespace korali
 
 
 #endif // _KORALI_PROBLEM_BAYESIAN_LATENT_HPP_

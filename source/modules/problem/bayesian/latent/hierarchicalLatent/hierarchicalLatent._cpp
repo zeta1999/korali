@@ -50,10 +50,10 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  // 1. means - one mean per latent variable.
  //     Each mean is for whichever transformed version of the variable that is normally distributed.
  for (size_t i = 0; i < _k->_variables.size(); i++){
-   korali::Variable new_hyperparam();
+   korali::Variable new_hyperparam;
    new_hyperparam._latentVariableDistributionType = "NA";
    new_hyperparam._bayesianType = "Hyperparameter";
-   new_hyperparam._name = "Mean of "+_k->_variables[i]._name;
+   new_hyperparam._name = "Mean of "+_k->_variables[i]->_name;
    // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
  }
 
@@ -62,7 +62,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  // Degrees of freedom of the lower-triangular matrix L: n*(n+1)/2
  for (size_t i = 0; i < _k->_variables.size(); i++){
    for (size_t j = i; j < _k->_variables.size(); j++){
-     korali::Variable new_hyperparam();
+     korali::Variable new_hyperparam;
      new_hyperparam._latentVariableDistributionType = "NA";
      new_hyperparam._bayesianType = "Hyperparameter";
      new_hyperparam._name = "L["+std::to_string(i)+", "+std::to_string(j)+"] of Covariance LL'";   // L[i][j]
@@ -73,7 +73,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 }
 
 void korali::problem::bayesian::latent::HierarchicalLatent::execute(korali::Sample& sample){
-  evaluateLoglikelihood(sample);
+  evaluateLogLikelihood(sample);
 }
 
 
@@ -87,8 +87,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateS(korali::Sa
 /*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
            values for the latent variables. See the description of this function for more information.
            (It will set "Conditional logLikelihood" and use "Latent Variables".) */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLoglikelihood(korali::Sample& sample){
-  sample.run(_conditionalLogLikelihood);
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLogLikelihood(korali::Sample& sample){
+  sample.run(_conditionalLogLikelihoodFunction);
 }
 
 /*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
@@ -110,16 +110,17 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoo
   auto latentVariables = sample["Latent Variables"].get<std::vector<double>>();
   auto mean = sample["Mean"].get<std::vector<double>>();
   int N = mean.size(); // Number of latent variables
-  // auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
-//  assert (N == covMatrix.size());
-//  for (v : covMatrix)
-//    assert (v.size() == N)
-  gsl_matrix* covMatrixGSL = sample["Covariance Matrix"].get<gsl_matrix*>(); // todo: does this work?
-  assert (covMatrixGSL.size1 == N);
-  assert (covMatrixGSL.size2 == N);
+  auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
+  assert (N == covMatrix.size());
+  for (std::vector<double> v : covMatrix)
+    assert (v.size() == N);
+//  gsl_matrix* covMatrixGSL = sample["Covariance Matrix"].get<gsl_matrix*>(); // todo: does this work? - No, need to pass a correct type for the pointer, instead of matrix*
+//  assert (covMatrixGSL.size1 == N);
+//  assert (covMatrixGSL.size2 == N);
 
-  // gsl_matrix* covMatrixGSL = gsl_matrix_alloc(N, N);
-  // covMatrixGSL.data = &covMatrix; // todo does this work?
+  //gsl_matrix_const_view covMatrixGSL = gsl_matrix_const_view_array(&covMatrix[0][0], N, N); // This works, but for memcopy below we need a proper matrix
+  gsl_matrix* covMatrixGSL = gsl_matrix_alloc(N, N);
+  covMatrixGSL->data = &covMatrix[0][0]; // todo does this work?
 
 
   // First, calculate the cholesky decomposition, cov = L'*L
@@ -143,8 +144,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoo
 
   //gsl_vector* b = gsl_vector_alloc(N);
   gsl_vector *latent_minus_mean  = gsl_vector_alloc(N);
-  latent_minus_mean.data = &latentVariables;
-  gsl_vector_const_view mean_view(&mean, N);
+  latent_minus_mean->data = &latentVariables[0];
+  gsl_vector_const_view mean_view = gsl_vector_const_view_array(&mean[0], N);
   gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
   //std::vector<double> latent_minus_mean(latentVariables); // should copy -?
   //std::transform(latent_minus_mean.begin(), latent_minus_mean.end(), mean.begin(), latent_minus_mean.begin(), std::minus<double>());
@@ -162,9 +163,9 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoo
   // add the log of the normalization factor:
   lllh -= 1./2. * (log(2*M_PI) + logdet);
 
-  evaluateConditionalLoglikelihood(sample);
+  evaluateConditionalLogLikelihood(sample);
   //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
-  sample["LogLikelihood"] = sample["Conditional LogLikelihood"] + lllh;
+  sample["LogLikelihood"] = sample["Conditional LogLikelihood"].get<double>() + lllh;
 
 
 }
