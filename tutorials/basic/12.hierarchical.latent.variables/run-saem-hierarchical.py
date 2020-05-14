@@ -24,7 +24,7 @@ def main():
     # the distribution already "contains" the data, it implements the function: latent --> p(data | latent)
     e["Problem"]["Conditional Log Likelihood Function"] = lambda sample : distrib.conditional_p(sample)
 
-    e["Solver"]["Type"] = "executor"
+    e["Solver"]["Type"] = "hSAEM"
     e["Solver"]["Number Samples Per Step"] = 100
     e["Solver"]["Termination Criteria"]["Max Generations"] = 30
 
@@ -33,15 +33,10 @@ def main():
     e["Distributions"][0]["Minimum"] = -100
     e["Distributions"][0]["Maximum"] = 100
 
-    e["Distributions"][1]["Name"] = "Uniform 1"
-    e["Distributions"][1]["Type"] = "Univariate/Uniform"
-    e["Distributions"][1]["Minimum"] = -100
-    e["Distributions"][1]["Maximum"] = 100
-
-    # * Define which hyperparameters we use (only theta)
+    # * Define which hyperparameters we use (only theta, the mean of p(data | theta, sigma) - sigma is assumed known)
     e["Variables"][0]["Name"] = "latent mean"
     e["Variables"][0]["Bayesian Type"] = "Latent Variable"
-    e["Variables"][0][ "Latent Variable Distribution Type" ] = "Normal"
+    e["Variables"][0]["Latent Variable Distribution Type"] = "Normal"
     e["Variables"][0]["Prior Distribution"] = "Uniform 0"  # not used (?) but required
 
     e["File Output"]["Frequency"] = 50

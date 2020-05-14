@@ -7,21 +7,29 @@
 #include <gsl/gsl_blas.h>
 
 
-/* The problem initialization; here, create hyperparameter variables and set up index lists to
-         find both types of variables */
+/* The problem initialization; here, create hyperparameter variables, add them to the problem's variable list,
+    and set up index lists to find both types of variables in that list.*/
 void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
   korali::problem::bayesian::Latent::initialize();
 
-  // Just for convenience. The hyperparameters will all have indices higher than those of the latent variables
+  int _numberLatentVariables = _k->_variables.size();
+  // _sDimension = numberLatentVariables(1 + numberLatentVariables);
+
+  // Just for convenience and code readability. The hyperparameters will all have indices higher than those of the
+  // latent variables, and cov-variables will come after mean-variables. These could all be removed to optimize runspeed.
  _latentVariableIndices.clear();
  _hyperparameterVariableIndices.clear();
+ _hyperparameterMeanIndices.clear();
+ _hyperparameterCovIndices.clear();
+ _hyperparameterCovIndices.resize(_numberLatentVariables);
+ for (auto v : _hyperparameterCovIndices) v.clear();
 
  _normalLatentIndices.clear();
  _lognormalLatentIndices.clear();
  _logitnormalLatentIndices.clear();
 
- std::vector<korali::Variable> _hyperparameters;
+ std::vector<korali::Variable*> _hyperparameters;
  _hyperparameters.clear();
 
  for (size_t i = 0; i < _k->_variables.size(); i++)
@@ -46,29 +54,40 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
   if (recognizedDistribution == false) _k->_logger->logError("Unrecognized distribution type: %s.\n", distribString.c_str());
  }
 
- // * Now, generate the hyperparameters:
- // 1. means - one mean per latent variable.
- //     Each mean is for whichever transformed version of the variable that is normally distributed.
- for (size_t i = 0; i < _k->_variables.size(); i++){
+ /*  Now, generate the hyperparameters:
+    1. means - one mean per latent variable.
+      Each mean is for whichever transformed version of the variable that is normally distributed. */
+ for (size_t i = 0; i < _numberLatentVariables; i++){
    korali::Variable new_hyperparam;
    new_hyperparam._latentVariableDistributionType = "NA";
    new_hyperparam._bayesianType = "Hyperparameter";
    new_hyperparam._name = "Mean of "+_k->_variables[i]->_name;
+   new_hyperparam._initialValue = 0; // todo: might work better if you use a small random number instead of 0, to break the symmetry if there is any symmetry in the latents
    // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
+   _hyperparameters.push_back( &new_hyperparam );
+   _hyperparameterMeanIndices.push_back(i + _k->_variables.size());
  }
 
- // 2. covariance matrices - we use Cholesky decomposition to ensure positive definiteness.
- // Note: If ever required, could add 'groups' of variables that share a covariance matrix, while groups are independent of each other.
- // Degrees of freedom of the lower-triangular matrix L: n*(n+1)/2
- for (size_t i = 0; i < _k->_variables.size(); i++){
-   for (size_t j = i; j < _k->_variables.size(); j++){
+ /* 2. covariance matrices - we use Cholesky decomposition to ensure positive definiteness.
+      Note: If ever required, could add 'groups' of variables that share a covariance matrix, while groups are independent of each other. */
+ //  Degrees of freedom of the covariance matrix: n*(n+1)/2; we over-represent it as matrix
+ for (size_t i = 0; i < _numberLatentVariables; i++){
+   for (size_t j = 0; j < _k->_variables.size(); j++){
      korali::Variable new_hyperparam;
      new_hyperparam._latentVariableDistributionType = "NA";
      new_hyperparam._bayesianType = "Hyperparameter";
-     new_hyperparam._name = "L["+std::to_string(i)+", "+std::to_string(j)+"] of Covariance LL'";   // L[i][j]
-     // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
+     new_hyperparam._name = "Cov["+std::to_string(i)+", "+std::to_string(j)+"]";   // Cov[i][j]
+     if (i == j) new_hyperparam._initialValue = 5.;
+     else        new_hyperparam._initialValue = 0.;
+     // Todo: Add any other parameters here that will be required by hierarchical SAEM. Initial values? Bounds?
+   _hyperparameters.push_back( &new_hyperparam );
+   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() + 2 * _k->_variables.size());
    }
  }
+
+ _k->_variables.insert( _k->_variables.end(), _hyperparameters.begin(), _hyperparameters.end());
+ for (size_t i = 0; i < _hyperparameters.size(); i++ )
+   _hyperparameterVariableIndices.push_back(_numberLatentVariables + i);
 
 }
 
@@ -76,13 +95,13 @@ void korali::problem::bayesian::latent::HierarchicalLatent::execute(korali::Samp
   evaluateLogLikelihood(sample);
 }
 
-
-/*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
-        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
-        sample is expected to contain parameter 'Latent Variables' */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateS(korali::Sample& sample){
-  //sample.run(_sOfLikelihoodModel); // TODO
-}
+//
+///*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+//        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
+//        sample is expected to contain parameter 'Latent Variables' */
+//void korali::problem::bayesian::latent::HierarchicalLatent::evaluateS(korali::Sample& sample){
+//  //sample.run(_sOfLikelihoodModel); // TODO
+//}
 
 /*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
            values for the latent variables. See the description of this function for more information.

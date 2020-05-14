@@ -1,0 +1,107 @@
+#include "modules/solver/hSAEM/hSAEM.hpp"
+#include "modules/conduit/conduit.hpp"
+
+
+ /* @brief This is always run before (re-)starting the solver */
+void korali::solver::HSAEM::initialize()
+{
+
+ if( _k->_problem->getType() != "Bayesian/Latent/HierarchicalLatent")
+   _k->_logger->logError("SAEM can only optimize problems of type 'Bayesian/Latent/HierarchicalLatent' .\n");
+
+  _latentProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatent*>(_k->_problem);
+
+    // Todo: make sure the problem is initialized before the solver
+ _numberVariables = _k->_variables.size();
+ _numberLatent = _latentProblem->_latentVariableIndices.size();
+ _numberHyperparameters = _numberVariables - _numberLatent;
+
+ for (size_t i = 0; i < _numberVariables; i++)
+   if( std::isfinite(_k->_variables[i]->_initialValue) == false )
+     _k->_logger->logError("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
+
+}
+
+ /* @brief Run once, before the first generation */
+void korali::solver::HSAEM::setInitialConfiguration()
+{
+  // resizing and clearing internal vector variables
+ _currentSamples.clear();
+ _currentSampleMeans.resize(_numberLatent);
+ _currentSampleStandardDeviations.resize(_numberLatent);
+ _currentS1.resize(_numberLatent);
+ _currentS2.resize(_numberLatent);
+ for (std::vector<double> v : _currentS2)
+   v.resize(_numberLatent);
+ std::fill(_currentS1.begin(), _currentS1.end(), 0);
+ for (std::vector<double> v : _currentS2)
+   std::fill(v.begin(), v.end(), 0);
+ _currentCholesky.resize(_numberLatent);
+ for (std::vector<double> v : _currentCholesky)
+    v.resize(_numberLatent);
+
+  // Set starting values for hyperparameters - just copy them over, we already set them in the problem initialization
+  _currentHyperparametersMean.resize(_numberLatent);
+  _currentHyperparametersCovariance.resize(_numberLatent);
+  for (std::vector<double> v: _currentHyperparametersCovariance)
+    v.resize(_numberLatent);
+  _currentCholesky.resize(_numberLatent * _numberLatent);
+  size_t hyperparam_index = 0;
+  for (size_t i = 0; i < _numberLatent; i++)
+  {
+    int idx =  _latentProblem->_hyperparameterMeanIndices[i];
+    _currentHyperparametersMean[i] = _k->_variables[idx]->_initialValue;
+  }
+  for (size_t i = 0; i < _numberLatent; i++)
+    for (size_t j = 0; j < _numberLatent; j++)
+    {
+      int idx =  _latentProblem->_hyperparameterCovIndices[i][j];
+      _currentHyperparametersCovariance[i][j] = _k->_variables[idx]->_initialValue;
+    }
+
+  _bestLogLikelihood = -korali::Inf;
+
+}
+
+void korali::solver::HSAEM::runGeneration()
+{
+ if (_k->_currentGeneration == 1) setInitialConfiguration();
+
+ _k->_logger->logInfo("Normal", "Running generation %lu...\n", _k->_currentGeneration);
+
+ /* E1: Sample latent variable values */
+ sampleLatent();
+ _k->_logger->logInfo("Detailed", "Sampled generation: %d \n", _k->_currentGeneration);
+
+ /* E2: Update posterior probability function Q */
+ updateS();
+
+ /* M:  Find argmax Q(theta), analytically */
+ updateHyperparameters();
+ updateCholesky();
+
+}
+
+void korali::solver::HSAEM::sampleLatent(){
+}
+
+void korali::solver::HSAEM::updateS(){
+}
+
+void korali::solver::HSAEM::updateHyperparameters(){
+}
+
+void korali::solver::HSAEM::updateCholesky(){
+}
+
+
+void korali::solver::HSAEM::printGenerationBefore()
+{
+ _k->_logger->logInfo("Normal", "Preparing to start generation...\n");
+}
+
+void korali::solver::HSAEM::printGenerationAfter()
+{
+ _k->_logger->logInfo("Normal", "Finished to generation %lu...\n", _k->_currentGeneration);
+}
+

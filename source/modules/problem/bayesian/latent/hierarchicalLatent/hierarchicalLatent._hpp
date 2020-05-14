@@ -34,12 +34,12 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
  */
  void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
 
- /**
-  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
-        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
-        sample is expected to contain parameter 'Latent Variables'
- */
- void evaluateS(korali::Sample& sample);
+// /**
+//  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+//        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
+//        sample is expected to contain parameter 'Latent Variables'
+// */
+// void evaluateS(korali::Sample& sample);
 
   /**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some

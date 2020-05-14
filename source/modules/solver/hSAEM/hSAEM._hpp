@@ -1,0 +1,41 @@
+#ifndef _KORALI_SOLVER_HSAEM_HPP_
+#define _KORALI_SOLVER_HSAEM_HPP_
+
+#include "modules/solver/solver.hpp"
+#include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
+
+namespace korali { namespace solver {
+
+class HSAEM : public korali::Solver
+{
+ public:
+
+ korali::problem::bayesian::latent::HierarchicalLatent* _latentProblem;
+
+ void sampleLatent();
+ void updateS();
+ void updateHyperparameters();
+ void updateCholesky();
+
+ bool isLatent(int idx);
+ std::vector<double> meanAndSDev(std::vector<double> v);
+ std::vector<std::vector<double> > transpose(const std::vector<std::vector<double> > data);
+
+// void finalize() override;
+
+
+ /* @brief This is always run before (re-)starting the solver */
+ void initialize() override;
+
+ /* @brief Run once, before the first generation */
+ void setInitialConfiguration() override;
+ void runGeneration() override;
+ void printGenerationBefore() override;
+ void printGenerationAfter() override;
+
+};
+
+} } // namespace korali::solver
+
+
+#endif // _KORALI_SOLVER_HSAEM_HPP_
