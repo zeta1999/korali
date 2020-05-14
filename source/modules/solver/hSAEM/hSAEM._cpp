@@ -40,8 +40,8 @@ void korali::solver::HSAEM::setInitialConfiguration()
  for (size_t i = 0; i < _numberLatent; i++)
     _currentCholesky[i].resize(_numberLatent);
 
-  volatile int done = 0;
-  while (!done) sleep(1);
+//  volatile int done = 0;
+//  while (!done) sleep(1);
 
   // Set starting values for hyperparameters - just copy them over, we already set them in the problem initialization
   _currentHyperparametersMean.resize(_numberLatent);
