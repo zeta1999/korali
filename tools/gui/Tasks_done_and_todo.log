@@ -1,5 +1,29 @@
 Mark Martori Lopez
 
+Thursday 14 May 2020
+
+Tasks:
+
+1- [Solved] CURRENT GOAL: Modify the Distributions and convert them into Tabs like the Variables.
+
+		Step 1: [Solved] Modify the way to create Distributions.
+
+		Step 2: [Solved] Add one more frame specific for the Distributions.
+
+		Step 3: [Solved] Add a new notebook and a variable to determine in which tab of the notebook are we.
+
+		Step 4: [Solved] Create a New Distribution button in the main menu.
+
+		Step 5: [Solved] Create a new Function to delete Distributions and add it in the main menu with a button too.
+
+2- [Semi-Solved] CURRENT GOAL 2: Modify functions to import and export the data, as it changed.
+	
+		Step 1: [Solved] Divide the Distributions into tabs when reading it.
+
+		...
+		...
+
+-----------------------------------------------------
 Tuesday 12 May 2020
 
 Tasks:

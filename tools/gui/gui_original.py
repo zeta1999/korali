@@ -43,6 +43,7 @@ listofsolvers = []
 experiments = {} # Global dictionary for the frames and experiments.
 selectedtab = ''
 selectedtab2 = ''
+selectedtab3 = ''
 
 on = 0  #
 
@@ -155,6 +156,7 @@ def clearFrame():
     global experiments
     global selectedtab
     global contadorVariables
+
     
     frame = experiments[selectedtab]['canvas']
     frame2 = experiments[selectedtab]['rightFrame']
@@ -170,6 +172,7 @@ def deleteTab(totalTabs):
     if contador >2:
         for item in totalTabs.winfo_children():
             if str(item)==totalTabs.select():
+                print(str(item))
                 item.destroy()
                 contador -=1
                 return
@@ -193,6 +196,25 @@ def deleteVariable(self):
         
     else:
         popupmsgwarning('At least 2 variables to delete 1')
+
+def deleteDistribution(self):
+    global experiments
+    global selectedtab
+    global times_distr
+    
+    totalTabs3 = experiments[selectedtab]['totalTabs3']
+    #frame = experiments[selectedtab]['bottomrightFrame']
+    results =  experiments[selectedtab]['results']
+    ## Delete Tab and frame inside:
+    if len(totalTabs3.tabs()) > 1:
+        a = totalTabs3.select()
+##        selectedtab3Deleted = totalTabs3.tab(a, "text")
+        if results[4][times_distr-1]:
+             del results[4][times_distr-1]
+        totalTabs3.forget(a)
+        
+    else:
+        popupmsgwarning('At least 2 distributions to delete 1')
 
 #################
 ################# PRINTING FUNCTIONS:
@@ -925,6 +947,7 @@ def crearFrameVariables():
                 popupmsgwarning('Number of Variables exceeded!')
             contadorVariables+=1
 
+    
 def crearMainConfiguration(configuration,r,c,cont):
     global selectedtab
     
@@ -970,63 +993,86 @@ def crearMainConfiguration(configuration,r,c,cont):
                                     fakedescription = description
                                     printdata(expFrame,dicc[key2], texto, description,fakedescription, r, c,cont,options)                                    
                                 r+=1
-def crearDistribution(r):
+def crearDistribution():
     global selectedtab
     global experiments
     global times_distr
 
-    expFrame = experiments[selectedtab]['expFrame']
+    c=0
+    r=0
+
+    expFram = experiments[selectedtab]['distribution']
+    expFrame = expFram.tab3
     results = experiments[selectedtab]['results']
     results[4][times_distr]={}
     res = results[4][times_distr]
     stringVar = {}
 
-    texto = 'Distribution '+str(times_distr)
-    l1 =tk.Label(expFrame, text=texto,justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
-    l1.grid(row=r, column=0,columnspan= 1,pady = 24 ,padx=4, sticky='w')
+##    texto = 'Distribution '+str(times_distr)
+##    l1 =tk.Label(expFrame, text=texto,justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
+##    l1.grid(row=r, column=c,columnspan= 1,pady = 24 ,padx=4, sticky='w')
     
     texto1 = 'Name'
-    l2 = tk.Label(expFrame, text = texto1,  width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
-    l2.grid(row=r+1, column=0,columnspan= 1,pady = 2 ,padx=4, sticky='w')
+    l2 = tk.Label(expFrame, text = texto1,  width = 17,justify='left', bg='floralwhite', anchor="w", font="Arial 12")
+    l2.grid(row=r+1, column=c,columnspan= 1,pady = 2 ,padx=4, sticky='w')
     stringVar[texto1] = tk.StringVar()
     res[texto1] = tk.Entry(expFrame,width=10,font='Arial 12',textvariable = stringVar[texto1])
-    res[texto1].grid(row=r+1, column=1, pady= 2,padx=4, sticky = 'w')
+    res[texto1].grid(row=r+1, column=c+1, pady= 2,padx=4, sticky = 'w')
     
     texto2 = 'Type'
-    l3 = tk.Label(expFrame, text = texto2, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
-    l3.grid(row=r+2, column=0,columnspan= 1,pady = 2 ,padx=4, sticky='w')
+    l3 = tk.Label(expFrame, text = texto2, width = 17,justify='left', bg='floralwhite', anchor="w", font="Arial 12")
+    l3.grid(row=r+2, column=c,columnspan= 1,pady = 2 ,padx=4, sticky='w')
     stringVar[texto2] = tk.StringVar()
     res[texto2] = tk.Entry(expFrame,width=10,font='Arial 12',textvariable = stringVar[texto2])
-    res[texto2].grid(row=r+2, column=1, pady= 2,padx=4, sticky = 'w')
+    res[texto2].grid(row=r+2, column=c+1, pady= 2,padx=4, sticky = 'w')
     
     texto3 = 'Maximum'
-    l4=tk.Label(expFrame, text=texto3, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
-    l4.grid(row=r+3, column=0,pady = 2,padx=6, sticky='w')
+    l4=tk.Label(expFrame, text=texto3, width = 17,justify='left', bg='floralwhite', anchor="w", font="Arial 12")
+    l4.grid(row=r+3, column=c,pady = 2,padx=4, sticky='w')
     num3 = tk.IntVar()
     res[texto3] = Spinbox(expFrame, width=10, from_=0,font='Arial 12', to=9999, wrap=True, textvariable=num3, state='normal')
-    res[texto3].grid(row=r+3, column=1, pady= 2,padx=6)
+    res[texto3].grid(row=r+3, column=c+1, pady= 2,padx=6)
     corrector = expFrame.register(validardigit)
     res[texto3].config(validate = 'key',validatecommand = (corrector,'%P')) # %P represents the parameter we want to pass to validate.
 
     texto4 = 'Minimum'
-    l5=tk.Label(expFrame, text=texto4, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
-    l5.grid(row=r+4, column=0,pady = 2,padx=6, sticky='w')
+    l5=tk.Label(expFrame, text=texto4, width = 17,justify='left', bg='floralwhite', anchor="w", font="Arial 12")
+    l5.grid(row=r+4, column=c,pady = 2,padx=4, sticky='w')
     num4 = tk.IntVar()
     res[texto4] = Spinbox(expFrame, width=10, from_=0,font='Arial 12', to=9999, wrap=True, textvariable=num4, state='normal')
-    res[texto4].grid(row=r+4, column=1, pady= 2,padx=6)
+    res[texto4].grid(row=r+4, column=c+1, pady= 2,padx=6)
     corrector = expFrame.register(validardigit)
     res[texto4].config(validate = 'key',validatecommand = (corrector,'%P')) # %P represents the parameter we want to pass to validate.
     
     texto5 = 'Random Seed'
-    l6=tk.Label(expFrame, text=texto5, width = 17,justify='left', bg='white', anchor="w", font="Arial 12")
-    l6.grid(row=r+5, column=0,pady = 2,padx=6, sticky='w')
+    l6=tk.Label(expFrame, text=texto5, width = 17,justify='left', bg='floralwhite', anchor="w", font="Arial 12")
+    l6.grid(row=r+5, column=c,pady = 2,padx=4, sticky='w')
     num5 = tk.IntVar()
     res[texto5] = Spinbox(expFrame, width=10, from_=0,font='Arial 12', to=9999, wrap=True, textvariable=num5, state='normal')
-    res[texto5].grid(row=r+5, column=1, pady= 2,padx=6)
+    res[texto5].grid(row=r+5, column=c+1, pady= 2,padx=6)
     corrector = expFrame.register(validardigit)
     res[texto5].config(validate = 'key',validatecommand = (corrector,'%P')) # %P represents the parameter we want to pass to validate.
 
     times_distr +=1
+
+def crearDistributionFrame():
+    global experiments
+    global selectedtab
+    global selectedtab3
+    global times_distr
+
+    bottomleftFrame3 = experiments[selectedtab]['distribution']
+    totalTabs3 = experiments[selectedtab]['totalTabs3']
+    
+    if times_distr < 5:
+        bottomleftFrame3.tab3 = tk.Frame(bottomleftFrame3, height = 300, width = 520, background = 'floralwhite')#florawhite
+        selectedtab3 = 'Distribution '+str(times_distr)
+        totalTabs3.add(bottomleftFrame3.tab3, text = selectedtab3)
+        crearDistribution()
+        results = experiments[selectedtab]['results']
+        print(results[4].keys())
+    else:
+        popupmsgwarning('Exceeded limit of distributions')
 
 
                          
@@ -1072,18 +1118,21 @@ def crearTab(self,totalTabs):
                 self.rightFrame.grid(row = 0, column = 2, stick = 'nsew',rowspan = 3)
 
                 ## BOTTOM LEFT FRAME:
-                self.bottomleftFrame = tk.Frame(self.tab, background = 'azure', width = 1200, height = 850, borderwidth = 3,relief = 'groove')#width = 950, height = 850
-                self.bottomleftFrame.grid(column = 0, row = 1, sticky = 'nsew',rowspan = 5, columnspan = 2) 
-                self.bottomleftFrame.grid_propagate(0)
 
-                self.bottomleftFrame1 = tk.Frame(self.bottomleftFrame, background = 'azure', width = 650, height = 850, borderwidth = 1,relief = 'groove')#width = 950, height = 850
-                self.bottomleftFrame1.grid(column = 0, row = 1, sticky = 'nsew')
+                self.bottomleftFrame1 = tk.Frame(self.tab, background = 'azure', width = 480, height = 850, borderwidth = 1,relief = 'groove')#width = 950, height = 850
+                self.bottomleftFrame1.grid(column = 0, row = 1, sticky = 'nsew',rowspan = 5,columnspan=1)
                 self.bottomleftFrame1.grid_propagate(0)
                 
-                self.expFrame = tk.Frame(self.bottomleftFrame, background = 'white', width = 550, height = 850)#width = 950, height = 850
-                self.expFrame.grid(column = 1, row = 1, sticky = 'nsew')
-                self.expFrame.grid_propagate(0)
-                self.e =tk.Label(self.expFrame, text='Main Configuration',justify='left', anchor="w", font="Arial 15", fg='black', bg='white') #bg = 'darkcyan', fg='white')
+                self.bottomleftFrame2 = tk.Frame(self.tab, background = 'white', width = 520, height = 550, borderwidth = 3,relief = 'groove')#width = 950, height = 850
+                self.bottomleftFrame2.grid(column = 1, row = 1, sticky = 'nsew',rowspan = 4, columnspan = 1) 
+                self.bottomleftFrame2.grid_propagate(0)
+
+                self.bottomleftFrame3 = tk.Frame(self.tab, background = 'white', width = 520, height = 300, borderwidth = 3,relief = 'groove')#width = 950, height = 850
+                self.bottomleftFrame3.grid(column = 1, row = 5, sticky = 'nsew',rowspan = 1, columnspan = 1) 
+                self.bottomleftFrame3.grid_propagate(0)
+
+                
+                self.e =tk.Label(self.bottomleftFrame2, text='Main Configuration',justify='left', anchor="w", font="Arial 15", fg='black', bg='white') #bg = 'darkcyan', fg='white')
                 self.e.grid(row=0, column=0,columnspan= 1,pady = 40 ,padx=4, sticky='w')
                 
 
@@ -1091,22 +1140,6 @@ def crearTab(self,totalTabs):
                 self.bottomrightFrame = tk.Frame(self.tab, width = 650, height = 450, background ='azure', borderwidth = 1,relief = 'ridge')
                 self.bottomrightFrame.grid(row = 3,column = 2,sticky = 'nsew', rowspan = 3)
 
-                ## CANVAS + SCROLLBAR
-
-                self.canvas=Canvas(self.bottomleftFrame1,width = 650, height = 850,bg = 'azure', scrollregion= (0,0,1500,1500)) #yscrollcommand = vbar.set
-                #self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
-                #hbar=Scrollbar(self.bottomleftFrame1,orient=HORIZONTAL)
-                #hbar.pack(side=BOTTOM,fill=X)
-                #hbar.config(command=self.canvas.xview)
-                #vbar=Scrollbar(self.bottomleftFrame1,orient=VERTICAL)
-                #vbar.pack(side=RIGHT,fill=Y)
-                #vbar.config(command=self.canvas.yview)
-                self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
-                #self.canvas.config(width=650,height=850)
-                #self.canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
-
-                
-                self.canvas.grid_propagate(0)
                 
                 # STORE A DICTIONARY WITH ALL THE FRAMES ON IT TO BE CALLED ON ANY FUNCTION AND AVOID PASSING FRAMES.
                 expElements = {}
@@ -1116,9 +1149,10 @@ def crearTab(self,totalTabs):
                 expElements['leftFrame'] = self.leftFrame
                 expElements['rightFrame'] = self.rightFrame
                 expElements['bottomrightFrame'] = self.bottomrightFrame
-                expElements['bottomleftFrame'] = self.bottomleftFrame
-                expElements['canvas'] = self.canvas
-                expElements['expFrame'] = self.expFrame
+                expElements['bottomleftFrame'] = self.bottomleftFrame1
+                expElements['canvas'] = self.bottomleftFrame1
+                expElements['expFrame'] = self.bottomleftFrame2
+                expElements['distribution'] = self.bottomleftFrame3
 
 
                 self.totalTabs2 = ttk.Notebook(self.bottomrightFrame)
@@ -1127,12 +1161,13 @@ def crearTab(self,totalTabs):
                 expElements['totalTabs2'] = self.totalTabs2
 
                 crearFrameVariables()
+                
 
                 self.leftFrame.grid_propagate(0)
                 self.rightFrame.grid_propagate(0)
                 #self.bottomleftFrame.grid_propagate(0)
                 self.bottomrightFrame.grid_propagate(0)
-                self.bottomleftFrame.grid_propagate(0)
+                self.bottomleftFrame1.grid_propagate(0)
                 
                 #############################################################
 
@@ -1149,21 +1184,25 @@ def crearTab(self,totalTabs):
 
                 expElements['mainConf'] = mainConf
 
-                self.e =tk.Label(self.expFrame, text='Main Configuration',justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
+                self.e =tk.Label(self.bottomleftFrame2, text='Main Configuration',justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
                 self.e.grid(row=0, column=0,columnspan= 1,pady = 25 ,padx=4, sticky='w')
 
                 c = 0
                 r = 0
                 crearMainConfiguration(configuration,r,c,cont)
-##                print(experiments[selectedtab]['results']['Random Seed'])
 
                 ######  DISTRIBUTIONS ######
+                self.totalTabs3 = ttk.Notebook(self.bottomleftFrame3)
+                self.totalTabs3.pack(expand = 1, fill = "both")
+                expElements['totalTabs3'] = self.totalTabs3
+                
                 r=40
                 results[4]={}
-                crearDistribution(r)
-                r+= 6
-                self.distr_button = tk.Button(self.expFrame, text = 'Add distribution', command = lambda:crearDistribution(r))
-                self.distr_button.grid(row=100,column=0, pady = 6, padx = 2)
+                times_distr = 1
+                crearDistributionFrame()
+                
+##                self.distr_button = tk.Button(self.bottomleftFrame3, text = 'Add distribution', command = lambda:crearDistribution(r))
+##                self.distr_button.grid(row=100,column=0, pady = 6, padx = 2)
 
                 #############################################################
                # LEFT SIDE OF TAB1:
@@ -1221,9 +1260,11 @@ class KORALI(tk.Tk): #Inherited tk.tk
         self.experimentmenu = tk.Menu(self.menubar, tearoff = 1)
         self.experimentmenu.add_command(label = 'New Experiment...', command = lambda:crearTab(self,self.totalTabs))
         self.experimentmenu.add_command(label = 'New Variable...', command = lambda: crearFrameVariables())#,self.totalTabs2))
+        self.experimentmenu.add_command(label = 'New Distribution...', command = lambda: crearDistributionFrame())#,self.totalTabs2))
         self.experimentmenu.add_separator() # Separator baselr.
         self.experimentmenu.add_command(label = 'Delete Experiment...', command = lambda: deleteTab(self.totalTabs))#self.totalTabs.forget(self.tab))#lambda:deletetab(self,self.totalTabs,contador))
         self.experimentmenu.add_command(label = 'Delete Variable...', command = lambda:deleteVariable(self))
+        self.experimentmenu.add_command(label = 'Delete Distribution...', command = lambda:deleteDistribution(self))
         self.experimentmenu.add_separator() # Separator baselr.
         self.experimentmenu.add_command(label = 'Clear Experiment...', command = lambda:clearFrame())
         self.menubar.add_cascade(label = 'Experiments Configuration', menu = self.experimentmenu)
