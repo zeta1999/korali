@@ -30,10 +30,10 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
  */
  void initialize() override;
 
-// /**
-//  * @brief De-allocate GSL matrices and vectors
-// */
-// ~HierarchicalLatent(void);
+ /**
+  * @brief De-allocate both vectors with hyperparameter korali-variables
+ */
+ ~HierarchicalLatent(void);
 
  /**
   * @brief TODO

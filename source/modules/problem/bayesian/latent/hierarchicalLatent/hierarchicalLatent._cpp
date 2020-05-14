@@ -63,6 +63,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
     1. means - one mean per latent variable.
       Each mean is for whichever transformed version of the variable that is normally distributed. */
  for (size_t i = 0; i < _numberLatentVariables; i++){
+   // We need a "new" here, unless there's a way to prevent a not new-ed korali::Variable from being deallocated right after this function.
    korali::Variable *new_hyperparam = new korali::Variable;
    new_hyperparam->_latentVariableDistributionType = "NA";
    new_hyperparam->_bayesianType = "Hyperparameter";
@@ -122,13 +123,20 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 
 }
 
-///* De-allocate GSL matrices and vectors */
-//korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void){
+/* De-allocate both vectors with hyperparameter korali-variables
+    -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
+korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void){
+  for ( int i = 0; i < _hyperparameterMean.size(); i++ )
+    delete _hyperparameterMean[i];
+  _hyperparameterMean.clear();
+  for ( int i = 0; i < _hyperparameterMean.size(); i++ )
+    delete _hyperparameterCovariance[i];
+  _hyperparameterCovariance.clear();
 //  gsl_matrix_free(covMatrixGSL);
 //  gsl_matrix_free(chol);
 //  gsl_vector_free(latent_minus_mean);
 //  gsl_vector_free(x);
-//}
+}
 
 //
 ///*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
