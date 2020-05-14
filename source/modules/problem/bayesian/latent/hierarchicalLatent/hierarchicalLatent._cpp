@@ -26,7 +26,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 // _hyperparameterMeanIndices.clear();
 // _hyperparameterCovIndices.clear();
  _hyperparameterCovIndices.resize(_numberLatentVariables);
- for (auto v : _hyperparameterCovIndices) v.clear();
+ for (size_t i = 0; i< _hyperparameterCovIndices.size(); i++)
+   _hyperparameterCovIndices[i].clear();
 
  _normalLatentIndices.clear();
  _lognormalLatentIndices.clear();
@@ -62,25 +63,36 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
     1. means - one mean per latent variable.
       Each mean is for whichever transformed version of the variable that is normally distributed. */
  for (size_t i = 0; i < _numberLatentVariables; i++){
-   korali::Variable new_hyperparam = new korali::Variable;
-   new_hyperparam._latentVariableDistributionType = "NA";
-   new_hyperparam._bayesianType = "Hyperparameter";
-   new_hyperparam._name = "Mean of "+_k->_variables[i]->_name;
+   korali::Variable *new_hyperparam = new korali::Variable;
+   new_hyperparam->_latentVariableDistributionType = "NA";
+   new_hyperparam->_bayesianType = "Hyperparameter";
+   new_hyperparam->_name = "Mean of "+_k->_variables[i]->_name;
 
     /* initialize variable's mean with the user-defined initial value: */
-   if (_k->_variables[i]->_latentVariableDistributionType == "Normal")
-     new_hyperparam._initialValue = _k->_variables[i]->_initialValue;
-   if (_k->_variables[i]->_latentVariableDistributionType == "Log-Normal")
-     new_hyperparam._initialValue = log(_k->_variables[i]->_initialValue);
-   if (_k->_variables[i]->_latentVariableDistributionType == "Logit-Normal"){
-     double ival = _k->_variables[i]->_initialValue;
-     if ((ival < 0) || (ival >= 1) )
-       _k->_logger->logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
-     new_hyperparam._initialValue = (ival / (1 - ival));
+   std::string distribString = _k->_variables[i]->_latentVariableDistributionType.c_str();
+   if (distribString == "Normal")
+     new_hyperparam->_initialValue = _k->_variables[i]->_initialValue;
+   else {
+     if (distribString == "Log-Normal")
+       new_hyperparam->_initialValue = log(_k->_variables[i]->_initialValue);
+     else {
+       if (distribString == "Logit-Normal"){
+         double ival = _k->_variables[i]->_initialValue;
+         if ((ival < 0) || (ival >= 1) )
+           _k->_logger->logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
+         new_hyperparam->_initialValue = (ival / (1 - ival));
+       }
+       else
+         _k->_logger->logError("Unrecognized 'Latent Variable Distribution' ");
      }
+   }
 
    // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
-   _hyperparameterMean.push_back( &new_hyperparam );
+
+//  volatile int done = 0;
+//  while (!done) sleep(1);
+
+   _hyperparameterMean.push_back( new_hyperparam );
 //   _hyperparameters.push_back( &new_hyperparam );
 //   _hyperparameterMeanIndices.push_back(i + _k->_variables.size());
  }
@@ -90,14 +102,14 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  //  Degrees of freedom of the covariance matrix: n*(n+1)/2; we over-represent it as matrix
  for (size_t i = 0; i < _numberLatentVariables; i++){
    for (size_t j = 0; j < _k->_variables.size(); j++){
-     korali::Variable new_hyperparam = new korali::Variable;
-     new_hyperparam._latentVariableDistributionType = "NA";
-     new_hyperparam._bayesianType = "Hyperparameter";
-     new_hyperparam._name = "Cov["+std::to_string(i)+", "+std::to_string(j)+"]";   // Cov[i][j]
-     if (i == j) new_hyperparam._initialValue = 5.;
-     else        new_hyperparam._initialValue = 0.;
+     korali::Variable *new_hyperparam = new korali::Variable;
+     new_hyperparam->_latentVariableDistributionType = "NA";
+     new_hyperparam->_bayesianType = "Hyperparameter";
+     new_hyperparam->_name = "Cov["+std::to_string(i)+", "+std::to_string(j)+"]";   // Cov[i][j]
+     if (i == j) new_hyperparam->_initialValue = 5.;
+     else        new_hyperparam->_initialValue = 0.;
      // Todo: Add any other parameters here that will be required by hierarchical SAEM. Initial values? Bounds?
-   _hyperparameterCovariance.push_back( &new_hyperparam );
+   _hyperparameterCovariance.push_back( new_hyperparam );
    _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() );
 //   _hyperparameters.push_back( &new_hyperparam );
 //   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() + 2 * _k->_variables.size());

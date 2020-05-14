@@ -31,14 +31,14 @@ void korali::solver::HSAEM::setInitialConfiguration()
  _currentSampleStandardDeviations.resize(_numberLatent);
  _currentS1.resize(_numberLatent);
  _currentS2.resize(_numberLatent);
- for (std::vector<double> v : _currentS2)
-   v.resize(_numberLatent);
+ for (size_t i = 0; i < _numberLatent; i++)
+   _currentS2[i].resize(_numberLatent);
  std::fill(_currentS1.begin(), _currentS1.end(), 0);
- for (std::vector<double> v : _currentS2)
-   std::fill(v.begin(), v.end(), 0);
+ for (size_t i = 0; i < _numberLatent; i++)
+   std::fill(_currentS2[i].begin(), _currentS2[i].end(), 0);
  _currentCholesky.resize(_numberLatent);
- for (std::vector<double> v : _currentCholesky)
-    v.resize(_numberLatent);
+ for (size_t i = 0; i < _numberLatent; i++)
+    _currentCholesky[i].resize(_numberLatent);
 
   volatile int done = 0;
   while (!done) sleep(1);
@@ -46,8 +46,8 @@ void korali::solver::HSAEM::setInitialConfiguration()
   // Set starting values for hyperparameters - just copy them over, we already set them in the problem initialization
   _currentHyperparametersMean.resize(_numberLatent);
   _currentHyperparametersCovariance.resize(_numberLatent);
-  for (std::vector<double> v: _currentHyperparametersCovariance)
-    v.resize(_numberLatent);
+  for (size_t i = 0; i < _numberLatent; i++)
+    _currentHyperparametersCovariance[i].resize(_numberLatent);
   size_t hyperparam_index = 0;
   for (size_t i = 0; i < _numberLatent; i++)
   {
