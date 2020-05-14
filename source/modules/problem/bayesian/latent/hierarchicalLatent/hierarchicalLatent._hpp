@@ -4,6 +4,8 @@
 #include "modules/problem/bayesian/latent/latent.hpp"
 #include "modules/problem/bayesian/bayesian.hpp"
 
+//#include <memory>
+
 namespace korali {
 namespace problem {
 namespace bayesian {
@@ -11,6 +13,15 @@ namespace latent {
 
 class HierarchicalLatent : public korali::problem::bayesian::Latent
 {
+ private:
+// // local variables, but we don't want to re-allocate space at every use (or do we?)
+//  gsl_matrix* covMatrixGSL;
+//  gsl_matrix* chol;
+//  gsl_vector *latent_minus_mean;
+//  gsl_vector* x;
+
+//  void initializeGSLVariables(int nLatent);
+
  public:
 
  /**
@@ -18,6 +29,11 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
            find both types of variables
  */
  void initialize() override;
+
+// /**
+//  * @brief De-allocate GSL matrices and vectors
+// */
+// ~HierarchicalLatent(void);
 
  /**
   * @brief TODO
@@ -48,10 +64,6 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
  */
  void evaluateConditionalLogLikelihood(korali::Sample& sample);
 
-   /**
-  * @brief Just for testing
- */
-  void execute(korali::Sample& sample);
 
 };
 

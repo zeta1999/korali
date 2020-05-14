@@ -5,7 +5,6 @@ from model import *
 from tutorial_samplers import *
 
 import numpy as np
-from numpy.random import default_rng
 
 import korali
 
@@ -14,8 +13,9 @@ def main():
     # Initialize the distribution
     distrib = ConditionalDistribution4()
 
-    rng = default_rng()
-    initial_hyperparams = rng.standard_normal(2) # 1d mean and cov
+    # # rng = np.random.default_rng()
+    # # initial_hyperparams = rng.standard_normal(2) # 1d mean and cov
+    # initial_hyperparams = np.random.standard_normal(2) # 1d mean and cov
 
     k = korali.Engine()
     e = korali.Experiment()
@@ -24,7 +24,7 @@ def main():
     # the distribution already "contains" the data, it implements the function: latent --> p(data | latent)
     e["Problem"]["Conditional Log Likelihood Function"] = lambda sample : distrib.conditional_p(sample)
 
-    e["Solver"]["Type"] = "hSAEM"
+    e["Solver"]["Type"] = "HSAEM"
     e["Solver"]["Number Samples Per Step"] = 100
     e["Solver"]["Termination Criteria"]["Max Generations"] = 30
 
@@ -35,7 +35,8 @@ def main():
 
     # * Define which hyperparameters we use (only theta, the mean of p(data | theta, sigma) - sigma is assumed known)
     e["Variables"][0]["Name"] = "latent mean"
-    e["Variables"][0]["Bayesian Type"] = "Latent Variable"
+    e["Variables"][0]["Initial Value"] = -5
+    e["Variables"][0]["Bayesian Type"] = "Latent"
     e["Variables"][0]["Latent Variable Distribution Type"] = "Normal"
     e["Variables"][0]["Prior Distribution"] = "Uniform 0"  # not used (?) but required
 
@@ -50,9 +51,9 @@ def main():
 
 if __name__ == '__main__':
     # ** For debugging, try this: **
-    # import sys, trace
-    # sys.stdout = sys.stderr
-    # tracer = trace.Trace(trace=1, count=0, ignoredirs=["/usr", sys.prefix])
-    # tracer.runfunc(main)
-    # ** Else: **
-    main()
+    import sys, trace
+    sys.stdout = sys.stderr
+    tracer = trace.Trace(trace=1, count=0, ignoredirs=["/usr", sys.prefix])
+    tracer.runfunc(main)
+    # # ** Else: **
+    # main()

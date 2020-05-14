@@ -40,23 +40,25 @@ void korali::solver::HSAEM::setInitialConfiguration()
  for (std::vector<double> v : _currentCholesky)
     v.resize(_numberLatent);
 
+  volatile int done = 0;
+  while (!done) sleep(1);
+
   // Set starting values for hyperparameters - just copy them over, we already set them in the problem initialization
   _currentHyperparametersMean.resize(_numberLatent);
   _currentHyperparametersCovariance.resize(_numberLatent);
   for (std::vector<double> v: _currentHyperparametersCovariance)
     v.resize(_numberLatent);
-  _currentCholesky.resize(_numberLatent * _numberLatent);
   size_t hyperparam_index = 0;
   for (size_t i = 0; i < _numberLatent; i++)
   {
-    int idx =  _latentProblem->_hyperparameterMeanIndices[i];
-    _currentHyperparametersMean[i] = _k->_variables[idx]->_initialValue;
+//    int idx =  _latentProblem->_hyperparameterMeanIndices[i];
+    _currentHyperparametersMean[i] = _latentProblem->_hyperparameterMean[i]->_initialValue;
   }
   for (size_t i = 0; i < _numberLatent; i++)
     for (size_t j = 0; j < _numberLatent; j++)
     {
       int idx =  _latentProblem->_hyperparameterCovIndices[i][j];
-      _currentHyperparametersCovariance[i][j] = _k->_variables[idx]->_initialValue;
+      _currentHyperparametersCovariance[i][j] = _latentProblem->_hyperparameterCovariance[idx]->_initialValue;
     }
 
   _bestLogLikelihood = -korali::Inf;

@@ -7,21 +7,24 @@
 #include <gsl/gsl_blas.h>
 
 
+
 /* The problem initialization; here, create hyperparameter variables, add them to the problem's variable list,
     and set up index lists to find both types of variables in that list.*/
 void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
+
   korali::problem::bayesian::Latent::initialize();
 
   int _numberLatentVariables = _k->_variables.size();
+  //  initializeGSLVariables(_numberLatentVariables);
   // _sDimension = numberLatentVariables(1 + numberLatentVariables);
 
   // Just for convenience and code readability. The hyperparameters will all have indices higher than those of the
   // latent variables, and cov-variables will come after mean-variables. These could all be removed to optimize runspeed.
  _latentVariableIndices.clear();
- _hyperparameterVariableIndices.clear();
- _hyperparameterMeanIndices.clear();
- _hyperparameterCovIndices.clear();
+// _hyperparameterVariableIndices.clear();
+// _hyperparameterMeanIndices.clear();
+// _hyperparameterCovIndices.clear();
  _hyperparameterCovIndices.resize(_numberLatentVariables);
  for (auto v : _hyperparameterCovIndices) v.clear();
 
@@ -29,8 +32,9 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  _lognormalLatentIndices.clear();
  _logitnormalLatentIndices.clear();
 
- std::vector<korali::Variable*> _hyperparameters;
- _hyperparameters.clear();
+// std::vector<korali::Variable*> _hyperparameters;
+ _hyperparameterMean.clear();
+ _hyperparameterCovariance.clear();
 
  for (size_t i = 0; i < _k->_variables.size(); i++)
  {
@@ -41,7 +45,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
             {_k->_logger->logError("Please only define Latent variables and their distribution type. Korali will automatically generate the hyperparameters. \n");}
          else _k->_logger->logError("Unrecognized Variable Type %s \n", typeString.c_str());   }
 
-  // Check distributions and sort latent variables by distribution
+  /* Check distributions and sort latent variables by distribution */
   bool recognizedDistribution = false;
   std::string distribString = _k->_variables[i]->_latentVariableDistributionType;
   if (distribString == "Normal")   { _normalLatentIndices.push_back(i);   recognizedDistribution = true; }
@@ -58,14 +62,27 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
     1. means - one mean per latent variable.
       Each mean is for whichever transformed version of the variable that is normally distributed. */
  for (size_t i = 0; i < _numberLatentVariables; i++){
-   korali::Variable new_hyperparam;
+   korali::Variable new_hyperparam = new korali::Variable;
    new_hyperparam._latentVariableDistributionType = "NA";
    new_hyperparam._bayesianType = "Hyperparameter";
    new_hyperparam._name = "Mean of "+_k->_variables[i]->_name;
-   new_hyperparam._initialValue = 0; // todo: might work better if you use a small random number instead of 0, to break the symmetry if there is any symmetry in the latents
+
+    /* initialize variable's mean with the user-defined initial value: */
+   if (_k->_variables[i]->_latentVariableDistributionType == "Normal")
+     new_hyperparam._initialValue = _k->_variables[i]->_initialValue;
+   if (_k->_variables[i]->_latentVariableDistributionType == "Log-Normal")
+     new_hyperparam._initialValue = log(_k->_variables[i]->_initialValue);
+   if (_k->_variables[i]->_latentVariableDistributionType == "Logit-Normal"){
+     double ival = _k->_variables[i]->_initialValue;
+     if ((ival < 0) || (ival >= 1) )
+       _k->_logger->logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
+     new_hyperparam._initialValue = (ival / (1 - ival));
+     }
+
    // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
-   _hyperparameters.push_back( &new_hyperparam );
-   _hyperparameterMeanIndices.push_back(i + _k->_variables.size());
+   _hyperparameterMean.push_back( &new_hyperparam );
+//   _hyperparameters.push_back( &new_hyperparam );
+//   _hyperparameterMeanIndices.push_back(i + _k->_variables.size());
  }
 
  /* 2. covariance matrices - we use Cholesky decomposition to ensure positive definiteness.
@@ -73,27 +90,33 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  //  Degrees of freedom of the covariance matrix: n*(n+1)/2; we over-represent it as matrix
  for (size_t i = 0; i < _numberLatentVariables; i++){
    for (size_t j = 0; j < _k->_variables.size(); j++){
-     korali::Variable new_hyperparam;
+     korali::Variable new_hyperparam = new korali::Variable;
      new_hyperparam._latentVariableDistributionType = "NA";
      new_hyperparam._bayesianType = "Hyperparameter";
      new_hyperparam._name = "Cov["+std::to_string(i)+", "+std::to_string(j)+"]";   // Cov[i][j]
      if (i == j) new_hyperparam._initialValue = 5.;
      else        new_hyperparam._initialValue = 0.;
      // Todo: Add any other parameters here that will be required by hierarchical SAEM. Initial values? Bounds?
-   _hyperparameters.push_back( &new_hyperparam );
-   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() + 2 * _k->_variables.size());
+   _hyperparameterCovariance.push_back( &new_hyperparam );
+   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() );
+//   _hyperparameters.push_back( &new_hyperparam );
+//   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() + 2 * _k->_variables.size());
    }
  }
 
- _k->_variables.insert( _k->_variables.end(), _hyperparameters.begin(), _hyperparameters.end());
- for (size_t i = 0; i < _hyperparameters.size(); i++ )
-   _hyperparameterVariableIndices.push_back(_numberLatentVariables + i);
+// _k->_variables.insert( _k->_variables.end(), _hyperparameters.begin(), _hyperparameters.end());
+// for (size_t i = 0; i < _hyperparameters.size(); i++ )
+//   _hyperparameterVariableIndices.push_back(_numberLatentVariables + i);
 
 }
 
-void korali::problem::bayesian::latent::HierarchicalLatent::execute(korali::Sample& sample){
-  evaluateLogLikelihood(sample);
-}
+///* De-allocate GSL matrices and vectors */
+//korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void){
+//  gsl_matrix_free(covMatrixGSL);
+//  gsl_matrix_free(chol);
+//  gsl_vector_free(latent_minus_mean);
+//  gsl_vector_free(x);
+//}
 
 //
 ///*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
@@ -121,6 +144,9 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalL
  */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihood(korali::Sample& sample)
 {
+//  volatile int done = 0;
+//  while (!done) sleep(1);
+
   // calculate log[ p(latent | hyperparams) ]:
   // -- need a multivariate log-gaussian function for this
   // += conditional log-llh (log[p(data | latent)])
@@ -186,8 +212,20 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoo
   //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
   sample["LogLikelihood"] = sample["Conditional LogLikelihood"].get<double>() + lllh;
 
-
+  gsl_matrix_free(covMatrixGSL);
+  gsl_matrix_free(chol);
+  gsl_vector_free(latent_minus_mean);
+  gsl_vector_free(x);
 }
+
+///* @brief allocate memory for all GSL-matrix and GSL-vector local variables used in calculating the loglikelihood
+//    @param nLatent: The number of latent variables in this problem.  */
+//void korali::problem::bayesian::latent::HierarchicalLatent::initializeGSLVariables(int nLatent){
+//  covMatrixGSL = gsl_matrix_alloc(nLatent, nLatent);
+//  chol = gsl_matrix_alloc(nLatent, nLatent);
+//  latent_minus_mean = gsl_vector_alloc(nLatent);
+//  x = gsl_vector_alloc(nLatent);
+//}
 
 /*! @brief Not implemented */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoodGradient(korali::Sample& sample)
@@ -200,3 +238,4 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateFisherInform
 {
   _k->_logger->logError("Fisher information not yet implemented for selected bayesian problem ('HierarchicalLatent') and log likelihood model.");
 }
+
