@@ -1,5 +1,29 @@
 Mark Martori Lopez
 
+Tuesday 19 May 2020
+
+Tasks:
+
+1- [Solved] CURRENT GOAL: NEW FORMAT OF APP PRESENTATION.
+
+	1- Split the file into different files to make it more readable. Creating Frame Classes apart.
+	2- New file with main KORALI class -> Root.
+	3- New File with app running.
+	4- Restructured the Korali APP following the 'image.png' file.
+	5- Connect files through classes.
+
+2- [Solved] New create and Delete Experiment Functions.
+
+3- [Solved] New menubar.
+
+4- [Solved] Buttons: General Settings, Problems, Solvers.
+
+5- [Solved] All readings done when initializing app.
+
+6- [Solved] Cascades created from Problems and Solvers Menubuttons.
+
+-----------------------------------------------------
+
 Thursday 14 May 2020
 
 Tasks:
