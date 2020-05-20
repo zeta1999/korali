@@ -149,7 +149,7 @@ korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void)
 /*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
            values for the latent variables. See the description of this function for more information.
            (It will set "Conditional logLikelihood" and use "Latent Variables".) */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLogLikelihood(korali::Sample& sample){
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLoglikelihood(korali::Sample& sample){
   sample.run(_conditionalLogLikelihoodFunction);
 }
 
@@ -162,7 +162,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalL
                 re-calculate this for every latent variable sample.
          TODO: But first, test it.
  */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihood(korali::Sample& sample)
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood(korali::Sample& sample)
 {
 //  volatile int done = 0;
 //  while (!done) sleep(1);
@@ -228,7 +228,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoo
   // add the log of the normalization factor:
   lllh -= 1./2. * (log(2*M_PI) + logdet);
 
-  evaluateConditionalLogLikelihood(sample);
+  evaluateConditionalLoglikelihood(sample);
   //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
   sample["LogLikelihood"] = sample["Conditional LogLikelihood"].get<double>() + lllh;
 
@@ -246,16 +246,4 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoo
 //  latent_minus_mean = gsl_vector_alloc(nLatent);
 //  x = gsl_vector_alloc(nLatent);
 //}
-
-/*! @brief Not implemented */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogLikelihoodGradient(korali::Sample& sample)
-{
-  _k->_logger->logError("Gradient not yet implemented for selected bayesian problem ('HierarchicalLatent') and log likelihood model.");
-}
-
-/*! @brief Not implemented */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateFisherInformation(korali::Sample& sample)
-{
-  _k->_logger->logError("Fisher information not yet implemented for selected bayesian problem ('HierarchicalLatent') and log likelihood model.");
-}
 

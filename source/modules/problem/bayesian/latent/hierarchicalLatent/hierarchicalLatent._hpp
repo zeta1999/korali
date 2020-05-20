@@ -38,17 +38,8 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
  /**
   * @brief TODO
  */
- void evaluateLogLikelihood(korali::Sample& sample) override;
+ void evaluateLoglikelihood(korali::Sample& sample) override;
 
-  /**
-  * @brief TODO
- */
- void evaluateFisherInformation(korali::Sample& sample) override;
-
-  /**
-  * @brief TODO
- */
- void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
 
 // /**
 //  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
@@ -62,7 +53,7 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
            values for the latent variables. See the description of this function for more information.
            (It will set "Conditional logLikelihood" and use "Latent Variables".)
  */
- void evaluateConditionalLogLikelihood(korali::Sample& sample);
+ void evaluateConditionalLoglikelihood(korali::Sample& sample);
 
 
 };

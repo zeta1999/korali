@@ -10,11 +10,10 @@ namespace bayesian {
 class Latent : public korali::problem::Bayesian
 {
  public:
- void evaluateLogLikelihood(korali::Sample& sample) override;
- void evaluateFisherInformation(korali::Sample& sample) override;
- void evaluateLogLikelihoodGradient(korali::Sample& sample) override;
- // void evaluateLogPrior(korali::Sample& sample) override;
- // void evaluateLogPosterior(korali::Sample& sample) override;
+ /** @brief Class considered abstract; do not use. */
+ void evaluateLoglikelihood(korali::Sample& sample) override;
+
+ /** @brief The problem initialization; just calls the initialization from Bayesian. */
  void initialize() override;
 
 };
@@ -22,6 +21,5 @@ class Latent : public korali::problem::Bayesian
 }  // namespace bayesian
 }  // namespace problem
 }  // namespace korali
-
 
 #endif // _KORALI_PROBLEM_BAYESIAN_LATENT_HPP_

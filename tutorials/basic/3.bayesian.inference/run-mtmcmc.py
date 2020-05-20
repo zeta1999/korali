@@ -15,7 +15,7 @@ e = korali.Experiment()
 
 # Setting up the reference likelihood for the Bayesian Problem
 e["Problem"]["Type"] = "Bayesian/Reference"
-e["Problem"]["Likelihood Model"] = "Additive Normal"
+e["Problem"]["Likelihood Model"] = "Normal"
 e["Problem"]["Reference Data"] = getReferenceData()
 e["Problem"]["Computational Model"] = lambda sampleData: modelWithDerivatives(sampleData, getReferencePoints())
 
@@ -23,18 +23,17 @@ e["Problem"]["Computational Model"] = lambda sampleData: modelWithDerivatives(sa
 e["Solver"]["Type"] = "TMCMC"
 e["Solver"]["Version"] = "mTMCMC"
 e["Solver"]["Population Size"] = 5000
-#e["Solver"]["Termination Criteria"]["Max Generations"] = 2
 e["Console Output"]["Verbosity"] = 'Detailed'
 
 # Configuring the problem's random distributions
 e["Distributions"][0]["Name"] = "Uniform 0"
 e["Distributions"][0]["Type"] = "Univariate/Uniform"
-e["Distributions"][0]["Minimum"] = -5.0
+e["Distributions"][0]["Minimum"] = 0.0
 e["Distributions"][0]["Maximum"] = +5.0
 
 e["Distributions"][1]["Name"] = "Uniform 1"
 e["Distributions"][1]["Type"] = "Univariate/Uniform"
-e["Distributions"][1]["Minimum"] = -5.0
+e["Distributions"][1]["Minimum"] = 0.0
 e["Distributions"][1]["Maximum"] = +5.0
 
 e["Distributions"][2]["Name"] = "Uniform 2"
@@ -52,6 +51,8 @@ e["Variables"][1]["Prior Distribution"] = "Uniform 1"
 e["Variables"][2]["Name"] = "[Sigma]"
 e["Variables"][2]["Prior Distribution"] = "Uniform 2"
 
+e["Console Output"]["Verbosity"] = "Detailed"
 # Starting Korali's Engine and running experiment
+
 k = korali.Engine()
 k.run(e)

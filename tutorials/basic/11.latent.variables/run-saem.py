@@ -68,10 +68,12 @@ def main():
     e["Distributions"][1]["Minimum"] = -5
     e["Distributions"][1]["Maximum"] = 5
 
-    k["Conduit"]["Type"] = "Concurrent"
-    k["Conduit"]["Concurrent Jobs"] = 4
+    e["Random Seed"] = 0xC0FFEE
 
+    #k["Conduit"]["Type"] = "Concurrent"
+    #k["Conduit"]["Concurrent Jobs"] = 4
     #k["Conduit"]["Type"] = "Distributed"
+
     k.run(e)
 
 if __name__ == '__main__':

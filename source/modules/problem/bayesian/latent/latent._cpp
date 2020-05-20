@@ -1,25 +1,14 @@
 #include "modules/problem/bayesian/latent/latent.hpp"
 #include <vector>
 
-/* @brief The problem initialization; just calls the initialization from Bayesian. */
+/* The problem initialization; just calls the initialization from Bayesian. */
 void korali::problem::bayesian::Latent::initialize()
 {
   korali::problem::Bayesian::initialize();
 }
 
-/* @brief Class considered abstract; do not use. */
-void korali::problem::bayesian::Latent::evaluateLogLikelihood(korali::Sample& sample){
+/* Class considered abstract; do not use. */
+void korali::problem::bayesian::Latent::evaluateLoglikelihood(korali::Sample& sample)
+{
   _k->_logger->logError("'Latent' is an abstract class; use 'Exponential Latent' or 'Hierarchical Latent'.");
-}
-
-/* @brief Not implemented */
-void korali::problem::bayesian::Latent::evaluateLogLikelihoodGradient(korali::Sample& sample)
-{
-  _k->_logger->logError("Gradient not yet implemented for selected bayesian problem ('Latent') and log likelihood model.");
-}
-
-/* @brief Not implemented */
-void korali::problem::bayesian::Latent::evaluateFisherInformation(korali::Sample& sample)
-{
-  _k->_logger->logError("Fisher information not yet implemented for selected bayesian problem ('Latent') and log likelihood model.");
 }
