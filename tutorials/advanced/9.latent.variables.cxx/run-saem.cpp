@@ -48,9 +48,6 @@ int main(int argc, char* argv[])
  auto k = korali::Engine();
  auto e = korali::Experiment();
 
-
- //auto p = heat2DInit(&argc, &argv);
-
  e["Problem"]["Type"] = "Bayesian/Latent/ExponentialLatent";
  e["Problem"]["S Of Likelihood Model"] = &distrib1_S;
  e["Problem"]["Zeta Of Likelihood Model"] = &distrib1_zeta;
@@ -61,8 +58,6 @@ int main(int argc, char* argv[])
  e["Solver"]["Type"] = "SAEM";
  e["Solver"]["Number Samples Per Step"] = 100;
  e["Solver"]["Termination Criteria"]["Max Generations"] = 100;
- // e["Solver"]["Latent Variable Sampler"] = &dummySampler;
-
 
  e["Variables"][0]["Name"] = "sigma";
  e["Variables"][0]["Bayesian Type"] = "Hyperparameter";
