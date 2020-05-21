@@ -17,6 +17,11 @@ class HSAEM : public korali::Solver
  void updateHyperparameters();
  void updateCholesky();
 
+   /**
+  * @brief initial things to run to test the hierarchical latent problem class
+  */
+  void justTesting();
+
  bool isLatent(int idx);
  std::vector<double> meanAndSDev(std::vector<double> v);
  std::vector<std::vector<double> > transpose(const std::vector<std::vector<double> > data);

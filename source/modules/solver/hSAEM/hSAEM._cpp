@@ -71,6 +71,8 @@ void korali::solver::HSAEM::runGeneration()
 
  _k->_logger->logInfo("Normal", "Running generation %lu...\n", _k->_currentGeneration);
 
+ justTesting();
+
  /* E1: Sample latent variable values */
  sampleLatent();
  _k->_logger->logInfo("Detailed", "Sampled generation: %d \n", _k->_currentGeneration);
@@ -81,6 +83,58 @@ void korali::solver::HSAEM::runGeneration()
  /* M:  Find argmax Q(theta), analytically */
  updateHyperparameters();
  updateCholesky();
+
+}
+
+
+
+/* initial things to run to test the hierarchical latent problem class */
+void korali::solver::HSAEM::justTesting()
+{
+// for simple population example: Only means of the data, 1-dimensional
+ size_t nIndividuals = 10;
+ std::vector<double> latent_vars = {1.25, 1.25, 1.25, 1., 1., 1., 0.9, 0.75, 0.75, 0.75,};
+ std::vector<double> mean = {1};
+ std::vector<std::vector<double>> cov(1);
+ cov[0] = std::vector<double>({0.5});
+ // sigma (sdev of the distribution of which the latent variable is the mean), and the data points, are
+ // set by the problem - we can't access them here
+
+ korali::Sample sample;
+ sample["Latent Variables"] = latent_vars;
+ sample["Mean"] = mean ;
+ sample["Covariance Matrix"] = cov;
+ sample["Module"] = "Problem";
+ sample["Operation"] = "Evaluate Conditional LogLikelihood";
+
+  _conduit->start(sample);
+  _conduit->wait(sample);
+
+ // test evaluateConditionalLoglikelihood()
+
+  sample["Operation"] = "Evaluate LogLikelihood";
+  double cond_llh = sample["Conditional LogLikelihood"];
+  _k->_logger->logInfo("Normal", "Test: Conditional LLLH = %f evaluated for latent variables:\n", cond_llh);
+  for (size_t i = 0; i < _latentProblem->_latentVariableIndices.size(); i++){
+    int idx = _latentProblem->_latentVariableIndices[i];
+    _k->_logger->logInfo("Normal", "Test: \t %s : %e \n", _k->_variables[idx]->_name.c_str(), latent_vars[i]);
+  }
+
+
+ // test evaluateLoglikelihood()
+  sample["Operation"] = "Evaluate LogLikelihood";
+  _conduit->start(sample);
+  _conduit->wait(sample);
+  double llh = sample["LogLikelihood"];
+  _k->_logger->logInfo("Normal", "Test: LLH = %f evaluated for latent variables as above, plus mean:\n", llh);
+  for (size_t i = 0; i < mean.size(); i++){
+    _k->_logger->logInfo("Normal", "Test: \t Mean %d: %e \n", i, mean[i]);
+  }
+  for (size_t i = 0; i < cov.size(); i++){
+    for (size_t j = 0; j < cov[0].size(); j++){
+    _k->_logger->logInfo("Normal", "Test: \t Cov[%d, %d]: %e \n", i, j, cov[i][j]);
+  }
+  }
 
 }
 

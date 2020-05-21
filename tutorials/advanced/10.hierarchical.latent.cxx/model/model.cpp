@@ -37,9 +37,8 @@ ConditionalDistribution4::ConditionalDistribution4(){
 void ConditionalDistribution4::conditional_p(korali::Sample& s)
 {
       std::vector<double> latentVariables = s["Latent Variables"];
+      assert (latentVariables.size() == _p.nIndividuals);
 
-      double mean = latentVariables[0];
-      std::vector<double> mean_vec({mean});
       double sigma = _p.sigma;
 
       // log(p(data | mean, sigma ))
@@ -47,14 +46,15 @@ void ConditionalDistribution4::conditional_p(korali::Sample& s)
       for (size_t i=0; i < _p.nIndividuals; i++){
         double pt = _p.data[i][0];
         std::vector<double> pt_vec({pt});
-
+        double mean = latentVariables[i];
+        std::vector<double> mean_vec({mean});
 
         double p = univariate_gaussian_probability(mean_vec, sigma, pt_vec);
 
         logp += log(p);
       }
 
-      s['Conditional LogLikelihood'] = logp;
+      s["Conditional LogLikelihood"] = logp;
 };
 
 

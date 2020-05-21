@@ -35,7 +35,7 @@ def generate_data():
     n_samples = 1   # how many datapoints per individual
     sigma = .5
     omega = 2.
-    mean = 5 # The Hyperparameter
+    mean = 1 # The Hyperparameter
     output_file_925 = "data_925.in" # 925 for section 9.2.5
 
     simple_data = draw_from_simple_hierarchical(n_individuals, sigma=sigma, omega=omega, mean=mean, n_samples=n_samples)

@@ -12,31 +12,31 @@
     and set up index lists to find both types of variables in that list.*/
 void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
-
   korali::problem::bayesian::Latent::initialize();
 
-  int _numberLatentVariables = _k->_variables.size();
-  //  initializeGSLVariables(_numberLatentVariables);
-  // _sDimension = numberLatentVariables(1 + numberLatentVariables);
+  // * helper variables
+  int numberLatentVariables = _k->_variables.size();
+    // store the distribution indices in this list, sorted:
+  std::vector<int> _sortedDistribIndices;
+    // store one variable per mean among the hyperparameters, to access name, etc. further down:
+  std::map<int, korali::Variable> exampleLatentVariables;
 
-  // Just for convenience and code readability. The hyperparameters will all have indices higher than those of the
-  // latent variables, and cov-variables will come after mean-variables. These could all be removed to optimize runspeed.
+  // * clear and resize vectors
+    // Just for convenience and code readability. The hyperparameters will all have indices higher than those of the
+    // latent variables, and cov-variables will come after mean-variables. This could (should?)  be removed to optimize speed.
  _latentVariableIndices.clear();
-// _hyperparameterVariableIndices.clear();
-// _hyperparameterMeanIndices.clear();
-// _hyperparameterCovIndices.clear();
- _hyperparameterCovIndices.resize(_numberLatentVariables);
- for (size_t i = 0; i< _hyperparameterCovIndices.size(); i++)
-   _hyperparameterCovIndices[i].clear();
-
+   // these are not just for convenience
  _normalLatentIndices.clear();
  _lognormalLatentIndices.clear();
  _logitnormalLatentIndices.clear();
 
-// std::vector<korali::Variable*> _hyperparameters;
+ _hyperparameterCovIndices.resize(numberLatentVariables);
+ for (size_t i = 0; i< _hyperparameterCovIndices.size(); i++)
+   _hyperparameterCovIndices[i].clear();
  _hyperparameterMean.clear();
  _hyperparameterCovariance.clear();
 
+  /* Check and assign distribution types (of the latent variables), etc.*/
  for (size_t i = 0; i < _k->_variables.size(); i++)
  {
   // Check variables type
@@ -57,20 +57,53 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
     _k->_logger->logError("Each latent variable must be either normally, log-normally or logit-normally distributed. NA is only for internal use.", typeString);
    }
   if (recognizedDistribution == false) _k->_logger->logError("Unrecognized distribution type: %s.\n", distribString.c_str());
+
+  int distribIndex = _k->_variables[i]->_distributionIndex;
+  int individualIndex = _k->_variables[i]->_individualIndex;
+  if (_latentVariableDistributions.count(distribIndex) == 0){
+    _latentVariableDistributions[distribIndex] = distribString;
+    exampleLatentVariables[distribIndex] = _k->_variables[i];
+  }
+  else
+    assert (_latentVariableDistributions[distribIndex][0] == distribString && "Error: Assigned two+ latent variables to the same distribution (same 'Distribution Index'), but declared different distribution types for both.");
+ }
+
+  /* Check the distribution indices and individual indices.
+       For each distribution index, there should be the same number of individual-indices.
+       Then create lists to keep track of them. */
+ for(map<int,int>::iterator it = _latentVariableDistributions.begin(); it != _latentVariableDistributions.end(); ++it)
+   _sortedDistribIndices.push_back(it->first);
+ for(auto var : _k->_variables)
+   _sortedIndividualIndices.push_back(var->_individualIndex);
+ std::sort( _sortedDistribIndices.begin(), _sortedDistribIndices.end() );
+ std::sort( _sortedIndividualIndices.begin(), _sortedIndividualIndices.end() );
+ _sortedIndividualIndices.erase( unique( _sortedIndividualIndices.begin(), _sortedIndividualIndices.end() ), _sortedIndividualIndices.end() );
+ numberHyperparameterMeans = _latentVariableDistributions.size();
+ numberIndividuals = _sortedDistribIndices.size();
+ for (size_t i = 0; i < numberIndividuals; i++){
+   for (size_t j = 0; j < numberHyperparameterMeans; j++){
+        // TODO: Check the indices
+        //   might also want to create an index of the form variable_index[i][j] that returns the list of variable z_{i,j}
+   }
  }
 
  /*  Now, generate the hyperparameters:
-    1. means - one mean per latent variable.
+    1. Means - one mean per distinct 'Distribution Index'.
       Each mean is for whichever transformed version of the variable that is normally distributed. */
- for (size_t i = 0; i < _numberLatentVariables; i++){
+ for (size_t i = 0; i < numberHyperparameterMeans; i++){
    // We need a "new" here, unless there's a way to prevent a not new-ed korali::Variable from being deallocated right after this function.
    korali::Variable *new_hyperparam = new korali::Variable;
    new_hyperparam->_latentVariableDistributionType = "NA";
    new_hyperparam->_bayesianType = "Hyperparameter";
-   new_hyperparam->_name = "Mean of "+_k->_variables[i]->_name;
+   new_hyperparam->_name = "Mean of" + exampleLatentVariables[i]->_name.c_str();
+   new_hyperparam->_distributionIndex = _sortedDistribIndices[i];
+   for (size_t j = 0; j < numberLatentVariables; j++){
+     if _k->_variables[j]->_distributionIndex == new_hyperparam->_distributionIndex
+       _latentToHyperparameterMapping[j] = i;
+   }
 
     /* initialize variable's mean with the user-defined initial value: */
-   std::string distribString = _k->_variables[i]->_latentVariableDistributionType.c_str();
+   std::string distribString = _latentVariableDistributions[i];
    if (distribString == "Normal")
      new_hyperparam->_initialValue = _k->_variables[i]->_initialValue;
    else {
@@ -88,40 +121,38 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
      }
    }
 
-   // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values? Bounds?
+   // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values?-OK. Bounds?
 
 //  volatile int done = 0;
 //  while (!done) sleep(1);
 
    _hyperparameterMean.push_back( new_hyperparam );
-//   _hyperparameters.push_back( &new_hyperparam );
-//   _hyperparameterMeanIndices.push_back(i + _k->_variables.size());
  }
 
  /* 2. covariance matrices - we use Cholesky decomposition to ensure positive definiteness.
       Note: If ever required, could add 'groups' of variables that share a covariance matrix, while groups are independent of each other. */
  //  Degrees of freedom of the covariance matrix: n*(n+1)/2; we over-represent it as matrix
- for (size_t i = 0; i < _numberLatentVariables; i++){
-   for (size_t j = 0; j < _k->_variables.size(); j++){
+ for (size_t i = 0; i < numberHyperparameterMeans; i++){
+   for (size_t j = 0; j < numberHyperparameterMeans; j++){
      korali::Variable *new_hyperparam = new korali::Variable;
      new_hyperparam->_latentVariableDistributionType = "NA";
      new_hyperparam->_bayesianType = "Hyperparameter";
      new_hyperparam->_name = "Cov["+std::to_string(i)+", "+std::to_string(j)+"]";   // Cov[i][j]
-     if (i == j) new_hyperparam->_initialValue = 5.;
+     if (i == j) new_hyperparam->_initialValue = 5.; // just choosing something large - this could become a configuration parameter
      else        new_hyperparam->_initialValue = 0.;
      // Todo: Add any other parameters here that will be required by hierarchical SAEM. Initial values? Bounds?
    _hyperparameterCovariance.push_back( new_hyperparam );
-   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() );
-//   _hyperparameters.push_back( &new_hyperparam );
-//   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() + 2 * _k->_variables.size());
+   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() ); // This will probably never be used, might drop it
    }
  }
 
 // _k->_variables.insert( _k->_variables.end(), _hyperparameters.begin(), _hyperparameters.end());
 // for (size_t i = 0; i < _hyperparameters.size(); i++ )
-//   _hyperparameterVariableIndices.push_back(_numberLatentVariables + i);
+//   _hyperparameterVariableIndices.push_back(numberLatentVariables + i);
 
 }
+
+
 
 /* De-allocate both vectors with hyperparameter korali-variables
     -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
@@ -148,7 +179,7 @@ korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void)
 
 /*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
            values for the latent variables. See the description of this function for more information.
-           (It will set "Conditional logLikelihood" and use "Latent Variables".) */
+           (It will set "Conditional LogLikelihood" and use "Latent Variables".) */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLoglikelihood(korali::Sample& sample){
   sample.run(_conditionalLogLikelihoodFunction);
 }

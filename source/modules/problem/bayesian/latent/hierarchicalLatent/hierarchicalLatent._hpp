@@ -51,7 +51,7 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
   /**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
            values for the latent variables. See the description of this function for more information.
-           (It will set "Conditional logLikelihood" and use "Latent Variables".)
+           (It will set "Conditional LogLikelihood" and use "Latent Variables".)
  */
  void evaluateConditionalLoglikelihood(korali::Sample& sample);
 

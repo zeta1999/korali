@@ -20,33 +20,37 @@ int main(int argc, char* argv[])
   auto k = korali::Engine();
   auto e = korali::Experiment();
 
+  int nIndividuals = distrib4._p.nIndividuals;
 
-    e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent";
+
+  e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent";
    // the distribution already "contains" the data, it implements the function: latent --> p(data | latent)
-    e["Problem"]["Conditional Log Likelihood Function"] = &distrib4_conditional_p; // defined in model.cpp
+  e["Problem"]["Conditional Log Likelihood Function"] = &distrib4_conditional_p; // defined in model.cpp
 
-    e["Solver"]["Type"] = "HSAEM";
-    e["Solver"]["Number Samples Per Step"] = 100;
-    e["Solver"]["Termination Criteria"]["Max Generations"] = 30;
+  e["Solver"]["Type"] = "HSAEM";
+  e["Solver"]["Number Samples Per Step"] = 100;
+  e["Solver"]["Termination Criteria"]["Max Generations"] = 30;
 
-    e["Distributions"][0]["Name"] = "Uniform 0";
-    e["Distributions"][0]["Type"] = "Univariate/Uniform";
-    e["Distributions"][0]["Minimum"] = -100;
-    e["Distributions"][0]["Maximum"] = 100;
+  e["Distributions"][0]["Name"] = "Uniform 0";
+  e["Distributions"][0]["Type"] = "Univariate/Uniform";
+  e["Distributions"][0]["Minimum"] = -100;
+  e["Distributions"][0]["Maximum"] = 100;
 
-    // * Define which hyperparameters we use (only theta, the mean of p(data | theta, sigma) - sigma is assumed known)
-    e["Variables"][0]["Name"] = "latent mean";
+    // * Define which latent variables we use (only the means - sigma is assumed known and the same for each)
+  for (size_t i = 0; i < nIndividuals; i++){
+    e["Variables"][0]["Name"] = "latent mean " + std::to_string(i);
     e["Variables"][0]["Initial Value"] = -5;
     e["Variables"][0]["Bayesian Type"] = "Latent";
     e["Variables"][0]["Latent Variable Distribution Type"] = "Normal";
     e["Variables"][0]["Prior Distribution"] = "Uniform 0" ; // not used (?) but required
+  }
+  e["File Output"]["Frequency"] = 50;
+  e["Console Output"]["Frequency"] = 10;
+  e["Console Output"]["Verbosity"] = "Detailed";
 
-    e["File Output"]["Frequency"] = 50;
-    e["Console Output"]["Frequency"] = 10;
-    e["Console Output"]["Verbosity"] = "Detailed";
 
-    k.run(e);
+  k.run(e);
 
-    return 0;
+  return 0;
 
 }

@@ -33,12 +33,13 @@ def main():
     e["Distributions"][0]["Minimum"] = -100
     e["Distributions"][0]["Maximum"] = 100
 
-    # * Define which hyperparameters we use (only theta, the mean of p(data | theta, sigma) - sigma is assumed known)
-    e["Variables"][0]["Name"] = "latent mean"
-    e["Variables"][0]["Initial Value"] = -5
-    e["Variables"][0]["Bayesian Type"] = "Latent"
-    e["Variables"][0]["Latent Variable Distribution Type"] = "Normal"
-    e["Variables"][0]["Prior Distribution"] = "Uniform 0"  # not used (?) but required
+    # * Define which hyperparameters we use (only the means - sigma is assumed known)
+    for i in range(distrib.nIndividuals):
+        e["Variables"][0]["Name"] = "latent mean "+str(i)
+        e["Variables"][0]["Initial Value"] = -5
+        e["Variables"][0]["Bayesian Type"] = "Latent"
+        e["Variables"][0]["Latent Variable Distribution Type"] = "Normal"
+        e["Variables"][0]["Prior Distribution"] = "Uniform 0"  # not used (?) but required
 
     e["File Output"]["Frequency"] = 50
     e["Console Output"]["Frequency"] = 10
