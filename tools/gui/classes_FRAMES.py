@@ -2,17 +2,19 @@ import tkinter as tk
 from tkinter import *
 import os, sys
 import json
-import copy      
+import copy
+
+# FILES import
+import class_GeneralSettings
+import functions
 
 ## Frame Variables:
+clickables = ['General Settings', 'Problem', 'Solver', 'Variables', 'Distributions']
+bgColor = 'azure'
 darkColor ='lightseagreen'
 lightColor = '#00A3E0'
 extraColor = '#183A54'
-selectorColor = 'whitesmoke'
-bgColor = 'azure'
-
-clickables = ['General Settings', 'Problem', 'Solver', 'Variables', 'Distributions']
-
+selectorColor = 'aliceblue'
 
 experiments = {} # Global dictionary for the frames and experiments.
 menus = [] # Store which directories have already been read.
@@ -33,11 +35,7 @@ default = False # readirs function.
 experiments = {} # Global dictionary for the frames and experiments.
 
 
-
-
-def display_general_settings():
-    print('Not done yet')
-
+### ------- Creating DICTIONARIES before starting:
 def recursiveUpdate(dest, defaults):
  if (isinstance(defaults, dict)):               # Si default es un diccionario...
   for k, x in defaults.items():                 # Para cada key y valor.
@@ -51,7 +49,6 @@ def recursiveUpdate(dest, defaults):
      recursiveUpdate(dest[k], defaults[k])
 
 
-     
 def splitPath(s):
     dirs = []
     dirName = ''
@@ -115,6 +112,7 @@ def readDirs(filePath,DB,default):
         dirName = dirs[levels - 1]
         childrenList += [dirName]
 ##    crearVariables(DB)
+######## END OF CREATING DICTIONARIES before starting ------------
 
 def printConfig(a,b,c):
     print('printConfig')
@@ -125,6 +123,7 @@ def printVariables(a,b,c,d):
 def crearMenu(padre,directorio,DB,cont):
     global menus
     global experiments
+    global selectedtab
     global listofproblems
     global listofsolvers
     
@@ -134,13 +133,13 @@ def crearMenu(padre,directorio,DB,cont):
         subMenu = Menu(padre,activeforeground = 'teal')
         dirInfo=DB[directorio]
         if len(dirInfo['children']) == 0:
-            padre.add_command(label = nombre, command = lambda : [printConfig(directorio,DB, cont),printVariables(sf.tab2,directorio,DB,cont)])
+            padre.add_command(label = nombre, command = lambda : functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont))#[printConfig(directorio,DB, cont),printVariables(sf.tab2,directorio,DB,cont)])
         else:
             padre.add_cascade(label=nombre, menu = subMenu)
             configPath=dirInfo['config']
             if configPath != "NULL" and len(dirInfo['children']) == 0: # SI ES UN LEAF:
                 dirs=splitPath(configPath)
-                subMenu.add_command(label = dirs[len(dirs)-1], command = lambda : [printConfig(directorio,DB, cont),printVariables(bottomrightFrame.tab2,directorio,DB,cont)])
+                subMenu.add_command(label = dirs[len(dirs)-1], command = lambda : functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont))#command = lambda : [printConfig(directorio,DB, cont),printVariables(bottomrightFrame.tab2,directorio,DB,cont)])
             children=dirInfo['children']
             for child in children:
                 crearMenu(subMenu,child,DB,cont)
@@ -183,13 +182,12 @@ def cascade(mainPath,DB,cont):
 
 class FirstFrame():
     def __init__(self,master):
+        global experiments
+        global selectedtab
         
         ff = tk.Frame(master,bg=selectorColor,width=416,height=930,borderwidth= 3,relief='solid')
         ff.grid(column=0,row=0)
         ff.grid_propagate(0)
-
-        general_settings = tk.Button(ff,text = '+  General Settings',borderwidth =1, anchor = 'w',font= 'Arial 16',  command = lambda:display_general_settings())
-        general_settings.place(x=180, y=100, anchor="center")
 
         # STORE A DICTIONARY WITH ALL THE FRAMES ON IT TO BE CALLED ON ANY FUNCTION AND AVOID PASSING FRAMES.
         expElements = {}
@@ -197,19 +195,23 @@ class FirstFrame():
         experiments[selectedtab]['results'] = {}
         expElements['firstFrame'] = ff
         
-        # STORE A DICTIONARY WITH ALL THE FRAMES ON IT TO BE CALLED ON ANY FUNCTION AND AVOID PASSING FRAMES.
-
 
 class SecondFrame():
     def __init__(self,master):
         global experiments
         global selectedtab
       
-        sf = tk.Frame(master,bg=bgColor,width=717,height=930,borderwidth=2,relief='raised')
-        sf.grid(column=1,row=0)
-        sf.grid_propagate(0)
+        self.sf = tk.Frame(master,bg=bgColor,width=717,height=930,borderwidth=2,relief='raised')
+        self.sf.grid(column=1,row=0)
+        self.sf.grid_propagate(0)
+        
+        experiments[selectedtab]['secondFrame'] = self.sf
 
-        experiments[selectedtab]['secondFrame'] = sf
+        ## General Settings Button:
+        ff = experiments[selectedtab]['firstFrame']
+        general_settings = tk.Button(ff,text = '+  General Settings',borderwidth =3, anchor = 'w',
+                                     font= 'Arial 16',  command = lambda:class_GeneralSettings.GeneralSettings(self.sf))
+        general_settings.place(x=180, y=100, anchor="center")
 
         ## Here because frames need to be finished before starting.
         cont= 0
@@ -221,7 +223,7 @@ class SecondFrame():
 class ThirdFrame():
     def __init__(self,master):
         
-        tf = tk.Frame(master,bg=bgColor,width=716,height=930,borderwidth=2,relief='raised')
+        tf = tk.Frame(master,bg='white',width=716,height=930,borderwidth=2,relief='raised')
         tf.grid(column=2,row=0)
         tf.grid_propagate(0)
 

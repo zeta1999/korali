@@ -75,7 +75,7 @@ class KORALI(tk.Tk): #Inherited tk.tk
 
         ## NOTEBOOK TO SET THE TABS:  # This is the bar where the tabs will be attached.
         s = ttk.Style()
-        s.configure('TNotebook.Tab', font=('Arial','14','bold') )
+        s.configure('TNotebook.Tab', font=('Arial','14','bold'), foreground='navy',background = 'cadetblue')#'slategray')
         self.totalTabs = ttk.Notebook(self)
         self.totalTabs.pack(expand = 1, fill = "both")
                
