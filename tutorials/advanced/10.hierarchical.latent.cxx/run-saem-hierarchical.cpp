@@ -38,11 +38,13 @@ int main(int argc, char* argv[])
 
     // * Define which latent variables we use (only the means - sigma is assumed known and the same for each)
   for (size_t i = 0; i < nIndividuals; i++){
-    e["Variables"][0]["Name"] = "latent mean " + std::to_string(i);
-    e["Variables"][0]["Initial Value"] = -5;
-    e["Variables"][0]["Bayesian Type"] = "Latent";
-    e["Variables"][0]["Latent Variable Distribution Type"] = "Normal";
-    e["Variables"][0]["Prior Distribution"] = "Uniform 0" ; // not used (?) but required
+    e["Variables"][i]["Name"] = "latent mean " + std::to_string(i);
+    e["Variables"][i]["Initial Value"] = -5;
+    e["Variables"][i]["Bayesian Type"] = "Latent";
+    e["Variables"][i]["Individual Index"] = i;
+    e["Variables"][i]["Latent Space Coordinate"] = 0;
+    e["Variables"][i]["Latent Variable Distribution Type"] = "Normal";
+    e["Variables"][i]["Prior Distribution"] = "Uniform 0" ; // not used (?) but required
   }
   e["File Output"]["Frequency"] = 50;
   e["Console Output"]["Frequency"] = 10;

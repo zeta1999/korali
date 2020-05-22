@@ -12,13 +12,22 @@ void korali::solver::HSAEM::initialize()
   _latentProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatent*>(_k->_problem);
 
     // Todo: make sure the problem is initialized before the solver
- _numberVariables = _k->_variables.size();
- _numberLatent = _latentProblem->_latentVariableIndices.size();
- _numberHyperparameters = _numberVariables - _numberLatent;
+ _numberLatent = _k->_variables.size();
+ _latentSpaceDimensions = _latentProblem->_latentSpaceDimensions;
+// _numberHyperparameters = _latentSpaceDimensions * (1 + _latentSpaceDimensions);
 
- for (size_t i = 0; i < _numberVariables; i++)
+ for (size_t i = 0; i < _numberLatent; i++)
    if( std::isfinite(_k->_variables[i]->_initialValue) == false )
      _k->_logger->logError("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
+ for (auto var : _latentProblem->_hyperparameterMean)
+   if( std::isfinite(var->_initialValue) == false )
+     _k->_logger->logError("Initial Value of one (automatically created) hyperparameter variable not defined (no defaults can be calculated).\n");
+ for (auto var : _latentProblem->_hyperparameterCovariance){
+  // for (auto var : vars){
+     if( std::isfinite(var->_initialValue) == false )
+       _k->_logger->logError("Initial Value of one (automatically created) hyperparameter variable not defined (no defaults can be calculated).\n");
+  // }
+ }
 
 }
 
@@ -29,33 +38,33 @@ void korali::solver::HSAEM::setInitialConfiguration()
  _currentSamples.clear();
  _currentSampleMeans.resize(_numberLatent);
  _currentSampleStandardDeviations.resize(_numberLatent);
- _currentS1.resize(_numberLatent);
- _currentS2.resize(_numberLatent);
- for (size_t i = 0; i < _numberLatent; i++)
-   _currentS2[i].resize(_numberLatent);
+ _currentS1.resize(_latentSpaceDimensions);
+ _currentS2.resize(_latentSpaceDimensions);
+ for (size_t i = 0; i < _latentSpaceDimensions; i++)
+   _currentS2[i].resize(_latentSpaceDimensions);
  std::fill(_currentS1.begin(), _currentS1.end(), 0);
- for (size_t i = 0; i < _numberLatent; i++)
+ for (size_t i = 0; i < _latentSpaceDimensions; i++)
    std::fill(_currentS2[i].begin(), _currentS2[i].end(), 0);
- _currentCholesky.resize(_numberLatent);
- for (size_t i = 0; i < _numberLatent; i++)
-    _currentCholesky[i].resize(_numberLatent);
+ _currentCholesky.resize(_latentSpaceDimensions);
+ for (size_t i = 0; i < _latentSpaceDimensions; i++)
+    _currentCholesky[i].resize(_latentSpaceDimensions);
 
 //  volatile int done = 0;
 //  while (!done) sleep(1);
 
   // Set starting values for hyperparameters - just copy them over, we already set them in the problem initialization
-  _currentHyperparametersMean.resize(_numberLatent);
-  _currentHyperparametersCovariance.resize(_numberLatent);
-  for (size_t i = 0; i < _numberLatent; i++)
-    _currentHyperparametersCovariance[i].resize(_numberLatent);
+  _currentHyperparametersMean.resize(_latentSpaceDimensions);
+  _currentHyperparametersCovariance.resize(_latentSpaceDimensions);
+  for (size_t i = 0; i < _latentSpaceDimensions; i++)
+    _currentHyperparametersCovariance[i].resize(_latentSpaceDimensions);
   size_t hyperparam_index = 0;
-  for (size_t i = 0; i < _numberLatent; i++)
+  for (size_t i = 0; i < _latentSpaceDimensions; i++)
   {
 //    int idx =  _latentProblem->_hyperparameterMeanIndices[i];
     _currentHyperparametersMean[i] = _latentProblem->_hyperparameterMean[i]->_initialValue;
   }
-  for (size_t i = 0; i < _numberLatent; i++)
-    for (size_t j = 0; j < _numberLatent; j++)
+  for (size_t i = 0; i < _latentSpaceDimensions; i++)
+    for (size_t j = 0; j < _latentSpaceDimensions; j++)
     {
       int idx =  _latentProblem->_hyperparameterCovIndices[i][j];
       _currentHyperparametersCovariance[i][j] = _latentProblem->_hyperparameterCovariance[idx]->_initialValue;
@@ -110,7 +119,7 @@ void korali::solver::HSAEM::justTesting()
   _conduit->start(sample);
   _conduit->wait(sample);
 
- // test evaluateConditionalLoglikelihood()
+ // * test evaluateConditionalLoglikelihood()
 
   sample["Operation"] = "Evaluate LogLikelihood";
   double cond_llh = sample["Conditional LogLikelihood"];
@@ -121,7 +130,7 @@ void korali::solver::HSAEM::justTesting()
   }
 
 
- // test evaluateLoglikelihood()
+ // * test evaluateLoglikelihood()
   sample["Operation"] = "Evaluate LogLikelihood";
   _conduit->start(sample);
   _conduit->wait(sample);
