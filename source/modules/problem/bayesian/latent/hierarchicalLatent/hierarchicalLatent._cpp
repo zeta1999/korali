@@ -268,7 +268,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihoo
   // --> log(det(covariance)) = sum(log( diag(L) ))
   double logdet = 0;
   for (size_t i = 0; i < N; i++){
-    logdet += log(gsl_matrix_get(chol, i, i));
+    logdet +=  log(gsl_matrix_get(chol, i, i));
+    // We swallow the 2* and drop 1/2* further down (det(Sigma) = det(chol)**2 and we later take the root).
   }
 
 
@@ -302,17 +303,18 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihoo
     //  gsl_matrix_scale(epsMatrix, eps);
 
     // * "Invert" the covariance matrix using the cholesky decomposition cov = L'*L (solve a LSE for each 'individual')
-    gsl_linalg_cholesky_solve(chol, latent_minus_mean, x);   // -> x = L^-1 * (latent - mean)
+    gsl_linalg_cholesky_solve(chol, latent_minus_mean, x);   // -> x = Cov^-1 * (latent - mean)
 
     // --> log(p( latent | mean, cov )) = || (latent - mean)*L^-1 ||^2 / 2
     //                                  = (latent - mean)^T * cov^-1 / 2 * (latent - mean)
     double lllh_i;
-    gsl_blas_ddot (x, x, &lllh_i);
+    gsl_blas_ddot (latent_minus_mean, x, &lllh_i);
     lllh -= lllh_i / 2.;
   }
 
   // add the log of the normalization factor:
-  lllh -= 1./2. * (log(2*M_PI) + logdet) * _numberIndividuals;
+  double log_normn = (float(N) / 2. * log(2.*M_PI) + logdet) ;
+  lllh -= log_normn * float(_numberIndividuals);
 
   evaluateConditionalLoglikelihood(sample);
   //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
