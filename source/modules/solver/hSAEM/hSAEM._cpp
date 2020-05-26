@@ -19,10 +19,10 @@ void korali::solver::HSAEM::initialize()
  for (size_t i = 0; i < _numberLatent; i++)
    if( std::isfinite(_k->_variables[i]->_initialValue) == false )
      _k->_logger->logError("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
- for (auto var : _latentProblem->_hyperparameterMean)
+ for (auto var : _latentProblem->_hyperparametersMean)
    if( std::isfinite(var->_initialValue) == false )
      _k->_logger->logError("Initial Value of one (automatically created) hyperparameter variable not defined (no defaults can be calculated).\n");
- for (auto var : _latentProblem->_hyperparameterCovariance){
+ for (auto var : _latentProblem->_hyperparametersCovariance){
   // for (auto var : vars){
      if( std::isfinite(var->_initialValue) == false )
        _k->_logger->logError("Initial Value of one (automatically created) hyperparameter variable not defined (no defaults can be calculated).\n");
@@ -36,8 +36,10 @@ void korali::solver::HSAEM::setInitialConfiguration()
 {
   // resizing and clearing internal vector variables
  _currentSamples.clear();
- _currentSampleMeans.resize(_numberLatent);
- _currentSampleStandardDeviations.resize(_numberLatent);
+ _currentSampleMeans.resize(_latentSpaceDimensions);
+ _currentZ.resize(_MCMCNumberChains);
+ for (size_t i = 0; i < _latentSpaceDimensions)
+ _currentSampleStandardDeviations.resize(_latentSpaceDimensions);
  _currentS1.resize(_latentSpaceDimensions);
  _currentS2.resize(_latentSpaceDimensions);
  for (size_t i = 0; i < _latentSpaceDimensions; i++)
@@ -48,6 +50,15 @@ void korali::solver::HSAEM::setInitialConfiguration()
  _currentCholesky.resize(_latentSpaceDimensions);
  for (size_t i = 0; i < _latentSpaceDimensions; i++)
     _currentCholesky[i].resize(_latentSpaceDimensions);
+ _MCMCVariances.resize(_latentSpaceDimensions);
+ std::fill(_MCMCVariances.begin(), _MCMCVariances.end(), 1.0);
+ _acceptanceRate = 1.;
+
+ _annealedCovariance.resize(_latentSpaceDimensions * _latentSpaceDimensions);
+ std::fill(_annealedCovariance.begin(), _annealedCovariance.end(); 0);
+ for (size_t i = 0; i < _latentSpaceDimensions; i++)
+   // diagonal matrix, flattened
+   _annealedCovariance[i + i * _latentSpaceDimensions] = 1.0; // "high" initial covariance values; adjust if needed
 
 //  volatile int done = 0;
 //  while (!done) sleep(1);
@@ -60,15 +71,24 @@ void korali::solver::HSAEM::setInitialConfiguration()
   size_t hyperparam_index = 0;
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
   {
-//    int idx =  _latentProblem->_hyperparameterMeanIndices[i];
-    _currentHyperparametersMean[i] = _latentProblem->_hyperparameterMean[i]->_initialValue;
+//    int idx =  _latentProblem->_hyperparametersMeanIndices[i];
+    _currentHyperparametersMean[i] = _latentProblem->_hyperparametersMean[i]->_initialValue;
   }
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     for (size_t j = 0; j < _latentSpaceDimensions; j++)
     {
-      int idx =  _latentProblem->_hyperparameterCovIndices[i][j];
-      _currentHyperparametersCovariance[i][j] = _latentProblem->_hyperparameterCovariance[idx]->_initialValue;
+      int idx =  _latentProblem->_hyperparametersCovIndices[i][j];
+      _currentHyperparametersCovariance[i][j] = _latentProblem->_hyperparametersCovariance[idx]->_initialValue;
     }
+
+  updateDistribution();
+  for (size_t i = 0; i < _mcmcNumberChains; i++ ){
+    _currentZ[i].resize(_latentSpaceDimensions);
+    _annealedNormalGenerator.getRandomVector(&_currentZ[i], _latentSpaceDimensions);
+  }
+
+  if (_latentSpaceDimensions == 1)
+    _n3 = 0;
 
   _bestLogLikelihood = -korali::Inf;
 
@@ -148,12 +168,111 @@ void korali::solver::HSAEM::justTesting()
 }
 
 void korali::solver::HSAEM::sampleLatent(){
+
+  updateDistribution(); // because we want to draw from it below
+
+  int NStepsPerChain = _MCMCOuterSteps * (_n1 + _n2 + _n3);
+  std::vector<std::vector<std::vector<std::vector<double>>>> allSamples;
+  //allSamples.clear();
+
+  // Todo: Get current Log-Likelihood.
+
+
+  // ** Loop over chains
+  for (size_t c_idx = 0; c_idx < _MCMCNumberChains; c_idx++)
+  {
+    std::vector<std::vector<std::vector<double>>> chainSamples;
+    //chainSamples.clear();
+
+    // ** Chain initialization
+    eta = std::vector<std::vector<double>>; // NrIndividuals x NrDimensions
+    eta.resize(_nIndividuals);
+    for (size_t edx = 0; edx < _nIndividuals; edx++){
+      eta[edx].resize(_latentSpaceDimensions);
+      // current eta = current z - current mean
+      std::transform(_currentZ[c_idx].begin(), _currentZ[c_idx].end(),
+         _currentHyperparametersMean.begin(), eta[edx].begin(), std::minus<double>())
+    }
+
+    // ** Loop over one chain
+    for (size_t step = 0; step < _MCMCOuterSteps)
+    {
+      std::vector<std::vector<double>> stepSamples;  // NrIndividuals x NrDimensions
+      //stepSamples.clear();
+
+      // ** 1st proposal distribution
+      for (size_t i = 0; i < _n1; i++)
+      {
+        // Proposals q1: Drawn from p(latent | hyperparam)
+        eta_new = std::vector<std::vector<double>>; // NrIndividuals x NrDimensions
+        eta_new.resize(_nIndividuals);
+        std::vector *temp_eta(_latentSpaceDimensions);
+        for (size_t edx = 0; edx < _nIndividuals; edx++){
+          _annealedNormalGenerator.getRandomVector(temp_eta, _latentSpaceDimensions);// == Previous samples minus par.beta --Why?
+          eta_new[edx] = temp_eta;
+        }
+      /* Todo:
+         What George's code does:
+          -  sample jointly for all individuals and all dimensions
+          -  calculate the **conditional** log-llh for each individual; accept the entire
+             new vector of parameters according to this for each individual
+         */
+
+      }
+
+      // ** 2nd proposal distribution
+      for (size_t i = 0; i < _n2; i++)
+      {
+
+      /* Todo:
+         What George's code does:
+          - sample /per dimension/, but sample this dimension for all individuals at once
+          - calculate the *total* log-likelihood /per individual/, then reject or accept that
+            individual's parameter change according to that log-likelihood
+         */
+      }
+
+      // ** update variances
+
+      // ** 3rd proposal distribution
+      for (size_t i = 0; i < _n3; i++)
+      {
+      // TODO
+      }
+
+      // ** update variances
+
+    } // Chain end
+
+  }
+
+
+
 }
+
+//* @brief Update internal distribution representation of p(latent | hyper), and anneal the covariance if needed.
+void korali::solver::HSAEM::updateAnnealedDistribution(){
+  if (_useSimulatedAnnealing){
+    auto flatCov = flatten(_currentHyperparametersCovariance);
+    for(size_t i = 0; i < flatCov.size(); i++)
+      _annealedCovariance[i] = std::max(_annealedCovariance[i], flatCov[i]);
+    _annealedNormalGenerator.setProperty("Sigma", _annealedCovariance);
+  }
+  else
+    _annealedNormalGenerator.setProperty("Sigma", flatten(_currentHyperparametersCovariance));
+  _annealedNormalGenerator.setProperty("Mean Vector", _currentHyperparametersMean);
+  _annealedNormalGenerator.updateDistribution();
+}
+
 
 void korali::solver::HSAEM::updateS(){
 }
 
+
 void korali::solver::HSAEM::updateHyperparameters(){
+
+
+
 }
 
 void korali::solver::HSAEM::updateCholesky(){
@@ -170,3 +289,18 @@ void korali::solver::HSAEM::printGenerationAfter()
  _k->_logger->logInfo("Normal", "Finished to generation %lu...\n", _k->_currentGeneration);
 }
 
+
+/** @brief: Utility function to convert a vector of vectors into a concatenated 1D vector.
+  */
+std::vector<double>  korali::solver::HSAEM::flatten(const std::vector<std::vector<double>>& v)
+{
+  // credits to Sebastian Redl @ stackoverflow
+  std::size_t total_size = 0;
+  for (const auto& sub : v)
+    total_size += sub.size();
+  std::vector<double> result;
+  result.reserve(total_size);
+  for (const auto& sub : v)
+    result.insert(result.end(), sub.begin(), sub.end());
+  return result;
+}

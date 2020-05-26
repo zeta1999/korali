@@ -12,7 +12,14 @@ class HSAEM : public korali::Solver
 
  korali::problem::bayesian::latent::HierarchicalLatent* _latentProblem;
 
+  /**
+  * @brief Draw samples of all latent variables, using a Metropolis-Hastings method.
+  *        Uses the same proposal distributions as described in chapter 9.3 of
+  *        "Mixed Effect Models for the Population Approach" by Marc Lavielle.
+  *         TODO: If enabled, uses simulated annealing.
+  */
  void sampleLatent();
+
  void updateS();
  void updateHyperparameters();
  void updateCholesky();

@@ -37,7 +37,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 
  _latentIndex.clear();
 
- _hyperparameterMean.clear();
+ _hyperparametersMean.clear();
 
 
 
@@ -157,16 +157,16 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 //  volatile int done = 0;
 //  while (!done) sleep(1);
 
-   _hyperparameterMean.push_back( new_hyperparam );
+   _hyperparametersMean.push_back( new_hyperparam );
  }
 
  /* 2. covariance matrices - we use Cholesky decomposition to ensure positive definiteness.
       Note: If ever required, could add 'groups' of variables that share a covariance matrix, while groups are independent of each other. */
  //  Degrees of freedom of the covariance matrix: n*(n+1)/2; we over-represent it as matrix
- _hyperparameterCovariance.clear();
- _hyperparameterCovIndices.resize(_latentSpaceDimensions);
- for (size_t i = 0; i< _hyperparameterCovIndices.size(); i++){
-   _hyperparameterCovIndices[i].clear();
+ _hyperparametersCovariance.clear();
+ _hyperparametersCovIndices.resize(_latentSpaceDimensions);
+ for (size_t i = 0; i< _hyperparametersCovIndices.size(); i++){
+   _hyperparametersCovIndices[i].clear();
   }
  for (size_t i = 0; i < _latentSpaceDimensions; i++){
    for (size_t j = 0; j < _latentSpaceDimensions; j++){
@@ -179,8 +179,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
      if (i == j) new_hyperparam->_initialValue = 5.; // just choosing something large - this could become a configuration parameter
      else        new_hyperparam->_initialValue = 0.;
      // Todo: Add any other parameters here that will be required by hierarchical SAEM. Initial values? Bounds?
-   _hyperparameterCovariance.push_back( new_hyperparam );
-   _hyperparameterCovIndices[i].push_back(j + i * _k->_variables.size() );
+   _hyperparametersCovariance.push_back( new_hyperparam );
+   _hyperparametersCovIndices[i].push_back(j + i * _k->_variables.size() );
    // YES this is used. Unfortunately, cannot create a vector of vectors of korali::Variables, at least not
    // via the config. Edit: TODO: It might not be such a good idea in general to store a list of korali::Variables at
    //                             stopping and re-starting. Maybe better move both definitions to the ._hpp ?
@@ -198,12 +198,12 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 /* De-allocate both vectors with hyperparameter korali-variables
     -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
 korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void){
-  for ( int i = 0; i < _hyperparameterMean.size(); i++ )
-    delete _hyperparameterMean[i];
-  _hyperparameterMean.clear();
-  for ( int i = 0; i < _hyperparameterCovariance.size(); i++ )
-      delete _hyperparameterCovariance[i];
-  _hyperparameterCovariance.clear();
+  for ( int i = 0; i < _hyperparametersMean.size(); i++ )
+    delete _hyperparametersMean[i];
+  _hyperparametersMean.clear();
+  for ( int i = 0; i < _hyperparametersCovariance.size(); i++ )
+      delete _hyperparametersCovariance[i];
+  _hyperparametersCovariance.clear();
 //  gsl_matrix_free(covMatrixGSL);
 //  gsl_matrix_free(chol);
 //  gsl_vector_free(latent_minus_mean);
