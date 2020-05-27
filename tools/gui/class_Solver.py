@@ -20,7 +20,6 @@ class Solvers():
         self.solver.grid(column=0,row=0)
         self.solver.grid_propagate(0)
 
-        experiments = classes_FRAMES.experiments
         selectedtab = classes_FRAMES.selectedtab
 
         # STORE THIS FRAME IN THE experiments dictionary.
@@ -31,5 +30,6 @@ class Solvers():
 
         functions.printConfig(self.solver,experiments,selectedtab,directorio,nombre,DB,cont)
 
-
-
+    def Show_frame(experiments,selectedtab):
+        solver = experiments[selectedtab]['solver']
+        solver.tkraise()

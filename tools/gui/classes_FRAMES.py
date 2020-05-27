@@ -120,29 +120,31 @@ def printConfig(a,b,c):
 def printVariables(a,b,c,d):
     print('Variables')
     
-def crearMenu(padre,directorio,DB,cont):
+def crearMenu(padre,directorio,DB,cont,x_pos,y_pos):
     global menus
     global experiments
     global selectedtab
     global listofproblems
     global listofsolvers
-    
+
+    tf = experiments[selectedtab]['thirdFrame']
     sf = experiments[selectedtab]['secondFrame']
+    ff = experiments[selectedtab]['firstFrame']
     nombre = DB[directorio]['names']
     if directorio not in menus: # Checkeamos si el directorio está en la lista de menus.
         subMenu = Menu(padre,activeforeground = 'teal')
         dirInfo=DB[directorio]
         if len(dirInfo['children']) == 0:
-            padre.add_command(label = nombre, command = lambda : functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont))#[printConfig(directorio,DB, cont),printVariables(sf.tab2,directorio,DB,cont)])
+            padre.add_command(label = nombre, command = lambda :[functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont,x_pos,y_pos),functions.website(tf,directorio)])#[printConfig(directorio,DB, cont),printVariables(sf.tab2,directorio,DB,cont)])
         else:
             padre.add_cascade(label=nombre, menu = subMenu)
             configPath=dirInfo['config']
             if configPath != "NULL" and len(dirInfo['children']) == 0: # SI ES UN LEAF:
                 dirs=splitPath(configPath)
-                subMenu.add_command(label = dirs[len(dirs)-1], command = lambda : functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont))#command = lambda : [printConfig(directorio,DB, cont),printVariables(bottomrightFrame.tab2,directorio,DB,cont)])
+                subMenu.add_command(label = dirs[len(dirs)-1], command = lambda : [functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont,x_pos,y_pos),functions.website(tf,directorio)])#command = lambda : [printConfig(directorio,DB, cont),printVariables(bottomrightFrame.tab2,directorio,DB,cont)])
             children=dirInfo['children']
             for child in children:
-                crearMenu(subMenu,child,DB,cont)
+                crearMenu(subMenu,child,DB,cont,x_pos,y_pos)
     menus.append(directorio)
     if cont == 0:
         if directorio not in listofproblems:
@@ -167,14 +169,15 @@ def cascade(mainPath,DB,cont):
     menuPadre = tk.Menu(menuButton, tearoff=False,activeforeground = 'teal')
     menuButton.configure(menu=menuPadre)
     y_pos = (200+(int(cont)*120))
-    menuButton.place(x=70,y=y_pos)
+    x_pos = 70
+    menuButton.place(x=x_pos,y=y_pos)
         
     menus.append(titulo) # Añadimos el título del boton, para no repetirlo en los desplegables.
     
       
     # Empezar los menus recursivamente llamando a la funcion crearMenu:
     for directorio in DB.keys():
-        crearMenu(menuPadre,directorio,DB,cont)
+        crearMenu(menuPadre,directorio,DB,cont,x_pos,y_pos)
     menus.clear() # Allows creating different experiments by emptying the menus list.
 
     
@@ -188,6 +191,10 @@ class FirstFrame():
         ff = tk.Frame(master,bg=selectorColor,width=416,height=930,borderwidth= 3,relief='solid')
         ff.grid(column=0,row=0)
         ff.grid_propagate(0)
+
+        go = tk.Button(ff,text = 'GO',borderwidth =3, anchor = 'w',
+                                     font= 'Arial 16',  command = lambda:functions.printt())
+        go.place(x=180, y=800, anchor="center")
 
         # STORE A DICTIONARY WITH ALL THE FRAMES ON IT TO BE CALLED ON ANY FUNCTION AND AVOID PASSING FRAMES.
         expElements = {}
@@ -213,6 +220,12 @@ class SecondFrame():
                                      font= 'Arial 16',  command = lambda:class_GeneralSettings.GeneralSettings(self.sf))
         general_settings.place(x=180, y=100, anchor="center")
 
+        self.tf = tk.Frame(master,bg='white',width=716,height=930,borderwidth=2,relief='raised')
+        self.tf.grid(column=2,row=0)
+        self.tf.grid_propagate(0)
+
+        experiments[selectedtab]['thirdFrame'] = self.tf
+
         ## Here because frames need to be finished before starting.
         cont= 0
         cascade(mainPath,configTreeDB,cont)
@@ -222,10 +235,12 @@ class SecondFrame():
 
 class ThirdFrame():
     def __init__(self,master):
-        
-        tf = tk.Frame(master,bg='white',width=716,height=930,borderwidth=2,relief='raised')
-        tf.grid(column=2,row=0)
-        tf.grid_propagate(0)
+        pass
+##        self.tf = tk.Frame(master,bg='white',width=716,height=930,borderwidth=2,relief='raised')
+##        self.tf.grid(column=2,row=0)
+##        self.tf.grid_propagate(0)
+##
+##        experiments[selectedtab]['thirdFrame'] = self.tf
 
 
 configTreeDB = {}

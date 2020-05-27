@@ -10,7 +10,7 @@ import functions
 # Frame Variables:
 selectorColor = 'aliceblue'
 forbidden = ['Variables','Problem','Solver']
-
+general_first_time = True
 
 
 class GeneralSettings():
@@ -18,13 +18,18 @@ class GeneralSettings():
         # master is the frame from the previous class where we want to insert data.
         global experiments
         global selectedtab
-
-        self.gs = tk.Frame(master,bg=selectorColor,width=717,height=925)
-        self.gs.grid(column=0,row=0)
-        self.gs.grid_propagate(0)
+        global general_first_time
 
         experiments = classes_FRAMES.experiments
         selectedtab = classes_FRAMES.selectedtab
+
+        if general_first_time == False:
+            self.Show_frame(experiments,selectedtab)
+            return
+        
+        self.gs = tk.Frame(master,bg=selectorColor,width=717,height=925)
+        self.gs.grid(column=0,row=0)
+        self.gs.grid_propagate(0)
 
         # STORE THIS FRAME IN THE experiments dictionary.
         experiments[selectedtab]['generalSettings'] = self.gs
@@ -52,7 +57,13 @@ class GeneralSettings():
             self.display_generalSettings(self.gs,r,c,cont)
             file.close()
         else:
-            functions.popupmsgwarning("There is not an 'experiment.config' file !")          
+            functions.popupmsgwarning("There is not an 'experiment.config' file !")
+            
+        general_first_time = False
+
+    def Show_frame(self,experiments,selectedtab):
+        general_settings = experiments[selectedtab]['generalSettings']
+        general_settings.tkraise()
 
         
     def display_generalSettings(self,gs,r,c,cont):

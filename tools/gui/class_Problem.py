@@ -20,7 +20,7 @@ class Problems():
         self.problem.grid(column=0,row=0)
         self.problem.grid_propagate(0)
 
-        experiments = classes_FRAMES.experiments
+##        experiments = classes_FRAMES.experiments
         selectedtab = classes_FRAMES.selectedtab
 
         # STORE THIS FRAME IN THE experiments dictionary.
@@ -31,5 +31,9 @@ class Problems():
 
         functions.printConfig(self.problem,experiments,selectedtab,directorio,nombre,DB,cont)
 
-
+    def Show_frame(experiments,selectedtab):
+        problem = experiments[selectedtab]['problem']
+        problem.tkraise()
+        
+        
 

@@ -1,51 +1,128 @@
 import tkinter as tk
 from tkinter import *
 from tkinter.messagebox import showerror, showwarning, showinfo, askyesno
+import webview
 
 # FILES import
 import class_GeneralSettings
 import class_Problem
 import class_Solver
+import classes_FRAMES
+import MAIN_APP
 
 # Variables:
+selectorColor = 'aliceblue'
 colorDescription = 'snow'
 colorProblem = 'snow'
+lightColor = '#00A3E0'
+extraColor = '#183A54'
+
+
 frame_problem = ''
 frame_solver =''
 first_time_p = True
 first_time_s = True
 
+# Tell us which one are we using under the cascade option.
+problems_ind = ''
+solvers_ind = ''
 
-def checkFormulario(sf,experiments,selectedtab, directorio,nombre,DB, cont):
+links = {'sampling':'https://www.cse-lab.ethz.ch/korali/docs/tutorials/basic/2.sampling.html',
+         'reinforcementLearning':'https://www.cse-lab.ethz.ch/korali/docs/modules/problem/reinforcementLearning/reinforcementLearning.html' ,
+         'gaussian':'https://www.cse-lab.ethz.ch/korali/docs/modules/problem/gaussian/gaussian.html',
+         'LMCMAES':'https://www.cse-lab.ethz.ch/korali/docs/modules/solver/LMCMAES/LMCMAES.html' }
+
+
+def printt():
+    experiments = classes_FRAMES.experiments
+    selectedtab = classes_FRAMES.selectedtab
+
+    print(experiments.keys())
+    
+def website(tf,directorio):
+    global links
+
+    link = links[directorio]
+    w = webview.create_window('KORALI', link, js_api=None, width=710, height=915,
+            x=1205, y=100, resizable=False, fullscreen=False, \
+            hidden=False, frameless=False, \
+            minimized=False, confirm_close=False, background_color='#FFF', \
+            text_select=False)
+    webview.start(w)
+    pass
+
+    
+    
+        
+
+def checkFormulario(sf,experiments,selectedtab, directorio,nombre,DB, cont,x_pos,y_pos):
     global frame_problem
     global frame_solver
     global first_time_p
     global first_time_s
+    global problems_ind
+    global solvers_ind
+
+    ff = experiments[selectedtab]['firstFrame']
+              
+    y_pos = y_pos +40
+    x_pos = x_pos
+    if len(nombre)>30:
+        nombre = nombre[0:30]+'...'       
 
     if cont == 0:
-        if directorio == frame_problem:
-            print('Make the Problem-frame visible with the data from before')
-        else:
-            if first_time_p == False:
-                messagebox.askyesno("Different Problem","Are you sure you want to proceed? Previous variables will vanish.")
+        if first_time_p == False:
+            if directorio == frame_problem:
+                class_Problem.Problems.Show_frame(experiments,selectedtab)
+            else:
+                ANSWER = messagebox.askyesno("Different Problem","Are you sure you want to proceed? Previous variables will vanish.")
+                if ANSWER == False:
+                    return
+                if problems_ind != '':
+                   for widget in ff.winfo_children():
+                        if widget['text'] == problems_ind:
+                            widget.destroy() 
+                which = tk.Button(ff,text = nombre, font = 'Arial 9 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab))
+                which.place(x=x_pos,y=y_pos)
+                problems_ind = nombre
                 frame_problem = directorio # IF USERS ANSWERS YES...
+                class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont)
+        else:
             first_time_p = False
             class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont)
-            #printConfig(experiments,directorio,DB, cont)            
-            #printVariables(sf.tab2,directorio,DB,cont)
+            frame_problem = directorio
+            which = tk.Button(ff,text = nombre,font = 'Arial 9 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab))
+            which.place(x=x_pos,y=y_pos)
+            problems_ind = nombre
+        
     elif cont == 1:
-        if directorio == frame_solver:
-            print('Make the Solver-frame visible with the data from before')
+        if first_time_s == False:
+            if directorio == frame_solver:
+                class_Solver.Solvers.Show_frame(experiments,selectedtab)
+            else:
+                ANSWER = messagebox.askyesno("Different Solver","Are you sure you want to proceed? Previous variables will vanish.")
+                if ANSWER == False:
+                    return
+                
+                if solvers_ind != '':
+                    for widget in ff.winfo_children():
+                        if widget['text'] == solvers_ind:
+                            widget.destroy()
+                which2 = tk.Button(ff,text = nombre,font = 'Arial 9 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab))
+                which2.place(x=x_pos,y=y_pos)
+                solvers_ind = nombre
+                frame_solver = directorio # IF USERS ANSWERS YES...
+                class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont)
         else:
-            if first_time_s == False:
-                messagebox.askyesno("Different Solver","Are you sure you want to proceed? Previous variables will vanish.")
-                frame_solver = directorio
             first_time_s = False
             class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont)
-
-            #printConfig(directorio,DB, cont)
+            frame_solver = directorio
+            which2 = tk.Button(ff,text = nombre,font = 'Arial 9 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab))
+            which2.place(x=x_pos,y=y_pos)
+            solvers_ind = nombre
+            #printConfig(experiments,directorio,DB, cont)            
             #printVariables(sf.tab2,directorio,DB,cont)
-    
+            
 def validardigit(num):
     # Función para validar POSITIVOS Y NEGATIVOS.
     r = False
