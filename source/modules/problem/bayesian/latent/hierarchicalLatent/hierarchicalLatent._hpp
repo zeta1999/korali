@@ -27,25 +27,35 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
  */
  void initialize() override;
 
- /**
-  * @brief De-allocate both vectors with hyperparameter korali-variables
- */
- ~HierarchicalLatent(void);
+// /**
+//  * @brief De-allocate both vectors with hyperparameter korali-variables
+// */
+// ~HierarchicalLatent(void);
 
  /**
-  * @brief TODO
+  * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
+  *       As opposed to evaluateConditionalLoglikelihood, this will return a single value.
  */
  void evaluateLoglikelihood(korali::Sample& sample) override;
 
 
   /**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
-           values for the latent variables. See the description of this function for more information.
+           values for the latent variables. See the description of that function for more information.
            (It will set "Conditional LogLikelihood" and use "Latent Variables".)
  */
  void evaluateConditionalLoglikelihood(korali::Sample& sample);
 
+ /**
+  * @brief Evaluate log of p(latent | hyperparameters) , so the hyperparam-dependent prior over the latent variables
+ */
+ void evaluateLogPrior(korali::Sample& sample) override;
 
+ /**
+  * @brief Evaluate the total log-probability p(all data | all latent) * p(latent | hyperparameters).
+  *  Expects that the fields 'Hyperparameters' and 'Latent Variables' are set for the input sample json object.
+ */
+ void evaluateLogPosterior(korali::Sample& sample) override;
 };
 
 

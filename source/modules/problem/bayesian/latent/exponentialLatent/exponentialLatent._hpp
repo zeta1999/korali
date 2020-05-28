@@ -9,12 +9,22 @@ namespace korali { namespace problem { namespace bayesian { namespace latent {
 class ExponentialLatent : public korali::problem::bayesian::Latent
 {
  public:
+//
+//  /**
+//  * @brief TODO: Given 'Hyperparameters' and 'Latent Variables' (parameters the sample is expected to have), calculate the total log likelihood.
+//  * @param sample The input sample.
+//  Note: This does not really fit into the same framework as e.g. for hierarchical Latent. Calculating p(data|latent)
+//        irrespective of the hyperparameters would require integrating over all feasible hyperparameter values.
+//        So this will be left unimplemented for now.
+//  */
+//  void evaluateLoglikelihood(korali::Sample &sample) override;
 
-  /**
-  * @brief Given 'Hyperparameters' and 'Latent Variables' (parameters the sample is expected to have), calculate the total log likelihood.
-  * @param sample inputSample
-  */
-  void evaluateLoglikelihood(korali::Sample &sample) override;
+
+ /**
+  * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
+  *       As opposed to evaluateConditionalLoglikelihood(), this will return a single value.
+ */
+  void evaluateLogPosterior(korali::Sample &sample) override;
 
   /*! @brief run the user defined sampler.
       @param sample contains [Hyperparameters] and [Number Samples].

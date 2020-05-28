@@ -6,10 +6,14 @@
 void korali::solver::HSAEM::initialize()
 {
 
- if( _k->_problem->getType() != "Bayesian/Latent/HierarchicalLatent")
-   _k->_logger->logError("SAEM can only optimize problems of type 'Bayesian/Latent/HierarchicalLatent' .\n");
-
-  _latentProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatent*>(_k->_problem);
+ if( (_k->_problem->getType() != "Bayesian/Latent/HierarchicalLatent") && (_k->_problem->getType() != "Bayesian/Latent/HierarchicalLatentLowlevel"))
+   _k->_logger->logError("SAEM can only optimize problems of type 'Bayesian/Latent/HierarchicalLatent' or '.../HierarchicalLatentLowlevel' .\n");
+ if (_k->_problem->getType() == "Bayesian/Latent/HierarchicalLatent"){
+   _latentProblemWrapper = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatent*>(_k->_problem);
+   _latentProblem = &_latentProblemWrapper->_lowlevelProblem;
+   }
+ if (_k->_problem->getType() == "Bayesian/Latent/HierarchicalLatentLowlevel")
+   _latentProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatentLowlevel*>(_k->_problem);
 
     // Todo: make sure the problem is initialized before the solver
  _numberLatent = _k->_variables.size();
@@ -19,14 +23,6 @@ void korali::solver::HSAEM::initialize()
  for (size_t i = 0; i < _numberLatent; i++)
    if( std::isfinite(_k->_variables[i]->_initialValue) == false )
      _k->_logger->logError("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
- for (auto var : _latentProblem->_hyperparametersMean)
-   if( std::isfinite(var->_initialValue) == false )
-     _k->_logger->logError("Initial Value of one (automatically created) hyperparameter variable not defined (no defaults can be calculated).\n");
- for (auto var : _latentProblem->_hyperparametersCovariance){
-  // for (auto var : vars){
-     if( std::isfinite(var->_initialValue) == false )
-       _k->_logger->logError("Initial Value of one (automatically created) hyperparameter variable not defined (no defaults can be calculated).\n");
-  // }
  }
 
 }
@@ -34,7 +30,7 @@ void korali::solver::HSAEM::initialize()
  /* @brief Run once, before the first generation */
 void korali::solver::HSAEM::setInitialConfiguration()
 {
-  // resizing and clearing internal vector variables
+  // resizing and clearing internal vectors
  _currentSamples.clear();
  _currentSampleMeans.resize(_latentSpaceDimensions);
  _currentZ.resize(_MCMCNumberChains);
@@ -77,7 +73,8 @@ void korali::solver::HSAEM::setInitialConfiguration()
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     for (size_t j = 0; j < _latentSpaceDimensions; j++)
     {
-      int idx =  _latentProblem->_hyperparametersCovIndices[i][j];
+//      int idx =  _latentProblem->_hyperparametersCovIndices[i][j];
+      int idx = i * _latentProblem->_latentSpaceDimensions + j;
       _currentHyperparametersCovariance[i][j] = _latentProblem->_hyperparametersCovariance[idx]->_initialValue;
     }
 
@@ -141,9 +138,8 @@ void korali::solver::HSAEM::justTesting()
 
  // * test evaluateConditionalLoglikelihood()
 
-  sample["Operation"] = "Evaluate LogLikelihood";
-  double cond_llh = sample["Conditional LogLikelihood"];
-  _k->_logger->logInfo("Normal", "Test: Conditional LLLH = %f evaluated for latent variables:\n", cond_llh);
+  std::vector<double> cond_llh = sample["Conditional LogLikelihood"];
+  _k->_logger->logInfo("Normal", "Test: Conditional LLLH = %f evaluated for latent variables:\n", cond_llh[0]); // Todo: adjust this to pring all of cond_llh
   for (size_t i = 0; i < _latentProblem->_latentVariableIndices.size(); i++){
     int idx = _latentProblem->_latentVariableIndices[i];
     _k->_logger->logInfo("Normal", "Test: \t %s : %e \n", _k->_variables[idx]->_name.c_str(), latent_vars[i]);
@@ -151,10 +147,10 @@ void korali::solver::HSAEM::justTesting()
 
 
  // * test evaluateLoglikelihood()
-  sample["Operation"] = "Evaluate LogLikelihood";
+  sample["Operation"] = "Evaluate LogPosterior";
   _conduit->start(sample);
   _conduit->wait(sample);
-  double llh = sample["LogLikelihood"];
+  double llh = sample["LogPosterior"];
   _k->_logger->logInfo("Normal", "Test: LLH = %f evaluated for latent variables as above, plus mean:\n", llh);
   for (size_t i = 0; i < mean.size(); i++){
     _k->_logger->logInfo("Normal", "Test: \t Mean %d: %e \n", i, mean[i]);

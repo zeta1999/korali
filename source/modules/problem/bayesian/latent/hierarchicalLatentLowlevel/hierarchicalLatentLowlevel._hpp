@@ -33,12 +33,18 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
  /**
   * @brief De-allocate both vectors with hyperparameter korali-variables
  */
- ~HierarchicalLatentLowlevel(void);
+// ~HierarchicalLatentLowlevel(void);
 
  /**
-  * @brief TODO
+  * @brief Evaluate log of p(latent | hyperparameters) , so the hyperparam-dependent prior over the latent variables
  */
- void evaluateLoglikelihood(korali::Sample& sample) override;
+ void evaluateLogPrior(korali::Sample& sample) override;
+
+ /**
+  * @brief Evaluate the total log-probability p(all data | all latent) * p(latent | hyperparameters).
+  *  Expects that the fields 'Hyperparameters' and 'Latent Variables' are set for the input sample json object.
+ */
+ void evaluateLogPosterior(korali::Sample& sample) override;
 
 
 // /**
@@ -53,7 +59,15 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
            values for the latent variables. See the description of this function for more information.
            (It will set "Conditional LogLikelihood" and use "Latent Variables".)
  */
- void evaluateConditionalLoglikelihood(korali::Sample& sample);
+ void evaluateLoglikelihoodSingle(korali::Sample& sample);
+
+
+ /**
+  * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
+  *       As opposed to evaluateConditionalLoglikelihood, this will return a single value.
+ */
+ void evaluateLoglikelihood(korali::Sample& sample) override;
+
 
 
 };

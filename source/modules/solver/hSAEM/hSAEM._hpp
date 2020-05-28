@@ -10,7 +10,8 @@ class HSAEM : public korali::Solver
 {
  public:
 
- korali::problem::bayesian::latent::HierarchicalLatent* _latentProblem;
+ korali::problem::bayesian::latent::HierarchicalLatent* _latentProblemWrapper;
+ korali::problem::bayesian::latent::HierarchicalLatentLowlevel* _latentProblem;
 
   /**
   * @brief Draw samples of all latent variables, using a Metropolis-Hastings method.

@@ -21,9 +21,9 @@ void korali::problem::bayesian::latent::ExponentialLatent::initialize()
 }
 
 /*! @brief Given 'Hyperparameters' and 'Latent Variables' (parameters the sample is expected to have), calculate
-          the total log likelihood.
+          the total log probability.
 */
-void korali::problem::bayesian::latent::ExponentialLatent::evaluateLoglikelihood(korali::Sample& sample){
+void korali::problem::bayesian::latent::ExponentialLatent::evaluateLogPosterior(korali::Sample& sample){
     // Evaluate the user-given probability distribution for latent- and hyperparameter values given in the sample
   sample.run(_sOfLikelihoodModel);
   sample.run(_zetaOfLikelihoodModel);
@@ -38,7 +38,7 @@ void korali::problem::bayesian::latent::ExponentialLatent::evaluateLoglikelihood
   std::vector<double> _sValues = sample["S"].get<std::vector<double>>();
   std::vector<double> _phiValues = sample["phi"].get<std::vector<double>>();
 
-  sample["logLikelihood"] = - _zetaValue + std::inner_product(std::begin(_sValues), std::end(_sValues), std::begin(_phiValues), 0.0);
+  sample["logPosterior"] = - _zetaValue + std::inner_product(std::begin(_sValues), std::end(_sValues), std::begin(_phiValues), 0.0);
 }
 
 /*! @brief run the user defined sampler.

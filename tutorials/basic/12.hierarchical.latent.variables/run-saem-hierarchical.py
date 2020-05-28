@@ -34,7 +34,7 @@ def main():
     e["Distributions"][0]["Maximum"] = 100
 
     # * Define which hyperparameters we use (only the means - sigma is assumed known)
-    for i in range(distrib.nIndividuals):
+    for i in range(1): # range(distrib.nIndividuals):
         e["Variables"][i]["Name"] = "latent mean "+str(i)
         e["Variables"][i]["Initial Value"] = -5
         e["Variables"][i]["Bayesian Type"] = "Latent"
