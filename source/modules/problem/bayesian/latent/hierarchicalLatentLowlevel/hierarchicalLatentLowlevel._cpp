@@ -1,0 +1,338 @@
+#include "modules/problem/bayesian/latent/HierarchicalLatentLowlevel/HierarchicalLatentLowlevel.hpp"
+
+#include <math.h>
+#include <map>
+
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
+
+
+
+/* The problem initialization; here, create hyperparameter variables, add them to the problem's variable list,
+    and set up index lists to find both types of variables in that list.*/
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
+{
+  korali::problem::bayesian::Latent::initialize();
+
+  // * helper variables
+  int numberLatentVariables = _k->_variables.size();
+    // store the distribution indices in this list, sorted:
+  std::vector<int> sortedDistribIndices;
+  std::vector<int> sortedIndividualIndices;
+    // store one variable per mean among the hyperparameters, to access name, etc. further down:
+  std::map<int, korali::Variable*> exampleLatentVariables;
+
+  std::map<int, std::vector<int> > distribIndicesPerIndividual;
+
+  // * clear and resize vectors
+    /* Todo: We don't need these _latentVariableIndices in HierarchicalLatentLowlevel.
+             Remove some time and make these vectors a property of only exponentialLatent, not Latent. */
+ _latentVariableIndices.clear();
+   // these are not just for convenience
+ _normalLatentIndices.clear();
+ _lognormalLatentIndices.clear();
+ _logitnormalLatentIndices.clear();
+
+ _latentIndex.clear();
+
+ _hyperparametersMean.clear();
+
+
+
+  /* Check and assign distribution types (of the latent variables), etc.*/
+ for (size_t i = 0; i < _k->_variables.size(); i++)
+ {
+  // Check variables type
+  std::string typeString = _k->_variables[i]->_bayesianType;
+  if (typeString == "Latent")   { _latentVariableIndices.push_back(i); }
+  else { if (typeString == "Latent")
+            {_k->_logger->logError("Please only define Latent variables and their distribution type. Korali will automatically generate the hyperparameters. \n");}
+         else _k->_logger->logError("Unrecognized Variable Type %s \n", typeString.c_str());   }
+
+  /* Check distributions and sort latent variables by distribution */
+  bool recognizedDistribution = false;
+  std::string distribString = _k->_variables[i]->_latentVariableDistributionType;
+  if (distribString == "Normal")   { _normalLatentIndices.push_back(i);   recognizedDistribution = true; }
+  if (distribString == "Log-Normal")   { _lognormalLatentIndices.push_back(i);   recognizedDistribution = true; }
+  if (distribString == "Logit-Normal")   { _logitnormalLatentIndices.push_back(i);   recognizedDistribution = true; }
+  if (distribString == "NA")   {
+    _latentVariableIndices.push_back(i);   recognizedDistribution = true;
+    _k->_logger->logError("Each latent variable must be either normally, log-normally or logit-normally distributed. NA is only for internal use.", typeString);
+   }
+  if (recognizedDistribution == false) _k->_logger->logError("Unrecognized distribution type: %s.\n", distribString.c_str());
+
+  int distribIndex = _k->_variables[i]->_latentSpaceCoordinate;
+  int individualIndex = _k->_variables[i]->_individualIndex;
+  if (_latentVariableDistributions.count(distribIndex) == 0){
+    _latentVariableDistributions[distribIndex] = distribString;
+    exampleLatentVariables[distribIndex] = _k->_variables[i];
+  }
+  else
+    assert (_latentVariableDistributions[distribIndex] == distribString); // "Error: Assigned two+ latent variables to the same distribution (same 'Distribution Index'), but declared different distribution types for both.");
+ }
+
+  /* Check the distribution indices and individual indices.
+       For each distribution index, there should be the same number of individual-indices.
+       Then create lists to keep track of them. */
+ for(auto var : _k->_variables)
+   sortedDistribIndices.push_back(var->_latentSpaceCoordinate);
+ for(auto var : _k->_variables)
+   sortedIndividualIndices.push_back(var->_individualIndex);
+ std::sort( sortedDistribIndices.begin(), sortedDistribIndices.end() );
+ std::sort( sortedIndividualIndices.begin(), sortedIndividualIndices.end() );
+ sortedDistribIndices.erase( unique( sortedDistribIndices.begin(), sortedDistribIndices.end() ), sortedDistribIndices.end() );
+ sortedIndividualIndices.erase( unique( sortedIndividualIndices.begin(), sortedIndividualIndices.end() ), sortedIndividualIndices.end() );
+ _latentSpaceDimensions = sortedDistribIndices.size();
+ _numberIndividuals = sortedIndividualIndices.size();
+
+ _latentIndex.resize(_numberIndividuals);
+ for (size_t i = 0; i < _numberIndividuals; i++)
+   _latentIndex[i].resize(_latentSpaceDimensions);
+ assert (_k->_variables.size() == _latentSpaceDimensions * _numberIndividuals); // "Error: For each coordinate of each 'individual' latent variable vector, one (latent) variable needs to be defined.");
+
+ // * Check that the ranges are from 0 to max
+ for (auto var : _k->_variables){
+   if (distribIndicesPerIndividual.count(var->_individualIndex) ==0){
+     distribIndicesPerIndividual.insert(std::make_pair(var->_individualIndex, std::vector<int>()));
+    // distribIndicesPerIndividual[var->_individualIndex] = std::vector<int>(0);
+     distribIndicesPerIndividual.at(var->_individualIndex).clear();
+     distribIndicesPerIndividual.at(var->_individualIndex).push_back(var->_latentSpaceCoordinate);
+   }
+   else  distribIndicesPerIndividual.at(var->_individualIndex).push_back(var->_latentSpaceCoordinate);
+ }
+ for (size_t i = 0; i < _numberIndividuals; i++){
+   assert ( std::find(sortedIndividualIndices.begin(), sortedIndividualIndices.end(), i) != sortedIndividualIndices.end()); // "Error: Expected contiguous range of individual-indices. This index was missing: "+std::to_string(i));
+   for (size_t j = 0; j < _latentSpaceDimensions; j++){
+     assert (std::find(distribIndicesPerIndividual[i].begin(), distribIndicesPerIndividual[i].end(), j) != distribIndicesPerIndividual[i].end()); // "Error: A distribution index ("+std::to_string(j)+") was not present for any variable with 'Individual Index' "+std::to_string(i)+". We need each 'coordinate' (distribution type) once for each individual.");
+   }
+ }
+
+ // * Set up a 2D index for easier variable access
+ for (size_t i = 0; i < _k->_variables.size(); i++){
+   int i_idx = _k->_variables[i]->_individualIndex;
+   int d_idx = _k->_variables[i]->_latentSpaceCoordinate;
+   _latentIndex[i_idx][d_idx] = i;
+ }
+
+
+ /*  Now, generate the hyperparameters:
+    1. Means - one mean per distinct 'Distribution Index'.
+      Each mean is for whichever transformed version of the variable that is normally distributed. */
+ for (size_t i = 0; i < _latentSpaceDimensions; i++){
+   // We need a "new" here, unless there's a way to prevent a not new-ed korali::Variable from being deallocated right after this function.
+   korali::Variable *new_hyperparam = new korali::Variable;
+   new_hyperparam->_latentVariableDistributionType = "NA";
+   new_hyperparam->_bayesianType = "Hyperparameter";
+   new_hyperparam->_name = std::string("Mean of ") + exampleLatentVariables[i]->_name.c_str();
+   new_hyperparam->_latentSpaceCoordinate = i; // sortedDistribIndices[i];
+   new_hyperparam->_individualIndex = -1;
+   for (size_t j = 0; j < numberLatentVariables; j++){
+     if (_k->_variables[j]->_latentSpaceCoordinate == i)
+       _latentToHyperparameterMapping[j] = i;
+   }
+
+    /* initialize variable's mean with the user-defined initial value (from one example latent variable representing this coordinate/ distribution index): */
+   std::string distribString = _latentVariableDistributions[i];
+   if (distribString == "Normal")
+     new_hyperparam->_initialValue =  exampleLatentVariables[i]->_initialValue;
+   else {
+     if (distribString == "Log-Normal")
+       new_hyperparam->_initialValue = log(exampleLatentVariables[i]->_initialValue);
+     else {
+       if (distribString == "Logit-Normal"){
+         double ival = exampleLatentVariables[i]->_initialValue;
+         if ((ival < 0) || (ival >= 1) )
+           _k->_logger->logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
+         new_hyperparam->_initialValue = (ival / (1 - ival));
+       }
+       else
+         _k->_logger->logError("Unrecognized 'Latent Variable Distribution' ");
+     }
+   }
+
+   // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values?-OK. Bounds?
+
+//  volatile int done = 0;
+//  while (!done) sleep(1);
+
+   _hyperparametersMean.push_back( new_hyperparam );
+
+ }
+
+ /* 2. Create covariance matrices.
+      Note: If ever required, could add 'groups' of variables that share a covariance matrix, while groups are independent of each other. */
+ //  Degrees of freedom of the covariance matrix: n*(n+1)/2; we over-represent it as matrix
+ _hyperparametersCovariance.clear();
+ _hyperparametersCovIndices.resize(_latentSpaceDimensions);
+ for (size_t i = 0; i< _hyperparametersCovIndices.size(); i++){
+   _hyperparametersCovIndices[i].clear();
+  }
+ for (size_t i = 0; i < _latentSpaceDimensions; i++){
+   for (size_t j = 0; j < _latentSpaceDimensions; j++){
+     korali::Variable *new_hyperparam = new korali::Variable;
+     new_hyperparam->_latentVariableDistributionType = "NA";
+     new_hyperparam->_bayesianType = "Hyperparameter";
+     new_hyperparam->_latentSpaceCoordinate = -1;
+     new_hyperparam->_individualIndex = -1;
+     new_hyperparam->_name = "Cov["+std::to_string(i)+", "+std::to_string(j)+"]";   // Cov[i][j]
+     if (i == j) new_hyperparam->_initialValue = 5.; // just choosing something large - this could become a configuration parameter
+     else        new_hyperparam->_initialValue = 0.;
+     // Todo: Add any other parameters here that will be required by hierarchical SAEM. Initial values? Bounds?
+   _hyperparametersCovariance.push_back( new_hyperparam );
+   _hyperparametersCovIndices[i].push_back(j + i * _k->_variables.size() );
+   // YES this is used. Unfortunately, cannot create a vector of vectors of korali::Variables, at least not
+   // via the config. Edit: TODO: It might not be such a good idea in general to store a list of korali::Variables at
+   //                             stopping and re-starting. Maybe better move both definitions to the ._hpp ?
+   }
+ }
+
+// _k->_variables.insert( _k->_variables.end(), _hyperparameters.begin(), _hyperparameters.end());
+// for (size_t i = 0; i < _hyperparameters.size(); i++ )
+//   _hyperparameterVariableIndices.push_back(numberLatentVariables + i);
+
+}
+
+
+
+/* De-allocate both vectors with hyperparameter korali-variables
+    -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
+korali::problem::bayesian::latent::HierarchicalLatentLowlevel::~HierarchicalLatentLowlevel(void){
+  for ( int i = 0; i < _hyperparametersMean.size(); i++ )
+    delete _hyperparametersMean[i];
+  _hyperparametersMean.clear();
+  for ( int i = 0; i < _hyperparametersCovariance.size(); i++ )
+      delete _hyperparametersCovariance[i];
+  _hyperparametersCovariance.clear();
+//  gsl_matrix_free(covMatrixGSL);
+//  gsl_matrix_free(chol);
+//  gsl_vector_free(latent_minus_mean);
+//  gsl_vector_free(x);
+}
+
+//
+///*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+//        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
+//        sample is expected to contain parameter 'Latent Variables' */
+//void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateS(korali::Sample& sample){
+//  //sample.run(_sOfLikelihoodModel); // TODO
+//}
+
+/*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
+           values for the latent variables. See the description of this function for more information.
+           (It will set "Conditional LogLikelihood" and use "Latent Variables".) */
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateConditionalLoglikelihood(korali::Sample& sample){
+  sample.run(_conditionalLogLikelihoodFunction);
+}
+
+/*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
+                    a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
+                    Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
+
+         TODO: Move calculation of cholesky decomposition out of this function, and into hSAEM. Don't want to
+                re-calculate this for every latent variable sample.
+         TODO: But first, test it.
+ */
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihood(korali::Sample& sample)
+{
+//  volatile int done = 0;
+//  while (!done) sleep(1);
+
+  // calculate log[ p(latent | hyperparams) ]:
+  // -- need a multivariate log-gaussian function for this
+  // += conditional log-llh (log[p(data | latent)])
+
+
+  auto latentVariables = sample["Latent Variables"].get<std::vector<double>>();
+  auto mean = sample["Mean"].get<std::vector<double>>();
+  int N = mean.size(); // Number of latent variables
+  auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
+  assert (N == covMatrix.size()); // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
+  assert (N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
+  for (std::vector<double> v : covMatrix)
+    assert (v.size() == N);
+//  gsl_matrix* covMatrixGSL = sample["Covariance Matrix"].get<gsl_matrix*>(); // todo: does this work? - No, need to pass a correct type for the pointer, instead of matrix*
+//  assert (covMatrixGSL.size1 == N);
+//  assert (covMatrixGSL.size2 == N);
+
+  //gsl_matrix_const_view covMatrixGSL = gsl_matrix_const_view_array(&covMatrix[0][0], N, N); // This works, but for memcopy below we need a proper matrix
+  gsl_matrix* covMatrixGSL = gsl_matrix_alloc(N, N);
+  covMatrixGSL->data = &covMatrix[0][0]; // todo does this work?
+
+  // First, calculate the cholesky decomposition, cov = L'*L
+  gsl_matrix* chol = gsl_matrix_alloc(N, N);
+  gsl_matrix_memcpy(chol, covMatrixGSL);
+  int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+
+  // --> log(det(covariance)) = sum(log( diag(L) ))
+  double logdet = 0;
+  for (size_t i = 0; i < N; i++){
+    logdet +=  log(gsl_matrix_get(chol, i, i));
+    // We swallow the 2* and drop 1/2* further down (det(Sigma) = det(chol)**2 and we later take the root).
+  }
+
+
+  // we'll need those
+  gsl_vector_const_view mean_view = gsl_vector_const_view_array(&mean[0], N);
+  gsl_vector *latent_minus_mean  = gsl_vector_alloc(N);
+  gsl_vector* x = gsl_vector_alloc(N);
+  int v_idx;
+  double lllh = 0;
+  //gsl_vector_const_view b(&latent_minus_mean, N);
+  //gsl_vector* b = gsl_vector_alloc(N);
+
+  /* Calculate the log-probability for each individual, meaning each of the transformed-latent-variable vectors
+   following the same multivariate Gaussian distribution */
+  for (int i = 0; i < _numberIndividuals; i++){
+    // Get i-th vector of latent variables:
+    for (int j = 0; j < _latentSpaceDimensions; j++){
+      v_idx = _latentIndex[i][j];
+      gsl_vector_set(latent_minus_mean, j, latentVariables[v_idx]);
+    }
+
+    gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
+    //std::vector<double> latent_minus_mean(latentVariables); // should copy -?
+    //std::transform(latent_minus_mean.begin(), latent_minus_mean.end(), mean.begin(), latent_minus_mean.begin(), std::minus<double>());
+
+
+    //  // for inversion/solving a linear eqation, could add a small positive diagonal matrix:
+    //  double eps = 1.e-10;
+    //  gsl_matrix* epsMatrix = gsl_matrix_alloc(N, N);
+    //  gsl_matrix_set_identity(epsMatrix);
+    //  gsl_matrix_scale(epsMatrix, eps);
+
+    // * "Invert" the covariance matrix using the cholesky decomposition cov = L'*L (solve a LSE for each 'individual')
+    gsl_linalg_cholesky_solve(chol, latent_minus_mean, x);   // -> x = Cov^-1 * (latent - mean)
+
+    // --> log(p( latent | mean, cov )) = || (latent - mean)*L^-1 ||^2 / 2
+    //                                  = (latent - mean)^T * cov^-1 / 2 * (latent - mean)
+    double lllh_i;
+    gsl_blas_ddot (latent_minus_mean, x, &lllh_i);
+    lllh -= lllh_i / 2.;
+  }
+
+  // add the log of the normalization factor:
+  double log_normn = (float(N) / 2. * log(2.*M_PI) + logdet) ;
+  lllh -= log_normn * float(_numberIndividuals);
+
+  evaluateConditionalLoglikelihood(sample);
+  //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
+  sample["LogLikelihood"] = sample["Conditional LogLikelihood"].get<double>() + lllh;
+
+  gsl_matrix_free(covMatrixGSL);
+  gsl_matrix_free(chol);
+  gsl_vector_free(latent_minus_mean);
+  gsl_vector_free(x);
+}
+
+///* @brief allocate memory for all GSL-matrix and GSL-vector local variables used in calculating the loglikelihood
+//    @param nLatent: The number of latent variables in this problem.  */
+//void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initializeGSLVariables(int nLatent){
+//  covMatrixGSL = gsl_matrix_alloc(nLatent, nLatent);
+//  chol = gsl_matrix_alloc(nLatent, nLatent);
+//  latent_minus_mean = gsl_vector_alloc(nLatent);
+//  x = gsl_vector_alloc(nLatent);
+//}
+

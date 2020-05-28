@@ -1,5 +1,5 @@
-#ifndef _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
-#define _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
+#ifndef _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_
+#define _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_
 
 #include "modules/problem/bayesian/latent/latent.hpp"
 #include "modules/problem/bayesian/bayesian.hpp"
@@ -11,15 +11,18 @@ namespace problem {
 namespace bayesian {
 namespace latent {
 
-class HierarchicalLatent : public korali::problem::bayesian::Latent
+class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
 {
  private:
+// // local variables, but we don't want to re-allocate space at every use (or do we?)
+//  gsl_matrix* covMatrixGSL;
+//  gsl_matrix* chol;
+//  gsl_vector *latent_minus_mean;
+//  gsl_vector* x;
 
+//  void initializeGSLVariables(int nLatent);
 
  public:
-
- /** @brief The lowlevel problem containing actual calculations. */
- korali::problem::bayesian::latent::HierarchicalLatentLowlevel* _lowlevelProblem;
 
  /**
   * @brief The problem initialization; here, create hyperparameter variables and set up index lists to
@@ -30,13 +33,20 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
  /**
   * @brief De-allocate both vectors with hyperparameter korali-variables
  */
- ~HierarchicalLatent(void);
+ ~HierarchicalLatentLowlevel(void);
 
  /**
   * @brief TODO
  */
  void evaluateLoglikelihood(korali::Sample& sample) override;
 
+
+// /**
+//  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+//        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
+//        sample is expected to contain parameter 'Latent Variables'
+// */
+// void evaluateS(korali::Sample& sample);
 
   /**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
@@ -55,4 +65,4 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
 } // namespace korali
 
 
-#endif // _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
+#endif // _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_
