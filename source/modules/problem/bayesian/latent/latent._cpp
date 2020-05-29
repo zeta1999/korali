@@ -1,4 +1,5 @@
 #include "modules/problem/bayesian/latent/latent.hpp"
+#include "modules/problem/bayesian/bayesian.hpp"
 #include <vector>
 
 /* The problem initialization; just calls the initialization from Bayesian. */
@@ -9,6 +10,20 @@ void korali::problem::bayesian::Latent::initialize()
 
 /* Class considered abstract; do not use. */
 void korali::problem::bayesian::Latent::evaluateLoglikelihood(korali::Sample& sample)
+{
+  _k->_logger->logError("'Latent' is an abstract class; use 'Exponential Latent' or 'Hierarchical Latent'.");
+}
+
+
+/* Class considered abstract; do not use. */
+void korali::problem::bayesian::Latent::evaluateLogPosterior(korali::Sample& sample)
+{
+  _k->_logger->logError("'Latent' is an abstract class; use 'Exponential Latent' or 'Hierarchical Latent'.");
+}
+
+
+/* Class considered abstract; do not use. */
+void korali::problem::bayesian::Latent::evaluateLogPrior(korali::Sample& sample)
 {
   _k->_logger->logError("'Latent' is an abstract class; use 'Exponential Latent' or 'Hierarchical Latent'.");
 }

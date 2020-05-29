@@ -17,30 +17,31 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
   korali::problem::bayesian::Latent::initialize();
 
   if (_numberIndividuals <= 0) _k->_logger->logError("Hierarchical latent variable problems require defining reference data.\n");
-  if (_data.size() != _numberIndividuals) _k->_logger->logError("Hierarchical latent variable problems require defining reference data, with one vector of points for each individual.\n", _likelihoodModel.c_str());
+  if (_data.size() != _numberIndividuals) _k->_logger->logError("Hierarchical latent variable problems require defining reference data, with one vector of points for each individual.\n");
   // The user should define one variable per latent variable dimension, as prototype:
   if (_k->_variables.size() != _latentSpaceDimensions) _k->_logger->logError("Hierarchical latent variable problems require only a subset of prototype variables to be defined. Please define one prototype latent variable per individual. (Expected %d variables, found %d variables.) \n", _numberIndividuals, _k->_variables.size());
 
   // * * Set up the lowlevel problem
-  _lowlevelProblem["Conditional Log Likelihood Function" ] = _conditionalLogLikelihoodFunction ;
-  _lowlevelProblem["Data Dimensions" ] = _dataDimensions;
-  _lowlevelProblem["Data" ] = _data;
-  _lowlevelProblem["Number Individuals" ] = _numberIndividuals;
-  _lowlevelProblem["Latent Space Dimensions" ] = _latentSpaceDimensions;
-  _lowlevelProblem["Initial Variance" ] = _initialVariance;
+  _koraliExperiment["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatentLowlevel";
+  _koraliExperiment["Problem"]["Conditional Log Likelihood Function"] = _conditionalLogLikelihoodFunction ;
+  _koraliExperiment["Problem"]["Data Dimensions" ] = _dataDimensions;
+  _koraliExperiment["Problem"]["Data" ] = _data;
+  _koraliExperiment["Problem"]["Number Individuals" ] = _numberIndividuals;
+  _koraliExperiment["Problem"]["Latent Space Dimensions" ] = _latentSpaceDimensions;
+  _koraliExperiment["Problem"]["Initial Variance" ] = _initialVariance;
 
   // * Create all variables: Additional latent variables as well as hyperparameters.
   // * 1. Determine how many latent variables are needed and create them.
   for (size_t i = 0; i < _numberIndividuals; i++){
     for (size_t dim = 0; dim < _latentSpaceDimensions; dim++ ){
-      korali::Variable var = _k->_variables[dim];
+      korali::Variable *var = _k->_variables[dim];
       if (var->_bayesianType.c_str() != "Latent") _k->_logger->logError("Expected prototype variables for latent variables only; found a hyperparameter. Hyperparameters will be created automatically.");
 //      if (var->_latentVariableDistributionType.c_str() == "NA") _k->_logger->logError("Latent variable distribution type 'NA' is only for internal use. Please choose a valid distribution.");
-      _lowlevelProblem["Variables"][ i * _latentSpaceDimensions + dim ]["Latent Variable Distribution Type"] = var->_latentVariableDistributionType;
-      _lowlevelProblem["Variables"][ i * _latentSpaceDimensions + dim ]["Bayesian Type"] = "Latent";
-      _lowlevelProblem["Variables"][ i * _latentSpaceDimensions + dim ]["Name"] = var->_name.c_str() + " " + std::to_string(i);
-      _lowlevelProblem["Variables"][ i * _latentSpaceDimensions + dim ]["Individual Index"] = i;
-      _lowlevelProblem["Variables"][ i * _latentSpaceDimensions + dim ]["Latent Space Coordinate"] = j;
+      _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Latent Variable Distribution Type"] = var->_latentVariableDistributionType;
+      _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Bayesian Type"] = "Latent";
+      _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Name"] = var->_name + " " + std::to_string(i);
+      _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Individual Index"] = i;
+      _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Latent Space Coordinate"] = dim;
     }
   }
 
@@ -48,11 +49,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  _lognormalLatentIndices.clear();
  _logitnormalLatentIndices.clear();
 
- _latentIndex.clear();
-
- _hyperparametersMeanIndices.clear();
-
-
+// _latentIndex.clear();
   /* Check and assign distribution types (of the latent variables), etc.*/
  for (size_t i = 0; i < _k->_variables.size(); i++)
  {
@@ -76,29 +73,29 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
       Each mean is for whichever transformed version of the variable that is normally distributed. */
  int numberLatent = _latentSpaceDimensions * _numberIndividuals;
  for (size_t i = 0; i < _latentSpaceDimensions; i++){
-   korali::Variable var = _k->_variables[dim];
-   _lowlevelProblem["Variables"][ numberLatent + i ]["Latent Variable Distribution Type"] = "NA";
-   _lowlevelProblem["Variables"][ numberLatent + i ]["Bayesian Type"] = "Hyperparameter";
-   _lowlevelProblem["Variables"][ numberLatent + i ]["Is Mean"] = true;
-   _lowlevelProblem["Variables"][ numberLatent + i ]["Name"] = "Mean of " var->_name.c_str();
-   _lowlevelProblem["Variables"][ numberLatent + i ]["Individual Index"] = -1;
-   _lowlevelProblem["Variables"][ numberLatent + i ]["Latent Space Coordinate"] = j;
-   _lowlevelProblem["Variables"][ numberLatent + i ]["Initial Value"] = var->_initialValue;
-   _hyperparametersMeanIndices.push_back( numberLatent + i );
+   korali::Variable *var = _k->_variables[i];
+   _koraliExperiment["Variables"][ numberLatent + i ]["Latent Variable Distribution Type"] = "NA";
+   _koraliExperiment["Variables"][ numberLatent + i ]["Bayesian Type"] = "Hyperparameter";
+   _koraliExperiment["Variables"][ numberLatent + i ]["Is Mean"] = true;
+   _koraliExperiment["Variables"][ numberLatent + i ]["Name"] = "Mean of " + var->_name;
+   _koraliExperiment["Variables"][ numberLatent + i ]["Individual Index"] = -1;
+   _koraliExperiment["Variables"][ numberLatent + i ]["Latent Space Coordinate"] = i;
+  // _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = var->_initialValue;
+//   _hyperparametersMeanIndices.push_back( numberLatent + i );
 
     /* initialize variable's mean with the user-defined initial value (from one example latent variable representing this coordinate/ distribution index): */
    std::string distribString = _latentVariableDistributions[i];
    if (distribString == "Normal")
-     new_hyperparam->_initialValue =  _k->_variables[i]->_initialValue;
+     _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] =  _k->_variables[i]->_initialValue;
    else {
      if (distribString == "Log-Normal")
-       new_hyperparam->_initialValue = log(_k->_variables[i]->_initialValue);
+       _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = log(_k->_variables[i]->_initialValue);
      else {
        if (distribString == "Logit-Normal"){
          double ival = _k->_variables[i]->_initialValue;
          if ((ival < 0) || (ival >= 1) )
            _k->_logger->logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
-         new_hyperparam->_initialValue = (ival / (1 - ival));
+         _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = (ival / (1 - ival));
        }
        else
          _k->_logger->logError("Unrecognized 'Latent Variable Distribution' %s ", distribString.c_str());
@@ -116,29 +113,43 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  /* 2. Create covariance matrices.
       Note: If ever required, could add 'groups' of variables that share a covariance matrix, while groups are independent of each other. */
  //  Degrees of freedom of the covariance matrix: n*(n+1)/2; we over-represent it as matrix
- _hyperparametersCovIndices.resize(_latentSpaceDimensions);
- for (size_t i = 0; i< _hyperparametersCovIndices.size(); i++){
-   _hyperparametersCovIndices[i].clear();
-  }
+// _hyperparametersCovIndices.resize(_latentSpaceDimensions);
+// for (size_t i = 0; i< _hyperparametersCovIndices.size(); i++){
+//   _hyperparametersCovIndices[i].clear();
+//  }
  for (size_t i = 0; i < _latentSpaceDimensions; i++){
    for (size_t j = 0; j < _latentSpaceDimensions; j++){
-     korali::Variable vari = _k->_variables[i];
-     korali::Variable varj = _k->_variables[j];
+     korali::Variable *vari = _k->_variables[i];
+     korali::Variable *varj = _k->_variables[j];
      int varIdx =  numberLatent + _latentSpaceDimensions + i * _latentSpaceDimensions + j;
-     _lowlevelProblem["Variables"][ varIdx ]["Latent Variable Distribution Type"] = "NA";
-     _lowlevelProblem["Variables"][ varIdx ]["Bayesian Type"] = "Hyperparameter";
-     _lowlevelProblem["Variables"][ numberLatent + i ]["Is Mean"] = false;
-     _lowlevelProblem["Variables"][ numberLatent + i ]["Covariance I"] = i;
-     _lowlevelProblem["Variables"][ numberLatent + i ]["Covariance J"] = j;
-     _lowlevelProblem["Variables"][ varIdx ]["Name"] = "Cov["+std::to_string(i)+", "+std::to_string(j)+"] between "+ vari->_name.c_str()+" and "+ varj->_name.c_str();
-     _lowlevelProblem["Variables"][ varIdx ]["Individual Index"] = -1;
-     _lowlevelProblem["Variables"][ varIdx ]["Latent Space Coordinate"] = -1;
-     if (i == j) _lowlevelProblem["Variables"][ varIdx ]["Initial Value"] = _initialVariance;
-     else        _lowlevelProblem["Variables"][ varIdx ]["Initial Value"] = 0.0;
-   _hyperparametersCovIndices[i].push_back(varIdx);
+     _koraliExperiment["Variables"][ varIdx ]["Latent Variable Distribution Type"] = "NA";
+     _koraliExperiment["Variables"][ varIdx ]["Bayesian Type"] = "Hyperparameter";
+     _koraliExperiment["Variables"][ numberLatent + i ]["Is Mean"] = false;
+     _koraliExperiment["Variables"][ numberLatent + i ]["Covariance I"] = i;
+     _koraliExperiment["Variables"][ numberLatent + i ]["Covariance J"] = j;
+     _koraliExperiment["Variables"][ varIdx ]["Name"] = "Cov["+std::to_string(i)+", "+std::to_string(j)+"] between "+ vari->_name+" and "+ varj->_name;
+     _koraliExperiment["Variables"][ varIdx ]["Individual Index"] = -1;
+     _koraliExperiment["Variables"][ varIdx ]["Latent Space Coordinate"] = -1;
+     if (i == j) _koraliExperiment["Variables"][ varIdx ]["Initial Value"] = _initialVariance;
+     else        _koraliExperiment["Variables"][ varIdx ]["Initial Value"] = 0.0;
+//   _hyperparametersCovIndices[i].push_back(varIdx);
 
    }
  }
+
+
+  _koraliExperiment["Solver"] = "HSAEM";
+
+  _koraliExperiment["File Output"]["Frequency"] = 0;
+  _koraliExperiment["File Output"]["Enabled"] = false;
+  _koraliExperiment["Console Output"]["Frequency"] = 0;
+  _koraliExperiment["Console Output"]["Verbosity"] = "Silent"; // Todo: Or propagate the current, user defined setting?
+  _koraliExperiment["Random Seed"] = _k->_randomSeed++;
+
+ // TODO: Initialize the experiment and "extract" the lowlevel problem, so that we can call it's functions later.
+  _koraliEngine.initialize(_koraliExperiment);
+  _lowlevelProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatentLowlevel*>(
+                                                                   _koraliExperiment["Problem"].get<korali::Problem>());
 
 }
 
@@ -147,7 +158,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 /* De-allocate both vectors with hyperparameter korali-variables
     -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
 korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void){
-  delete _lowlevelProblem;
+  delete _koraliExperiment;
 
 }
 
@@ -178,6 +189,16 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalL
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood(korali::Sample& sample)
 {
   _lowlevelProblem->evaluateLoglikelihood(sample);
+}
+
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPosterior(korali::Sample& sample)
+{
+  _lowlevelProblem->evaluateLogPosterior(sample);
+}
+
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPrior(korali::Sample& sample)
+{
+  _lowlevelProblem->evaluateLogPrior(sample);
 }
 
 ///* @brief allocate memory for all GSL-matrix and GSL-vector local variables used in calculating the loglikelihood

@@ -38,7 +38,7 @@ void korali::problem::bayesian::latent::ExponentialLatent::evaluateLogPosterior(
   std::vector<double> _sValues = sample["S"].get<std::vector<double>>();
   std::vector<double> _phiValues = sample["phi"].get<std::vector<double>>();
 
-  sample["logPosterior"] = - _zetaValue + std::inner_product(std::begin(_sValues), std::end(_sValues), std::begin(_phiValues), 0.0);
+  sample["Log Posterior"] = - _zetaValue + std::inner_product(std::begin(_sValues), std::end(_sValues), std::begin(_phiValues), 0.0);
 }
 
 /*! @brief run the user defined sampler.

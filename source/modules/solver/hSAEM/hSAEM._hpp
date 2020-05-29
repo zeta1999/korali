@@ -3,6 +3,8 @@
 
 #include "modules/solver/solver.hpp"
 #include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
+#include "modules/distribution/multivariate/normal/normal.hpp"
+#include "modules/distribution/univariate/uniform/uniform.hpp"
 
 namespace korali { namespace solver {
 
@@ -24,6 +26,7 @@ class HSAEM : public korali::Solver
  void updateS();
  void updateHyperparameters();
  void updateCholesky();
+ void updateAnnealedDistribution();
 
    /**
   * @brief initial things to run to test the hierarchical latent problem class
@@ -31,8 +34,9 @@ class HSAEM : public korali::Solver
   void justTesting();
 
  bool isLatent(int idx);
- std::vector<double> meanAndSDev(std::vector<double> v);
- std::vector<std::vector<double> > transpose(const std::vector<std::vector<double> > data);
+ std::vector<double> meanAndSDev(const std::vector<double> &v);
+ std::vector<std::vector<double> > transpose(const std::vector<std::vector<double> > &data);
+ std::vector<double> flatten(const std::vector<std::vector<double>> &v);
 
 // void finalize() override;
 

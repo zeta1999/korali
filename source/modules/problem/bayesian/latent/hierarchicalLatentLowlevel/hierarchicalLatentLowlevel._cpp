@@ -1,4 +1,4 @@
-#include "modules/problem/bayesian/latent/HierarchicalLatentLowlevel/HierarchicalLatentLowlevel.hpp"
+#include "modules/problem/bayesian/latent/hierarchicalLatentLowlevel/hierarchicalLatentLowlevel.hpp"
 
 #include <math.h>
 #include <map>
@@ -74,10 +74,10 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
   // store pointers to hyperparameter variables in an easier form
   if (typeString == "Hyperparameter"){
     if (var->_isMean){
-      _hyperparametersMean[var->_latentSpaceCoordinate] = &_k->_variables[i];
+      _hyperparametersMean[var->_latentSpaceCoordinate] = _k->_variables[i];
     }
     else {
-      _hyperparametersCovariance[var->_covarianceI * _latentSpaceDimensions + var->_covarianceJ] = &_k->_variables[i];
+      _hyperparametersCovariance[var->_covarianceI * _latentSpaceDimensions + var->_covarianceJ] = _k->_variables[i];
     }
   }
 
@@ -86,6 +86,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
   /* Check the distribution indices and individual indices.
        For each distribution index, there should be the same number of 'individual' indices.
        Then create lists to keep track of them. */
+ std::vector<int> sortedDistribIndices(0);
+ std::vector<int> sortedIndividualIndices(0);
  for(auto var : _k->_variables)
    sortedDistribIndices.push_back(var->_latentSpaceCoordinate);
  for(auto var : _k->_variables)
@@ -94,8 +96,9 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
  std::sort( sortedIndividualIndices.begin(), sortedIndividualIndices.end() );
  sortedDistribIndices.erase( unique( sortedDistribIndices.begin(), sortedDistribIndices.end() ), sortedDistribIndices.end() );
  sortedIndividualIndices.erase( unique( sortedIndividualIndices.begin(), sortedIndividualIndices.end() ), sortedIndividualIndices.end() );
- _latentSpaceDimensions = sortedDistribIndices.size();
- _numberIndividuals = sortedIndividualIndices.size();
+ if (_latentSpaceDimensions != sortedDistribIndices.size()) _k->_logger->logError("Expected the utilized latent space coordinates to range from zero to one below the latent space dimension. Found too many or too few latent space coordinates in total.");
+ if (_numberIndividuals != sortedIndividualIndices.size()) _k->_logger->logError("Expected the utilized individual indices to range from zero to one below the number of individuals. Found too many or too few individual indices in total.");
+
 
  _latentIndex.resize(_numberIndividuals);
  for (size_t i = 0; i < _numberIndividuals; i++)
@@ -104,19 +107,22 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
    _k->_logger->logError("Error: For each coordinate of each 'individual' latent variable vector, one (latent) variable needs to be defined.");
 
  // * Check that the ranges are from 0 to max
+ std::map<int, std::vector<int>> latentCoordinatesPerIndividual;
  for (auto var : _k->_variables){
-   if (distribIndicesPerIndividual.count(var->_individualIndex) ==0){
-     distribIndicesPerIndividual.insert(std::make_pair(var->_individualIndex, std::vector<int>()));
-    // distribIndicesPerIndividual[var->_individualIndex] = std::vector<int>(0);
-     distribIndicesPerIndividual.at(var->_individualIndex).clear();
-     distribIndicesPerIndividual.at(var->_individualIndex).push_back(var->_latentSpaceCoordinate);
+   if (latentCoordinatesPerIndividual.count(var->_individualIndex) ==0){
+     latentCoordinatesPerIndividual.insert(std::make_pair(var->_individualIndex, std::vector<int>()));
+    // latentCoordinatesPerIndividual[var->_individualIndex] = std::vector<int>(0);
+     latentCoordinatesPerIndividual.at(var->_individualIndex).clear();
+     latentCoordinatesPerIndividual.at(var->_individualIndex).push_back(var->_latentSpaceCoordinate);
    }
-   else  distribIndicesPerIndividual.at(var->_individualIndex).push_back(var->_latentSpaceCoordinate);
+   else  latentCoordinatesPerIndividual.at(var->_individualIndex).push_back(var->_latentSpaceCoordinate);
  }
  for (size_t i = 0; i < _numberIndividuals; i++){
-   assert ( std::find(sortedIndividualIndices.begin(), sortedIndividualIndices.end(), i) != sortedIndividualIndices.end()); // "Error: Expected contiguous range of individual-indices. This index was missing: "+std::to_string(i));
+   if ( std::find(sortedIndividualIndices.begin(), sortedIndividualIndices.end(), i) == sortedIndividualIndices.end())
+     _k->_logger->logError("Error: Expected contiguous range of individual-indices. This index was missing: %d",i);
    for (size_t j = 0; j < _latentSpaceDimensions; j++){
-     assert (std::find(distribIndicesPerIndividual[i].begin(), distribIndicesPerIndividual[i].end(), j) != distribIndicesPerIndividual[i].end()); // "Error: A distribution index ("+std::to_string(j)+") was not present for any variable with 'Individual Index' "+std::to_string(i)+". We need each 'coordinate' (distribution type) once for each individual.");
+     if (std::find(latentCoordinatesPerIndividual[i].begin(), latentCoordinatesPerIndividual[i].end(), j) == latentCoordinatesPerIndividual[i].end())
+       _k->_logger->logError("Error: A latent space coordinate (%d) was not present for any variable with 'Individual Index' %d. We need each 'coordinate' once for each individual.", j, i);
    }
  }
 
@@ -164,26 +170,26 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
 /*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, for each data point
             and each vector given in sample["Latent Variables"].
      @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
-     @returns : sample['LogLikelihood'], a list/vector with one log-likelihood per individual.
+     @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
      */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihood(korali::Sample& sample){
   std::vector<std::vector<double>> allLatentVars = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
   std::vector<double> allLogP(_numberIndividuals);
   for (size_t i = 0; i < _numberIndividuals; i++){
-    assert (data[i].size() > 0); // && "We need non-empty data for each individual.");
+    assert (_data[i].size() > 0); // && "We need non-empty data for each individual.");
     double logP = 0;
     for (std::vector<double> dataPoint : _data[i]){
       sample["Latent Variables"] = allLatentVars[i];
       sample["Data Point"] = dataPoint;
       sample.run(_conditionalLogLikelihoodFunction);
-      logP += sample["Conditional Loglikelihood"];
+      logP += sample["Conditional Loglikelihood"].get<double>();
     }
     allLogP[i] = logP;
   }
-  sample["LogLikelihood"] = allLogP;
+  sample["Log Likelihood"] = allLogP;
 }
 
-/*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
+/*! @brief Evaluate the "prior" log-probability of the latent variables, given hyperparameters (mean and covariance matrix).
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
                     a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
@@ -192,7 +198,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
                 re-calculate this for every latent variable sample.
          TODO: But first, test it.
  */
-void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior(korali::Sample& sample)
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior(korali::Sample& sample)
 {
 //  volatile int done = 0;
 //  while (!done) sleep(1);
@@ -274,9 +280,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   double log_normn = (float(N) / 2. * log(2.*M_PI) + logdet) ;
   lllh -= log_normn * float(_numberIndividuals);
 
-  evaluateLoglikelihood(sample);
-  //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
-  sample["LogLikelihood"] = sample["Conditional LogLikelihood"].get<double>() + lllh;
+  sample["Log Likelihood"] = lllh;
 
   gsl_matrix_free(covMatrixGSL);
   gsl_matrix_free(chol);
@@ -284,12 +288,18 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   gsl_vector_free(x);
 }
 
-///* @brief allocate memory for all GSL-matrix and GSL-vector local variables used in calculating the loglikelihood
-//    @param nLatent: The number of latent variables in this problem.  */
-//void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initializeGSLVariables(int nLatent){
-//  covMatrixGSL = gsl_matrix_alloc(nLatent, nLatent);
-//  chol = gsl_matrix_alloc(nLatent, nLatent);
-//  latent_minus_mean = gsl_vector_alloc(nLatent);
-//  x = gsl_vector_alloc(nLatent);
-//}
+/*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Data
+                    was given at Problem creation.
+                    "Mean" should be a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
+                    Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
+         TODO: test it.
+ */
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior(korali::Sample& sample)
+{
+  evaluateLogPrior(sample);
 
+  evaluateLoglikelihood(sample);
+  //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
+  sample["Log Posterior"] = sample["Log Likelihood"].get<double>() + sample["Log Prior"].get<double>();
+}

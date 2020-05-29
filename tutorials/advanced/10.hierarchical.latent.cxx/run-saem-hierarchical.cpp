@@ -27,6 +27,18 @@ int main(int argc, char* argv[])
    // the distribution already "contains" the data, it implements the function: latent --> p(data | latent)
   e["Problem"]["Conditional Log Likelihood Function"] = &distrib4_conditional_p; // defined in model.cpp
 
+  // We need to add one dimension to _p.data, because one individual in the general case could have
+  // more than one data point assigned
+  std::vector<std::vector<std::vector<double>>> dataVector(nIndividuals);
+  for (size_t i = 0; i < nIndividuals; i++){
+    dataVector[i].clear();
+    dataVector[i].push_back(distrib4._p.data[i]);
+  }
+  e["Problem"]["Data"] = dataVector;
+  e["Problem"][ "Data Dimensions" ] = 1;
+  e["Problem"]["Number Individuals" ] = nIndividuals;
+  e["Problem"][ "Latent Space Dimensions" ] = 1;
+
   e["Solver"]["Type"] = "HSAEM";
   e["Solver"]["Number Samples Per Step"] = 100;
   e["Solver"]["Termination Criteria"]["Max Generations"] = 30;
@@ -37,7 +49,8 @@ int main(int argc, char* argv[])
   e["Distributions"][0]["Maximum"] = 100;
 
     // * Define which latent variables we use (only the means - sigma is assumed known and the same for each)
-  for (size_t i = 0; i < nIndividuals; i++){
+  // for (size_t i = 0; i < nIndividuals; i++){
+  for (size_t i = 0; i < 1; i++){
     e["Variables"][i]["Name"] = "latent mean " + std::to_string(i);
     e["Variables"][i]["Initial Value"] = -5;
     e["Variables"][i]["Bayesian Type"] = "Latent";

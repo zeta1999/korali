@@ -37,22 +37,25 @@ ConditionalDistribution4::ConditionalDistribution4(){
 void ConditionalDistribution4::conditional_p(korali::Sample& s)
 {
       std::vector<double> latentVariables = s["Latent Variables"];
-      assert (latentVariables.size() == _p.nIndividuals);
+      std::vector<double> dataPoint = s["Data Point"];
+      assert (latentVariables.size() == 1); // nr latent space dimensions = 1
 
       double sigma = _p.sigma;
 
       // log(p(data | mean, sigma ))
       double logp = 0;
-      for (size_t i=0; i < _p.nIndividuals; i++){
-        double pt = _p.data[i][0];
+      // for (size_t i=0; i < _p.nIndividuals; i++){
+        //double pt = _p.data[i][0];
+        double pt = dataPoint[0]; // in this example there is only one data dimension, too
+        //assert (pt == _p.data[i][0]); // did we set the data correctly?
         std::vector<double> pt_vec({pt});
-        double mean = latentVariables[i];
-        std::vector<double> mean_vec({mean});
-
-        double p = univariate_gaussian_probability(mean_vec, sigma, pt_vec);
+//        double mean = latentVariables[0];
+//        std::vector<double> mean_vec({mean});
+        assert (latentVariables.size() == 1); // In this example the dimension is 1
+        double p = univariate_gaussian_probability(latentVariables, sigma, pt_vec);
 
         logp += log(p);
-      }
+      // }
 
       s["Conditional LogLikelihood"] = logp;
 };
