@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 
  e["Solver"]["Type"] = "SAEM";
  e["Solver"]["Number Samples Per Step"] = 100;
- e["Solver"]["Termination Criteria"]["Max Generations"] = 100;
+ e["Solver"]["Termination Criteria"]["Max Generations"] = 30;
 
 
  e["Distributions"][0]["Name"] = "Uniform 0";
