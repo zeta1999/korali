@@ -85,6 +85,7 @@ void korali::solver::TMCMC::setInitialConfiguration()
     if (_maxChainLength != 1) korali::Logger::logError("Current version of 'mTMCMC' supports only 'Max Chain Length' of 1 (BASIS).");
     if (_stepSize < 0.0) korali::Logger::logError("Step Size lower than 0.0 (is %lf)\n", _stepSize);
     if (_domainExtensionFactor < 0.0) korali::Logger::logError("Domain Extension Factor lower than 0.0 (is %lf)\n", _domainExtensionFactor);
+    if (_targetAcceptanceRate <= 0.0 || _targetAcceptanceRate > 1.0) korali::Logger::logError("Target Acceptance Rate must be in (0,1), is %lf.", _targetAcceptanceRate);
 
     _chainCandidatesErrors.resize(_populationSize, -1);
     _chainLeadersErrors.resize(_populationSize, -1);
@@ -194,6 +195,7 @@ void korali::solver::TMCMC::runGeneration()
   {
     if (_k->_currentGeneration > 1)
     {
+      calculateStepSize();
       calculateGradients(samples);
       calculateProposals(samples);
     }
@@ -426,6 +428,17 @@ void korali::solver::TMCMC::processGeneration()
 
   _maxLoglikelihood = *std::max_element(_sampleLogLikelihoodDatabase.begin(), _sampleLogLikelihoodDatabase.end());
   _chainCount = leaderId;
+}
+
+
+void korali::solver::TMCMC::calculateStepSize()
+{
+  if (_adaptiveStepSize == false) return;
+
+  double t = _proposalsAcceptanceRate/_targetAcceptanceRate;
+  double factor = 0.5 + 1.0/(1.0+exp(-3.0*(t-1.0)));
+  _stepSize *= factor;
+
 }
 
 void korali::solver::TMCMC::calculateGradients(std::vector<korali::Sample> &samples)
@@ -843,6 +856,7 @@ void korali::solver::TMCMC::printGenerationAfter()
 
   if (_version == "mTMCMC")
   {
+    if(_adaptiveStepSize) _k->_logger->logInfo("Detailed", "Step Size: %lf\n", _stepSize);
     _k->_logger->logInfo("Normal", "Number Of Covariance Corrections: %zu\n", _numCovarianceCorrections);
     _k->_logger->logInfo("Detailed", "Number Of LU Decomposition Errors: %zu\n", _numLUDecompositionFailuresProposal);
     _k->_logger->logInfo("Detailed", "Number Of Eigenvalue Errors: %zu\n", _numEigenDecompositionFailuresProposal);

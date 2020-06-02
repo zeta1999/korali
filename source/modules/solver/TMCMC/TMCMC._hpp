@@ -47,6 +47,11 @@ class TMCMC : public korali::Solver
   void processCandidate(const size_t sampleId);
 
   /* 
+  * @brief Calculates step size based on Target Acceptance Rate (only relevant for mTMCMC and Adaptive Step Size active).
+  */
+  void calculateStepSize();
+
+  /* 
   * @brief Calculate gradients of loglikelihood (only relevant for mTMCMC).
   */
   void calculateGradients(std::vector<korali::Sample> &samples);

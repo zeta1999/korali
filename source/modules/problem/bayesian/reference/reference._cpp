@@ -102,7 +102,7 @@ void korali::problem::bayesian::Reference::loglikelihoodPositiveNormal(korali::S
     double m = -korali::Inf;
     try
     {
-      sample["Reference Evaluations"][i];
+      m = sample["Reference Evaluations"][i];
     }
     catch (const std::exception &e)
     {
@@ -147,12 +147,8 @@ void korali::problem::bayesian::Reference::loglikelihoodNegativeBinomial(korali:
     {
       korali::Logger::logError("Missing or incorrect value of 'Reference Evaluations' at position %lu returned by the sample evaluation. \n   + Solution: Make sure your model is storing its reference evaluations, e.g., sample[\"Reference Evaluations\"] = value(s).\n   + Cause: %s\n", i, e.what());
     }
+    if (m < 0.0) korali::Logger::logError("Negative value (%lf) detected in Reference Evaluation.\n", m);
 
-    if (m <= 0)
-    {
-      sample["logLikelihood"] = -korali::Inf;
-      return;
-    }
 
     double r = -korali::Inf;
     try
@@ -164,6 +160,7 @@ void korali::problem::bayesian::Reference::loglikelihoodNegativeBinomial(korali:
       korali::Logger::logError("Missing or incorrect value of 'Dispersion' at position %lu returned by the sample evaluation. \n   + Solution: Make sure your model is storing its reference evaluations, e.g., sample[\"Dispersion\"] = value(s).\n   + Cause: %s\n", i, e.what());
     }
 
+    if (r <= 0.0) korali::Logger::logError("Negative or zero value (%lf) detected for the Dispersion.\n", r);
     double p = m / (m + r);
     double y = _referenceData[i];
 
