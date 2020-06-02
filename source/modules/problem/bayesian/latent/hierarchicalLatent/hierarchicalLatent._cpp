@@ -56,6 +56,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
   // Check variables type
   std::string typeString = _k->_variables[i]->_bayesianType;
   if (typeString != "Latent") korali::Logger::logError("Unrecognized Variable Type %s \n", typeString.c_str());
+ }
 
 //  /* Check distributions and sort latent variables by distribution */
 //  bool recognizedDistribution = false;
@@ -149,7 +150,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  // TODO: Initialize the experiment and "extract" the lowlevel problem, so that we can call it's functions later.
   _koraliEngine.initialize(_koraliExperiment);
   _lowlevelProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatentLowlevel*>(
-                                                                   _koraliExperiment["Problem"].get<korali::Problem>());
+                                                                                        _koraliExperiment._problem );
 
 }
 
@@ -157,9 +158,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 
 /* De-allocate both vectors with hyperparameter korali-variables
     -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
-korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(void){
-  delete _koraliExperiment;
-
+korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent(){
+  delete &_koraliExperiment;
 }
 
 //
