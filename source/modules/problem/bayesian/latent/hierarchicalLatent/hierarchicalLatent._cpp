@@ -35,7 +35,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
   for (size_t i = 0; i < _numberIndividuals; i++){
     for (size_t dim = 0; dim < _latentSpaceDimensions; dim++ ){
       korali::Variable *var = _k->_variables[dim];
-      if (var->_bayesianType.c_str() != "Latent") korali::Logger::logError("Expected prototype variables for latent variables only; found a hyperparameter. Hyperparameters will be created automatically.");
+      if (var->_bayesianType != "Latent") korali::Logger::logError("Expected prototype variables for latent variables only; found a hyperparameter. Hyperparameters will be created automatically.");
 //      if (var->_latentVariableDistributionType.c_str() == "NA") korali::Logger::logError("Latent variable distribution type 'NA' is only for internal use. Please choose a valid distribution.");
       _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Latent Variable Distribution Type"] = var->_latentVariableDistributionType;
       _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Bayesian Type"] = "Latent";
@@ -85,9 +85,11 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 //   _hyperparametersMeanIndices.push_back( numberLatent + i );
 
     /* initialize variable's mean with the user-defined initial value (from one example latent variable representing this coordinate/ distribution index): */
-   std::string distribString = _latentVariableDistributions[i];
-   if (distribString == "Normal")
-     _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] =  _k->_variables[i]->_initialValue;
+   std::string distribString =  var->_latentVariableDistributionType; //_latentVariableDistributions[i];
+   if (distribString == "Normal"){
+     _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = 0; // TODO: This fails. Find out why and then make the line below work.
+     //_koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] =  _k->_variables[i]->_initialValue;
+   }
    else {
      if (distribString == "Log-Normal")
        _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = log(_k->_variables[i]->_initialValue);

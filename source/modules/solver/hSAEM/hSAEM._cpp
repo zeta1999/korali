@@ -30,7 +30,7 @@ void korali::solver::HSAEM::initialize()
  /* @brief Run once, before the first generation */
 void korali::solver::HSAEM::setInitialConfiguration()
 {
-  // resizing and clearing internal vectors
+  // Resizing and clearing internal vectors
  _currentSamples.clear();
  _currentSampleMeans.resize(_latentSpaceDimensions);
  _currentZ.resize(_mcmcNumberChains);

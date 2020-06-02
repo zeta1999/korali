@@ -95,7 +95,7 @@ class MCMCLatentSampler:
 
     # Configuring output settings
     e["File Output"]["Frequency"] = 0
-    e["File Output"]["Path"] = '_korali_sampling_results'
+    e["File Output"]["Path"] = "_korali_sampling_results"
     e["Console Output"]["Frequency"] = 0
     e["Console Output"]["Verbosity"] = "Silent"
 
