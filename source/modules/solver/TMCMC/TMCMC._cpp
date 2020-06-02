@@ -436,7 +436,7 @@ void korali::solver::TMCMC::calculateStepSize()
   if (_adaptiveStepSize == false) return;
 
   double t = _proposalsAcceptanceRate/_targetAcceptanceRate;
-  double factor = 0.5 + 1.0/(1.0+exp(-3.0*(t-1.0)));
+  double factor = 0.5 + 1.0/(1.0+exp(-5.0*(t-1.0)));
   _stepSize *= factor;
 
 }
