@@ -7,7 +7,7 @@ void korali::solver::HSAEM::initialize()
 {
 
  if( (_k->_problem->getType() != "Bayesian/Latent/HierarchicalLatent") && (_k->_problem->getType() != "Bayesian/Latent/HierarchicalLatentLowlevel"))
-   _k->_logger->logError("SAEM can only optimize problems of type 'Bayesian/Latent/HierarchicalLatent' or '.../HierarchicalLatentLowlevel' .\n");
+   korali::Logger::logError("SAEM can only optimize problems of type 'Bayesian/Latent/HierarchicalLatent' or '.../HierarchicalLatentLowlevel' .\n");
  if (_k->_problem->getType() == "Bayesian/Latent/HierarchicalLatent"){
    _latentProblemWrapper = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatent*>(_k->_problem);
    _latentProblem = _latentProblemWrapper->_lowlevelProblem;
@@ -22,7 +22,7 @@ void korali::solver::HSAEM::initialize()
 
  for (size_t i = 0; i < _numberLatent; i++)
    if( std::isfinite(_k->_variables[i]->_initialValue) == false )
-     _k->_logger->logError("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
+     korali::Logger::logError("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
 
 
 }
