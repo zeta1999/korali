@@ -165,15 +165,16 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
 //  //sample.run(_sOfLikelihoodModel); // TODO
 //}
 
-/*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
-           values for the latent variables. See the description of this function for more information.
-           (It will set "Conditional LogLikelihood" and use "Latent Variables".) */
+/*! @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
+            vector of latent variables (for a single, unspecified individual).
+            See the description of this function for more information.
+           (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".) */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihoodSingle(korali::Sample& sample){
   sample.run(_conditionalLogLikelihoodFunction);
   //sample["Single LogLikelihood"] = sample["Conditional LogLikelihood"];
 }
-/*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, for each data point
-            and each vector given in sample["Latent Variables"].
+/*! @brief Evaluate the total log-likelihood log(p(data | latent variables)) of all data points, given at problem definition.
+            Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).
      @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
      @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
      */
@@ -187,7 +188,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
       sample["Latent Variables"] = allLatentVars[i];
       sample["Data Point"] = dataPoint;
       sample.run(_conditionalLogLikelihoodFunction);
-      logP += sample["Conditional Loglikelihood"].get<double>();
+      logP += sample["Conditional LogLikelihood"].get<double>();
     }
     allLogP[i] = logP;
   }
@@ -197,6 +198,9 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
 /*! @brief Evaluate the "prior" log-probability of the latent variables, given hyperparameters (mean and covariance matrix).
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
                     a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
+                    "Latent Variables" should be a vector of vectors, one latent variable vector per individual. The order is
+                    assumed to be the same as the order of variables according to their indices at problem definition
+                    (["Variables"][THE_INDEX]["some property"] = ...)
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
 
          TODO: Move calculation of cholesky decomposition out of this function, and into hSAEM. Don't want to
@@ -213,7 +217,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   // += conditional log-llh (log[p(data | latent)])
 
 
-  auto latentVariables = sample["Latent Variables"].get<std::vector<double>>();
+  auto latentVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
   auto mean = sample["Mean"].get<std::vector<double>>();
   int N = mean.size(); // Number of latent variables
   auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
@@ -256,8 +260,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   for (int i = 0; i < _numberIndividuals; i++){
     // Get i-th vector of latent variables:
     for (int j = 0; j < _latentSpaceDimensions; j++){
-      v_idx = _latentIndex[i][j];
-      gsl_vector_set(latent_minus_mean, j, latentVariables[v_idx]);
+      //v_idx = _latentIndex[i][j];
+      gsl_vector_set(latent_minus_mean, j, latentVariables[i][j]);
     }
 
     gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
@@ -285,7 +289,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   double log_normn = (float(N) / 2. * log(2.*M_PI) + logdet) ;
   lllh -= log_normn * float(_numberIndividuals);
 
-  sample["Log Likelihood"] = lllh;
+  sample["Log Prior"] = lllh;
 
   gsl_matrix_free(covMatrixGSL);
   gsl_matrix_free(chol);
@@ -305,6 +309,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   evaluateLogPrior(sample);
 
   evaluateLoglikelihood(sample);
-  //               log(p) =         log(p(y | latent))          + log(p(latent | hyperparams))
-  sample["Log Posterior"] = sample["Log Likelihood"].get<double>() + sample["Log Prior"].get<double>();
+  auto llhs = sample["Log Likelihood"].get<std::vector<double>>();
+
+  //               log(p) =         log(p(y | latent))                   + log(p(latent | hyperparams))
+  sample["Log Posterior"] = std::accumulate(llhs.begin(), llhs.end(), 0) + sample["Log Prior"].get<double>();
 }

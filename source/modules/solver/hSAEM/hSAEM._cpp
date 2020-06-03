@@ -120,7 +120,7 @@ void korali::solver::HSAEM::justTesting()
 {
 // for simple population example: Only means of the data, 1-dimensional
  size_t nIndividuals = 10;
- std::vector<double> latent_vars = {1.25, 1.25, 1.25, 1., 1., 1., 0.9, 0.75, 0.75, 0.75,};
+ std::vector<std::vector<double> > latent_vars = {{1.25}, {1.25}, {1.25}, {1.}, {1.}, {1.}, {0.9}, {0.75}, {0.75}, {0.75}};
  std::vector<double> mean = {1};
  std::vector<std::vector<double>> cov(1);
  cov[0] = std::vector<double>({0.5});
@@ -128,7 +128,7 @@ void korali::solver::HSAEM::justTesting()
  // set by the problem - we can't access them here
 
  korali::Sample sample;
- sample["Latent Variables"] = {latent_vars[0]};
+ sample["Latent Variables"] = latent_vars[0];
  sample["Data Point"] = {0.89} ;
  sample["Mean"] = mean ;
  sample["Covariance Matrix"] = cov;
@@ -150,10 +150,11 @@ void korali::solver::HSAEM::justTesting()
 
 
  // * test evaluateLoglikelihood()
-  sample["Operation"] = "Evaluate LogPosterior";
+  sample["Latent Variables"] = latent_vars;
+  sample["Operation"] = "Evaluate logPosterior";
   _conduit->start(sample);
   _conduit->wait(sample);
-  double llh = sample["LogPosterior"];
+  double llh = sample["Log Posterior"].get<double>();
   _k->_logger->logInfo("Normal", "Test: LLH = %f evaluated for latent variables as above, plus mean:\n", llh);
   for (size_t i = 0; i < mean.size(); i++){
     _k->_logger->logInfo("Normal", "Test: \t Mean %d: %e \n", i, mean[i]);
