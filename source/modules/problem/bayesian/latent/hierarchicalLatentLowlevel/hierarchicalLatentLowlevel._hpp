@@ -36,7 +36,8 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
 // ~HierarchicalLatentLowlevel(void);
 
  /**
-  * @brief Evaluate log of p(latent | hyperparameters) , so the hyperparam-dependent prior over the latent variables
+  * @brief Evaluate log of p(latent | hyperparameters) , so the hyperparam-dependent prior over each latent variable.
+  * @returns a vector, with one log-prior for each latent variable.
  */
  void evaluateLogPrior(korali::Sample& sample) override;
 
@@ -68,7 +69,11 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
  */
  void evaluateLoglikelihood(korali::Sample& sample) override;
 
-
+ /**
+  * @brief transform each coordinate of z back to the latent variable it corresponds to. (E.g. if a latent variable
+  *        latent_i has a normal distribution, z_i == latent_i; if it is log-normal, exp(z_i) = latent_i, etc.
+ */
+ std::vector<double> zToLatent(std::vector<double> z);
 
 };
 

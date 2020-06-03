@@ -195,17 +195,23 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
   sample["Log Likelihood"] = allLogP;
 }
 
-/*! @brief Evaluate the "prior" log-probability of the latent variables, given hyperparameters (mean and covariance matrix).
+/*! @brief Evaluate the "prior" log-probability of the transformed latent variables, given hyperparameters (mean and covariance matrix).
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
                     a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
-                    "Latent Variables" should be a vector of vectors, one latent variable vector per individual. The order is
+                    "Latent Variables" should be a vector of vectors, one * transformed * latent variable vector per individual. The order is
                     assumed to be the same as the order of variables according to their indices at problem definition
                     (["Variables"][THE_INDEX]["some property"] = ...)
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
 
-         TODO: Move calculation of cholesky decomposition out of this function, and into hSAEM. Don't want to
+         TODO, updated: So this essentially implements a multivariate normal probability function. Though, that is already
+                implemented in the distribution multivariate/normal. So this is basically unnecessary. Well.
+                *** So: If this logPrior function turns out to malfunction, replace with one that uses multivariate/normal instead.
+
+         Former todo: Move calculation of cholesky decomposition out of this function, and into hSAEM. Don't want to
                 re-calculate this for every latent variable sample.
-         TODO: But first, test it.
+                -- wait, the prior is calculated over _all_ latent variables at once
+                  -- first see where you will actually need this function
+         ALso todo: But first, test it some more.
  */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior(korali::Sample& sample)
 {
@@ -251,7 +257,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   gsl_vector *latent_minus_mean  = gsl_vector_alloc(N);
   gsl_vector* x = gsl_vector_alloc(N);
   int v_idx;
-  double lllh = 0;
+  std::vector<double> individualLLH(_numberIndividuals);
+//  double lllh = 0;
   //gsl_vector_const_view b(&latent_minus_mean, N);
   //gsl_vector* b = gsl_vector_alloc(N);
 
@@ -282,14 +289,18 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
     //                                  = (latent - mean)^T * cov^-1 / 2 * (latent - mean)
     double lllh_i;
     gsl_blas_ddot (latent_minus_mean, x, &lllh_i);
-    lllh -= lllh_i / 2.;
+//    lllh -= lllh_i / 2.;
+    individualLLH[i] -= lllh_i / 2.;
   }
 
   // add the log of the normalization factor:
   double log_normn = (float(N) / 2. * log(2.*M_PI) + logdet) ;
-  lllh -= log_normn * float(_numberIndividuals);
+  for (size_t i = 0; i < _numberIndividuals; i++)
+    individualLLH[i] -= log_normn;
+//  lllh -= log_normn * float(_numberIndividuals);
 
   sample["Log Prior"] = lllh;
+  sample["Log Prior"] = individualLLH;
 
   gsl_matrix_free(covMatrixGSL);
   gsl_matrix_free(chol);
@@ -310,7 +321,34 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 
   evaluateLoglikelihood(sample);
   auto llhs = sample["Log Likelihood"].get<std::vector<double>>();
+  auto lpriors = sample["Log Prior"].get<std::vector<double>>();
 
   //               log(p) =         log(p(y | latent))                   + log(p(latent | hyperparams))
-  sample["Log Posterior"] = std::accumulate(llhs.begin(), llhs.end(), 0) + sample["Log Prior"].get<double>();
+  sample["Log Posterior"] = std::accumulate(llhs.begin(), llhs.end(), 0) +  std::accumulate(lpriors.begin(), lpriors.end(), 0);
+}
+
+std::vector<double> korali::problem::bayesian::latent::HierarchicalLatentLowlevel::zToLatent(std::vector<double> z){
+  if (z.size() != _latentSpaceDimensions)
+    korali::Logger::logError("Error, z vector passed to zToLatent() had the wrong number of entries.");
+  std::vector<double> theta(_latentSpaceDimensions);
+
+  int counter = 0;
+  for(int i : _normalLatentIndices){
+    theta[i] = z[i];
+    counter++;
+  }
+  for(int i : _lognormalLatentIndices){
+    theta[i] = exp(z[i]);
+    counter++;
+  }
+  for(int i : _logitnormalLatentIndices){
+    double ival = _k->_variables[i]->_initialValue;
+    if ((ival < 0) || (ival >= 1) )
+      korali::Logger::logError("Any value of a logit-normally distributed variable needs to be in range [0, 1).");
+    theta[i] = 1.0 / (1.0 + exp(-z[i]));  // z= logit(theta)
+    counter++;
+  }
+  assert (counter == _latentSpaceDimensions); // Else implementation error. The indices overlap, that should not be possible.
+
+  return theta;
 }

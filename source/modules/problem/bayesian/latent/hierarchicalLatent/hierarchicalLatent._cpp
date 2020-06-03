@@ -98,24 +98,24 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 
     /* initialize variable's mean with the user-defined initial value (from one example latent variable representing this coordinate/ distribution index): */
    std::string distribString =  var->_latentVariableDistributionType; //_latentVariableDistributions[i];
-   if (distribString == "Normal"){
-//     _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = 0.0; // TODO: This fails. Find out why and then make the line below work.
-     _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] =  _k->_variables[i]->_initialValue;
-   }
-   else {
-     if (distribString == "Log-Normal")
-       _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = log(_k->_variables[i]->_initialValue);
-     else {
-       if (distribString == "Logit-Normal"){
-         double ival = _k->_variables[i]->_initialValue;
-         if ((ival < 0) || (ival >= 1) )
-           korali::Logger::logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
-         _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = (ival / (1 - ival));
-       }
-       else
-         korali::Logger::logError("Unrecognized 'Latent Variable Distribution' %s ", distribString.c_str());
-     }
-   }
+   _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] =  _k->_variables[i]->_initialValue;
+//   if (distribString == "Normal"){
+//     _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] =  _k->_variables[i]->_initialValue;
+//   }
+//   else {
+//     if (distribString == "Log-Normal")
+//       _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = log(_k->_variables[i]->_initialValue);
+//     else {
+//       if (distribString == "Logit-Normal"){
+//         double ival = _k->_variables[i]->_initialValue;
+//         if ((ival < 0) || (ival >= 1) )
+//           korali::Logger::logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
+//         _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = (ival / (1 - ival));
+//       }
+//       else
+//         korali::Logger::logError("Unrecognized 'Latent Variable Distribution' %s ", distribString.c_str());
+//     }
+//   }
 
    // Todo: Add any other parameters here that will be required by the hierarchical SAEM. Initial values?-OK. Bounds?
 
