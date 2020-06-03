@@ -52,10 +52,11 @@ int main(int argc, char* argv[])
   // for (size_t i = 0; i < nIndividuals; i++){
   for (size_t i = 0; i < 1; i++){
     e["Variables"][i]["Name"] = "latent mean " + std::to_string(i);
-    e["Variables"][i]["Initial Value"] = -5;
+    e["Variables"][i]["Initial Value"] = -5.0;
     e["Variables"][i]["Bayesian Type"] = "Latent";
-    e["Variables"][i]["Individual Index"] = i;
-    e["Variables"][i]["Latent Space Coordinate"] = 0;
+    // These are set implicitly already ('Hierarchical Latent' problem doesn't have those parameters)
+//    e["Variables"][i]["Individual Index"] = i;
+//    e["Variables"][i]["Latent Space Coordinate"] = 0;
     e["Variables"][i]["Latent Variable Distribution Type"] = "Normal";
     e["Variables"][i]["Prior Distribution"] = "Uniform 0" ; // not used (?) but required
   }

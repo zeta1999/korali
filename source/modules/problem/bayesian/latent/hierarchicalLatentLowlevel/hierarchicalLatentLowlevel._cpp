@@ -69,7 +69,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
   int distribIndex = var->_latentSpaceCoordinate;
   int individualIndex = var->_individualIndex;
   if (_latentVariableDistributions[distribIndex] != distribString)
-    korali::Logger::logError("Assigned two+ latent variables to the same coordinate (same 'Latent Space Coordinate'), but declared different distribution types for both.");
+    if (!(typeString == "Hyperparameter" && distribString == "NA"))
+      korali::Logger::logError("Assigned two+ latent variables to the same coordinate (same 'Latent Space Coordinate'), but declared different distribution types for both.");
 
   // store pointers to hyperparameter variables in an easier form
   if (typeString == "Hyperparameter"){
@@ -89,9 +90,11 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
  std::vector<int> sortedDistribIndices(0);
  std::vector<int> sortedIndividualIndices(0);
  for(auto var : _k->_variables)
-   sortedDistribIndices.push_back(var->_latentSpaceCoordinate);
+   if (var->_bayesianType == "Latent") // Hyperparameters might have latent space coordinates assigned reasonably or might not - covariance matrix variables don't have a coordinate assigned (they have two)
+     sortedDistribIndices.push_back(var->_latentSpaceCoordinate);
  for(auto var : _k->_variables)
-   sortedIndividualIndices.push_back(var->_individualIndex);
+   if (var->_bayesianType == "Latent") // Only latent variables are assigned to individuals.
+     sortedIndividualIndices.push_back(var->_individualIndex);
  std::sort( sortedDistribIndices.begin(), sortedDistribIndices.end() );
  std::sort( sortedIndividualIndices.begin(), sortedIndividualIndices.end() );
  sortedDistribIndices.erase( unique( sortedDistribIndices.begin(), sortedDistribIndices.end() ), sortedDistribIndices.end() );
@@ -103,8 +106,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
  _latentIndex.resize(_numberIndividuals);
  for (size_t i = 0; i < _numberIndividuals; i++)
    _latentIndex[i].resize(_latentSpaceDimensions);
- if (_k->_variables.size() != _latentSpaceDimensions * _numberIndividuals)
-   korali::Logger::logError("Error: For each coordinate of each 'individual' latent variable vector, one (latent) variable needs to be defined.");
+ if (_k->_variables.size() != _latentSpaceDimensions * _numberIndividuals + _latentSpaceDimensions + _latentSpaceDimensions * _latentSpaceDimensions )
+   korali::Logger::logError("Error: For each coordinate of each 'individual' latent variable vector, one (latent) variable needs to be defined, and then we also need the right amount of hyperparameters (a mean vector and a covariance matrix).");
 
  // * Check that the ranges are from 0 to max
  std::map<int, std::vector<int>> latentCoordinatesPerIndividual;
@@ -126,11 +129,13 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
    }
  }
 
- // * Set up a 2D index for easier variable access
+ // * Set up a 2D index for easier latent variable access
  for (size_t i = 0; i < _k->_variables.size(); i++){
-   int i_idx = _k->_variables[i]->_individualIndex;
-   int d_idx = _k->_variables[i]->_latentSpaceCoordinate;
-   _latentIndex[i_idx][d_idx] = i;
+   if (_k->_variables[i]->_bayesianType == "Latent"){
+     int i_idx = _k->_variables[i]->_individualIndex;
+     int d_idx = _k->_variables[i]->_latentSpaceCoordinate;
+     _latentIndex[i_idx][d_idx] = i;
+   }
  }
 
 }

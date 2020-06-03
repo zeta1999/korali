@@ -80,8 +80,8 @@ void korali::solver::HSAEM::setInitialConfiguration()
 
   updateAnnealedDistribution();
   for (size_t i = 0; i < _mcmcNumberChains; i++ ){
-   // _currentZ[i].resize(_latentSpaceDimensions);
-    std::vector<double> temp_something(1);
+    _currentZ[i].resize(_latentSpaceDimensions);
+    //std::vector<double> temp_something(1);
     _annealedNormalGenerator->getRandomVector(&_currentZ[i][0], _latentSpaceDimensions);
   }
 
@@ -128,19 +128,21 @@ void korali::solver::HSAEM::justTesting()
  // set by the problem - we can't access them here
 
  korali::Sample sample;
- sample["Latent Variables"] = latent_vars;
+ sample["Latent Variables"] = {latent_vars[0]};
+ sample["Data Point"] = {0.89} ;
  sample["Mean"] = mean ;
  sample["Covariance Matrix"] = cov;
  sample["Module"] = "Problem";
  sample["Operation"] = "Evaluate Conditional LogLikelihood";
+ sample["Sample Id"] = 1234567;
 
   _conduit->start(sample);
   _conduit->wait(sample);
 
  // * test evaluateConditionalLoglikelihood()
 
-  std::vector<double> cond_llh = sample["Conditional LogLikelihood"];
-  _k->_logger->logInfo("Normal", "Test: Conditional LLLH = %f evaluated for latent variables:\n", cond_llh[0]); // Todo: adjust this to pring all of cond_llh
+  double cond_llh = sample["Conditional LogLikelihood"];
+  _k->_logger->logInfo("Normal", "Test: Conditional LLLH = %f evaluated for latent variables:\n", cond_llh);
   for (size_t i = 0; i < _latentProblem->_latentVariableIndices.size(); i++){
     int idx = _latentProblem->_latentVariableIndices[i];
     _k->_logger->logInfo("Normal", "Test: \t %s : %e \n", _k->_variables[idx]->_name.c_str(), latent_vars[i]);
