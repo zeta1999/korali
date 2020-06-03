@@ -48,7 +48,7 @@ void korali::solver::HSAEM::initialize()
 // _numberHyperparameters = _latentSpaceDimensions * (1 + _latentSpaceDimensions);
  _mcmcNumberChains = _numberSamplesPerStep; // to simplify things, use one MCMC chain per final sample to generate.
 
- _uniformGenerator->updateProperty("Mean", 0.0);
+ _univariateNormalGenerator->updateProperty("Mean", 0.0);
 
  for (size_t i = 0; i < _numberLatent; i++)
    if( std::isfinite(_k->_variables[i]->_initialValue) == false )
@@ -288,9 +288,9 @@ void korali::solver::HSAEM::sampleLatent(){
       for (size_t i = 0; i < _n2; i++)
       {
         for (size_t dim = 0; dim < _latentSpaceDimensions; dim++){
-          // we will use this to sample, and then update mcmcVariances after step 2, and then again after step 3
-          _uniformGenerator->updateProperty("Standard Deviation", mcmcVariances[dim] );
-          _uniformGenerator->updateDistribution();
+          // we will use this to sample, and then update _mcmcVariances after step 2, and then again after step 3
+          _univariateNormalGenerator->updateProperty("Standard Deviation", _mcmcVariances[dim] );
+          _univariateNormalGenerator->updateDistribution();
 
           std::vector<std::vector<double>> localZ = _currentZ[c_idx];
           for (size_t indiv = 0; indiv < _numberIndividuals; indiv++){
@@ -305,7 +305,7 @@ void korali::solver::HSAEM::sampleLatent(){
           // todo: - acceptance prob formula: ratio of new prior * log
           //, calculate it and sample then
           for (size_t indiv=0; indiv < _numberIndividuals; indiv++){
-            double logAcceptanceProb = newLLHs[indiv] + newPriors[indiv] - currentLLHs[c_idx][indiv] - currentPriors[c_idx][indiv];
+            double logAcceptanceProb = newLLHs[indiv] + newPriors[indiv] - currentLLHs[indiv] - currentPriors[indiv];
             double rval = _uniformGenerator->getRandomNumber();
             if (log(rval) < logAcceptanceProb){
               _currentZ[c_idx][indiv] = localZ[indiv];
@@ -325,8 +325,8 @@ void korali::solver::HSAEM::sampleLatent(){
 
       // **  update variances
       for (size_t dim = 0; dim < _latentSpaceDimensions; dim++){
-        _acceptanceRate[dim] = _acceptanceRateNominator / _acceptanceRateDenominator;
-        mcmcVariances[dim] *= ( 1.0 + _delta * (_acceptanceRate[dim] - _targetAcceptanceRate) );
+        _acceptanceRate[dim] = _acceptanceRateNominator[dim] / _acceptanceRateDenominator[dim];
+        _mcmcVariances[dim] *= ( 1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate) );
       }
 
       // ** 3rd proposal distribution
@@ -355,11 +355,11 @@ void korali::solver::HSAEM::updateAnnealedDistribution(){
     auto flatCov = flatten(_currentHyperparametersCovariance);
     for(size_t i = 0; i < flatCov.size(); i++)
       _annealedCovariance[i] = std::max(_annealedCovariance[i] * _simulatedAnnealingDecayFactor, flatCov[i]);
-    _annealedNormalGenerator->updateProperty("Sigma", _annealedCovariance);
+    _annealedNormalGenerator->setProperty("Sigma", _annealedCovariance);
   }
   else
-    _annealedNormalGenerator->updateProperty("Sigma", flatten(_currentHyperparametersCovariance));
-  _annealedNormalGenerator->updateProperty("Mean Vector", _currentHyperparametersMean);
+    _annealedNormalGenerator->setProperty("Sigma", flatten(_currentHyperparametersCovariance));
+  _annealedNormalGenerator->setProperty("Mean Vector", _currentHyperparametersMean);
   _annealedNormalGenerator->updateDistribution();
 }
 
