@@ -132,8 +132,12 @@ void korali::solver::HSAEM::setInitialConfiguration()
   if (_k->_currentGeneration <= 1){
     for (size_t i=0; i < _mcmcNumberChains; i++){
       korali::Sample sample;
+      sample["Sample Id"] = 2564234;
       sample["Latent Variables"] = _currentZ[i];
-      _latentProblem->evaluateLoglikelihood(sample);
+      sample["Operation"] = "Evaluate logLikelihood";
+      sample["Module"] = "Problem";
+      _conduit->start(sample);
+      _conduit->wait(sample);
       auto newLLHs = sample["Log Likelihood"].get<std::vector<double>>();
       _currentSampleLogLikelihoods[i] = newLLHs;
     }
@@ -161,6 +165,7 @@ void korali::solver::HSAEM::justTesting()
  // set by the problem - we can't access them here
 
  korali::Sample sample;
+ sample["Sample Id"] = 2564235;
  sample["Latent Variables"] = latent_vars[0];
  sample["Data Point"] = {0.89} ;
  sample["Mean"] = mean ;
@@ -222,6 +227,8 @@ void korali::solver::HSAEM::sampleLatent(){
     std::vector<double> currentPriors(0); // will be used in steps 2 and 3
     std::vector<double> acceptanceRates(0);
     korali::Sample sample;
+    sample["Sample Id"] = 2564236;
+    sample["Module"] = "Problem";
 
 
     // ** For each chain, the zeta values to restart from are: _currentZ
@@ -262,7 +269,9 @@ void korali::solver::HSAEM::sampleLatent(){
 
         // generate acceptance probabilities: new llh / former llh
         sample["Latent Variables"] = latentVars;
-        _latentProblem->evaluateLoglikelihood(sample);
+        sample["Operation"] = "Evaluate logLikelihood";
+        _conduit->start(sample);
+        _conduit->wait(sample);
         auto newLLHs = sample["Log Likelihood"].get<std::vector<double>>();
         for(size_t indiv=0; indiv < _numberIndividuals; indiv++){
           // generate RVs to randomly accept or reject each new zeta
@@ -278,7 +287,11 @@ void korali::solver::HSAEM::sampleLatent(){
 
       // initialize log priors
       sample["Latent Variables"] = _currentZ[c_idx];
-      _latentProblem->evaluateLogPrior(sample);
+      sample["Mean"] = _currentHyperparametersMean;
+      sample["Covariance Matrix"] = _currentHyperparametersCovariance;
+      sample["Operation"] = "Evaluate logPrior";
+      _conduit->start(sample);
+      _conduit->wait(sample);
       currentPriors = sample["Log Prior"].get<std::vector<double>>();
 
 
@@ -297,13 +310,20 @@ void korali::solver::HSAEM::sampleLatent(){
             double eta = _univariateNormalGenerator->getRandomNumber(); // Todo: Adjust covariance below - check whether we count acceptance for each coordinate or how
             localZ[indiv][dim] += eta;
           }
+
           sample["Latent Variables"] = localZ;
-          _latentProblem->evaluateLoglikelihood(sample);
-          _latentProblem->evaluateLogPrior(sample);
+          sample["Operation"] = "Evaluate logLikelihood";
+          _conduit->start(sample);
+          _conduit->wait(sample);
           auto newLLHs = sample["Log Likelihood"].get<std::vector<double>>();
+
+          sample["Latent Variables"] = localZ;
+          sample["Operation"] = "Evaluate logPrior";
+          _conduit->start(sample);
+          _conduit->wait(sample);
           auto newPriors = sample["Log Prior"].get<std::vector<double>>();
-          // todo: - acceptance prob formula: ratio of new prior * log
-          //, calculate it and sample then
+
+          // acceptance probability == ratio of new prior * log to the current one
           for (size_t indiv=0; indiv < _numberIndividuals; indiv++){
             double logAcceptanceProb = newLLHs[indiv] + newPriors[indiv] - currentLLHs[indiv] - currentPriors[indiv];
             double rval = _uniformGenerator->getRandomNumber();

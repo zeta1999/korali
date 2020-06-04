@@ -93,7 +93,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
    _koraliExperiment["Variables"][ numberLatent + i ]["Individual Index"] = -1;
    _koraliExperiment["Variables"][ numberLatent + i ]["Latent Space Coordinate"] = i;
    _koraliExperiment["Variables"][ numberLatent + i ]["Prior Distribution"] = "Dummy Prior";
-  // _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = var->_initialValue;
+   _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = var->_initialValue;
 //   _hyperparametersMeanIndices.push_back( numberLatent + i );
 
     /* initialize variable's mean with the user-defined initial value (from one example latent variable representing this coordinate/ distribution index): */

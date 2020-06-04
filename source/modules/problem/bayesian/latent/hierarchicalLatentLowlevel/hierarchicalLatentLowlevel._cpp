@@ -223,8 +223,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   // += conditional log-llh (log[p(data | latent)])
 
 
-  auto latentVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
-  auto mean = sample["Mean"].get<std::vector<double>>();
+  std::vector<std::vector<double>> latentVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
+  std::vector<double> mean = sample["Mean"].get<std::vector<double>>();
   int N = mean.size(); // Number of latent variables
   auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
   assert (N == covMatrix.size()); // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
@@ -341,8 +341,7 @@ std::vector<double> korali::problem::bayesian::latent::HierarchicalLatentLowleve
     counter++;
   }
   for(int i : _logitnormalLatentIndices){
-    double ival = _k->_variables[i]->_initialValue;
-    if ((ival < 0) || (ival >= 1) )
+    if ((z[i] < 0) || (z[i] >= 1) )
       korali::Logger::logError("Any value of a logit-normally distributed variable needs to be in range [0, 1).");
     theta[i] = 1.0 / (1.0 + exp(-z[i]));  // z= logit(theta)
     counter++;
