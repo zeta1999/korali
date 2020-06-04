@@ -298,8 +298,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   for (size_t i = 0; i < _numberIndividuals; i++)
     individualLLH[i] -= log_normn;
 //  lllh -= log_normn * float(_numberIndividuals);
-
-  sample["Log Prior"] = lllh;
+//  sample["Log Prior"] = lllh;
   sample["Log Prior"] = individualLLH;
 
   gsl_matrix_free(covMatrixGSL);
