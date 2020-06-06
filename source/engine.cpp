@@ -104,7 +104,7 @@ void korali::Engine::run()
       if (_experimentVector[i]->_fileOutputEnabled)
       {
         fs::remove_all(_experimentVector[i]->_fileOutputPath);
-        fs::create_directory(_experimentVector[i]->_fileOutputPath);
+        fs::create_directories(_experimentVector[i]->_fileOutputPath);
 
         // Setting log files to be saved on to the log folder
         std::string fileName = "./" + _experimentVector[i]->_fileOutputPath + "/log.txt";
