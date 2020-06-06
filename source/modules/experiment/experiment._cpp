@@ -1,4 +1,3 @@
-#include "auxiliar/fs.hpp"
 #include "auxiliar/koraliJson.hpp"
 #include "auxiliar/py2json.hpp"
 #include "engine.hpp"
@@ -11,6 +10,9 @@
 #include <cstdio>
 #include <map>
 #include <stdlib.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 /**
   * @brief Pointer to the current experiment in execution
@@ -118,10 +120,13 @@ void korali::Experiment::saveState()
     if (korali::saveJsonToFile(fileName.c_str(), js) != 0)
       KORALI_LOG_ERROR("Error trying to save result file: %s.\n", fileName.c_str());
 
-    remove(linkName.c_str());
+    fs::remove(linkName);
 
-    if (link(fileName.c_str(), linkName.c_str()) != 0)
-      KORALI_LOG_ERROR("Could not create hard link to latest result.\n + Target: %s\n + Link: %s\n", fileName.c_str(), linkName.c_str());
+    std::error_code errorCode;
+    fs::create_symlink(fileName, linkName, errorCode);
+
+    if (errorCode)
+      KORALI_LOG_ERROR("Could not create symlink to latest result.\n + Target: %s\n + Link: %s\n", fileName.c_str(), linkName.c_str());
   }
 }
 

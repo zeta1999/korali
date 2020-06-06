@@ -4,6 +4,9 @@
 
 #include "auxiliar/jsonInterface.hpp"
 #include <string>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 bool korali::isEmpty(knlohmann::json &js)
 {
@@ -87,23 +90,33 @@ void korali::mergeJson(knlohmann::json &dest, const knlohmann::json &defaults)
 
 bool korali::loadJsonFromFile(knlohmann::json &dst, const char *fileName)
 {
-  FILE *fid = fopen(fileName, "r");
-  if (fid != NULL)
+  if (fs::exists(fileName))
   {
-    fseek(fid, 0, SEEK_END);
-    long fsize = ftell(fid);
-    fseek(fid, 0, SEEK_SET); /* same as rewind(f); */
+   // Getting path from filename
+   fs::path filePath(fileName);
 
-    char *string = (char *)malloc(fsize + 1);
-    fread(string, 1, fsize, fid);
-    fclose(fid);
+   // Getting actual location if file is symlink
+   if (fs::is_symlink(fileName))
+     filePath = fs::read_symlink(fileName);
 
-    string[fsize] = '\0';
+   FILE *fid = fopen(filePath.c_str(), "r");
+   if (fid != NULL)
+   {
+     fseek(fid, 0, SEEK_END);
+     long fsize = ftell(fid);
+     fseek(fid, 0, SEEK_SET); /* same as rewind(f); */
 
-    dst = knlohmann::json::parse(string);
+     char *string = (char *)malloc(fsize + 1);
+     fread(string, 1, fsize, fid);
+     fclose(fid);
 
-    free(string);
-    return true;
+     string[fsize] = '\0';
+
+     dst = knlohmann::json::parse(string);
+
+     free(string);
+     return true;
+   }
   }
   return false;
 }

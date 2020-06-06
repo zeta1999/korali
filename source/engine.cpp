@@ -1,13 +1,13 @@
 #include "engine.hpp"
-#include "auxiliar/fs.hpp"
 #include "auxiliar/koraliJson.hpp"
 #include "modules/conduit/conduit.hpp"
 #include "modules/conduit/distributed/distributed.hpp"
 #include "modules/experiment/experiment.hpp"
 #include "modules/problem/problem.hpp"
 #include "modules/solver/solver.hpp"
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 std::vector<std::function<void(korali::Sample &)> *> korali::_functionVector;
 std::stack<korali::Engine *> korali::_engineStack;
@@ -103,7 +103,8 @@ void korali::Engine::run()
       // If experiments are saving results to file, create folder
       if (_experimentVector[i]->_fileOutputEnabled)
       {
-        if (!korali::dirExists(_experimentVector[i]->_fileOutputPath)) korali::mkdir(_experimentVector[i]->_fileOutputPath);
+        fs::remove_all(_experimentVector[i]->_fileOutputPath);
+        fs::create_directory(_experimentVector[i]->_fileOutputPath);
 
         // Setting log files to be saved on to the log folder
         std::string fileName = "./" + _experimentVector[i]->_fileOutputPath + "/log.txt";
