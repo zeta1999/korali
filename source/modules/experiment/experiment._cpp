@@ -8,9 +8,9 @@
 #include "modules/solver/solver.hpp"
 #include <chrono>
 #include <cstdio>
+#include <filesystem>
 #include <map>
 #include <stdlib.h>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
