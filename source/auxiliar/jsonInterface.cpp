@@ -97,7 +97,7 @@ bool korali::loadJsonFromFile(knlohmann::json &dst, const char *fileName)
 
    // Getting actual location if file is symlink
    if (fs::is_symlink(fileName))
-     filePath = fs::read_symlink(fileName);
+     filePath.replace_filename(fs::read_symlink(filePath));
 
    FILE *fid = fopen(filePath.c_str(), "r");
    if (fid != NULL)

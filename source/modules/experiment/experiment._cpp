@@ -123,7 +123,7 @@ void korali::Experiment::saveState()
     fs::remove(linkName);
 
     std::error_code errorCode;
-    fs::create_symlink(fileName, linkName, errorCode);
+    fs::create_symlink(genFileName, linkName, errorCode);
 
     if (errorCode)
       KORALI_LOG_ERROR("Could not create symlink to latest result.\n + Target: %s\n + Link: %s\n", fileName.c_str(), linkName.c_str());
