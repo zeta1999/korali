@@ -11,7 +11,7 @@ jobs:
   build_linux:
     docker:
       - image: circleci/python:latest
-      - image: gcc:9
+      - image: circleci/buildpack-deps:latest
       
     working_directory: ~/korali
     steps:
