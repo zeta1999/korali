@@ -10,7 +10,6 @@ workflows:
 jobs:
   build_linux:
     docker:
-      - image: circleci/python:latest
       - image: circleci/buildpack-deps:latest
       
     working_directory: ~/korali
