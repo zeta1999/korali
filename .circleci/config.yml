@@ -10,7 +10,8 @@ workflows:
 jobs:
   build_linux:
     docker:
-      - image: circleci/python:latest
+      - image: cselab/debian_buster_mpich
+      
     working_directory: ~/korali
     steps:
 
