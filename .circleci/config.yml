@@ -10,10 +10,7 @@ workflows:
 jobs:
   build_linux:
     docker:
-      - image: gcc:9
-      - image: python:3.8.3-buster
-        command: [python3-config]
-      
+      - image: circleci/python:latest
     working_directory: ~/korali
     steps:
 
@@ -26,8 +23,7 @@ jobs:
                    
       - run:
           name: install MPI
-          command: apt-get update;
-                   apt-get -y install mpich || true;
+          command: sudo apt-get install mpich;
                    echo 'export MPICXX=mpicxx' >> $BASH_ENV
 
       - restore_cache:
