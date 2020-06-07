@@ -78,9 +78,9 @@ Mandatory Requirements
 ---------------------------
 
   - **C++ Compiler**
-      Korali requires a C++ compiler that supports the C++14 standard (`-std=c++14`) to build.
-      **Hint:** Check the following `link <https://en.cppreference.com/w/cpp/compiler_support#C.2B.2B14_core_language_features>`_ to verify whether your compiler supports C++14.
-      Korali's installer will check the **$CXX** environment variable to determine the default C++ compiler. You can change the value of this variable to define a custom C++ compiler.
+      Korali requires a C++ compiler that fully supports the C++17 standard (`-std=c++17`) to build. That is:
+      + GNU C compiler (gcc) version 9.0 or higher
+      + Apple clang 10.0.0 or higher
   
   - **CMake**
       Korali requires that you have `CMake <https://cmake.org/>`_ version 3.0 or higher installed in your system.  If CMake is not found, you can ask Korali to install it automatically by using the ``--prereqs`` option.

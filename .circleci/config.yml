@@ -25,7 +25,7 @@ jobs:
       - run:
           name: install MPI
           command: apt-get update;
-                   apt-get -y install mpich;
+                   apt-get -y install mpich | echo;
                    echo 'export MPICXX=mpicxx' >> $BASH_ENV
 
       - restore_cache:
