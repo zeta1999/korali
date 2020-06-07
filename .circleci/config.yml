@@ -10,7 +10,8 @@ workflows:
 jobs:
   build_linux:
     docker:
-      - image: circleci/python:latest
+      - image: gcc:9
+      
     working_directory: ~/korali
     steps:
 
