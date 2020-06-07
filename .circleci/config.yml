@@ -23,8 +23,9 @@ jobs:
                    git submodule update --remote
                    
       - run:
-          name: install MPI
-          command: sudo apt-get install mpich;
+          name: install Dependencies
+          command: /bin/sh -c apt-get update && apt-get -y upgrade;
+                   /bin/sh -c apt-get -y install build-essential cmake git vim curl mpich python3-dev python3-pip python3-numpy python3-matplotlib python3-pandas python3-scipy python3-xlrd;
                    echo 'export MPICXX=mpicxx' >> $BASH_ENV
 
       - restore_cache:
