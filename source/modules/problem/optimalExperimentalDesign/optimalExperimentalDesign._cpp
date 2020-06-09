@@ -1,0 +1,13 @@
+#include "modules/problem/optimalExperimentalDesign/optimalExperimentalDesign.hpp"
+
+void korali::problem::OptimalExperimentalDesign::initialize() {
+  // Initializing Problem Configuration
+  if (_k->_variables.size() <= 0) KORALI_LOG_ERROR("Optimal Experimental Design problems two variables.\n");
+
+  for(  )
+}
+
+void korali::problem::OptimalExperimentalDesign::evaluate(korali::Sample &sample) {
+  // Evaluating Sample
+  sample["Evaluation"] = 1.0;
+}

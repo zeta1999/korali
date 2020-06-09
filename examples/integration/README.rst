@@ -9,8 +9,8 @@ Problem Description
 We are given the function :math:`f(x,y,z)=x^2+y^2+z^2` for :math:`x,y,z\in [0,1]^3`.
 We want to find the integral of this function over its domain.
 
-The Objective Function
-----------------------
+The Function to integrate
+-------------------------
 
 Create a folder named `model`. Inside, create a file with name `integrand.py` and paste the following code,
 
@@ -26,8 +26,8 @@ Create a folder named `model`. Inside, create a file with name `integrand.py` an
 
 This is the function we want to integrate.
 
-Optimization with CMAES
------------------------
+Import Function to integrate
+----------------------------
 
 First, open a file (you could name it 'run-integration.py') and import the korali module
 
