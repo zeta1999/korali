@@ -161,13 +161,13 @@ class ConditionalDistribution4():
         assert len(latent_vars) == 1 #self._p.nIndividuals, "we assume each individual has only one measurement and have their own latent variable"
         sigma = self._p.sigma
 
+        pdb.set_trace()
         # log(p(data | mean, sigma ))
-        logp = 0
+        # logp = 0
         #for i in range(self._p.nIndividuals):
             # pt = self._p.data[i]
             # assert pt == data[i]
         mean = latent_vars
-        pdb.set_trace()
         logp = np.log(utils.univariate_gaussian_probability(mean, sigma, data))
 
         sample["Conditional LogLikelihood"] = logp
