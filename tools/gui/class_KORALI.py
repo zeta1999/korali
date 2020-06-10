@@ -26,6 +26,10 @@ general_first_time = True
 dist_first_time = True
 dist_times = 1
 rows = 0
+first_time_p = True
+first_time_s = True
+
+variables_accessible = True
 
 
 experiments = {}
@@ -177,7 +181,6 @@ class KORALI(tk.Tk): #Inherited tk.tk
         if contador >2:
             for item in totalTabs.winfo_children():
                 if str(item)==totalTabs.select():
-                    print(str(item))
                     item.destroy()
                     contador -=1
                     return

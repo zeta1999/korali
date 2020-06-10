@@ -11,6 +11,8 @@ import functions
 selectorColor = 'snow'
 colorProblem = 'snow'
 forbidden = ['Variables','Problem','Solver']
+linktoVariables0 = ''
+linktoVariables1 = ''
 ##dist_first_time = True
 
 
@@ -21,6 +23,7 @@ class Variables():
         self.variables = tk.Frame(master,bg=selectorColor,width=717,height=925)
         self.variables.grid(column=0,row=0)
         self.variables.grid_propagate(0)
+
 
         experiments[selectedtab]['variables'] = self.variables
         res_var = {}
@@ -41,8 +44,11 @@ class Variables():
         
         results = experiments[selectedtab]['results']
 
-        if 0 not in results.keys() or 1 not in results.keys():
-            functions.popupmsgwarning('First choose a problem and a solver')
+        if 0 not in results.keys():
+            functions.popupmsgwarning('First choose a Problem and a Solver')
+            return
+        elif 1 not in results.keys():
+            functions.popupmsgwarning('Problem already displayed. Choose a Solver')
             return
         variables = experiments[selectedtab]['variables']
         variables.tkraise()

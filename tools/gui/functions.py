@@ -6,6 +6,13 @@ import json
 import os
 from tkinter.filedialog import asksaveasfile, askopenfilename
 
+# Add different colors to messages in console.
+import sys
+
+try: color = sys.stdout.shell
+except AttributeError: raise RuntimeError("Use IDLE")
+#
+
 
 ##import QWebView
 
@@ -31,8 +38,8 @@ files = [('Config Files', '*.config'),('Log Document','*.log'),
              ('Text Document', '*.txt')] 
 frame_problem = ''
 frame_solver =''
-first_time_p = True
-first_time_s = True 
+##first_time_p = True
+##first_time_s = True 
 import_dist_done = True
 
 # Tell us which one are we using under the cascade option.
@@ -45,7 +52,8 @@ linktoVariables0 = ''
 linktoVariables1 = ''
 contadorVariables = 1
 
-ro=4 # Variables rows.
+ro_var = 4 # Variables rows.
+rows_counter_var = 0
 
 
 def insertValues(results,cont,values):
@@ -63,7 +71,7 @@ def insertValues(results,cont,values):
             e.set(value)
         else:
             default = e.get()
-            if default == '0':
+            if len(default)>0:
                 e.delete(0,tk.END)
                 e.insert(END,values[numofentry])
             else:
@@ -81,15 +89,18 @@ def copiarDiccionario(d):
 
 def importFile(self):
     global files
-    global times_distr
     global rows
     global import_dist_done
     global contadorVariables
+    global ro_var
+    global rows_counter_var
 
     configTreeDB = classes_FRAMES.configTreeDB
     solverDB = classes_FRAMES.solverDB
     experiments = class_KORALI.experiments
     selectedtab = class_KORALI.selectedtab
+
+    class_KORALI.variables_accessible = False  # To control how to print the variables when importing.
 
     sf = experiments[selectedtab]['secondFrame']
     tf = experiments[selectedtab]['thirdFrame']
@@ -109,7 +120,6 @@ def importFile(self):
         valuesProblem = []
         valuesSolver = []
         valuesVariables = {}
-        linktoVariables_imported = []
 
         results = experiments[selectedtab]['results']
         
@@ -120,12 +130,14 @@ def importFile(self):
                 x_pos = 0
                 y_pos = 185
                 nombre = configTreeDB[texto]['names']
+                # Check which Problem it is and display it on the screen:
                 checkFormulario(sf,experiments,selectedtab, texto,nombre,configTreeDB, cont,x_pos,y_pos,tf)
-                
+
+                # Fill in its variables by using the file ones.
                 for key2 in parsedFile[directorio]:
                     valuesProblem.append(parsedFile[directorio][key2])
                 insertValues(results,cont,valuesProblem)
-                linktoVariables_imported.append(configTreeDB[texto]['config'])
+                class_KORALI.linktoVariables0 = configTreeDB[texto]['config']
                 
             elif directorio == 'Solver':     # SOLVER IMPORT
                 cont = 1
@@ -137,18 +149,26 @@ def importFile(self):
                 for key2 in parsedFile[directorio]:
                     valuesSolver.append(parsedFile[directorio][key2])
                 insertValues(results,cont,valuesSolver)
-                linktoVariables_imported.append(solverDB[texto]['config'])
+                class_KORALI.linktoVariables1 = solverDB[texto]['config']
                    
             elif 'ariable' in directorio:  # VARIABLES IMPORT avoiding v in case there is also a V, same with ending (-s).
                 
                 valuesVariables = []
                 cont = 2
                 numofentry = 0
-                selfV = experiments[selectedtab]['variables']
+                results = experiments[selectedtab]['results']
+                ro_var = 4
+                rows_counter_var = 0
+                sf = experiments[selectedtab]['secondFrame']                
+                if 2 in results.keys():
+##                    print('VARIABLES ANTES DE IMPORTAR ',results[2])
+##                    for widget in selfV.winfo_children():
+##                        widget.destroy()
+                    del results[2]
+                class_Variables.Variables(sf,experiments,selectedtab)
                 v = 0 # If there are several Variables Tabs in the imported file...
                 for dictionary in parsedFile[directorio]:
                     if v>0:
-                        print('QUE ESTA PASANDOOO = ',results)
                         #ro += 4
                         results = experiments[selectedtab]['results']
                         res_var = experiments[selectedtab]['labels_var']
@@ -165,39 +185,44 @@ def importFile(self):
                         ro += 2
                         printVariables2(selfV,experiments,selectedtab,cont,linktoVariables)
                         class_KORALI.times_var += 1
+                        
+                        for key in dictionary.keys():
+                            valuesVariables.append(dictionary[key])
                         v+=1
-                    v+=1
-                    for key in dictionary.keys():
-                        valuesVariables.append(dictionary[key])
+                    else:    
+                        # CREATING FRAME VARIABLES FOR FIRST TIME WHEN IMPORTING TO AVOID MISSUNDERSTANDINGS WITH VARIABLES:
+                        res_var = experiments[selectedtab]['labels_var']
+                        selfV = experiments[selectedtab]['variables']
+                        # Crear Frame Variables
+                        results[2] = {}
+                        res_var[2] = {}
+                        class_KORALI.times_var = 1
+                        linktoVariables = []
+                        linktoVariables.append(class_Variables.linktoVariables0)
+                        linktoVariables.append(class_Variables.linktoVariables1)
+                        results[2][class_KORALI.times_var] = {}
+                        res_var[2][class_KORALI.times_var] = {}                       
+                        button = tk.Button(selfV,text='Add +',highlightcolor='snow', fg='dimgray',
+                                               relief = 'flat', background = 'snow', anchor = 'w',activeforeground='teal',
+                                               activebackground= 'snow',font= 'Arial 16',command = lambda:printVariables(sf,directorio,DB,cont,experiments,selectedtab))
+                        button.config(highlightbackground='snow')
+                        button.grid(row=0,column=0,columnspan = 4)
+                        printVariables2(selfV,experiments,selectedtab,cont,linktoVariables)
+                        ro_var += 1 # CHECK THIS ONE.
+                        class_KORALI.times_var += 1
+                        v+=1
+                        results = experiments[selectedtab]['results']
+                        for key in dictionary.keys():
+                            valuesVariables.append(dictionary[key])
 
-                numofentry = 0       
+                numofentry = 0
                 for key in results[cont].keys():
                     for key2 in results[cont][key]:
                         e = results[cont][key][key2]
-                        e.insert(0,valuesVariables[numofentry])
-                        numofentry+=1                    
-                        
-                                        
-                        
-                    '''
-                        if len(linktoVariables_imported) != 0:
-                            printVariables2(selfV,experiments,selectedtab,cont,linktoVariables_imported)
-                        else:
-                            popupmsgwarning("Either problem or solver missing. Variables can't be filled in.")
-##                        crearFrameVariables() # Create as many Variable Frames as necessary.
-                        v+=1
-                    v+=1
-                    for key in dictionary.keys():
-                        valuesVariables.append(dictionary[key])
-                ########
-                        
-                numofentry = 0       
-                for key in results[cont].keys():
-                    for key2 in results[cont][key]:
-                        e = results[cont][key][key2]
+                        print('ESTO ES LA E = ',e)
+                        e.delete(0,tk.END)
                         e.insert(0,valuesVariables[numofentry])
                         numofentry+=1
-                '''
              
             else:                                       ## expFrame
                 if directorio == 'Distributions':      ## MAIN CONFIGURATION AND DISTRIBUTION IMPORT
@@ -205,7 +230,7 @@ def importFile(self):
                     r = 11
                     c = 0
                     valuesDistr = []
-                    times_distr = 1
+                    class_KORALI.dist_times = 1
                     class_KORALI.dist_first_time = True
                     for distribution in parsedFile[directorio]:
                         class_Distributions.Distributions(sf,selectedtab,experiments)
@@ -360,6 +385,7 @@ def website(tf,directorio,cont):
     tf.pack_propagate(0)
     file.close()
 
+'''
 def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
     global frame_problem
     global frame_solver
@@ -443,6 +469,161 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                                background = selectorColor,command = lambda: [class_Solver.Solvers.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
             which2.config(cursor = 'watch')
             which2.place(x=x_pos,y=y_pos)
+            solvers_ind = nombre
+            #printConfig(experiments,directorio,DB, cont)            
+            #printVariables(sf.tab2,directorio,DB,cont)
+'''
+def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
+    global frame_problem
+    global frame_solver
+##    global first_time_p
+##    global first_time_s
+    global problems_ind
+    global solvers_ind
+    global experiments
+    global selectedtab
+
+    experiments = exp
+    selectedtab = whichtab
+
+    ff = experiments[selectedtab]['firstFrame']
+    results = experiments[selectedtab]['results']
+    
+    if len(nombre)>30:
+        nombre = nombre[0:30]+'...'       
+
+    if cont == 0:
+        print('Entrying checkFormulario as a Problem...')
+        if class_KORALI.first_time_p == False:
+            print('Entrying as a problem not for first time')
+            if directorio == frame_problem: # If we click on the same Problem as before...
+                class_Problem.Problems.Show_frame(experiments,selectedtab) # We only show the frame again.
+                website(tf,directorio,cont)
+            else: # If we are choosing a different problem and not for first time:
+                print('Different Problem than before chosen')
+                ANSWER = messagebox.askyesno("Different Problem","Are you sure you want to proceed? Previous variables will vanish.")
+                if ANSWER == False:
+                    return
+                else: # If 'Yes':
+                    print('New problem chosen')
+                    if 'variables' in experiments[selectedtab].keys(): # Remove VARIABLES and compute it again.
+                        selfV = experiments[selectedtab]['variables']
+                        # Restart the variables selection
+                        class_Variables.linktoVariables0 = ''
+                        class_Variables.linktoVariables1 = ''
+                        print('Problem changed, there are variables')
+                        for widget in selfV.winfo_children():
+                            print('Destroying widget = ',widget)
+                            widget.destroy()
+                        if 2 in results.keys():
+                            print(' VARIABLES REMOVED = ',results[2])
+                            del results[2]
+                            print('NEW RESULTS OF THE DICTIONARY = ', results.keys())
+                    else:
+                        print('There are no variables')
+
+                if problems_ind != '': # If problem selected is not the same as the previously chosen and we can access it...
+                   for widget in ff.winfo_children(): # Delete the Button that shows the option chosen.
+                        if widget['text'] == problems_ind:
+                            widget.destroy()
+                else:
+                    print('No file named '+directorio+'.rst')
+                
+                for widget in ff.winfo_children():
+                    if widget['text'] == solvers_ind:
+                        widget.destroy()
+                class_KORALI.first_time_s = True
+                print('First time Solver = ',class_KORALI.first_time_s)
+                if 1 in results.keys():
+                    print('If Solver in Results = ',results[1])
+                    del results[1]
+                    print('Solver Deleted = ',results.keys())
+                if 'solver' in experiments[selectedtab].keys():
+                    solver_frame = experiments[selectedtab]['solver']
+                    for widget in solver_frame.winfo_children():
+                        widget.destroy()
+                    popupmsginfo('When choosing a new Problem, the previous chosen Solver is removed.')
+                    print('Solver frame cleaned too')
+                website(tf,directorio,cont)
+                which = tk.Button(ff,text = nombre,width=28, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: [class_Problem.Problems.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+                which.config(cursor = 'watch')
+                which.place(x=x_pos,y=y_pos+40)
+                problems_ind = nombre
+                frame_problem = directorio # IF USERS ANSWERS YES...
+                class_KORALI.times_var = 1
+                class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+                print('Calling again class_Problem')
+        else: # IF ITS THE FIRST TIME WE CHOOSE A PROBLEM:
+            
+            website(tf,directorio,cont)
+            class_KORALI.first_time_p = False
+            class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+            frame_problem = directorio
+            which = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
+                              background = selectorColor,command = lambda: [class_Problem.Problems.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+            which.config(cursor = 'watch')
+            which.place(x=x_pos,y=y_pos+40)
+            problems_ind = nombre
+        
+    elif cont == 1:
+        class_KORALI.times_var = 1
+        color.write("Entrying as a Solver","STRING")
+        if class_KORALI.first_time_s == False:
+            color.write("Entrying as a Solver NOT FOR first time","STRING")
+            if directorio == frame_solver:
+                class_Solver.Solvers.Show_frame(experiments,selectedtab)
+                website(tf,directorio,cont)
+            else:
+                color.write("If Solver selected is different from before...","STRING")
+                ANSWER = messagebox.askyesno("Different Solver","Are you sure you want to proceed? Previous variables will vanish.")
+                if ANSWER == False:
+                    return
+                color.write("If YES...","STRING")
+                # First thing to do, recalculate Variables. Delete previous ones in frame.
+                if 'variables' in experiments[selectedtab].keys(): # Remove VARIABLES and compute it again.
+                    selfV = experiments[selectedtab]['variables']
+                    results = experiments[selectedtab]['results']
+                    class_Variables.linktoVariables1 = DB[directorio]['config']
+                    print('SOOOOLVEEER : Problem changed, there are variables')
+                    for widget in selfV.winfo_children():
+                        print('SOOOOLVEEER : Destroying widget = ',widget)
+                        widget.destroy()
+                    if 2 in results.keys():
+                        print('SOOOOLVEEER : VARIABLES REMOVED = ',results[2])
+                        del results[2]
+                        print('SOOOOLVEEER : NEW RESULTS OF THE DICTIONARY = ', results.keys())
+                else:
+                    print('SOOOOLVEEER : There are no variables')
+                if solvers_ind != '':
+                    for widget in ff.winfo_children():
+                        if widget['text'] == solvers_ind:
+                            print("SOOOLVEEER = Destroying Solver Widget ==  ",widget)
+                            widget.destroy()
+                else:
+                    popupmsgwarning('Ups! Something went wrong... please restart the App')
+                if 1 in results.keys():
+                    print('SOOOOOLVEEEEEER = If Solver in Results = ',results[1])
+                    del results[1]
+                    print('SOOOOOOLVER = Solver Deleted = ',results.keys())
+                    
+                website(tf,directorio,cont)
+                which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: [class_Solver.Solvers.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+                which2.config(cursor = 'watch')
+                which2.place(x=x_pos,y=y_pos+40)
+                solvers_ind = nombre
+                frame_solver = directorio # IF USERS ANSWERS YES...
+                color.write("Class_Solver being called again","STRING")
+                class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+        else:
+            color.write("Entrying as a Solver FOR FIRST TIME","STRING")
+            website(tf,directorio,cont)
+            class_KORALI.first_time_s = False
+            class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+            frame_solver = directorio
+            which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
+                               background = selectorColor,command = lambda: [class_Solver.Solvers.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+            which2.config(cursor = 'watch')
+            which2.place(x=x_pos,y=y_pos+40)
             solvers_ind = nombre
             #printConfig(experiments,directorio,DB, cont)            
             #printVariables(sf.tab2,directorio,DB,cont)
@@ -569,9 +750,9 @@ def printdata(self,experiments,selectedtab,line, texto, r, c,cont,options):
             res[texto].grid(row=r, column=c+1, pady= 2,padx=6, sticky = 'w')
             self.corrector = self.register(validardigit)
 
-def printVariables(sf,directorio,DB,cont,linktoVariables0,linktoVariables1,contadorVariables,experiments,selectedtab):
-    
-    global ro
+def printVariables(sf,directorio,DB,cont,experiments,selectedtab):
+    global rows_counter_var
+    global ro_var
 
     linktoVariables = []
     results = experiments[selectedtab]['results']
@@ -585,78 +766,96 @@ def printVariables(sf,directorio,DB,cont,linktoVariables0,linktoVariables1,conta
         results[2] = {}
         res_var[2] = {}
         
-        if linktoVariables0 !='':
-            linktoVariables.append(linktoVariables0)    # Añadimos las variables que vienen del Problem.
+        if class_Variables.linktoVariables0 !='':
+            print('AÑADIENDO DESDE PROBLEM A linktoVariables = ', class_Variables.linktoVariables0)
+            linktoVariables.append(class_Variables.linktoVariables0)    # Añadimos las variables que vienen del Problem.
         else:
             popupmsgwarning('This Problem does not have Variables, choose another one.')
             return        
-        if linktoVariables1 !='':
-            linktoVariables.append(linktoVariables1)    # Añadimos las variables que vienen del Solver.
+        if class_Variables.linktoVariables1 !='':
+            print('AÑADIENDO DESDE SOLVER A linktoVariables = ', class_Variables.linktoVariables0)
+            linktoVariables.append(class_Variables.linktoVariables1)    # Añadimos las variables que vienen del Solver.
         else:
             popupmsgwarning('Solver does not have Variables, proceeding without them...')
     elif class_KORALI.times_var >3:
         popupmsgwarning('The maximum number of Variables allowed is 3.')
         return
-    else:
-        linktoVariables.append(linktoVariables0)
-        linktoVariables.append(linktoVariables1)
+    else: # Every time we entry this function we create a new linktoVariables.
+        linktoVariables.append(class_Variables.linktoVariables0)
+        linktoVariables.append(class_Variables.linktoVariables1)
 
     selfV = experiments[selectedtab]['variables']
     res_var = experiments[selectedtab]['labels_var']
 
-    if contadorVariables < 2:
+    if class_KORALI.times_var < 2:
         results[2][class_KORALI.times_var]={}
-        res_var[2][class_KORALI.times_var] = {}
-        contadorVariables += 1                               
+        res_var[2][class_KORALI.times_var] = {}                       
         button = tk.Button(selfV,text='Add +',highlightcolor='snow', fg='dimgray',
                                relief = 'flat', background = 'snow', anchor = 'w',activeforeground='teal',
-                               activebackground= 'snow',font= 'Arial 16',command = lambda:printVariables(sf,directorio,DB,cont,linktoVariables0,linktoVariables1,contadorVariables,experiments,selectedtab))
+                               activebackground= 'snow',font= 'Arial 16',command = lambda:printVariables(sf,directorio,DB,cont,experiments,selectedtab))
         button.config(highlightbackground='snow')
         button.grid(row=0,column=0,columnspan = 4)
         printVariables2(selfV,experiments,selectedtab,cont,linktoVariables)
-        ro += 1
+        ro_var += 1 # CHECK THIS ONE.
         class_KORALI.times_var += 1
-        contadorVariables+=1
 
     else:
-        ro += 4
-        results[2][class_KORALI.times_var]={}
+        results[2][class_KORALI.times_var] = {}
         res_var[2][class_KORALI.times_var] = {}
         ##            photo = PhotoImage(file = "trash1.ico")   image = photo,  -> añadir a button.
-        var = res_var[2][times_var]            
+        var = res_var[2][class_KORALI.times_var]
+        times_var = class_KORALI.times_var
         var['a'] =tk.Label(selfV, text='', fg=selectorColor, bg=selectorColor)
-        var['a'].grid(row=ro, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
+        var['a'].grid(row=ro_var, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
+        ro_var += 1
+        rows_counter_var += 1
         var['b'] =tk.Button(selfV, text='Variable '+str(times_var),activebackground=selectorColor, font="Arial 16", fg='black', bg='snow',
                           borderwidth=1,relief='solid',command = lambda: delVar(selfV,times_var,experiments,selectedtab)) #bg = 'darkcyan', fg='white')
-        var['b'].grid(row=ro+1, column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
-        ro += 2
+        var['b'].grid(row=ro_var, column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
+        ro_var += 1
+        rows_counter_var += 1
         printVariables2(selfV,experiments,selectedtab,cont,linktoVariables)
         class_KORALI.times_var += 1
         
     
 def delVar(self,which,experiments,selectedtab):
+    global rows_counter_var
+    global ro_var
+    
 
     res_var = experiments[selectedtab]['labels_var']
     results = experiments[selectedtab]['results']
+
+    for var_key in results[2].keys():
+        if var_key > which:
+            popupmsgwarning('First delete the last variable')
+            return
     # Key value '4' is for Distributions
-    var = res_var[2][which-1]
+    var = results[2][which]
+    var2 = res_var[2][which]
      
     for entry in var.values():
+        entry.destroy()
+    for entry in var2.values():
         entry.destroy()
 
     del res_var[2][which]
     del results[2][which]
 
     class_KORALI.times_var -= 1
+    ro_var -= rows_counter_var # Adding 2 due to the title of the variables.
+    ro_var -= 2
+    
     
     # Clean the frame:
 ##    for widget in selfV.winfo_children():
 ##            widget.destroy()
 def printVariables2(selfV,experiments,selectedtab,cont,linktoVariables):
-    global ro
-    
+    global ro_var
+    global rows_counter_var
+
+    rows_counter_var = 0
     results = experiments[selectedtab]['results']
-    print(results[2].keys())
     co = 0
     variables = classes_FRAMES.variables
     for part in linktoVariables:
@@ -668,26 +867,24 @@ def printVariables2(selfV,experiments,selectedtab,cont,linktoVariables):
                     texto = llave['Name']
                     texto = texto[0] # Remove the '{}' from the label name.
                     options = 'None'
-                    printdata(selfV,experiments,selectedtab,line, texto, ro, co, cont,options)
-                    ro+=1
+                    printdata(selfV,experiments,selectedtab,line, texto, ro_var, co, cont,options)
+                    ro_var+=1
+                    rows_counter_var += 1
     
 
     
 def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
-
-    global linktoVariables0
-    global linktoVariables1
     
     if cont == 0:
-        linktoVariables0 = DB[directorio]['config']
+        class_Variables.linktoVariables0 = DB[directorio]['config']
         class_KORALI.times_var = 1 # If we choose a new problem, delete variables and reset times_var
     elif cont == 1:
-        linktoVariables1 = DB[directorio]['config']
+        class_Variables.linktoVariables1 = DB[directorio]['config']
         
-    if linktoVariables0 != '' and linktoVariables1 != '':
+    if class_Variables.linktoVariables0 != '' and class_Variables.linktoVariables1 != '' and class_KORALI.variables_accessible == True:
         sf = experiments[selectedtab]['secondFrame']
         contadorVariables = 0
-        printVariables(sf,directorio,DB,2,linktoVariables0,linktoVariables1,contadorVariables,experiments,selectedtab)
+        printVariables(sf,directorio,DB,2,experiments,selectedtab)
         
     ## DELETE ANY WIDGET THAT WAS THERE BEFORE:
     for widget in self.winfo_children():
@@ -747,12 +944,30 @@ def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
     if cont == 1:
         class_Solver.Solvers.Show_frame(experiments,selectedtab)
 
+def howsitgoing(experiments,selectedtab):
+    global ro_var
+    global rows_counter_var
+    results = experiments[selectedtab]['results']
+
+    for key in results.keys():
+        print('RESULTS DICTIONARY  KEY = ',key,', Values = ',results[key],'\n')
+
+    print('NUMBER OF VARIABLES = ', class_KORALI.times_var-1)
+    print('NUMBER OF ROWS OF VARIABLES = ', ro_var)
+    print('NUMBER OF ROWS OF EACH VARIABLE = ',rows_counter_var)
+    print('NUMBER OF DISTRIBUTIONS = ', class_KORALI.dist_times)
+    print('NUMBER OF ROWS OF THE DISTRIBUTIONS = ',class_KORALI.rows)
+
+    
 
 def popupmsgwarning(text):
     Tk().withdraw()
     showwarning(title = 'Warning',message=text)
 ##    showinfo(title = 'Info',message=text)
 ##    showerror(title = 'Error',message=text)
+def popupmsginfo(text):
+    Tk().withdraw()
+    showinfo(title = 'Info', message = text)
 
 def explainDescription(description):
     tut = tk.Tk()

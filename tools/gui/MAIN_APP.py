@@ -10,9 +10,9 @@ import class_KORALI
 if __name__ == "__main__":
     app = class_KORALI.KORALI()
     app.geometry("1500x1000") # Size of our appliication.
-    app.minsize("1500","1000")
+##    app.minsize("1500","1000")
+    app.minsize("1000","1000")
     app.mainloop()
-    
-    
+
 
 

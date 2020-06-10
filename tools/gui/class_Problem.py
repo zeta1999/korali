@@ -20,13 +20,12 @@ class Problems():
         self.problem.grid(column=0,row=0)
         self.problem.grid_propagate(0)
 
-##        experiments = classes_FRAMES.experiments
-##        selectedtab = classes_FRAMES.selectedtab
-
         # STORE THIS FRAME IN THE experiments dictionary.
         experiments[selectedtab]['problem'] = self.problem
 
         results = experiments[selectedtab]['results']
+
+        # Every time this class is called, new Problem in the results:
         results[cont] = {}
 
         functions.printConfig(self.problem,experiments,selectedtab,directorio,nombre,DB,cont)

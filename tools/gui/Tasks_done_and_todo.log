@@ -1,23 +1,22 @@
 Mark Martori Lopez
 
 
-Tuesday 9 June 2020
+Tuesday 10 June 2020
 
 Tasks:
 
 CURRENT GOAL: Layout of the app changed. Folders of the app changed. Recode it + HTML + finish the app.
 
-0- [Solved] Better accessibility to files.
 
 1- [Solved] General Settings fully FINISHED -> button, frame and conections, Import/Export.
 
 2- [Solved] Distributions fully FINISHED -> buttons + number of Distributions + deletion of Distributions, frame and conections and Import/Export.
 
-3- [Semi-Solved] Problem FINISHED -> Buttons, frame and Import/Export. Missing: Conections between problem/solver/variables.
+3- [Solved] Problem FINISHED -> Buttons, frame and Import/Export, Conections between problem/solver/variables.
 
-4- [Semi-Solved] Solver FINISHED -> Buttons, frame and Import/Export, Missing: Conections between problem/solver/variables.
+4- [Solved] Solver FINISHED -> Buttons, frame and Import/Export, Conections between problem/solver/variables.
 
-5- [Semi-Solved] Variables FINISHED -> Buttons + number of Variables + deletion of Variables, frame and Export. Missing: Finish Import + conections between problem/solver/variables.
+5- [Semi-Solved] Variables FINISHED -> Buttons + number of Variables + deletion of Variables, frame and Export,  conections between problem/solver/variables. Missing: Finish Import.
 
 6- [Solved] New Layout of the app aswell as style.
 

@@ -20,13 +20,12 @@ class Distributions():
         if class_KORALI.dist_first_time == False: # If its not the first time we initialize the class Distribution...
             if functions.import_dist_done == False: # If this function is called inside a loop of the functions file...
                 self.dist = experiments[selectedtab]['distributions']
-                self.display_Distributions(self.dist,class_KORALI.rows,0,4,selectedtab,experiments)
+                self.display_Distributions(self.dist,0,4,selectedtab,experiments)
                 return
             else:
                 self.Show_frame(experiments,selectedtab)
                 return
 
-         
         self.dist = tk.Frame(master,bg=selectorColor,width=717,height=925)
         self.dist.grid(column=0,row=0)
         self.dist.grid_propagate(0)
@@ -43,10 +42,8 @@ class Distributions():
         self.efake =tk.Label(self.dist, text='', fg=selectorColor, bg=selectorColor)
         self.efake.grid(row=0, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
         self.e =tk.Button(self.dist, text='Distributions',activebackground='aliceblue', font="Arial 20", fg='black', bg=selectorColor,
-                          borderwidth=2,relief='solid', command = lambda : self.display_Distributions(self.dist,class_KORALI.rows,c,4,selectedtab,experiments)) #bg = 'darkcyan', fg='white')
+                          borderwidth=2,relief='solid', command = lambda : self.display_Distributions(self.dist,c,4,selectedtab,experiments)) #bg = 'darkcyan', fg='white')
         self.e.grid(row=1, column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
-        ##        self.b = tk.Button(self.dist, text = '+', activebackground='aliceblue', font="Arial 20", fg='black', bg=selectorColor,borderwidth=2,relief='solid', command = lambda : functions.Clear(self.gs)) #bg = 'darkcyan', fg='white')
-        ##        self.b.grid(row=1, column=3,columnspan=1,pady = 4 ,padx=10, sticky='n')
         self.edescr =tk.Label(self.dist, text='Click title to add a Distribution...', font="Arial 10", fg='navy', bg=selectorColor) #bg = 'darkcyan', fg='white')
         self.edescr.grid(row=2, column=0,columnspan=4,rowspan=1,pady = 4 ,padx=10, sticky='n')
         self.efake =tk.Label(self.dist, text='', fg=selectorColor, bg=selectorColor)
@@ -64,21 +61,25 @@ class Distributions():
         c = 0
         
 
-        self.display_Distributions(self.dist,class_KORALI.rows,c,cont,selectedtab,experiments)
+        self.display_Distributions(self.dist,c,cont,selectedtab,experiments)
+        class_KORALI.dist_times += 1
         class_KORALI.dist_first_time = False
+        
+
         
     def Show_frame(dist,experiments,selectedtab):
         dist = experiments[selectedtab]['distributions']
         dist.tkraise()
 
     def delDistr(self,which,selectedtab,experiments):
-##        global experiments
-##        global selectedtab
+        global rows_counter_var
         print('ENTRO : ',class_KORALI.rows)
 
-        if which > class_KORALI.dist_times:
-            functions.popupmsgwarning('First, please delete the last Distribution')
-            return
+        results = experiments[selectedtab]['results']
+        for key in results[4].keys():
+            if which > class_KORALI.dist_times:
+                functions.popupmsgwarning('First, please delete the last Distribution')
+                return
         results = experiments[selectedtab]['results']
         res_dist = experiments[selectedtab]['dist_label']
         # Key value '4' is for Distributions
@@ -97,8 +98,7 @@ class Distributions():
         print('SALGO : ',class_KORALI.rows)
         
     
-    def display_Distributions(self,dist,r,c,cont,selectedtab,experiments):
-        dist_times = class_KORALI.dist_times
+    def display_Distributions(self,dist,c,cont,selectedtab,experiments):
         
         if class_KORALI.dist_times > 3:
             functions.popupmsgwarning('No more Distributions available')
@@ -106,6 +106,7 @@ class Distributions():
         if class_KORALI.rows>4:
             results = experiments[selectedtab]['results']
             results[4][class_KORALI.dist_times]={}
+            print('SECOND TIME OF DISTRIBUTIONS = ',class_KORALI.dist_times)
             
             res_dist = experiments[selectedtab]['dist_label']
             res_dist[class_KORALI.dist_times]={}
@@ -116,13 +117,14 @@ class Distributions():
             res2['l'] =tk.Label(self.dist, text='', fg=selectorColor, bg=selectorColor)
             res2['l'].grid(row=class_KORALI.rows, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
             class_KORALI.rows+=1
-            res2['b'] =tk.Button(self.dist, text='Distribution '+str(dist_times),activebackground='aliceblue', font="Arial 16", fg='black', bg=selectorColor,
+            res2['b'] =tk.Button(self.dist, text='Distribution '+str(class_KORALI.dist_times),activebackground='aliceblue', font="Arial 16", fg='black', bg=selectorColor,
                           borderwidth=1,relief='solid',command = lambda: self.delDistr(class_KORALI.dist_times,selectedtab,experiments)) #bg = 'darkcyan', fg='white')
             res2['b'].grid(row=class_KORALI.rows, column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
-
+            class_KORALI.dist_times += 1
         else:
             results = experiments[selectedtab]['results']
             results[4][class_KORALI.dist_times]={}
+            print('FIRST TIME OF DISTRIBUTIONS == ',class_KORALI.dist_times)
             res = results[4][class_KORALI.dist_times]
             
             res_dist = experiments[selectedtab]['dist_label']
@@ -181,6 +183,3 @@ class Distributions():
         corrector = dist.register(functions.validardigit)
         res[texto5].config(validate = 'key',validatecommand = (corrector,'%P')) # %P represents the parameter we want to pass to validate.
 
-        class_KORALI.dist_times += 1
-
-        print(class_KORALI.rows)

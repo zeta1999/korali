@@ -210,6 +210,9 @@ class FirstFrame():
 ##        experiments[selectedtab] = expElements
         experiments[selectedtab]['results'] = {}
         experiments[selectedtab]['firstFrame'] = ff
+
+        self.HELP = tk.Button(text = "How's it going ?", command = lambda: functions.howsitgoing(experiments,selectedtab))
+        self.HELP.place(x=0,y=700)
         
 
 class SecondFrame():
@@ -239,7 +242,7 @@ class SecondFrame():
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
                                activebackground= selectorColor,font= 'Arial 16', command = lambda:class_GeneralSettings.GeneralSettings(self.sf,selectedtab,experiments))
         general_settings.config(highlightbackground=selectorColor)
-        general_settings.grid(column = 0, row= 2)
+        general_settings.place(x = 0, y = 70)
 
         self.tf = tk.Frame(master,bg='white',width=1083,height=930,borderwidth=2,relief='raised')
         self.tf.grid(column=2,row=0)
@@ -257,15 +260,13 @@ class SecondFrame():
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
                                activebackground= selectorColor,font= 'Arial 16', command = lambda:class_Variables.Variables.Show_frame(experiments,selectedtab))
         variables.config(highlightbackground=selectorColor)
-        variables.place(x = 0, y= 420)
+        variables.place(x = 0, y= 415)
 
         distributions = tk.Button(ff,text = '+  Distributions',fg =extraColor,highlightcolor=selectorColor,
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
                                activebackground= selectorColor,font= 'Arial 16', command = lambda: class_Distributions.Distributions(self.sf,selectedtab,experiments))
         distributions.config(highlightbackground=selectorColor)
-        distributions.place(x = 0, y= 530)
-
-        print(experiments)
+        distributions.place(x = 0, y= 525)
 
 class ThirdFrame():
     def __init__(self,master,selectedtab,experiments):
