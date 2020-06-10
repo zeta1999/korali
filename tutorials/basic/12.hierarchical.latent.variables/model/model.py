@@ -161,7 +161,7 @@ class ConditionalDistribution4():
         assert len(latent_vars) == 1 #self._p.nIndividuals, "we assume each individual has only one measurement and have their own latent variable"
         sigma = self._p.sigma
 
-        pdb.set_trace()
+        # pdb.set_trace()
         # log(p(data | mean, sigma ))
         # logp = 0
         #for i in range(self._p.nIndividuals):

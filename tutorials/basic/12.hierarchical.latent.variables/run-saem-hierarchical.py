@@ -36,7 +36,7 @@ def main():
     e["Problem"]["Latent Space Dimensions"] = 1
 
     e["Solver"]["Type"] = "HSAEM"
-    e["Solver"]["Number Samples Per Step"] = 100
+    e["Solver"]["Number Samples Per Step"] = 5
     e["Solver"]["Termination Criteria"]["Max Generations"] = 30
 
     e["Distributions"][0]["Name"] = "Uniform 0"

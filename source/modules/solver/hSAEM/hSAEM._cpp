@@ -42,15 +42,15 @@ void korali::solver::HSAEM::initialize()
    _latentProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatentLowlevel*>(_k->_problem);
 
     // Todo: make sure the problem is initialized before the solver
- _numberLatent = _k->_variables.size();
  _numberIndividuals = _latentProblem->_numberIndividuals;
  _latentSpaceDimensions = _latentProblem->_latentSpaceDimensions;
-// _numberHyperparameters = _latentSpaceDimensions * (1 + _latentSpaceDimensions);
+// assert (_latentSpaceDimensions == _k->_variables.size()); // only variables for one individual, as prototypes, should be defined
+// \_ Edit: hSAEM initialization is also called when initializing the sub-problem, from within hierarchicalLatent._cpp. In that case _k has a complete list of variables.
  _mcmcNumberChains = _numberSamplesPerStep; // to simplify things, use one MCMC chain per final sample to generate.
 
  _univariateNormalGenerator->updateProperty("Mean", 0.0);
 
- for (size_t i = 0; i < _numberLatent; i++)
+ for (size_t i = 0; i < _latentSpaceDimensions; i++)
    if( std::isfinite(_k->_variables[i]->_initialValue) == false )
      korali::Logger::logError("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
 
@@ -183,7 +183,7 @@ void korali::solver::HSAEM::justTesting()
   _k->_logger->logInfo("Normal", "Test: Conditional LLLH = %f evaluated for latent variables:\n", cond_llh);
   for (size_t i = 0; i < _latentProblem->_latentVariableIndices.size(); i++){
     int idx = _latentProblem->_latentVariableIndices[i];
-    _k->_logger->logInfo("Normal", "Test: \t %s : %e \n", _k->_variables[idx]->_name.c_str(), latent_vars[i]);
+    _k->_logger->logInfo("Normal", "Test: \t %s : %e \n", _latentProblem->_k->_variables[idx]->_name.c_str(), latent_vars[i]);
   }
 
 
@@ -215,8 +215,9 @@ void korali::solver::HSAEM::sampleLatent(){
 //  std::vector<std::vector<double>> chainLogLikelihoods(_mcmcNumberChains); // nChains x nIndividuals, not sure if needed.
 //  std::vector<std::vector<double>> initialChainLogLikelihoods(_mcmcNumberChains); // nChains x nIndividuals
 
-
-
+//
+//  volatile int done = 0;
+//  while (!done) sleep(1);
 
   // ** Loop over chains
   for (size_t c_idx = 0; c_idx < _mcmcNumberChains; c_idx++)
@@ -280,6 +281,10 @@ void korali::solver::HSAEM::sampleLatent(){
           if (log(rval) < logAcceptanceProb){
             // update zeta, update likelihood
             _currentZ[c_idx][indiv] = newZeta[indiv];
+            // Todo: Do not wrote to currentZ directly here, instead create a temporary array and write back everything
+//             only after the loop over all chains? I don't know enough about the optimization / what will be
+//             parallelized in both cases. It could help.
+            // Todo: Look at (T)MCMC, how are separate chains managed there?
             _currentSampleLogLikelihoods[c_idx][indiv] = newLLHs[indiv];
           }
         }
@@ -356,6 +361,27 @@ void korali::solver::HSAEM::sampleLatent(){
       }
 
       // ** Todo: update variances
+
+
+
+
+      // ** In modus "detailed", print current sampled values
+       _k->_logger->logInfo("Detailed", "    - Current transformed latent variable samples of chain %d: \n", c_idx);
+      for (size_t i = 0; i < _numberIndividuals; i++)
+      {
+        _k->_logger->logInfo("Detailed", "      - Individual %d: \n", i);
+        _k->_logger->logInfo("Detailed", "          LLH:       %.2f \n", currentLLHs[i]);
+        _k->_logger->logInfo("Detailed", "          Log-Prior: %.2f: \n", currentPriors[i]);
+        for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
+        {
+          int idx = _latentProblem->_latentIndex[i][dim];
+          _k->_logger->logInfo("Detailed", "        %s : %.2f \n", _latentProblem->_k->_variables[idx]->_name.c_str(), _currentZ[c_idx][i][dim]);
+        }
+      }
+      _k->_logger->logInfo("Detailed", "    - Acceptance rates: %.2f \n", c_idx);
+      for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
+        _k->_logger->logInfo("Detailed", "      Dim %d: %.2f \n", dim, _acceptanceRate[dim]);
+
 
     } // Chain end
 
