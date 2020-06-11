@@ -69,17 +69,19 @@ def plotVariables(genList):
   fig.subplots_adjust(hspace=.8)
 
   # suptitle?
-  plt.suptitle('SAEM Plotter - \nNumber of Samples: {0}\n'.format(str(numSamples)),
-               fontweight='bold', fontsize=20)
+  plt.suptitle(
+      'SAEM Plotter - \nNumber of Samples: {0}\n'.format(str(numSamples)),
+      fontweight='bold',
+      fontsize=20)
   for latentIdx in range(numLatent):
-      ax = fig.add_subplot(max(numLatent, numHyper) + 1, 2, 2 * latentIdx + 1)
-      ax.errorbar(x=generations, y=sample_means[:, latentIdx], yerr=sample_sdevs[:, latentIdx])
-      ax.set_title(latentVars[latentIdx]["Name"])
+    ax = fig.add_subplot(max(numLatent, numHyper) + 1, 2, 2 * latentIdx + 1)
+    ax.errorbar(x=generations, y=sample_means[:, latentIdx], yerr=sample_sdevs[:, latentIdx])
+    ax.set_title(latentVars[latentIdx]["Name"])
   # fig, ax = plt.subplots(nrows=max(numLatent, numHyper) + 1, ncols=1, figsize=(15,8))
   for hyperIdx in range(numHyper):
-      ax = fig.add_subplot(max(numLatent, numHyper) + 1, 2, 2 * hyperIdx + 2)
-      ax.plot(generations, hyperparams[:, hyperIdx])
-      ax.set_title(hyperVars[hyperIdx]["Name"])
+    ax = fig.add_subplot(max(numLatent, numHyper) + 1, 2, 2 * hyperIdx + 2)
+    ax.plot(generations, hyperparams[:, hyperIdx])
+    ax.set_title(hyperVars[hyperIdx]["Name"])
   ax = fig.add_subplot(max(numLatent, numHyper) + 1, 2, 2 * max(numLatent, numHyper) + 1)
   ax.plot(generations, gammas)
   ax.set_title("gamma")

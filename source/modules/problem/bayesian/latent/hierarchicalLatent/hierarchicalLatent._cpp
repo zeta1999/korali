@@ -16,10 +16,10 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 {
   korali::problem::bayesian::Latent::initialize();
 
-  if (_numberIndividuals <= 0) korali::Logger::logError("Hierarchical latent variable problems require defining reference data.\n");
-  if (_data.size() != _numberIndividuals) korali::Logger::logError("Hierarchical latent variable problems require defining reference data, with one vector of points for each individual.\n");
+  if (_numberIndividuals <= 0) KORALI_LOG_ERROR("Hierarchical latent variable problems require defining reference data.\n");
+  if (_data.size() != _numberIndividuals) KORALI_LOG_ERROR("Hierarchical latent variable problems require defining reference data, with one vector of points for each individual.\n");
   // The user should define one variable per latent variable dimension, as prototype:
-  if (_k->_variables.size() != _latentSpaceDimensions) korali::Logger::logError("Hierarchical latent variable problems require only a subset of prototype variables to be defined. Please define one prototype latent variable per individual. (Expected %d variables, found %d variables.) \n", _numberIndividuals, _k->_variables.size());
+  if (_k->_variables.size() != _latentSpaceDimensions) KORALI_LOG_ERROR("Hierarchical latent variable problems require only a subset of prototype variables to be defined. Please define one prototype latent variable per individual. (Expected %d variables, found %d variables.) \n", _numberIndividuals, _k->_variables.size());
 
   // * * Set up the lowlevel problem
 
@@ -44,8 +44,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
   for (size_t i = 0; i < _numberIndividuals; i++){
     for (size_t dim = 0; dim < _latentSpaceDimensions; dim++ ){
       korali::Variable *var = _k->_variables[dim];
-      if (var->_bayesianType != "Latent") korali::Logger::logError("Expected prototype variables for latent variables only; found a hyperparameter. Hyperparameters will be created automatically.");
-//      if (var->_latentVariableDistributionType.c_str() == "NA") korali::Logger::logError("Latent variable distribution type 'NA' is only for internal use. Please choose a valid distribution.");
+      if (var->_bayesianType != "Latent") KORALI_LOG_ERROR("Expected prototype variables for latent variables only; found a hyperparameter. Hyperparameters will be created automatically.");
+//      if (var->_latentVariableDistributionType.c_str() == "NA") KORALI_LOG_ERROR("Latent variable distribution type 'NA' is only for internal use. Please choose a valid distribution.");
       _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Latent Variable Distribution Type"] = var->_latentVariableDistributionType;
       _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Bayesian Type"] = "Latent";
       _koraliExperiment["Variables"][ i * _latentSpaceDimensions + dim ]["Name"] = var->_name + " " + std::to_string(i);
@@ -66,7 +66,7 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
  {
   // Check variables type
   std::string typeString = _k->_variables[i]->_bayesianType;
-  if (typeString != "Latent") korali::Logger::logError("Unrecognized Variable Type %s \n", typeString.c_str());
+  if (typeString != "Latent") KORALI_LOG_ERROR("Unrecognized Variable Type %s \n", typeString.c_str());
  }
 
 //  /* Check distributions and sort latent variables by distribution */
@@ -76,9 +76,9 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 //  if (distribString == "Log-Normal")   { _lognormalLatentIndices.push_back(i);   recognizedDistribution = true; }
 //  if (distribString == "Logit-Normal")   { _logitnormalLatentIndices.push_back(i);   recognizedDistribution = true; }
 //  if (distribString == "NA")   {
-//    korali::Logger::logError("Each latent variable must be either normally, log-normally or logit-normally distributed. NA is only for internal use.", typeString);
+//    KORALI_LOG_ERROR("Each latent variable must be either normally, log-normally or logit-normally distributed. NA is only for internal use.", typeString);
 //   }
-//  if (recognizedDistribution == false) korali::Logger::logError("Unrecognized distribution type: %s.\n", distribString.c_str());
+//  if (recognizedDistribution == false) KORALI_LOG_ERROR("Unrecognized distribution type: %s.\n", distribString.c_str());
 
  /*  Now, generate the hyperparameters:
     1. Means - one mean per distinct 'Distribution Index'.
@@ -109,11 +109,11 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
 //       if (distribString == "Logit-Normal"){
 //         double ival = _k->_variables[i]->_initialValue;
 //         if ((ival < 0) || (ival >= 1) )
-//           korali::Logger::logError("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
+//           KORALI_LOG_ERROR("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
 //         _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = (ival / (1 - ival));
 //       }
 //       else
-//         korali::Logger::logError("Unrecognized 'Latent Variable Distribution' %s ", distribString.c_str());
+//         KORALI_LOG_ERROR("Unrecognized 'Latent Variable Distribution' %s ", distribString.c_str());
 //     }
 //   }
 
