@@ -5,6 +5,8 @@ import webview
 import json
 import os
 from tkinter.filedialog import asksaveasfile, askopenfilename
+import time
+from cefpython3 import cefpython as cef
 
 # Add different colors to messages in console.
 import sys
@@ -25,9 +27,13 @@ import MAIN_APP
 import class_Variables
 import class_KORALI
 import class_Distributions
+import MAIN_APP
+import class_BrowserFrame
 
 
 # Variables:
+frameWidth=1150
+frameHeight=900
 selectorColor = 'aliceblue'
 colorDescription = 'snow'
 colorProblem = 'snow'
@@ -47,6 +53,9 @@ problems_ind = ''
 solvers_ind = ''
 
 links = {'sampling':'../../docs/manual/modules/problem/sampling/sampling.rst'}
+#https://www.cse-lab.ethz.ch/korali/docs/examples/sampling.html
+links_website = {'sampling':'https://www.cse-lab.ethz.ch/korali/docs/examples/sampling.html',
+                 'rein':'o'}
 
 linktoVariables0 = ''
 linktoVariables1 = ''
@@ -299,13 +308,9 @@ def exportFile():
     
     bottomleftFr = experiments[selectedtab]['solver']
     rightFr = experiments[selectedtab]['problem']
-##    variableFr = experiments[selectedtab]['totalTabs2']
 
     # Copy results dictionary into results2
     results2 = {}
-##    for key in results:
-##         results2[key] = results[key].copy()
-##    results2 = {k : v for k,v in results}
     results2 = copiarDiccionario(results)
          
     results2['Problem'] = results2.pop(0)
@@ -368,111 +373,43 @@ def validardigit(num):
             r = False
     return r
 
+##def openFrame(self,directorio,link):
+##    """
+##    opens other frame and hides main frame
+##    """
+##    self.hide(self)
+##    subFrame = class_KORALI.Information(directorio,link)
 
-    
-def website(tf,directorio,cont):
-    global links
-    
-    if cont == 0:
-        link = '../../docs/manual/modules/problem/'+directorio+'/'+directorio+'.rst'
-    elif cont == 1:
-        link = '../../docs/manual/modules/solver/'+directorio+'/'+directorio+'.rst'
-
-    file = open(link,'r')
-    first_line = file.readline()
-    Label = tk.Label(tf, text = first_line, font = 'Arial 18')
-    Label.pack(side='top')
-    tf.pack_propagate(0)
-    file.close()
-
+'''   
+def embed_browser(self):
+        window_info = cef.WindowInfo()
+        rect = [0, 0, self.winfo_width(), self.winfo_height()]
+        window_info.SetAsChild(self.get_window_handle(), rect)
+        self.browser = cef.CreateBrowserSync(window_info,
+                                             url="http://www.google.com") #todo
+        assert self.browser
+##        self.browser.SetClientHandler(LoadHandler(self))
+##        self.browser.SetClientHandler(FocusHandler(self))
+        self.message_loop_work()
 '''
-def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
-    global frame_problem
-    global frame_solver
-    global first_time_p
-    global first_time_s
-    global problems_ind
-    global solvers_ind
-    global experiments
-    global selectedtab
-
-    experiments = exp
-    selectedtab = whichtab
-
-    ff = experiments[selectedtab]['firstFrame']
-              
-    y_pos = y_pos +40
-    x_pos = x_pos
-    if len(nombre)>30:
-        nombre = nombre[0:30]+'...'       
-
-    if cont == 0:
-        if first_time_p == False:
-            if directorio == frame_problem:
-                class_Problem.Problems.Show_frame(experiments,selectedtab)
-                website(tf,directorio,cont)
-            else:
-                ANSWER = messagebox.askyesno("Different Problem","Are you sure you want to proceed? Previous variables will vanish.")
-                if ANSWER == False:
-                    return
-                if problems_ind != '':
-                   for widget in ff.winfo_children():
-                        if widget['text'] == problems_ind:
-                            widget.destroy()
-                website(tf,directorio,cont)
-                which = tk.Button(ff,text = nombre,width=28, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: [class_Problem.Problems.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
-                which.config(cursor = 'watch')
-                which.place(x=x_pos,y=y_pos)
-                problems_ind = nombre
-                frame_problem = directorio # IF USERS ANSWERS YES...
-                class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
-                for widget in ff.winfo_children():
-                        if widget['text'] == solvers_ind:
-                            first_time_s = True
-                            widget.destroy()
-        else:
-            website(tf,directorio,cont)
-            first_time_p = False
-            class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
-            frame_problem = directorio
-            which = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: [class_Problem.Problems.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
-            which.config(cursor = 'watch')
-            which.place(x=x_pos,y=y_pos)
-            problems_ind = nombre
         
-    elif cont == 1:
-        if first_time_s == False:
-            if directorio == frame_solver:
-                class_Solver.Solvers.Show_frame(experiments,selectedtab)
-                website(tf,directorio,cont)
-            else:
-                ANSWER = messagebox.askyesno("Different Solver","Are you sure you want to proceed? Previous variables will vanish.")
-                if ANSWER == False:
-                    return
-                if solvers_ind != '':
-                    for widget in ff.winfo_children():
-                        if widget['text'] == solvers_ind:
-                            widget.destroy()
-                website(tf,directorio,cont)
-                which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: [class_Solver.Solvers.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
-                which2.config(cursor = 'watch')
-                which2.place(x=x_pos,y=y_pos)
-                solvers_ind = nombre
-                frame_solver = directorio # IF USERS ANSWERS YES...
-                class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
-        else:
-            website(tf,directorio,cont)
-            first_time_s = False
-            class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
-            frame_solver = directorio
-            which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
-                               background = selectorColor,command = lambda: [class_Solver.Solvers.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
-            which2.config(cursor = 'watch')
-            which2.place(x=x_pos,y=y_pos)
-            solvers_ind = nombre
-            #printConfig(experiments,directorio,DB, cont)            
-            #printVariables(sf.tab2,directorio,DB,cont)
-'''
+def website(directorio,cont,tf):
+    global frameWidth
+    global frameHeight
+
+    if directorio in MAIN_APP.links_website.keys():
+        link = MAIN_APP.links_website[directorio]
+    else:
+        popupmsgwarning('There is not a CSE-Lab link reference to the chosen directory')
+        return
+    
+
+
+    frame=class_BrowserFrame.createHTMLFrame(tf,frameWidth,frameHeight,directorio,link)    
+    frame.grid(row=0, column=0)
+    
+    
+
 def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
     global frame_problem
     global frame_solver
@@ -497,8 +434,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
         if class_KORALI.first_time_p == False:
             print('Entrying as a problem not for first time')
             if directorio == frame_problem: # If we click on the same Problem as before...
-                class_Problem.Problems.Show_frame(experiments,selectedtab) # We only show the frame again.
-                website(tf,directorio,cont)
+                class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont) # We only show the frame again.
             else: # If we are choosing a different problem and not for first time:
                 print('Different Problem than before chosen')
                 ANSWER = messagebox.askyesno("Different Problem","Are you sure you want to proceed? Previous variables will vanish.")
@@ -544,8 +480,8 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                         widget.destroy()
                     popupmsginfo('When choosing a new Problem, the previous chosen Solver is removed.')
                     print('Solver frame cleaned too')
-                website(tf,directorio,cont)
-                which = tk.Button(ff,text = nombre,width=28, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: [class_Problem.Problems.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+                
+                which = tk.Button(ff,text = nombre,width=28, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont))
                 which.config(cursor = 'watch')
                 which.place(x=x_pos,y=y_pos+40)
                 problems_ind = nombre
@@ -553,17 +489,17 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                 class_KORALI.times_var = 1
                 class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
                 print('Calling again class_Problem')
-        else: # IF ITS THE FIRST TIME WE CHOOSE A PROBLEM:
-            
-            website(tf,directorio,cont)
+##                website(directorio,cont)
+        else: # IF ITS THE FIRST TIME WE CHOOSE A PROBLEM:         
             class_KORALI.first_time_p = False
             class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
             frame_problem = directorio
             which = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
-                              background = selectorColor,command = lambda: [class_Problem.Problems.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+                              background = selectorColor,command = lambda:class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf))
             which.config(cursor = 'watch')
             which.place(x=x_pos,y=y_pos+40)
             problems_ind = nombre
+##            website(tf,directorio,cont)
         
     elif cont == 1:
         class_KORALI.times_var = 1
@@ -571,8 +507,8 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
         if class_KORALI.first_time_s == False:
             color.write("Entrying as a Solver NOT FOR first time","STRING")
             if directorio == frame_solver:
-                class_Solver.Solvers.Show_frame(experiments,selectedtab)
-                website(tf,directorio,cont)
+                class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf)
+##                website(directorio,cont)
             else:
                 color.write("If Solver selected is different from before...","STRING")
                 ANSWER = messagebox.askyesno("Different Solver","Are you sure you want to proceed? Previous variables will vanish.")
@@ -606,25 +542,25 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                     del results[1]
                     print('SOOOOOOLVER = Solver Deleted = ',results.keys())
                     
-                website(tf,directorio,cont)
-                which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: [class_Solver.Solvers.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+                which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
                 which2.config(cursor = 'watch')
                 which2.place(x=x_pos,y=y_pos+40)
                 solvers_ind = nombre
                 frame_solver = directorio # IF USERS ANSWERS YES...
                 color.write("Class_Solver being called again","STRING")
                 class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+##                website(tf,directorio,cont)
         else:
             color.write("Entrying as a Solver FOR FIRST TIME","STRING")
-            website(tf,directorio,cont)
             class_KORALI.first_time_s = False
             class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
             frame_solver = directorio
             which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
-                               background = selectorColor,command = lambda: [class_Solver.Solvers.Show_frame(experiments,selectedtab),website(tf,directorio,cont)])
+                               background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
             which2.config(cursor = 'watch')
             which2.place(x=x_pos,y=y_pos+40)
             solvers_ind = nombre
+##            website(tf,directorio,cont)
             #printConfig(experiments,directorio,DB, cont)            
             #printVariables(sf.tab2,directorio,DB,cont)
             
@@ -942,7 +878,8 @@ def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
     else:
         popupmsgwarning('No Configuration Settings found')
     if cont == 1:
-        class_Solver.Solvers.Show_frame(experiments,selectedtab)
+        pass
+##        class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont)
 
 def howsitgoing(experiments,selectedtab):
     global ro_var

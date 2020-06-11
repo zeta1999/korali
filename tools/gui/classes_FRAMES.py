@@ -9,6 +9,9 @@ import class_GeneralSettings
 import functions
 import class_Variables
 import class_Distributions
+import class_BrowserFrame
+
+
 ## Frame Variables:
 clickables = ['General Settings', 'Problem', 'Solver', 'Variables', 'Distributions']
 bgColor = 'azure'
@@ -232,6 +235,12 @@ class SecondFrame():
         
         experiments[selectedtab]['secondFrame'] = self.sf
 
+        self.tf = tk.Frame(master,bg='white',width=1083,height=930,borderwidth=2,relief='raised')
+        self.tf.grid(column=2,row=0)
+        self.tf.grid_propagate(0)
+
+        experiments[selectedtab]['thirdFrame'] = self.tf
+
         ## General Settings Button:
         ff = experiments[selectedtab]['firstFrame']
         space1 = tk.Label(ff,text='',font='Arial 20', background = selectorColor)
@@ -244,12 +253,7 @@ class SecondFrame():
         general_settings.config(highlightbackground=selectorColor)
         general_settings.place(x = 0, y = 70)
 
-        self.tf = tk.Frame(master,bg='white',width=1083,height=930,borderwidth=2,relief='raised')
-        self.tf.grid(column=2,row=0)
-        self.tf.grid_propagate(0)
-
-        experiments[selectedtab]['thirdFrame'] = self.tf
-
+    
         ## Here because frames need to be finished before starting.
         cont= 0
         cascade(mainPath,configTreeDB,cont,selectedtab,experiments)
@@ -270,12 +274,22 @@ class SecondFrame():
 
 class ThirdFrame():
     def __init__(self,master,selectedtab,experiments):
-        pass
-##        self.tf = tk.Frame(master,bg='white',width=866,height=930,borderwidth=2,relief='raised')
-##        self.tf.grid(column=2,row=0)
-##        self.tf.grid_propagate(0)
-##
-##        experiments[selectedtab]['thirdFrame'] = self.tf
+        
+        tf = experiments[selectedtab]['thirdFrame']
+##        self.navigation_bar = class_BrowserFrame.NavigationBar(tf)
+##        self.navigation_bar.grid(row=0, column=0,
+##                                 sticky=(tk.N + tk.S + tk.E + tk.W))
+        
+        self.browser_frame = class_BrowserFrame.BrowserFrame(tf)
+        self.browser_frame.grid(row=1, column=0,
+                                sticky=(tk.N + tk.S + tk.E + tk.W))
+##        tk.Grid.rowconfigure(self, 1, weight=1)
+##        tk.Grid.columnconfigure(self, 0, weight=1)
+        
+    def get_browser(self):
+        if self.browser_frame:
+            return self.browser_frame.browser
+        return None
 
 
 configTreeDB = {}

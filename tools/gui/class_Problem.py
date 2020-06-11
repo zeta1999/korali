@@ -30,9 +30,12 @@ class Problems():
 
         functions.printConfig(self.problem,experiments,selectedtab,directorio,nombre,DB,cont)
 
-    def Show_frame(experiments,selectedtab):
+    def Show_frame(experiments,selectedtab,directorio,cont,tf):
         problem = experiments[selectedtab]['problem']
         problem.tkraise()
+        functions.time.sleep(1)
+        functions.website(directorio,cont,tf)
+        
         
         
 

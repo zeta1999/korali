@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import *
+from pubsub import pub
 from tkinter.messagebox import showerror, showwarning, showinfo
+import webview
 
 #FILES import:
 import classes_FRAMES
@@ -186,7 +188,34 @@ class KORALI(tk.Tk): #Inherited tk.tk
                     return
         else:
             popupmsgwarning('At least 2 experiments to delete 1')
-       
+
+    def hide(self):
+        """
+        hides main frame
+        """
+        print('HIDING')
+
+
+class Information(tk.Toplevel):
+    #----------------------------------------------------------------------
+    def __init__(self,directorio,link):
+        """Constructor"""
+        tk.Toplevel.__init__(self)
+        self.geometry("400x300")
+        self.title("Information")
+##        self.grab_set()
+        print('hello')
+        # create the button
+        webview.create_window(directorio, link)
+        webview.start()
+
+
+##    def onClose(self):
+##        """
+##        closes the frame and sends a message to the main frame
+##        """
+##        self.destroy()
+##        pub.sendMessage("otherFrameClosed", arg1="data")
 
 ## --------------- END OF CLASSES ------------------------    
 ########################################################    
