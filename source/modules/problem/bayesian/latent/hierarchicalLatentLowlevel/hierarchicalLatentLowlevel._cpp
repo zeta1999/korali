@@ -15,9 +15,6 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
 {
   korali::problem::bayesian::Latent::initialize();
 
-  // * helper variables
-  int numberLatentVariables = _numberIndividuals * _latentSpaceDimensions;
-
  _normalLatentIndices.clear();
  _lognormalLatentIndices.clear();
  _logitnormalLatentIndices.clear();
@@ -34,7 +31,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
 // }
 
  /* Check and assign distribution types , by looking only at those of the first individual. */
- int dim_counter =  0;
+ size_t dim_counter =  0;
  for (size_t i = 0; i < _k->_variables.size() && (dim_counter < _latentSpaceDimensions); i++)
  {
     bool recognizedDistribution = false;
@@ -67,7 +64,6 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
   std::string distribString = var->_latentVariableDistributionType;
   if (typeString != "Latent" && typeString != "Hyperparameter") KORALI_LOG_ERROR("Unrecognized Variable Type %s \n", typeString.c_str());
   int distribIndex = var->_latentSpaceCoordinate;
-  int individualIndex = var->_individualIndex;
   if (_latentVariableDistributions[distribIndex] != distribString)
     if (!(typeString == "Hyperparameter" && distribString == "NA"))
       KORALI_LOG_ERROR("Assigned two+ latent variables to the same coordinate (same 'Latent Space Coordinate'), but declared different distribution types for both.");
@@ -225,7 +221,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 
   std::vector<std::vector<double>> latentVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
   std::vector<double> mean = sample["Mean"].get<std::vector<double>>();
-  int N = mean.size(); // Number of latent variables
+  size_t N = mean.size(); // Number of latent variables
   auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
   assert (N == covMatrix.size()); // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
   assert (N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
@@ -256,7 +252,6 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   gsl_vector_const_view mean_view = gsl_vector_const_view_array(&mean[0], N);
   gsl_vector *latent_minus_mean  = gsl_vector_alloc(N);
   gsl_vector* x = gsl_vector_alloc(N);
-  int v_idx;
   std::vector<double> individualLLH(_numberIndividuals);
 //  double lllh = 0;
   //gsl_vector_const_view b(&latent_minus_mean, N);
@@ -267,7 +262,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   for (int i = 0; i < _numberIndividuals; i++){
     // Get i-th vector of latent variables:
     for (int j = 0; j < _latentSpaceDimensions; j++){
-      //v_idx = _latentIndex[i][j];
+      //size_t v_idx = _latentIndex[i][j];
       gsl_vector_set(latent_minus_mean, j, latentVariables[i][j]);
     }
 
@@ -331,16 +326,16 @@ std::vector<double> korali::problem::bayesian::latent::HierarchicalLatentLowleve
     KORALI_LOG_ERROR("Error, z vector passed to zToLatent() had the wrong number of entries.");
   std::vector<double> theta(_latentSpaceDimensions);
 
-  int counter = 0;
-  for(int i : _normalLatentIndices){
+  size_t counter = 0;
+  for(size_t i : _normalLatentIndices){
     theta[i] = z[i];
     counter++;
   }
-  for(int i : _lognormalLatentIndices){
+  for(size_t i : _lognormalLatentIndices){
     theta[i] = exp(z[i]);
     counter++;
   }
-  for(int i : _logitnormalLatentIndices){
+  for(size_t i : _logitnormalLatentIndices){
     if ((z[i] < 0) || (z[i] >= 1) )
       KORALI_LOG_ERROR("Any value of a logit-normally distributed variable needs to be in range [0, 1).");
     theta[i] = 1.0 / (1.0 + exp(-z[i]));  // z= logit(theta)
