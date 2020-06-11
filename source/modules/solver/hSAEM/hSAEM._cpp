@@ -378,7 +378,7 @@ void korali::solver::HSAEM::sampleLatent(){
           _k->_logger->logInfo("Detailed", "        %s : %.2f \n", _latentProblem->_k->_variables[idx]->_name.c_str(), _currentZ[c_idx][i][dim]);
         }
       }
-      _k->_logger->logInfo("Detailed", "    - Acceptance rates: %.2f \n", c_idx);
+      _k->_logger->logInfo("Detailed", "    - Acceptance rates, chain %d: \n", c_idx);
       for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
         _k->_logger->logInfo("Detailed", "      Dim %d: %.2f \n", dim, _acceptanceRate[dim]);
 

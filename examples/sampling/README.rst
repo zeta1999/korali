@@ -82,7 +82,7 @@ We choose the solver `MCMC` and set the initial mean and standard deviation of t
 
 .. code-block:: python
 
-    e["Solver"]["Type"]  = "MCMC"
+    e["Solver"]["Type"]  = "Sampler/MCMC"
     e["Variables"][0]["Initial Mean"] = 0.0
     e["Variables"][0]["Initial Standard Deviation"] = 1.0
 

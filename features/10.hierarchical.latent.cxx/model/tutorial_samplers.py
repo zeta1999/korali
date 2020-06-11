@@ -119,7 +119,7 @@ class Example925Sampler:
 #             e["Variables"][i]["Initial Standard Deviation"] = 2.0
 #
 #         # Configuring the MCMC sampler parameters
-#         e["Solver"]["Type"]  = "MCMC"
+#         e["Solver"]["Type"]  = "Sampler/MCMC"
 #         e["Solver"]["Burn In"] = 400
 #         e["Solver"]["Termination Criteria"]["Max Samples"] = 1000
 #
