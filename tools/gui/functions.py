@@ -434,7 +434,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
         if class_KORALI.first_time_p == False:
             print('Entrying as a problem not for first time')
             if directorio == frame_problem: # If we click on the same Problem as before...
-                class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont) # We only show the frame again.
+                class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf) # We only show the frame again.
             else: # If we are choosing a different problem and not for first time:
                 print('Different Problem than before chosen')
                 ANSWER = messagebox.askyesno("Different Problem","Are you sure you want to proceed? Previous variables will vanish.")
@@ -481,7 +481,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                     popupmsginfo('When choosing a new Problem, the previous chosen Solver is removed.')
                     print('Solver frame cleaned too')
                 
-                which = tk.Button(ff,text = nombre,width=28, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont))
+                which = tk.Button(ff,text = nombre,width=28, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf))
                 which.config(cursor = 'watch')
                 which.place(x=x_pos,y=y_pos+40)
                 problems_ind = nombre
