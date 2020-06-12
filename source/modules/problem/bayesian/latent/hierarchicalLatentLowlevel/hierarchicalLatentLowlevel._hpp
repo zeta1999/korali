@@ -59,7 +59,6 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
  */
   void evaluateLogPosterior(korali::Sample &sample) override;
 
-
   /**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
             vector of latent variables (for a single, unspecified individual).

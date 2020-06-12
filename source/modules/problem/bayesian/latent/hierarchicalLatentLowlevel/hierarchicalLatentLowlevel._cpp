@@ -154,7 +154,6 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
   }
 }
 
-
 /*! @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
             vector of latent variables (for a single, unspecified individual).
             See the description of this function for more information.

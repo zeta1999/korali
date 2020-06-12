@@ -15,12 +15,12 @@ class Latent : public korali::problem::Bayesian
   /** @brief Class considered abstract; do not use.
         @param sample : A sample.*/
   virtual void evaluateLoglikelihood(korali::Sample &sample) override;
-    /**
+  /**
    * @brief Class considered abstract; do not use.
    * @param sample : A sample.
    */
-  virtual void evaluateLogPrior(korali::Sample &sample);     // override / hide bayesian's function
-    /**
+  virtual void evaluateLogPrior(korali::Sample &sample); // override / hide bayesian's function
+  /**
    * @brief Class considered abstract; do not use.
    * @param sample: A sample.
    */

@@ -174,7 +174,7 @@ korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent()
   delete &_koraliExperiment;
 }
 
-  /**
+/**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
             vector of latent variables (for a single, unspecified individual).
             See the description of that function in the config for more information.
@@ -185,7 +185,6 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihoo
 {
   sample.run(_conditionalLogLikelihoodFunction);
 }
-
 
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood(korali::Sample &sample)
 {

@@ -46,7 +46,6 @@ class HSAEM : public korali::Solver
   */
   void justTesting();
 
-
   /** @brief Utility function to convert a vector of vectors into a concatenated 1D vector.
   *   @param v: The vector of vectors to flatten
   *   @returns a flattened vector

@@ -1,6 +1,6 @@
-#include "korali.hpp"
 #include "_model/model.hpp"
 #include "_model/some_samplers.hpp"
+#include "korali.hpp"
 
 #include <vector>
 
