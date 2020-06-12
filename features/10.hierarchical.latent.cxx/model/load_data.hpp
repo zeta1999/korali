@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <vector>
 
-typedef struct pointsInfoStruct {
+typedef struct pointsInfoStruct
+{
   std::vector<std::vector<double>> data;
   size_t nIndividuals;
   size_t nSamplesEach;
@@ -13,8 +14,8 @@ typedef struct pointsInfoStruct {
   double omega;
 } pointsInfo;
 
-pointsInfoStruct& simplePopulationData();
+pointsInfoStruct &simplePopulationData();
 
-void reset_points(pointsInfoStruct& __p, std::vector<std::vector<double>> new_data, int new_nSamplesEach );
+void reset_points(pointsInfoStruct &__p, std::vector<std::vector<double>> new_data, int new_nSamplesEach);
 
 #endif // _HEAT2D_H_

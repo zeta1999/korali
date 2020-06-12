@@ -5,9 +5,9 @@
 #include "load_data.hpp"
 #include "utils.hpp"
 
-#include <vector>
 #include <cmath>
 #include <random>
+#include <vector>
 
 /*
 Model 1:
@@ -25,49 +25,41 @@ Latent variables:
     Assignment of each data point to the modes
 */
 
-
-class ExponentialFamilyDistribution 
+class ExponentialFamilyDistribution
 {
- public:
-        pointsInfoStruct _p;
-        virtual void S(korali::Sample& k) = 0;
-        virtual void zeta(korali::Sample& k) = 0;
-        virtual void phi(korali::Sample& k) = 0;
+  public:
+  pointsInfoStruct _p;
+  virtual void S(korali::Sample &k) = 0;
+  virtual void zeta(korali::Sample &k) = 0;
+  virtual void phi(korali::Sample &k) = 0;
 
-       int sufficientStatisticsDimension; // Dimensionality of vectors returned by S and phi
+  int sufficientStatisticsDimension; // Dimensionality of vectors returned by S and phi
 };
 
 class ExampleDistribution1 : public ExponentialFamilyDistribution
 {
-    // Take the hyperparameter as sigma of a normal distribution, and the mean mu as latent variable
+  // Take the hyperparameter as sigma of a normal distribution, and the mean mu as latent variable
 
-    public:
+  public:
+  ExampleDistribution1();
+  void S(korali::Sample &k) override;
+  void zeta(korali::Sample &k) override;
+  void phi(korali::Sample &k) override;
 
-         ExampleDistribution1();
-        void S(korali::Sample& k) override;
-        void zeta(korali::Sample& k) override;
-        void phi(korali::Sample& k) override;
-
-        double mu_lower_bound;
-        double mu_upper_bound;
-        double mu_range;
-
+  double mu_lower_bound;
+  double mu_upper_bound;
+  double mu_range;
 };
-
 
 class ExampleDistribution2 : public ExponentialFamilyDistribution
 {
-    //  Second test case with multiple gaussian distributions; latent variables are cluster assignments.
+  //  Second test case with multiple gaussian distributions; latent variables are cluster assignments.
 
-    public:
-
-         ExampleDistribution2();
-        void S(korali::Sample& k) override;
-        void zeta(korali::Sample& k) override;
-        void phi(korali::Sample& k) override;
-
-
+  public:
+  ExampleDistribution2();
+  void S(korali::Sample &k) override;
+  void zeta(korali::Sample &k) override;
+  void phi(korali::Sample &k) override;
 };
-
 
 #endif

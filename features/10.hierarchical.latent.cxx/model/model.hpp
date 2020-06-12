@@ -5,17 +5,16 @@
 #include "load_data.hpp"
 #include "utils.hpp"
 
-#include <vector>
 #include <cmath>
 #include <random>
+#include <vector>
 
 class ConditionalDistribution4
 {
-    public:
-        ConditionalDistribution4();
-        void conditional_p(korali::Sample& k);
-        pointsInfoStruct _p;
+  public:
+  ConditionalDistribution4();
+  void conditional_p(korali::Sample &k);
+  pointsInfoStruct _p;
 };
-
 
 #endif

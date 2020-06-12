@@ -1,79 +1,75 @@
 #ifndef _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
 #define _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_
 
+#include "engine.hpp"
+#include "modules/experiment/experiment.hpp"
+#include "modules/problem/bayesian/bayesian.hpp"
 #include "modules/problem/bayesian/latent/hierarchicalLatentLowlevel/hierarchicalLatentLowlevel.hpp"
 #include "modules/problem/bayesian/latent/latent.hpp"
-#include "modules/problem/bayesian/bayesian.hpp"
-#include "modules/experiment/experiment.hpp"
-#include "engine.hpp"
 
 //#include <memory>
 
-namespace korali {
-namespace problem {
-namespace bayesian {
-namespace latent {
-
+namespace korali
+{
+namespace problem
+{
+namespace bayesian
+{
+namespace latent
+{
 class HierarchicalLatent : public korali::problem::bayesian::Latent
 {
- private:
+  private:
+  public:
+  /** @brief The lowlevel problem containing actual calculations. */
+  korali::problem::bayesian::latent::HierarchicalLatentLowlevel *_lowlevelProblem;
 
-
- public:
-
- /** @brief The lowlevel problem containing actual calculations. */
- korali::problem::bayesian::latent::HierarchicalLatentLowlevel* _lowlevelProblem;
-
- /**
+  /**
   * @brief The problem initialization; here, create hyperparameter variables and set up index lists to
            find both types of variables
  */
- void initialize() override;
+  void initialize() override;
 
- /**
+  /**
   * @brief Call destructor of sub-problem, just in case we want to do some de-allocation there
  */
- ~HierarchicalLatent();
+  ~HierarchicalLatent();
 
- /**
+  /**
   * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
   *       As opposed to evaluateConditionalLoglikelihood, this will return a single value.
  */
- void evaluateLoglikelihood(korali::Sample &sample) override;
-
+  void evaluateLoglikelihood(korali::Sample &sample) override;
 
   /**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
            values for the latent variables. See the description of that function for more information.
            (It will set "Conditional LogLikelihood" and use "Latent Variables".)
  */
- void evaluateConditionalLoglikelihood(korali::Sample &sample);
+  void evaluateConditionalLoglikelihood(korali::Sample &sample);
 
- /**
+  /**
   * @brief Evaluate log of p(latent | hyperparameters) , so the hyperparameter-dependent prior over the latent variables.
  */
- void evaluateLogPrior(korali::Sample &sample) override;
+  void evaluateLogPrior(korali::Sample &sample) override;
 
- /**
+  /**
   * @brief Evaluate the total log-probability p(all data | all latent) * p(latent | hyperparameters).
   *  Expects that the fields 'Hyperparameters' and 'Latent Variables' are set for the input sample json object.
  */
- void evaluateLogPosterior(korali::Sample &sample) override;
+  void evaluateLogPosterior(korali::Sample &sample) override;
 
+  korali::Experiment _koraliExperiment;
 
- korali::Experiment _koraliExperiment;
-
- /**
+  /**
  * @brief Right now this engine is only ever used to initialize the lowlevel problem / experiment.
  */
   korali::Engine _koraliEngine;
 };
 
-
 } // namespace latent
 } // namespace bayesian
 } // namespace problem
 } // namespace korali
-
 
 #endif // _KORALI_PROBLEM_HIERARCHICALLATENT_HPP_

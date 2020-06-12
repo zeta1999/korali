@@ -19,11 +19,10 @@ namespace solver
 /** @brief This is always run before (re-)starting the solver */
 void SAEM::initialize()
 {
-
- if( _k->_problem->getType() != "Bayesian/Latent/ExponentialLatent")
+  if (_k->_problem->getType() != "Bayesian/Latent/ExponentialLatent")
     KORALI_LOG_ERROR("SAEM can only optimize problems of type 'Bayesian/Latent/ExponentialLatent' .\n");
 
-  _latentProblem = dynamic_cast<korali::problem::bayesian::latent::ExponentialLatent*>(_k->_problem);
+  _latentProblem = dynamic_cast<korali::problem::bayesian::latent::ExponentialLatent *>(_k->_problem);
 
   _numberVariables = _k->_variables.size();
   _numberLatent = _latentProblem->_latentVariableIndices.size();
@@ -223,9 +222,11 @@ void SAEM::updateS()
     meanSampleS[i] = sumVec[i] / _numberSamplesPerStep;
 
   // Now the Robbins-Monro update
-  if (_k->_currentGeneration == 0) _currentS = meanSampleS;
-  else for(size_t i = 0; i < S_dim; i++)
-    _currentS[i] =   _previousS[i]  + _gamma * (meanSampleS[i] - _previousS[i]);
+  if (_k->_currentGeneration == 0)
+    _currentS = meanSampleS;
+  else
+    for (size_t i = 0; i < S_dim; i++)
+      _currentS[i] = _previousS[i] + _gamma * (meanSampleS[i] - _previousS[i]);
 
   return;
 }
@@ -240,7 +241,7 @@ void SAEM::updateS()
 */
 void SAEM::QFunction(Sample &sample, size_t zetaFc, size_t phiFc)
 {
-//  sample["Hyperparameters"] = sample["Parameters"].get<std::vector<double>>();
+  //  sample["Hyperparameters"] = sample["Parameters"].get<std::vector<double>>();
   sample["Hyperparameters"] = KORALI_GET(std::vector<double>, sample, "Parameters");
   sample.run(zetaFc); // Zeta of Likelihood Model
   sample.run(phiFc);  // Phi of Likelihood Model
@@ -268,8 +269,9 @@ void SAEM::updateHyperparameters()
 
   _currentHyperparameters = _experiment["Results"]["Best Sample"]["Parameters"].get<std::vector<double>>();
   if (_currentHyperparameters.size() != _numberHyperparameters) KORALI_LOG_ERROR(
-      "Implementation error: number of parameter values returned from sub-experiment did not match. Expected: %d, got: %d.\n",
-          _numberHyperparameters, _currentHyperparameters.size());
+    "Implementation error: number of parameter values returned from sub-experiment did not match. Expected: %d, got: %d.\n",
+    _numberHyperparameters,
+    _currentHyperparameters.size());
   double llh = _experiment["Results"]["Best Sample"]["F(x)"].get<double>();
   _currentLogLikelihood = llh;
 

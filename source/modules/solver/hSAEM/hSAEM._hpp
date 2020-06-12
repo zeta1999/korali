@@ -1,20 +1,21 @@
 #ifndef _KORALI_SOLVER_HSAEM_HPP_
 #define _KORALI_SOLVER_HSAEM_HPP_
 
-#include "modules/solver/solver.hpp"
-#include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
 #include "modules/distribution/multivariate/normal/normal.hpp"
-#include "modules/distribution/univariate/uniform/uniform.hpp"
 #include "modules/distribution/univariate/normal/normal.hpp"
+#include "modules/distribution/univariate/uniform/uniform.hpp"
+#include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
+#include "modules/solver/solver.hpp"
 
-namespace korali { namespace solver {
-
+namespace korali
+{
+namespace solver
+{
 class HSAEM : public korali::Solver
 {
- public:
-
- korali::problem::bayesian::latent::HierarchicalLatent* _latentProblemWrapper;
- korali::problem::bayesian::latent::HierarchicalLatentLowlevel* _latentProblem;
+  public:
+  korali::problem::bayesian::latent::HierarchicalLatent *_latentProblemWrapper;
+  korali::problem::bayesian::latent::HierarchicalLatentLowlevel *_latentProblem;
 
   /**
   * @brief Draw samples of all latent variables, using a Metropolis-Hastings method.
@@ -22,38 +23,36 @@ class HSAEM : public korali::Solver
   *        "Mixed Effect Models for the Population Approach" by Marc Lavielle.
   *         TODO: If enabled, uses simulated annealing.
   */
- void sampleLatent();
+  void sampleLatent();
 
- void updateS();
- void updateHyperparameters();
-// void updateCholesky();
- void updateAnnealedDistribution();
+  void updateS();
+  void updateHyperparameters();
+  // void updateCholesky();
+  void updateAnnealedDistribution();
 
-   /**
+  /**
   * @brief initial things to run to test the hierarchical latent problem class
   */
   void justTesting();
 
- bool isLatent(int idx);
- std::vector<double> meanAndSDev(const std::vector<double> &v);
- std::vector<std::vector<double> > transpose(const std::vector<std::vector<double> > &data);
- std::vector<double> flatten(const std::vector<std::vector<double>> &v);
+  bool isLatent(int idx);
+  std::vector<double> meanAndSDev(const std::vector<double> &v);
+  std::vector<std::vector<double>> transpose(const std::vector<std::vector<double>> &data);
+  std::vector<double> flatten(const std::vector<std::vector<double>> &v);
 
-// void finalize() override;
+  // void finalize() override;
 
+  /* @brief This is always run before (re-)starting the solver */
+  void initialize() override;
 
- /* @brief This is always run before (re-)starting the solver */
- void initialize() override;
-
- /* @brief Run once, before the first generation */
- void setInitialConfiguration() override;
- void runGeneration() override;
- void printGenerationBefore() override;
- void printGenerationAfter() override;
-
+  /* @brief Run once, before the first generation */
+  void setInitialConfiguration() override;
+  void runGeneration() override;
+  void printGenerationBefore() override;
+  void printGenerationAfter() override;
 };
 
-} } // namespace korali::solver
-
+} // namespace solver
+} // namespace korali
 
 #endif // _KORALI_SOLVER_HSAEM_HPP_

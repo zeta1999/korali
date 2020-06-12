@@ -1,87 +1,84 @@
 #ifndef _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_
 #define _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_
 
-#include "modules/problem/bayesian/latent/latent.hpp"
 #include "modules/problem/bayesian/bayesian.hpp"
+#include "modules/problem/bayesian/latent/latent.hpp"
 
 //#include <memory>
 
-namespace korali {
-namespace problem {
-namespace bayesian {
-namespace latent {
-
+namespace korali
+{
+namespace problem
+{
+namespace bayesian
+{
+namespace latent
+{
 class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
 {
- private:
-// // local variables, but we don't want to re-allocate space at every use (or do we?)
-//  gsl_matrix* covMatrixGSL;
-//  gsl_matrix* chol;
-//  gsl_vector *latent_minus_mean;
-//  gsl_vector* x;
+  private:
+  // // local variables, but we don't want to re-allocate space at every use (or do we?)
+  //  gsl_matrix* covMatrixGSL;
+  //  gsl_matrix* chol;
+  //  gsl_vector *latent_minus_mean;
+  //  gsl_vector* x;
 
-//  void initializeGSLVariables(int nLatent);
+  //  void initializeGSLVariables(int nLatent);
 
- public:
-
- /**
+  public:
+  /**
   * @brief The problem initialization; here, create hyperparameter variables and set up index lists to
            find both types of variables
  */
- void initialize() override;
+  void initialize() override;
 
- /**
+  /**
   * @brief De-allocate both vectors with hyperparameter korali-variables
  */
-// ~HierarchicalLatentLowlevel(void);
+  // ~HierarchicalLatentLowlevel(void);
 
- /**
+  /**
   * @brief Evaluate log of p(latent | hyperparameters) , so the hyperparam-dependent prior over each latent variable.
   * @returns a vector, with one log-prior for each latent variable.
  */
- void evaluateLogPrior(korali::Sample& sample) override;
+  void evaluateLogPrior(korali::Sample &sample) override;
 
- /**
+  /**
   * @brief Evaluate the total log-probability p(all data | all latent) * p(latent | hyperparameters).
   *  Expects that the fields 'Hyperparameters' and 'Latent Variables' are set for the input sample json object.
  */
- void evaluateLogPosterior(korali::Sample& sample) override;
+  void evaluateLogPosterior(korali::Sample &sample) override;
 
-
-// /**
-//  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
-//        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
-//        sample is expected to contain parameter 'Latent Variables'
-// */
-// void evaluateS(korali::Sample& sample);
+  // /**
+  //  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
+  //        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
+  //        sample is expected to contain parameter 'Latent Variables'
+  // */
+  // void evaluateS(korali::Sample& sample);
 
   /**
   * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
            values for the latent variables. See the description of this function for more information.
            (It will set "Conditional LogLikelihood" and use "Latent Variables".)
  */
- void evaluateLoglikelihoodSingle(korali::Sample& sample);
+  void evaluateLoglikelihoodSingle(korali::Sample &sample);
 
-
- /**
+  /**
   * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
   *       As opposed to evaluateConditionalLoglikelihood, this will return a single value.
  */
- void evaluateLoglikelihood(korali::Sample& sample) override;
+  void evaluateLoglikelihood(korali::Sample &sample) override;
 
- /**
+  /**
   * @brief transform each coordinate of z back to the latent variable it corresponds to. (E.g. if a latent variable
   *        latent_i has a normal distribution, z_i == latent_i; if it is log-normal, exp(z_i) = latent_i, etc.
  */
- std::vector<double> zToLatent(std::vector<double> z);
-
+  std::vector<double> zToLatent(std::vector<double> z);
 };
-
 
 } // namespace latent
 } // namespace bayesian
 } // namespace problem
 } // namespace korali
-
 
 #endif // _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_

@@ -2,8 +2,8 @@
 #define _KORALI_SOLVERS_SAEM_H_
 
 #include "engine.hpp"
-#include "modules/solver/solver.hpp"
 #include "modules/problem/bayesian/latent/exponentialLatent/exponentialLatent.hpp"
+#include "modules/solver/solver.hpp"
 
 #include <vector>
 
@@ -20,7 +20,7 @@ class SAEM : public Solver
   Engine _engine;         //!< @brief Korali engine for running the optimization in the M step
   Experiment _experiment; //!< @brief Korali experiment for the optimization in the M step
 
-   korali::problem::bayesian::latent::ExponentialLatent *_latentProblem; //!< @brief The problem instance that this SAEM is supposed to solve
+  korali::problem::bayesian::latent::ExponentialLatent *_latentProblem; //!< @brief The problem instance that this SAEM is supposed to solve
 
   /**
   * @brief Run the user defined sampler to get new samples. Track mean and variance of the samples.
@@ -84,7 +84,6 @@ class SAEM : public Solver
   * @return result, a 2D array, so that data[i][j] is moved to result[j][i].
   */
   std::vector<std::vector<double>> transpose(const std::vector<std::vector<double>> data);
-
 
   /**
   * @brief Function to be optimized in the M-step.

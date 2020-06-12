@@ -3,25 +3,26 @@
 
 #include "modules/problem/bayesian/bayesian.hpp"
 
-namespace korali {
-namespace problem {
-namespace bayesian {
-
+namespace korali
+{
+namespace problem
+{
+namespace bayesian
+{
 class Latent : public korali::problem::Bayesian
 {
- public:
- /** @brief Class considered abstract; do not use. */
- virtual void evaluateLoglikelihood(korali::Sample &sample) override;
- virtual void evaluateLogPrior(korali::Sample &sample);      // override / hide bayesian's function
- virtual void evaluateLogPosterior(korali::Sample &sample);  // override / hide bayesian's function
+  public:
+  /** @brief Class considered abstract; do not use. */
+  virtual void evaluateLoglikelihood(korali::Sample &sample) override;
+  virtual void evaluateLogPrior(korali::Sample &sample);     // override / hide bayesian's function
+  virtual void evaluateLogPosterior(korali::Sample &sample); // override / hide bayesian's function
 
- /** @brief The problem initialization; just calls the initialization from Bayesian. */
- virtual void initialize() override;
-
+  /** @brief The problem initialization; just calls the initialization from Bayesian. */
+  virtual void initialize() override;
 };
 
-}  // namespace bayesian
-}  // namespace problem
-}  // namespace korali
+} // namespace bayesian
+} // namespace problem
+} // namespace korali
 
 #endif // _KORALI_PROBLEM_BAYESIAN_LATENT_HPP_
