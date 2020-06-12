@@ -16,7 +16,7 @@ pointsInfoStruct &univariateData()
   size_t nDimensions = 0;
 
   printf("Loading data from data_single.in ... \n");
-  problemFile = fopen("model/data_single.in", "r");
+  problemFile = fopen("_model/data_single.in", "r");
   if (!problemFile)
   {
     char cwd[PATH_MAX];
@@ -59,7 +59,7 @@ pointsInfoStruct &multivariateData()
   size_t nClusters = 0;
 
   printf("Loading data from data_multiple.in ... \n");
-  problemFile = fopen("model/data_multiple.in", "r");
+  problemFile = fopen("_model/data_multiple.in", "r");
   fscanf(problemFile, "%lu", &nPoints);
   fscanf(problemFile, "%lu", &nDimensions);
   fscanf(problemFile, "%lu", &nClusters);

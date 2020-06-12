@@ -18,7 +18,7 @@ pointsInfoStruct &simplePopulationData()
   double omega = 0;
 
   printf("Loading data from data_925.in ... \n");
-  problemFile = fopen("model/data_925.in", "r");
+  problemFile = fopen("_model/data_925.in", "r");
   if (!problemFile)
   {
     char cwd[PATH_MAX];
