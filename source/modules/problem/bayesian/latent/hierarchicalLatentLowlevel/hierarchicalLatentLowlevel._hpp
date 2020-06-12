@@ -38,40 +38,51 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
   // ~HierarchicalLatentLowlevel(void);
 
   /**
-  * @brief Evaluate log of p(latent | hyperparameters) , so the hyperparam-dependent prior over each latent variable.
-  * @returns a vector, with one log-prior for each latent variable.
+  * @brief Evaluate log of p(latent | hyperparameters), hyperparameter-dependent prior over each *transformed* latent variable.
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
+                    a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the covariance.)
+                    "Latent Variables" should be a vector of vectors, one * transformed * latent variable vector per individual. The order is
+                    assumed to be the same as the order of variables according to their indices at problem definition
+                    (["Variables"][THE_INDEX]["some property"] = ...).
+  * @returns sample["Log Prior"], a vector, with one log-prior for each latent variable.
  */
   void evaluateLogPrior(korali::Sample &sample) override;
 
   /**
   * @brief Evaluate the total log-probability p(all data | all latent) * p(latent | hyperparameters).
-  *  Expects that the fields 'Hyperparameters' and 'Latent Variables' are set for the input sample json object.
+            log[ p(all data | all latent) * p(all latent | hyperparameters) ]
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"].
+                    Data was given at problem creation.
+                    "Mean" should be a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors.
+                    (No special encoding of the cov.)
+     @returns sample["Log Posterior"], a single value.
  */
   void evaluateLogPosterior(korali::Sample &sample) override;
 
-  // /**
-  //  * @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
-  //        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
-  //        sample is expected to contain parameter 'Latent Variables'
-  // */
-  // void evaluateS(korali::Sample& sample);
 
   /**
-  * @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
-           values for the latent variables. See the description of this function for more information.
-           (It will set "Conditional LogLikelihood" and use "Latent Variables".)
+  * @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
+            vector of latent variables (for a single, unspecified individual).
+            See the description of that function in the config for more information.
+           (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".)
+  * @param sample: Should contain fields "Latent Variables" and "Data Point".
  */
   void evaluateLoglikelihoodSingle(korali::Sample &sample);
 
   /**
-  * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
-  *       As opposed to evaluateConditionalLoglikelihood, this will return a single value.
+    @brief Evaluate each log-likelihood log(p(data for individual i | latent variables i)) across all data points
+            assigned to the individual, given latent variables.
+            Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).
+     @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
+     @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
  */
   void evaluateLoglikelihood(korali::Sample &sample) override;
 
   /**
   * @brief transform each coordinate of z back to the latent variable it corresponds to. (E.g. if a latent variable
   *        latent_i has a normal distribution, z_i == latent_i; if it is log-normal, exp(z_i) = latent_i, etc.
+  * @param z: A vector with values for each z variable.
+  * @returns A vector with "true", not-transformed latent variable values.
  */
   std::vector<double> zToLatent(std::vector<double> z);
 };

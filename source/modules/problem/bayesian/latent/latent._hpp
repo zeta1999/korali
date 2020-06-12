@@ -12,9 +12,18 @@ namespace bayesian
 class Latent : public korali::problem::Bayesian
 {
   public:
-  /** @brief Class considered abstract; do not use. */
+  /** @brief Class considered abstract; do not use.
+        @param sample : A sample.*/
   virtual void evaluateLoglikelihood(korali::Sample &sample) override;
+    /**
+   * @brief Class considered abstract; do not use.
+   * @param sample : A sample.
+   */
   virtual void evaluateLogPrior(korali::Sample &sample);     // override / hide bayesian's function
+    /**
+   * @brief Class considered abstract; do not use.
+   * @param sample: A sample.
+   */
   virtual void evaluateLogPosterior(korali::Sample &sample); // override / hide bayesian's function
 
   /** @brief The problem initialization; just calls the initialization from Bayesian. */

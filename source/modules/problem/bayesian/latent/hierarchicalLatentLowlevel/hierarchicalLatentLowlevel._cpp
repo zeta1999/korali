@@ -154,40 +154,19 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
   }
 }
 
-//
-///* De-allocate both vectors with hyperparameter korali-variables
-//    -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
-//korali::problem::bayesian::latent::HierarchicalLatentLowlevel::~HierarchicalLatentLowlevel(void){
-//  for ( int i = 0; i < _hyperparametersMean.size(); i++ )
-//    delete _hyperparametersMean[i];
-//  _hyperparametersMean.clear();
-//  for ( int i = 0; i < _hyperparametersCovariance.size(); i++ )
-//      delete _hyperparametersCovariance[i];
-//  _hyperparametersCovariance.clear();
-////  gsl_matrix_free(covMatrixGSL);
-////  gsl_matrix_free(chol);
-////  gsl_vector_free(latent_minus_mean);
-////  gsl_vector_free(x);
-//}
-
-//
-///*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
-//        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
-//        sample is expected to contain parameter 'Latent Variables' */
-//void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateS(korali::Sample& sample){
-//  //sample.run(_sOfLikelihoodModel); // TODO
-//}
 
 /*! @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
             vector of latent variables (for a single, unspecified individual).
             See the description of this function for more information.
-           (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".) */
+           (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".)
+  * @param sample: Should contain fields "Latent Variables" (a vector) and "Data Point" (a vector). */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihoodSingle(korali::Sample &sample)
 {
   sample.run(_conditionalLogLikelihoodFunction);
   //sample["Single LogLikelihood"] = sample["Conditional LogLikelihood"].get<double>();
 }
-/*! @brief Evaluate the total log-likelihood log(p(data | latent variables)) of all data points, given at problem definition.
+/*! @brief Evaluate each log-likelihood log(p(data for individual i | latent variables i)) across all data points
+            assigned to the individual, given latent variables.
             Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).
      @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
      @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
@@ -214,10 +193,10 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
 
 /*! @brief Evaluate the "prior" log-probability of the transformed latent variables, given hyperparameters (mean and covariance matrix).
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
-                    a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
+                    a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the covariance.)
                     "Latent Variables" should be a vector of vectors, one * transformed * latent variable vector per individual. The order is
                     assumed to be the same as the order of variables according to their indices at problem definition
-                    (["Variables"][THE_INDEX]["some property"] = ...)
+                    (["Variables"][THE_INDEX]["some property"] = ...).
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
 
          TODO, updated: So this essentially implements a multivariate normal probability function. Though, that is already
@@ -325,7 +304,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 
 /*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Data
-                    was given at Problem creation.
+                    was given at problem creation.
                     "Mean" should be a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
          TODO: test it.

@@ -14,30 +14,38 @@ namespace solver
 class HSAEM : public korali::Solver
 {
   public:
+  /*** @brief Only needed at setup; could make this a local/temporary variable */
   korali::problem::bayesian::latent::HierarchicalLatent *_latentProblemWrapper;
+  /*** @brief The (lowlevel) latent variable problem that this hSAEM instance is solving. */
   korali::problem::bayesian::latent::HierarchicalLatentLowlevel *_latentProblem;
 
   /**
   * @brief Draw samples of all latent variables, using a Metropolis-Hastings method.
   *        Uses the same proposal distributions as described in chapter 9.3 of
   *        "Mixed Effect Models for the Population Approach" by Marc Lavielle.
-  *         TODO: If enabled, uses simulated annealing.
+  *        If enabled, uses simulated annealing.
   */
   void sampleLatent();
 
+  /*** @brief After sampling, update the statistics (S1 and S2) used to update the hyperparameters.  */
   void updateS();
+
+  /*** @brief Update current estimates of the hyperparameters, using S1 and S2 statistics updated with new samples. */
   void updateHyperparameters();
   // void updateCholesky();
+
+  /*** @brief Update the distribution used during sampling with new hyperparameter values. If simulated annealing
+              is enabled, it will be applied here: In earlier generations, the covariance is enlarged so that
+              sampling happens across a wider range. */
   void updateAnnealedDistribution();
 
   /**
-  * @brief initial things to run to test the hierarchical latent problem class
+  * @brief initial things to run to test the hierarchical latent problem class. To be deleted.
   */
   void justTesting();
 
-  bool isLatent(int idx);
-  std::vector<double> meanAndSDev(const std::vector<double> &v);
-  std::vector<std::vector<double>> transpose(const std::vector<std::vector<double>> &data);
+
+  /*** @brief Utility function to convert a vector of vectors into a concatenated 1D vector. */
   std::vector<double> flatten(const std::vector<std::vector<double>> &v);
 
   // void finalize() override;
@@ -47,8 +55,11 @@ class HSAEM : public korali::Solver
 
   /* @brief Run once, before the first generation */
   void setInitialConfiguration() override;
+  /*** @brief Run a generation; main unit of execution. */
   void runGeneration() override;
+  /*** @brief Print information before each generation */
   void printGenerationBefore() override;
+  /*** @brief Print information after each generation */
   void printGenerationAfter() override;
 };
 

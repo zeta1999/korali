@@ -174,31 +174,19 @@ korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent()
   delete &_koraliExperiment;
 }
 
-//
-///*! @brief Evaluate the sufficient statistics, sufficient for determining the hyperparameters.
-//        Not necessarily equal to the 'sufficient statistics' of an exponential family distribution.
-//        sample is expected to contain parameter 'Latent Variables' */
-//void korali::problem::bayesian::latent::HierarchicalLatent::evaluateS(korali::Sample& sample){
-//  //sample.run(_sOfLikelihoodModel); // TODO
-//}
-
-/*! @brief Evaluate the user-defined function giving the conditional log-likelihood of the data, given some
-           values for the latent variables. See the description of this function for more information.
-           (It will set "Conditional LogLikelihood" and use "Latent Variables".) */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateConditionalLoglikelihood(korali::Sample &sample)
+  /**
+  * @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
+            vector of latent variables (for a single, unspecified individual).
+            See the description of that function in the config for more information.
+           (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".)
+  * @param sample: Should contain fields "Latent Variables" and "Data Point".
+ */
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihoodSingle(korali::Sample &sample)
 {
   sample.run(_conditionalLogLikelihoodFunction);
 }
 
-/*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
-    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
-                    a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
-                    Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
 
-         TODO: Move calculation of cholesky decomposition out of this function, and into hSAEM. Don't want to
-                re-calculate this for every latent variable sample.
-         TODO: But first, test it.
- */
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood(korali::Sample &sample)
 {
   _lowlevelProblem->evaluateLoglikelihood(sample);

@@ -27,11 +27,13 @@ class ExponentialLatent : public korali::problem::bayesian::Latent
   /**
   * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
   *       As opposed to evaluateConditionalLoglikelihood(), this will return a single value.
+  * @param sample needs to contain:
+      - sample["Hyperparameters"]
+      - sample["Latent Variables"]
  */
   void evaluateLogPosterior(korali::Sample &sample) override;
 
   /*! @brief run the user defined sampler.
-      @param sample contains [Hyperparameters] and [Number Samples].
       @param sample needs to contain:
       - sample["Hyperparameters"]
       - sample["Number Samples"]

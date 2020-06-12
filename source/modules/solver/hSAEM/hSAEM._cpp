@@ -457,7 +457,7 @@ void korali::solver::HSAEM::updateHyperparameters()
 
 //void korali::solver::HSAEM::updateCholesky(){
 //
-//  // TODO
+//  // TODO ?
 //
 //}
 
