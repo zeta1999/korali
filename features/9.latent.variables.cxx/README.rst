@@ -1,3 +1,8 @@
+--------------------------------------------
+CXX Latent Variable Probability Optimization
+--------------------------------------------
+
+
 # Under Construction! (todo)
 
 
