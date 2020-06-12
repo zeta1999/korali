@@ -158,7 +158,7 @@ void korali::solver::HSAEM::justTesting()
   sample["Mean"] = mean;
   sample["Covariance Matrix"] = cov;
   sample["Module"] = "Problem";
-  sample["Operation"] = "Evaluate Conditional LogLikelihood";
+  sample["Operation"] = "Evaluate LogLikelihood Single";
   sample["Sample Id"] = 1234567;
 
   _conduit->start(sample);
