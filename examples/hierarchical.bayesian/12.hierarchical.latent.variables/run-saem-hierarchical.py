@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('./model')
+sys.path.append('./_model')
 from model import *
 from tutorial_samplers import *
 
