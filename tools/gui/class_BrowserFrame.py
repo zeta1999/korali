@@ -1,11 +1,20 @@
-from cefpython3 import cefpython as cef
+'''
+*Usage*                                                                                                                                   #####
+*Displays the Browser Frame and embeds the HTML from CSE-Lab Main Website.                                                                #####
+*Adds a Navigation Bar to go forwards and backwards inside the HTML.                                                                      #####
+                                                                                                                                          #####
+*Functions and Classes*                                                                                                                   #####
+*2 classes: BrowserFrame and NavigationBar.                                                                                               #####
+*Main Function: createHTMLFrame - Returns the Frame that is embeding the HTML. Needs to be docked to the Third Frame -> 'parentFrame'     #####
+'''
+from cefpython3 import cefpython as cef # Library used to launch and manage the website.
 import ctypes
 try:
     import tkinter as tk
 except ImportError:
     import Tkinter as tk
 import sys
-import platform
+import platform # To check the OS of the user.
 import logging as _logging
 
 # FILES IMPORT:
@@ -22,10 +31,10 @@ MAC = (platform.system() == "Darwin")
 # Globals
 logger = _logging.getLogger("tkinter_.py")
 
-browser_frame = None
-navigation_bar = None
+browser_frame = None # Initial Value
+navigation_bar = None # Initial Value
 
-def createHTMLFrame(parentFrame,frameWidth,frameHeight,directory,link):
+def createHTMLFrame(parentFrame,frameWidth,frameHeight,directory,link): 
     global browser_frame
     global navigation_bar
     stream_handler = _logging.StreamHandler()

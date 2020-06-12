@@ -16,7 +16,7 @@ class Problems():
     def __init__(self,master,experiments,directorio,nombre,DB,cont,selectedtab):
         # master is the frame from the previous class where we want to insert data.
 
-        self.problem = tk.Frame(master,bg=selectorColor,width=717,height=925)
+        self.problem = tk.Frame(master,bg=selectorColor,width=495,height=925)
         self.problem.grid(column=0,row=0)
         self.problem.grid_propagate(0)
 

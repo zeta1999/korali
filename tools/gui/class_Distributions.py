@@ -1,6 +1,16 @@
+'''
+*Usage*                                                                                                                                   #####
+*Creates and Displays/Raise the Distribution Frame and Initiate the Distributions key of the main dictionary -> results.                  #####
+*Deletes the Distributions and erase them from 'results'.                                                                                 #####
+                                                                                                                                          #####
+*Functions and Classes*                                                                                                                   #####
+*1 class: Distributions.                                                                                                                  #####
+*Main Function: display_Distributions - Is in charge of managing the creation and the amount of Distributions in the SecondFrame          #####
+                                                                                                                                          #####
+*MAIN DICTIONARY KEY = 4                                                                                                                  #####
+'''
 import tkinter as tk
 from tkinter import *
-import json
 
 #FILES import
 import classes_FRAMES
@@ -16,17 +26,17 @@ forbidden = ['Variables','Problem','Solver']
 
 class Distributions():
     def __init__(self,master,selectedtab,experiments):
-        # master is the frame from the previous class where we want to insert data.
-        if class_KORALI.dist_first_time == False: # If its not the first time we initialize the class Distribution...
-            if functions.import_dist_done == False: # If this function is called inside a loop of the functions file...
-                self.dist = experiments[selectedtab]['distributions']
-                self.display_Distributions(self.dist,0,4,selectedtab,experiments)
+                                                                                  # master refers to the frame from the previous class where data must be inserted.
+        if class_KORALI.dist_first_time == False:                                 # If its not the first time we initialize the class Distribution...
+            if functions.import_dist_done == False:                               # If this function is called inside a loop of the functions file...
+                self.dist = experiments[selectedtab]['distributions']               
+                self.display_Distributions(self.dist,0,4,selectedtab,experiments) # Display the Distribution Parameters.
                 return
             else:
-                self.Show_frame(experiments,selectedtab)
-                return
+                self.Show_frame(experiments,selectedtab)                          # If its not the first time the Button 'Distribution' is clicked and the function is not called inside a loop.
+                return                                                            # Show Distribution Frame.
 
-        self.dist = tk.Frame(master,bg=selectorColor,width=717,height=925)
+        self.dist = tk.Frame(master,bg=selectorColor,width=495,height=925)        # Creating Distribution Frame.
         self.dist.grid(column=0,row=0)
         self.dist.grid_propagate(0)
 
@@ -71,6 +81,7 @@ class Distributions():
         dist = experiments[selectedtab]['distributions']
         dist.tkraise()
 
+    # Deletes the Distribution from the frame and its values from the results dictionary.
     def delDistr(self,which,selectedtab,experiments):
         global rows_counter_var
         print('ENTRO : ',class_KORALI.rows)
@@ -98,19 +109,17 @@ class Distributions():
         print('SALGO : ',class_KORALI.rows)
         
     
-    def display_Distributions(self,dist,c,cont,selectedtab,experiments):
+    def display_Distributions(self,dist,c,cont,selectedtab,experiments):    # Displays the labels and the widgets regarding Distributions.
         
         if class_KORALI.dist_times > 3:
             functions.popupmsgwarning('No more Distributions available')
             return
         if class_KORALI.rows>4:
             results = experiments[selectedtab]['results']
-            results[4][class_KORALI.dist_times]={}
-            print('SECOND TIME OF DISTRIBUTIONS = ',class_KORALI.dist_times)
-            
+            results[4][class_KORALI.dist_times]={}            
             res_dist = experiments[selectedtab]['dist_label']
             res_dist[class_KORALI.dist_times]={}
-##            photo = PhotoImage(file = "trash1.ico")   image = photo,  -> añadir a button.
+##            photo = PhotoImage(file = "trash1.ico")   image = photo,  -> añadir a button. # Linux doesn't support .ico in Tkinter.
             res = results[4][class_KORALI.dist_times]
             res2 = res_dist[class_KORALI.dist_times]
             class_KORALI.rows += 1
@@ -124,7 +133,6 @@ class Distributions():
         else:
             results = experiments[selectedtab]['results']
             results[4][class_KORALI.dist_times]={}
-            print('FIRST TIME OF DISTRIBUTIONS == ',class_KORALI.dist_times)
             res = results[4][class_KORALI.dist_times]
             
             res_dist = experiments[selectedtab]['dist_label']
@@ -132,11 +140,6 @@ class Distributions():
             res2 = res_dist[class_KORALI.dist_times]
 
         stringVar = {}
-
-    ##    texto = 'Distribution '+str(times_distr)
-    ##    l1 =tk.Label(expFrame, text=texto,justify='left', anchor="w", font="Arial 17", fg='black', bg='white') #bg = 'darkcyan', fg='white')
-    ##    l1.grid(row=r, column=c,columnspan= 1,pady = 24 ,padx=4, sticky='w')
-
         class_KORALI.rows += 1
         texto1 = 'Name'
         res2['l2'] = tk.Label(dist, text = texto1,  width = 25,justify='left', bg='snow', anchor="w", font="Arial 15")

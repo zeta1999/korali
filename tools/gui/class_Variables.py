@@ -20,7 +20,7 @@ class Variables():
     def __init__(self,master,experiments,selectedtab):
         # master is the frame from the previous class where we want to insert data.
       
-        self.variables = tk.Frame(master,bg=selectorColor,width=717,height=925)
+        self.variables = tk.Frame(master,bg=selectorColor,width=495,height=925)
         self.variables.grid(column=0,row=0)
         self.variables.grid_propagate(0)
 

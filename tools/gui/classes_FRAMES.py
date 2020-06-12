@@ -1,8 +1,31 @@
-import tkinter as tk
-from tkinter import *
+'''
+*Usage*                                                                                                                                   #####
+*Reads the Folders and Files needed and stores its information into 2 Dictionaries [ ConfigTreeDB (for Problem), SolverDB (for Solver)    #####
+Creates the 3 MAIN FRAMES of the GUI..                                                                                                    #####
+                                                                                                                                          #####
+*Functions and Classes*                                                                                                                   #####
+*3 classes: FirstFrame, SecondFrame and ThirdFrame.                                                                                       #####
+*Main Function: ReadDirs - Is in charge of managing the creation and the amount of Distributions in the SecondFrame                       #####
+                                                                                                                                          #####
+*MAIN DICTIONARY KEY = 4                                                                                                                  #####
+*CONT = 0 for PROBLEM.                                                                                                                    #####
+*CONT = 1 for SOLVER.                                                                                                                     #####
+*CONT = 2 for VARIABLES.                                                                                                                  #####
+*CONT = 4 for DISTRIBUTIONS.                                                                                                              #####
+'''
+try:
+    import tkinter as tk
+    from tkinter import *
+    from tkinter import ttk
+except ImportError:
+    import Tkinter as tk
+    from Tkinter import *
+    from Tkinter import ttk
 import os, sys
 import json
 import copy
+from PIL import Image, ImageTk
+
 
 # FILES import
 import class_GeneralSettings
@@ -20,29 +43,24 @@ lightColor = '#00A3E0'
 extraColor = '#183A54'
 selectorColor = 'aliceblue'
 
-##experiments = {} # Global dictionary for the frames and experiments.
 menus = [] # Store which directories have already been read.
 listofproblems=[]
 listofsolvers=[]
 
 ## Global Variables:
-contador = 1    # Which is the num of the experiment where we are?
-##selectedtab = '' # Which is the name of the experiment where we are?
 configTreeDB = {}
 solverDB = {}
 variables = {}
 mainPath = '../../source/modules/problem'
 mainPath2 = '../../source/modules/solver'
 
-default = False # readirs function.
-
-##experiments = {} # Global dictionary for the frames and experiments.
+default = False # readirs function default variable.
 
 
 ### ------- Creating DICTIONARIES before starting:
-def recursiveUpdate(dest, defaults):
- if (isinstance(defaults, dict)):               # Si default es un diccionario...
-  for k, x in defaults.items():                 # Para cada key y valor.
+def recursiveUpdate(dest, defaults):            # Stores the Heritage of each .config File.
+ if (isinstance(defaults, dict)):               # If default is a dictionary...
+  for k, x in defaults.items():                 # For every key and value...
    if (not k in dest): dest[k] = copy.deepcopy(defaults[k])
    else: 
      recursiveUpdate(dest[k], defaults[k])
@@ -88,11 +106,9 @@ def readDirs(filePath,DB,default):
                         if default:
                             recursiveUpdate(dest,default)
                         dirInfoDic['herencia'] = dest
-                        #print(dirInfoDic['config'])
-                        #print(dirInfoDic['herencia'],'\n')
                     finally:
                         archivo.close()
-                elif fileName.endswith('.rst'): # Dame el nombre dentro del README:
+                elif fileName.endswith('.rst'): # Ask for the name inside the README.rst
                     try:
                         file = open(filePath+'/'+fileName,"r")
                         lines = file.readlines()
@@ -100,12 +116,12 @@ def readDirs(filePath,DB,default):
                             line = lines[i]
                             if '****\n' in line or '===\n' in line:
                                 name = lines[i+1]
-                                dirInfoDic['names'] = name.replace('\n','') # Quitar '\n'
+                                dirInfoDic['names'] = name.replace('\n','') # Remove '\n'
                                 break
                             else:
                                 pass
                     finally:
-                        file.close() ## Cierra el archivo README.
+                        file.close() ## Close File README.rst
             continue
         dirs=splitPath(dirPath)
         levels=len(dirs)
@@ -116,9 +132,9 @@ def readDirs(filePath,DB,default):
         dirName = dirs[levels - 1]
         childrenList += [dirName]
     crearVariables(DB)
-######## END OF CREATING DICTIONARIES before starting ------------
+######### End - CREATING DICTIONARIES before starting ------------
     
-### CREAR EL DICCIONARIO DE VARIABLES COMBINANDO LOS DOS DICCIONARIOS ANTERIORES
+### Create VARIABLES dictionary by combining the variables from both previous dictionaries
 def crearVariables(DB):
     for key in DB.keys():
         if 'Variables Configuration' in DB[key]['herencia'].keys():
@@ -128,11 +144,11 @@ def crearVariables(DB):
                 variables[DB[key]['config']] = {}
         else:
             variables[DB[key]['config']] = {}            
-             ######################
+### End - VARIABLES dictionary.
 
-def crearMenu(padre,directorio,DB,cont,x_pos,y_pos,selectedtab,experiments):
+### START - Creating Cascade Menus for Problem and Solver.
+def createMenu(padre,directorio,DB,cont,x_pos,y_pos,selectedtab,experiments):            
     global menus
-##    global experiments
     global listofproblems
     global listofsolvers
     global variables
@@ -141,20 +157,20 @@ def crearMenu(padre,directorio,DB,cont,x_pos,y_pos,selectedtab,experiments):
     sf = experiments[selectedtab]['secondFrame']
     ff = experiments[selectedtab]['firstFrame']
     nombre = DB[directorio]['names']
-    if directorio not in menus: # Checkeamos si el directorio está en la lista de menus.
+    if directorio not in menus: # Check if the directory is in the Menu list.
         subMenu = Menu(padre,activeforeground = 'teal')
         dirInfo=DB[directorio]
         if len(dirInfo['children']) == 0:
-            padre.add_command(label = nombre, command = lambda :functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont,x_pos,y_pos,tf))#[printConfig(directorio,DB, cont),printVariables(sf.tab2,directorio,DB,cont)])
+            padre.add_command(label = nombre, command = lambda :functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont,x_pos,y_pos,tf))
         else:
             padre.add_cascade(label=nombre, menu = subMenu)
             configPath=dirInfo['config']
-            if configPath != "NULL" and len(dirInfo['children']) == 0: # SI ES UN LEAF:
+            if configPath != "NULL" and len(dirInfo['children']) == 0: # If its a leaf...
                 dirs=splitPath(configPath)
-                subMenu.add_command(label = dirs[len(dirs)-1], command = lambda : functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont,x_pos,y_pos,tf))#command = lambda : [printConfig(directorio,DB, cont),printVariables(bottomrightFrame.tab2,directorio,DB,cont)])
+                subMenu.add_command(label = dirs[len(dirs)-1], command = lambda : functions.checkFormulario(sf,experiments,selectedtab, directorio,nombre, DB, cont,x_pos,y_pos,tf))
             children=dirInfo['children']
             for child in children:
-                crearMenu(subMenu,child,DB,cont,x_pos,y_pos,selectedtab,experiments)
+                createMenu(subMenu,child,DB,cont,x_pos,y_pos,selectedtab,experiments)
     menus.append(directorio)
     if cont == 0:
         if directorio not in listofproblems:
@@ -163,37 +179,31 @@ def crearMenu(padre,directorio,DB,cont,x_pos,y_pos,selectedtab,experiments):
         if directorio not in listofsolvers:
             listofsolvers.append(directorio)
 
-def cascade(mainPath,DB,cont,selectedtab,experiments):
-##    global experiments
-    
+def cascade(mainPath,DB,cont,selectedtab,experiments):  
     dirs = splitPath(mainPath)
-    
     for directorio in DB.keys():
         if directorio in dirs:
             titulo = directorio
             break
-
     ff = experiments[selectedtab]['firstFrame']
-
     menuButton = tk.Menubutton(ff, text = ' +   '+DB[titulo]['names'],fg =extraColor,highlightcolor=selectorColor,
                                borderwidth = 0, background = selectorColor, anchor = 'w',activeforeground='teal',
-                               activebackground= selectorColor,font= 'Arial 16')
+                               activebackground= selectorColor,font= 'Arial 17 bold')
     menuButton.config(cursor = 'fleur')
     menuPadre = tk.Menu(menuButton, tearoff=False,activeforeground = 'teal')
     menuButton.configure(menu=menuPadre)
-    y_pos = (185+(int(cont)*120))
+    y_pos = (215+(int(cont)*120))
     x_pos = 0
     menuButton.place(x=x_pos,y=y_pos)
         
-    menus.append(titulo) # Añadimos el título del boton, para no repetirlo en los desplegables.
-    
+    menus.append(titulo) # Adding the Button's title to avoid repetition in cascades.    
       
-    # Empezar los menus recursivamente llamando a la funcion crearMenu:
+    # Starting the menus recursivly calling to CreateMenu function.
     for directorio in DB.keys():
-        crearMenu(menuPadre,directorio,DB,cont,x_pos,y_pos,selectedtab,experiments)
+        createMenu(menuPadre,directorio,DB,cont,x_pos,y_pos,selectedtab,experiments)
     menus.clear() # Allows creating different experiments by emptying the menus list.
 
-    
+####### END - Creating
 
 
 class FirstFrame():
@@ -209,13 +219,19 @@ class FirstFrame():
         ff.grid_propagate(0)
 
         # STORE A DICTIONARY WITH ALL THE FRAMES ON IT TO BE CALLED ON ANY FUNCTION AND AVOID PASSING FRAMES.
-####        expElements = {}
-##        experiments[selectedtab] = expElements
         experiments[selectedtab]['results'] = {}
         experiments[selectedtab]['firstFrame'] = ff
 
-        self.HELP = tk.Button(text = "How's it going ?", command = lambda: functions.howsitgoing(experiments,selectedtab))
-        self.HELP.place(x=0,y=700)
+        self.HELP = tk.Button(ff,text = "How's it going ?", command = lambda: functions.howsitgoing(experiments,selectedtab))
+##        self.HELP.place(x=0,y=620)
+        
+
+        canvasff = tk.Canvas(ff, width=255, height=220,borderwidth = 3, relief = 'solid')
+
+        img = ImageTk.PhotoImage(Image.open('images_KORALI/CSELAB_ETH_logo.png').resize((255, 220), Image.ANTIALIAS)) 
+        canvasff.background = img  # Keep a reference in case this code is put in a function.
+        bg = canvasff.create_image(0, 0, anchor=tk.NW, image=img)
+        canvasff.place(x=0,y=700)
         
 
 class SecondFrame():
@@ -223,23 +239,29 @@ class SecondFrame():
         global experiments
         global selectedtab
         
-        
         selectedtab = whichtab
         experiments = exp
-
-##        general_first_time = class_KORALI.general_first_time
-      
-        self.sf = tk.Frame(master,bg=bgColor,width=500,height=930,borderwidth=2,relief='raised')
+        
+        self.sf = tk.Frame(master,bg=bgColor,width=500,height=930,borderwidth=2,relief='ridge')
         self.sf.grid(column=1,row=0)
         self.sf.grid_propagate(0)
         
         experiments[selectedtab]['secondFrame'] = self.sf
 
-        self.tf = tk.Frame(master,bg='white',width=1083,height=930,borderwidth=2,relief='raised')
-        self.tf.grid(column=2,row=0)
-        self.tf.grid_propagate(0)
+        self.tf = tk.Frame(master,width=1083,height=930,borderwidth=2,relief='raised')
 
         experiments[selectedtab]['thirdFrame'] = self.tf
+
+        # Create KORALI background for the third frame:
+        canvas = tk.Canvas(self.tf, width=1083, height=930)
+
+        img = ImageTk.PhotoImage(Image.open('images_KORALI/korali_screen.png').resize((1083, 930), Image.ANTIALIAS))
+        canvas.background = img 
+        bg = canvas.create_image(0, 0, anchor=tk.NW, image=img)
+        self.tf.grid(column=2,row=0)
+        self.tf.grid_propagate(0)
+        canvas.pack()
+        
 
         ## General Settings Button:
         ff = experiments[selectedtab]['firstFrame']
@@ -249,44 +271,38 @@ class SecondFrame():
         space2.grid(row=1,column=0)
         general_settings = tk.Button(ff,text = '+  General Settings',fg =extraColor,highlightcolor=selectorColor,
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
-                               activebackground= selectorColor,font= 'Arial 16', command = lambda:class_GeneralSettings.GeneralSettings(self.sf,selectedtab,experiments))
+                               activebackground= selectorColor,font= 'Arial 17 bold', command = lambda:class_GeneralSettings.GeneralSettings(self.sf,selectedtab,experiments))
         general_settings.config(highlightbackground=selectorColor)
-        general_settings.place(x = 0, y = 70)
+        general_settings.place(x = 0, y = 100)
 
-    
-        ## Here because frames need to be finished before starting.
-        cont= 0
+        cont = 0
         cascade(mainPath,configTreeDB,cont,selectedtab,experiments)
         cont+=1
         cascade(mainPath2,solverDB,cont,selectedtab,experiments)
 
         variables = tk.Button(ff,text = '+  Variables',fg =extraColor,highlightcolor=selectorColor,
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
-                               activebackground= selectorColor,font= 'Arial 16', command = lambda:class_Variables.Variables.Show_frame(experiments,selectedtab))
+                               activebackground= selectorColor,font= 'Arial 17 bold', command = lambda:class_Variables.Variables.Show_frame(experiments,selectedtab))
         variables.config(highlightbackground=selectorColor)
-        variables.place(x = 0, y= 415)
+        variables.place(x = 0, y= 445)
 
         distributions = tk.Button(ff,text = '+  Distributions',fg =extraColor,highlightcolor=selectorColor,
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
-                               activebackground= selectorColor,font= 'Arial 16', command = lambda: class_Distributions.Distributions(self.sf,selectedtab,experiments))
+                               activebackground= selectorColor,font= 'Arial 17 bold', command = lambda: class_Distributions.Distributions(self.sf,selectedtab,experiments))
         distributions.config(highlightbackground=selectorColor)
-        distributions.place(x = 0, y= 525)
+        distributions.place(x = 0, y= 555)
 
 class ThirdFrame():
     def __init__(self,master,selectedtab,experiments):
         
         tf = experiments[selectedtab]['thirdFrame']
-##        self.navigation_bar = class_BrowserFrame.NavigationBar(tf)
-##        self.navigation_bar.grid(row=0, column=0,
-##                                 sticky=(tk.N + tk.S + tk.E + tk.W))
         
         self.browser_frame = class_BrowserFrame.BrowserFrame(tf)
-        self.browser_frame.grid(row=1, column=0,
-                                sticky=(tk.N + tk.S + tk.E + tk.W))
-##        tk.Grid.rowconfigure(self, 1, weight=1)
-##        tk.Grid.columnconfigure(self, 0, weight=1)
+        #self.browser_frame.grid(row=1, column=0,sticky=(tk.N + tk.S + tk.E + tk.W)) # Make .grid later so it doesn't appear when nothing is displayed.
         
     def get_browser(self):
+        self.browser_frame.grid(row=1, column=0,
+                                sticky=(tk.N + tk.S + tk.E + tk.W))                  # Adding the .grid now.
         if self.browser_frame:
             return self.browser_frame.browser
         return None

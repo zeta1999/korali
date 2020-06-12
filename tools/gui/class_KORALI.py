@@ -1,14 +1,17 @@
 import tkinter as tk
 from tkinter import *
-from pubsub import pub
+import os, sys
+import json
+from PIL import Image, ImageTk
 from tkinter.messagebox import showerror, showwarning, showinfo
-import webview
+import webbrowser
 
 #FILES import:
 import classes_FRAMES
 import functions
 import class_Distributions
 import class_GeneralSettings
+import MAIN_APP
 
 
 ## Main Variables:
@@ -18,10 +21,14 @@ NORM_FONT = ("Verdana",6) #Font and size.
 SMALL_FONT = ("Verdana",4) #Font and size.
 RES_FONT = ('Courier',8)
 font = "Helvetica 10"
-
+bgColor = 'azure'
+darkColor ='lightseagreen'
+lightColor = '#00A3E0'
+extraColor = '#183A54'
+selectorColor = 'aliceblue'
 ##general_first_time = True
 
-contador = 1
+contador = 0
 ##times_dist = 1
 times_var = 1
 general_first_time = True
@@ -61,6 +68,7 @@ class KORALI(tk.Tk): #Inherited tk.tk
         global times_var
         global experiments
         global selectedtab
+        
 
         ## MAIN TOOLBAR ----------
         # FILE MENU:
@@ -83,7 +91,7 @@ class KORALI(tk.Tk): #Inherited tk.tk
         self.experimentMenu.add_cascade(label = 'Delete...', menu = self.deleteMenu)
         self.experimentMenu.add_separator()
 
-        self.newMenu.add_command(label = 'Experiment', command = lambda:self.crearTab(self.totalTabs))
+        self.newMenu.add_command(label = 'Experiment', command = lambda:self.crearTab(self.totalTabs,experiments,selectedtab))
         self.newMenu.add_command(label = 'Variable', command = lambda: print('New Variable have not been done yet'))
         self.newMenu.add_command(label = 'Distribution', command = lambda: class_Distributions.Distributions)
 
@@ -103,16 +111,25 @@ class KORALI(tk.Tk): #Inherited tk.tk
 
         ## NOTEBOOK TO SET THE TABS:  # This is the bar where the tabs will be attached.
         s = ttk.Style()
-        s.configure('TNotebook.Tab', font=('Arial','14','bold'), foreground='navy',background = 'cadetblue')#'slategray')
+        s.configure('TNotebook.Tab', font=('Arial','14','bold'), foreground='#183A54',background = 'cadetblue')
         self.totalTabs = ttk.Notebook(self)
         self.totalTabs.pack(expand = 1, fill = "both")
                
         ## DOWN-TOOLBAR
         self.toolbar = tk.Frame(self, background='darkcyan')
-        self.CSELab = tk.Label(self.toolbar, text='CSE-Lab      ',font='Helvetica 20 bold', fg='silver',bg='darkcyan')
-        self.CSELab.pack(side='right',padx=2,pady=2) # Padding options.
-        self.CSELab.pack_propagate(0)
 
+        self.space = tk.Label(self.toolbar, text='',font='Helvetica 12 bold', fg='darkcyan',bg='darkcyan')
+        self.space.pack(side='right',padx=50,pady=1) # Padding options.
+        self.space.pack_propagate(0)
+
+        self.symbol = tk.Label(self.toolbar, text='©',font='Helvetica 16 bold', fg='white',bg='darkcyan')
+        self.symbol.pack(side='right',padx=2,pady=1) # Padding options.
+        self.symbol.pack_propagate(0)
+        
+        self.CSELab = tk.Label(self.toolbar, text='Copyright 2020 by Mark Martori Lopez',font='Helvetica 13', fg='white',bg='darkcyan')
+        self.CSELab.pack(side='right',padx=2,pady=1) # Padding options.
+        self.CSELab.pack_propagate(0)
+        
         self.toolbar.pack(side='bottom', fill='x')
         ## END DOWN TOOLBAR
         self.crearTab(self.totalTabs,experiments,selectedtab)
@@ -123,45 +140,102 @@ class KORALI(tk.Tk): #Inherited tk.tk
         selectedtab = event.widget.tab(tabb,'text')
 
     def tutorial(self):
+        def openweb(url):
+            webbrowser.open(url,new=1)
         def page2():
-            tut.destroy()
-            tut2 = tk.Tk()
+##            tut.destroy()
+            tut2 = tk.Toplevel()
+            tut2.geometry('600x600+650+100')
+            tut2.minsize("600","400")
+            tut2.maxsize("600","400")
+            tut2.wm_title('KORALI - Help - Import')
+            frame_tut = tk.Frame(tut2,width=600,height=400, bg='snow')
+            frame_tut.pack()
 
-            def page3():
-                tut2.destroy() # Destroys page 2 and opens page 3:
-                tut3 = tk.Tk()
-
-                tut3.wm_title('Part 3!')
-
-                label = ttk.Label(tut3, text = 'Part 3', font = NORM_FONT)
-                label.pack(side='top', fill='x', pady=10)
-                B1 = ttk.Button(tut3, text='Done!', command=tut3.destroy)
-                B1.pack()
-                tut3.mainloop()
-
-            tut2.wm_title('Part 2!')
-            label = ttk.Label(tut2, text = 'Part 2', font = NORM_FONT)
-            label.pack(side='top', fill='x', pady=10)
-            B1 = ttk.Button(tut2, text='Done!', command= page3)
-            B1.pack()
+            label = tk.Label(frame_tut, text='How do I import a file?',fg='black', font = 'Arial 25 bold',background='snow')
+            label.place(x=115,y=30)
+            text = tk.Label(frame_tut, text ="Korali provides an option to import a '.config' file:\n"+
+                            "'Settings -> Import File...'.\n\n\n"+
+                            "However, the number and the order of the variables \n"+
+                            "inside the '.config' file, must follow the same \n"+
+                            "structure as displayed on the KORALI App.",font = 'Arial 16',
+                            background = 'snow', fg='black')
+            text.place(x=55,y=100)
             tut2.mainloop()
 
-        tut = tk.Tk()
-        tut.wm_title('Tutorial')
-        label = ttk.Label(tut, text='What do you need help with?', font = NORM_FONT)
-        label.pack(side='top', fill='x', pady=10)
+        def page3():
+##            tut.destroy()
+            tut3 = tk.Toplevel()
+            tut3.geometry('600x600+350+80')
+            tut3.minsize("600","400")
+            tut3.maxsize("600","400")
+            tut3.wm_title('KORALI - Help - Export')
+            frame_tut = tk.Frame(tut3,width=600,height=400, bg='snow')
+            frame_tut.pack()
+            frame_tut.pack_propagate(0)
+            label = tk.Label(frame_tut, text='How do I export the data?',fg='black', font = 'Arial 25 bold',background='snow')
+            label.place(x=105,y=30)
+            text = tk.Label(frame_tut, text ="Korali provides an option to Export the data provided:\n"+
+                            "'Settings -> Export File As...'.\n\n\n"+
+                            "However, the file can only be saved as:\n"+
+                            "'.config', '.txt' or '.log'.",
+                font = 'Arial 16', background = 'snow', fg='black')
+            text.place(x=55,y=100)
+            tut3.mainloop()
 
-        B1 = ttk.Button(tut, text = 'Overview of the application', command = page2)
-        B1.pack()
-        B2 = ttk.Button(tut, text = 'How do I get Days-timed data?', command = lambda:popupmsgwarning('Not yet complited')) # How do I trade???
-        B2.pack()
-        B3 = ttk.Button(tut, text = 'Graph Question/Help', command = lambda: popupmsgwarning('Not yet complited'))
-        B3.pack()
+ 
+            
 
+
+        tut = tk.Toplevel()
+        tut.geometry('1300x900+350+80')
+        tut.minsize("1300","900")
+        tut.maxsize("1300","900")
+        tut.wm_title('KORALI - Help')
+        frame_tut = tk.Frame(tut,width=1300,height=900, bg='snow')
+        frame_tut.pack()
+        
+        canvas = tk.Canvas(frame_tut, width=1300, height=900)
+        img = ImageTk.PhotoImage(Image.open('images_KORALI/korali_screen.png').resize((1300, 1100), Image.ANTIALIAS)) # resize((1083, 930) 
+        canvas.background = img  # Keep a reference in case this code is put in a function.
+        bg = canvas.create_image(0, 0, anchor=tk.NW, image=img)
+        canvas.pack()
+        frame_tut.pack_propagate(0)
+
+        
+        label = tk.Label(canvas, text='What do you need help with?', font = 'Arial 30 bold',background='white')
+        label.place(x=350,y=30)
+
+        text = tk.Label(canvas, text = 'Korali is a high-performance framework for uncertainty quantification of computational models. Korali\n provides a scalable engine enables sampling and optimization on large-scale HPC systems, and\n a multi-language interface allows the execution of multiple computational models, either\n sequential or distributed (MPI), C++ or Python, and pre-compiled/legacy applications.',
+                        font = 'Arial 16', background = 'white', fg='darkgray')
+        text.place(x=150,y=100)
+        B1 = tk.Button(canvas, text = ' - Overview of the application',width = 25,fg =extraColor,highlightcolor=selectorColor,
+                               borderwidth = 0, background = selectorColor, anchor = 'w',activeforeground='teal',
+                               activebackground= selectorColor,font= 'Arial 20 bold', command = lambda: openweb('https://www.cse-lab.ethz.ch/korali/#features'))
+        B1.place(x=150,y=300)
+        B2 = tk.Button(canvas, text = ' - How do I import a file?',width = 25,fg =extraColor,highlightcolor=selectorColor,
+                               borderwidth = 0, background = selectorColor, anchor = 'w',activeforeground='teal',
+                               activebackground= selectorColor,font= 'Arial 20 bold', command = page2)
+        B2.place(x=750,y=300)
+        B3 = tk.Button(canvas, text = ' - How do I export the data?',width = 25,fg =extraColor,highlightcolor=selectorColor,
+                               borderwidth = 0, background = selectorColor, anchor = 'w',activeforeground='teal',
+                               activebackground= selectorColor,font= 'Arial 20 bold', command = page3)
+        B3.place(x=150,y=600)
+
+        B3 = tk.Button(canvas, text = ' - CSE-Lab Main Website',width = 25,fg =extraColor,highlightcolor=selectorColor,
+                               borderwidth = 0, background = selectorColor, anchor = 'w',activeforeground='teal',
+                               activebackground= selectorColor,font= 'Arial 20 bold', command = lambda: openweb('https://www.cse-lab.ethz.ch/'))
+        B3.place(x=750,y=600)
+
+        version = tk.Label(canvas,text = MAIN_APP.version, font='Times 14 bold', fg='black',background='white')
+        version.place(x=575,y=850)
+
+        canvas.pack_propagate(0)
         tut.mainloop()
 
     def crearTab(self,totalTabs,experiments,selectedtab):
         global contador
+        contador+=1
 
         if contador < 7:
             general_first_time = True

@@ -23,7 +23,7 @@ class GeneralSettings():
             self.Show_frame(experiments,selectedtab)
             return
         
-        self.gs = tk.Frame(master,bg=selectorColor,width=717,height=925)
+        self.gs = tk.Frame(master,bg=selectorColor,width=495,height=925)
         self.gs.grid(column=0,row=0)
         self.gs.grid_propagate(0)
 

@@ -1,16 +1,30 @@
+'''
+Welcome to the Korali Graphical-User-Interface created by Mark Martori Lopez (martori.mark@gmail.com) under the CSE-Lab-ETH.              #####
+                                                                                                                                          #####
+                                                                                                                                          #####
+*Starting File: Runs the APP KORALI, sets window parameters [Geometry and Size] and initializes the listener of the Embeded HTML.         #####
+*Incorporates the links displayed on the Third Frame ( CSE-Lab Korali HTML embeded ) under the dictionary: links_website.                 #####
+*Dictionary chosen as key, link as value.                                                                                                 #####
+*Defines the KORALI Version.                                                                                                              #####
+'''
+
+# if python.7 Tkinter. ttk is like the CSS.
 from cefpython3 import cefpython as cef
 try:
     import tkinter as tk
+    from tkinter import *
+    from tkinter import ttk
 except ImportError:
     import Tkinter as tk
-
-from tkinter import *
-from tkinter import ttk # if python.7 Tkinter. ttk is like the CSS.
-from cefpython3 import cefpython as cef
+    from Tkinter import *
+    from Tkinter import ttk
 
 # Files import:
 import class_KORALI
 import class_BrowserFrame
+
+# KORALI's VERSION:
+version = 'Korali v1.0.4 (03/05/2020)'
 
 
 
@@ -18,7 +32,6 @@ if __name__ == "__main__":
     app = class_KORALI.KORALI()
     app.geometry("1500x1000") # Size of our appliication.
     app.minsize("1500","1000")
-##    app.minsize("1000","1000")
     cef.Initialize()
     app.mainloop()
     cef.Shutdown()

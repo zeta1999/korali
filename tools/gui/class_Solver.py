@@ -16,7 +16,7 @@ class Solvers():
     def __init__(self,master,experiments,directorio,nombre,DB,cont,selectedtab):
         # master is the frame from the previous class where we want to insert data.
 
-        self.solver = tk.Frame(master,bg=selectorColor,width=717,height=925)
+        self.solver = tk.Frame(master,bg=selectorColor,width=495,height=925)
         self.solver.grid(column=0,row=0)
         self.solver.grid_propagate(0)
 

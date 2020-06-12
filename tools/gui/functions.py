@@ -137,7 +137,7 @@ def importFile(self):
                 cont = 0
                 texto = parsedFile[directorio]['Type']
                 x_pos = 0
-                y_pos = 185
+                y_pos = 215
                 nombre = configTreeDB[texto]['names']
                 # Check which Problem it is and display it on the screen:
                 checkFormulario(sf,experiments,selectedtab, texto,nombre,configTreeDB, cont,x_pos,y_pos,tf)
@@ -152,7 +152,7 @@ def importFile(self):
                 cont = 1
                 texto = parsedFile[directorio]['Type']
                 x_pos = 0
-                y_pos = 305
+                y_pos = 335
                 nombre = solverDB[texto]['names']
                 checkFormulario(sf,experiments,selectedtab, texto,nombre,solverDB, cont,x_pos,y_pos,tf)                
                 for key2 in parsedFile[directorio]:
@@ -481,7 +481,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                     popupmsginfo('When choosing a new Problem, the previous chosen Solver is removed.')
                     print('Solver frame cleaned too')
                 
-                which = tk.Button(ff,text = nombre,width=28, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf))
+                which = tk.Button(ff,text = nombre,width=29, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf))
                 which.config(cursor = 'watch')
                 which.place(x=x_pos,y=y_pos+40)
                 problems_ind = nombre
@@ -494,7 +494,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
             class_KORALI.first_time_p = False
             class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
             frame_problem = directorio
-            which = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
+            which = tk.Button(ff,text = nombre,width=29,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
                               background = selectorColor,command = lambda:class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf))
             which.config(cursor = 'watch')
             which.place(x=x_pos,y=y_pos+40)
@@ -542,7 +542,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                     del results[1]
                     print('SOOOOOOLVER = Solver Deleted = ',results.keys())
                     
-                which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
+                which2 = tk.Button(ff,text = nombre,width=29,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
                 which2.config(cursor = 'watch')
                 which2.place(x=x_pos,y=y_pos+40)
                 solvers_ind = nombre
@@ -555,7 +555,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
             class_KORALI.first_time_s = False
             class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
             frame_solver = directorio
-            which2 = tk.Button(ff,text = nombre,width=28,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
+            which2 = tk.Button(ff,text = nombre,width=29,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
                                background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
             which2.config(cursor = 'watch')
             which2.place(x=x_pos,y=y_pos+40)
