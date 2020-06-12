@@ -74,6 +74,7 @@ def main():
   e["Variables"][variable_counter]["Initial Value"] = 2.0
   e["Variables"][variable_counter]["Upper Bound"] = 5
   e["Variables"][variable_counter]["Lower Bound"] = 0
+  variable_counter += 1
 
   # * Latent variables
   latent_counter = 0

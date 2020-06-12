@@ -14,9 +14,9 @@ void dummySampler(korali::Sample& k)
 
 // Always samples 0  - unused
 
-  std::vector<double> hyperparams = k["Hyperparameters"];
-  size_t numberSamples = k["Number Samples"];
-  size_t numberLatentVars = k["Number Of Latent Variables"];
+  std::vector<double> hyperparams = k["Hyperparameters"].get<std::vector<double> >();
+  size_t numberSamples = k["Number Samples"].get<size_t>();
+  size_t numberLatentVars = k["Number Of Latent Variables"].get<size_t>();
 
   std::vector<std::vector<double>> samples;
   for(size_t i = 0; i < numberSamples; i++){
@@ -72,8 +72,8 @@ MCMCLatentSampler::MCMCLatentSampler(int numberLatentVars, int numberHyperparams
          * - use a "Custom" bayesian problem, with our log-posterior as "Likelihood Model" , but with the current values for theta inserted.
         */
 
-      std::vector<double> hyperparameters = kSample["Hyperparameters"];
-      size_t numberSamples = kSample["Number Samples"];
+      std::vector<double> hyperparameters = kSample["Hyperparameters"].get<  std::vector<double>>();
+      size_t numberSamples = kSample["Number Samples"].get<size_t>();
       if (kSample["Number Of Latent Variables"] != numberLatent)
          { fprintf(stderr, "[Error] Implementation error, number of latent variables at initialization does not fit to what was passed as variable"); exit(-1); }
 
@@ -193,10 +193,12 @@ MultimodalGaussianSampler::MultimodalGaussianSampler (std::vector<std::vector<do
 void MultimodalGaussianSampler::sampleLatent(korali::Sample& k){
 	/* Sample assignments for each point separately, proportional to the resulting data likelihood, p(point, assignment | hyperparams) */
 
-    std::vector<double> hyperparameters = k["Hyperparameters"];
-    int nSamples = k["Number Samples"];
-    if (k["Number Of Latent Variables"] != nPoints)
-       { fprintf(stderr, "[Error] Number of latent variables at initialization does not fit to what was passed as variable.\n"); exit(-1); }
+    std::vector<double> hyperparameters = k["Hyperparameters"].get< std::vector<double>>();
+    int nSamples = k["Number Samples"].get<int>();
+    if (k["Number Of Latent Variables"].get<int>() != nPoints)
+       { fprintf(stderr, "[Error] Number of latent variables at initialization does not fit to what was passed as data.\n");
+         fprintf(stderr, "[Error] Number of latent variables: %d; number of points: %d.\n", k["Number Of Latent Variables"].get<int>(), nPoints );
+         exit(-1); }
 
     // get sigma
     double sigma = hyperparameters[nClusters * nDimensions];

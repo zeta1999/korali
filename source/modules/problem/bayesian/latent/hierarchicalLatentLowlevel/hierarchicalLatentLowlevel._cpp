@@ -167,7 +167,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
            (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".) */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihoodSingle(korali::Sample& sample){
   sample.run(_conditionalLogLikelihoodFunction);
-  //sample["Single LogLikelihood"] = sample["Conditional LogLikelihood"];
+  //sample["Single LogLikelihood"] = sample["Conditional LogLikelihood"].get<double>();
 }
 /*! @brief Evaluate the total log-likelihood log(p(data | latent variables)) of all data points, given at problem definition.
             Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).

@@ -130,7 +130,7 @@ class MultimodalGaussianSampler():
     nSamples = k["Number Samples"]
     if (k["Number Of Latent Variables"] != self.nPoints):
       raise BaseException(
-          "Implementation error, number of latent variables at initialization does not fit to what was passed as variable"
+          "Implementation error, number of latent variables at initialization does not fit to what was passed as data"
       )
 
     # get sigma

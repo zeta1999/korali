@@ -68,6 +68,7 @@ void SAEM::runGeneration(void)
   if (_k->_currentGeneration == 1) setInitialConfiguration();
 
   /* E1: Sample latent variable values */
+
   sampleLatent();
   _k->_logger->logInfo("Detailed", "Sampled generation: %d \n", _k->_currentGeneration);
 
@@ -239,7 +240,8 @@ void SAEM::updateS()
 */
 void SAEM::QFunction(Sample &sample, size_t zetaFc, size_t phiFc)
 {
-  sample["Hyperparameters"] = sample["Parameters"];
+//  sample["Hyperparameters"] = sample["Parameters"].get<std::vector<double>>();
+  sample["Hyperparameters"] = KORALI_GET(std::vector<double>, sample, "Parameters");
   sample.run(zetaFc); // Zeta of Likelihood Model
   sample.run(phiFc);  // Phi of Likelihood Model
 
@@ -265,6 +267,9 @@ void SAEM::updateHyperparameters()
   _engine.run(_experiment);
 
   _currentHyperparameters = _experiment["Results"]["Best Sample"]["Parameters"].get<std::vector<double>>();
+  if (_currentHyperparameters.size() != _numberHyperparameters) KORALI_LOG_ERROR(
+      "Implementation error: number of parameter values returned from sub-experiment did not match. Expected: %d, got: %d.\n",
+          _numberHyperparameters, _currentHyperparameters.size());
   double llh = _experiment["Results"]["Best Sample"]["F(x)"].get<double>();
   _currentLogLikelihood = llh;
 
