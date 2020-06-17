@@ -19,7 +19,7 @@ KORALILIBS=`python3 -m korali.cxx --libs`
 
 load_data.o: load_data.cpp 
 	@echo "Compiling: $< -> $@"
-	$(KORALICXX) $(CXXFLAGS) $(INCLUDES) $(KORALICFLAGS) -MP -MMD -c $< -o $@
+	$(KORALICXX) $(CXXFLAGS) $(INCLUDES) $(KORALICFLAGS) -MP -MMD -g -c $< -o $@
 
 
 %.o: %.cpp %.hpp utils.hpp
@@ -33,7 +33,7 @@ load_data.o: load_data.cpp
 
 model.o: model.cpp model.hpp utils.hpp
 	@echo "Compiling: $< -> $@"
-	$(KORALICXX) $(CXXFLAGS) $(INCLUDES) $(KORALICFLAGS) -MP -MMD -c $< -o $@
+	$(KORALICXX) $(CXXFLAGS) $(INCLUDES) $(KORALICFLAGS) -MP -MMD -g -c $< -o $@
 
 #	$(KORALICXX) -c $< $(KORALICFLAGS)
 

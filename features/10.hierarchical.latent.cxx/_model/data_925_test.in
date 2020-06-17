@@ -1,0 +1,20 @@
+10 1 0.5 2.0
+4.0
+4.0
+4.5
+5.0
+5.0
+7.0
+6.5
+6.5
+7.2
+7.2
+
+# 10 1 0.5 2.0: Individuals / samples per ind. / sigma / omega
+#    draw psi_i ~ N(theta, omega**2)
+#    draw x_i ~ N(psi_i, sigma**2) (= data points; sigma is assumed known)
+# Mean (i.e. theta) is: 5 (= The hyperparameter)
+# Test data; assume latent variables are: first 5: 4.5; second 5: 7.0
+# Manually created data --> Standard deviations will be off
+
+# Replace the filenm in load_data.cpp and recompile to use this data

@@ -41,6 +41,11 @@ class HSAEM : public korali::Solver
               sampling happens across a wider range. */
   void updateAnnealedDistribution();
 
+    /** @brief  Call after updating hyperparameters: Re-calculate the likelihood of all current samples.
+                Need to be already set up: _currentHyperparametersMean and _currentHyperparametersCovariance and _currentZ
+    */
+  void updateProbabilities();
+
   /**
   * @brief initial things to run to test the hierarchical latent problem class. To be deleted.
   */
@@ -65,6 +70,9 @@ class HSAEM : public korali::Solver
   void printGenerationBefore() override;
   /** @brief Print information after each generation */
   void printGenerationAfter() override;
+
+
+//  void finalize() override;
 };
 
 } // namespace solver

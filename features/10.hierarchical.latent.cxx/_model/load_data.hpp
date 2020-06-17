@@ -14,8 +14,22 @@ typedef struct pointsInfoStruct
   double omega;
 } pointsInfo;
 
-pointsInfoStruct &simplePopulationData();
+typedef struct pointsInfoStructAdvanced
+{
+  std::vector<std::vector<std::vector<double>>> data;
+  size_t nIndividuals;
+  size_t maxNSamples;
+  std::vector<size_t> nSamplesEach;
+  double sigma;
+  double dNormal;
+  double dLognormal;
+  double dLogitnormal;
+} pointsInfoAdv;
 
-void reset_points(pointsInfoStruct &__p, std::vector<std::vector<double>> new_data, int new_nSamplesEach);
+pointsInfoStruct &simplePopulationData();
+pointsInfoStructAdvanced &populationData();
+
+void reset_points(pointsInfoStruct &__p, std::vector<std::vector<double>> new_data, int new_nSamplesEach, double new_sigma, double new_omega);
+void reset_points_adv(pointsInfoStructAdvanced &__p, std::vector<std::vector<double>> new_data, double new_sigma);
 
 #endif // _HEAT2D_H_

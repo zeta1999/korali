@@ -40,7 +40,7 @@ Normal and log-normal distributions describe distributions in many different dis
       x_i \; \sim \; \mathcal{N}(\theta_i, \sigma^2) \; \text{for} \; 1 \leq i \leq N  \\
       \theta_i \; \sim \; \mathcal{N}(\psi, \omega)
 
-   We have one sample per "individuum" i. Note that our notation is reverted to that of the book, we use :math:`\theta`
+   We have one sample per 'individuum' i. Note that our notation is flipped compared to the book, we use :math:`\theta`
    for latent variables and :math:`\psi` for hyperparameters.
 
 

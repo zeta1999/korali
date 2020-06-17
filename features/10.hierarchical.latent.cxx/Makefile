@@ -8,13 +8,13 @@ KORALILIBS=`python3 -m korali.cxx --libs`
 all: $(BINARIES)
 
 $(BINARIES) : % : %.o _model/model.o  _model/load_data.o   _model/utils.o
-	$(KORALICXX) -o $@ $^ $(KORALILIBS)
+	$(KORALICXX) -g -o $@ $^ $(KORALILIBS)
 
-model/%.o:
+_model/%.o:
 	$(MAKE) -C _model all
 
 %.o: %.cpp
-	$(KORALICXX) -c $(KORALICFLAGS) $<
+	$(KORALICXX) -g -c $(KORALICFLAGS) $<
 
 .PHONY: clean
 clean:
