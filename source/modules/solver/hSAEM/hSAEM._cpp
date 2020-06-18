@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <sstream>
 
 void korali::solver::HSAEM::runGeneration()
 {
@@ -539,6 +540,7 @@ void korali::solver::HSAEM::updateProbabilities(){
     auto newPriors = sample["Log Prior"].get<std::vector<double>>();
     _currentSampleLogPriors[c_idx] = newPriors;
 
+
   }
   double LLHSum = 0;
   for (size_t c_idx = 0; c_idx <_mcmcNumberChains; c_idx++){
@@ -546,6 +548,8 @@ void korali::solver::HSAEM::updateProbabilities(){
     LLHSum = std::accumulate(_currentSampleLogPriors[c_idx].begin(), _currentSampleLogPriors[c_idx].end(), LLHSum);
   }
   _currentLogLikelihood = LLHSum / static_cast<double>(_mcmcNumberChains);
+  if (_currentLogLikelihood > _bestLogLikelihood)
+    _bestLogLikelihood = _currentLogLikelihood;
 
 }
 
@@ -564,6 +568,8 @@ void korali::solver::HSAEM::printGenerationAfter()
 {
   _k->_logger->logInfo("Normal", "Finished to generation %lu...\n", _k->_currentGeneration);
 
+  _k->_logger->logInfo("Normal", "    Current Total LogLikelihood:          %.2e\n", _currentLogLikelihood);
+  _k->_logger->logInfo("Normal", "    Best Total LogLikelihood:             %.2e\n", _bestLogLikelihood);
   // ** Show current hyperparameters
   _k->_logger->logInfo("Normal", " Current hyperparameters, mean: \n");
   for (size_t dim = 0; dim < _latentSpaceDimensions; dim++){
@@ -572,16 +578,20 @@ void korali::solver::HSAEM::printGenerationAfter()
     _k->_logger->logInfo("Normal", "\tMean of %s etc:\n", varName.c_str());
     _k->_logger->logInfo("Normal", "\t\t%.2f  \n",_currentHyperparametersMean[dim]);
   }
-  _k->_logger->logInfo("Normal", "\n Current hyperparameters, covariance matrix: \n");
-  _k->_logger->logInfo("Normal",   "  [");
+  std::ostringstream covLogStringStream;
+  _k->_logger->logInfo("Normal", "Current hyperparameters, covariance matrix: \n");
+  covLogStringStream << "  [";
+//  _k->_logger->logInfo("Normal",   "  [");
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
   {
-     _k->_logger->logInfo("Normal",   "    [");
+     covLogStringStream <<  "    [";
      for (size_t j = 0; j < _latentSpaceDimensions; j++)
-       _k->_logger->logInfo("Normal", "\t%.2f ", _currentHyperparametersCovariance[i][j]);
-     _k->_logger->logInfo("Normal",   "],\n");
+       covLogStringStream << "\t" << _currentHyperparametersCovariance[i][j] << " ";
+     covLogStringStream << "],\n";
+     _k->_logger->logInfo("Normal", covLogStringStream.str().c_str());
+     covLogStringStream.str("");
   }
-
+  _k->_logger->logInfo("Normal",   "    ]\n");
   // ** Print current sampled values
   for (size_t c_idx = 0; c_idx < _mcmcNumberChains; c_idx++)
   {                             // TODO: Report the non-transformed latents instead. More informative.

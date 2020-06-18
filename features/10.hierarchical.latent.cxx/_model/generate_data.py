@@ -24,6 +24,14 @@ def logit(p):
     assert 0 <= p < 1
     return np.log(p / (1. - p))
 
+
+#
+#  Model 4:
+#    draw z_i ~ N(theta, Omega), where Omega need not be diagonal
+#       psi_i = f(z_i), where f is either id, log^-1, or logit^-1
+#    draw x_i ~ N(psi_i, sigma**2)
+#
+
 def draw_from_hierarchical(n_individuals, sigma, cov, mean, max_n_samples, d_normal, d_logn, d_logitn):
     '''
         x_ij ~ N(latent_i, sigma**2)
@@ -78,6 +86,7 @@ def generate_data():
     omega = 2.
     mean = 1 # The Hyperparameter
     output_file_925 = "data_925.in"  # 925 for section 9.2.5
+    info_output_file_925 = "data_925_info.txt"
 
     simple_data = draw_from_simple_hierarchical(n_individuals, sigma=sigma, omega=omega, mean=mean, n_samples=n_samples)
 
@@ -88,14 +97,16 @@ def generate_data():
         lines = [" ".join([str(d[i, j]) for j in range(n_samples)])  + "\n"   for i in range(n_individuals)]
         fd.writelines(lines)
 
+    # calculate the optimizer (just the mean) and store it as reference
+    with open(info_output_file_925, "w") as fd:
+        fd.write("# The optimizing hyperparameter (the mean):"+"\n")
+        optimizer = np.mean(simple_data)
+        fd.write("# \t%.3f\n" % optimizer)
+        fd.write("# Original mean (used to create data):\n")
+        fd.write("# \t"+str(mean)+"\n")
+        fd.write("# Original hyperparameter variance:\n# \tw^2 with w == "+str(omega)+"\n")
     print("Done")
 
-
-#
-#  Model 4:
-#    draw psi_i ~ N(theta, Omega)
-#    draw x_i ~ N(psi_i, sigma**2)
-#
 
 def generate_data_advanced():
     '''
