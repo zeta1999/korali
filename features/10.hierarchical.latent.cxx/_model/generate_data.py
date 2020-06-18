@@ -42,7 +42,7 @@ def draw_from_hierarchical(n_individuals, sigma, cov, mean, max_n_samples, d_nor
     latents = np.zeros(shape=(n_individuals, d))
     latents_z = np.zeros(shape=(n_individuals, d))
     for i in range(n_individuals):
-        n_samples = np.random.choice(np.arange(1, max_n_samples))
+        n_samples = np.random.choice(np.arange(1, max_n_samples + 1))
 
         # a) sample the latent variable
         latents_z[i, :] = np.random.multivariate_normal(mean, cov)
@@ -114,7 +114,7 @@ def generate_data_advanced():
         given latent variables, the sampled points simply are normally distributed, with sdev sigma, around the latent variable
         '''
     n_individuals = 3
-    max_n_samples = 10 # each individual has between 1 and this number of data points assigned
+    max_n_samples = 1 # each individual has between 1 and this number of data points assigned
     sigma = .5
     omega1 = 1.
     omega2 = 0.5

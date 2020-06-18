@@ -53,7 +53,7 @@ void korali::solver::HSAEM::initialize()
   // \_ Edit: hSAEM initialization is also called when initializing the sub-problem, from within hierarchicalLatent._cpp. In that case _k has a complete list of variables.
   _mcmcNumberChains = _numberSamplesPerStep; // to simplify things, use one MCMC chain per final sample to generate.
 
-  _univariateNormalGenerator->updateProperty("Mean", 0.0);
+  _univariateNormalGenerator->_mean = 0.0;
 
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     if (std::isfinite(_k->_variables[i]->_initialValue) == false)
@@ -334,18 +334,16 @@ void korali::solver::HSAEM::sampleLatent()
         for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
         {
           // we will use this to sample, and then update _mcmcStandardDeviations after step 2, and then again after step 3
-          _univariateNormalGenerator->updateProperty("Standard Deviation", _mcmcStandardDeviations[dim]);
+          _univariateNormalGenerator->_standardDeviation = _mcmcStandardDeviations[dim];
           _univariateNormalGenerator->updateDistribution();
-          assert(_univariateNormalGenerator->_standardDeviation == 1.);
-          // \_ The lines above don't seem to work; this catches it if that behaviour ever changes.
-          //    -- then, need drop the modification of the random variable again, below.
+//          assert(_univariateNormalGenerator->_standardDeviation != 1.);
 
           std::vector<std::vector<double>> localZ = chainZ;
           for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
           {
             double eta = _univariateNormalGenerator->getRandomNumber(); // Todo: Adjust covariance below - check whether we count acceptance for each coordinate or how
             // Adjust eta, eta is ~ N(0, 1) and we need other sdev
-            eta *= _mcmcStandardDeviations[dim];
+//            eta *= _mcmcStandardDeviations[dim];
             localZ[indiv][dim] += eta;
           }
 
@@ -356,6 +354,8 @@ void korali::solver::HSAEM::sampleLatent()
           auto newLLHs = sample["Log Likelihood"].get<std::vector<double>>();
 
           sample["Latent Variables"] = localZ;
+          sample["Mean"] = _currentHyperparametersMean;
+          sample["Covariance Matrix"] = _currentHyperparametersCovariance;
           sample["Operation"] = "Evaluate logPrior";
           _conduit->start(sample);
           _conduit->wait(sample);
@@ -407,16 +407,14 @@ void korali::solver::HSAEM::sampleLatent()
 
         std::vector<std::vector<double>> localZ = chainZ;
         for (size_t dim : randomCoords){
-          _univariateNormalGenerator->updateProperty("Standard Deviation", _mcmcStandardDeviations[dim]);
+          _univariateNormalGenerator->_standardDeviation = _mcmcStandardDeviations[dim];
           _univariateNormalGenerator->updateDistribution();
-          assert(_univariateNormalGenerator->_standardDeviation == 1.);
-          // \_ The lines above don't seem to work; this catches it if that behaviour ever changes.
-          //    -- then, need drop the modification of the random variable again, below.
+//          assert(_univariateNormalGenerator->_standardDeviation != 1.);
 
           for (size_t indiv=0; indiv < _numberIndividuals; indiv++){
             double eta = _univariateNormalGenerator->getRandomNumber();
             // Adjust eta, eta is ~ N(0, 1) and we need other sdev
-            eta *= _mcmcStandardDeviations[dim];
+//            eta *= _mcmcStandardDeviations[dim];
             localZ[indiv][dim] += eta;
           }
         }
@@ -428,6 +426,8 @@ void korali::solver::HSAEM::sampleLatent()
         auto newLLHs = sample["Log Likelihood"].get<std::vector<double>>();
 
         sample["Latent Variables"] = localZ;
+        sample["Mean"] = _currentHyperparametersMean;
+        sample["Covariance Matrix"] = _currentHyperparametersCovariance;
         sample["Operation"] = "Evaluate logPrior";
         _conduit->start(sample);
         _conduit->wait(sample);

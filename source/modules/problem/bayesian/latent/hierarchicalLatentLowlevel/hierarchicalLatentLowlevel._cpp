@@ -162,7 +162,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
             vector of latent variables (for a single, unspecified individual).
             See the description of this function for more information.
            (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".)
-  * @param sample: Should contain fields "Latent Variables" (a vector) and "Data Point" (a vector). */
+  * @param sample: Should contain fields "Latent Variables" (a vector) and "Data Point" (a vector).
+                    "Latent Variables" must be the untransformed values. */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihoodSingle(korali::Sample &sample)
 {
   sample.run(_conditionalLogLikelihoodFunction);
@@ -172,9 +173,11 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
             assigned to the individual, given latent variables.
             Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).
      @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
+     @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
+                    whether "Latent Variables" are the untransformed values.
      @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
      */
-void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihood(korali::Sample &sample)
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihood_(korali::Sample &sample, bool zForm)
 {
   std::vector<std::vector<double>> allLatentVars = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
   std::vector<double> allLogP(_numberIndividuals);
@@ -182,9 +185,12 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
   {
     assert(_data[i].size() > 0); // && "We need non-empty data for each individual.");
     double logP = 0;
+    std::vector<double> latentVars = allLatentVars[i];
+    if (zForm)
+      latentVars = zToLatent(latentVars);
     for (std::vector<double> dataPoint : _data[i])
     {
-      sample["Latent Variables"] = allLatentVars[i];
+      sample["Latent Variables"] = latentVars;
       sample["Data Point"] = dataPoint;
       sample.run(_conditionalLogLikelihoodFunction);
       logP += sample["Conditional LogLikelihood"].get<double>();
@@ -193,6 +199,10 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
   }
   sample["Log Likelihood"] = allLogP;
 }
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihood(korali::Sample &sample)
+{
+  evaluateLoglikelihood_(sample, true);
+}
 
 /*! @brief Evaluate the "prior" log-probability of the transformed latent variables, given hyperparameters (mean and covariance matrix).
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
@@ -200,6 +210,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
                     "Latent Variables" should be a vector of vectors, one * transformed * latent variable vector per individual. The order is
                     assumed to be the same as the order of variables according to their indices at problem definition
                     (["Variables"][THE_INDEX]["some property"] = ...).
+    @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
+                    whether "Latent Variables" are the untransformed values.
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
 
          TODO, updated: So this essentially implements a multivariate normal probability function. Though, that is already
@@ -212,7 +224,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
                   -- first see where you will actually need this function
          ALso todo: But first, test it some more.
  */
-void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior(korali::Sample &sample)
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_(korali::Sample &sample, bool zForm)
 {
   //  volatile int done = 0;
   //  while (!done) sleep(1);
@@ -221,7 +233,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   // -- need a multivariate log-gaussian function for this
   // += conditional log-llh (log[p(data | latent)])
 
-  std::vector<std::vector<double>> latentZVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
+  std::vector<std::vector<double>> _latentVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
   std::vector<double> mean = sample["Mean"].get<std::vector<double>>();
   size_t N = mean.size(); // Number of latent variables
   auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
@@ -265,15 +277,17 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   for (size_t i = 0; i < _numberIndividuals; i++)
   {
     // Get i-th vector of latent variables:
-//    std::vector<double> latentZ = latentToZ(latentZVariables[i]);
+    std::vector<double> latentZ = _latentVariables[i];
+    if (!zForm)
+      latentZ = latentToZ(latentZ);
     for (size_t j = 0; j < _latentSpaceDimensions; j++)
     {
       //size_t v_idx = _latentIndex[i][j];
-      gsl_vector_set(latent_minus_mean, j, latentZVariables[i][j]);
+      gsl_vector_set(latent_minus_mean, j, latentZ[j]);
     }
 
     gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
-    //std::vector<double> latent_minus_mean(latentZVariables); // should copy -?
+    //std::vector<double> latent_minus_mean(_latentVariables); // should copy -?
     //std::transform(latent_minus_mean.begin(), latent_minus_mean.end(), mean.begin(), latent_minus_mean.begin(), std::minus<double>());
 
     //  // for inversion/solving a linear eqation, could add a small positive diagonal matrix:
@@ -306,6 +320,11 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   gsl_vector_free(latent_minus_mean);
   gsl_vector_free(x);
 }
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior(korali::Sample &sample)
+{
+  evaluateLogPrior_(sample, true);
+}
+
 
 /*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Data
@@ -314,16 +333,20 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
          TODO: test it.
  */
-void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior(korali::Sample &sample)
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior_(korali::Sample &sample, bool zForm)
 {
-  evaluateLogPrior(sample);
+  evaluateLogPrior_(sample, zForm);
+  evaluateLoglikelihood_(sample, zForm);
 
-  evaluateLoglikelihood(sample);
   auto llhs = sample["Log Likelihood"].get<std::vector<double>>();
   auto lpriors = sample["Log Prior"].get<std::vector<double>>();
 
   //               log(p) =         log(p(y | latent))                   + log(p(latent | hyperparams))
   sample["Log Posterior"] = std::accumulate(llhs.begin(), llhs.end(), 0) + std::accumulate(lpriors.begin(), lpriors.end(), 0);
+}
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior(korali::Sample &sample)
+{
+  evaluateLogPosterior_(sample, true);
 }
 
 

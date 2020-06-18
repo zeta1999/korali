@@ -187,19 +187,31 @@ void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihoo
   sample.run(_conditionalLogLikelihoodFunction);
 }
 
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood_(korali::Sample &sample, bool zForm)
+{
+  _lowlevelProblem->evaluateLoglikelihood_(sample, zForm);
+}
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood(korali::Sample &sample)
 {
-  _lowlevelProblem->evaluateLoglikelihood(sample);
+  _lowlevelProblem->evaluateLoglikelihood_(sample, true);
 }
 
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPosterior_(korali::Sample &sample, bool zForm)
+{
+  _lowlevelProblem->evaluateLogPosterior_(sample, zForm);
+}
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPosterior(korali::Sample &sample)
 {
-  _lowlevelProblem->evaluateLogPosterior(sample);
+  _lowlevelProblem->evaluateLogPosterior_(sample, true);
 }
 
+void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPrior_(korali::Sample &sample, bool zForm)
+{
+  _lowlevelProblem->evaluateLogPrior_(sample, zForm);
+}
 void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPrior(korali::Sample &sample)
 {
-  _lowlevelProblem->evaluateLogPrior(sample);
+  _lowlevelProblem->evaluateLogPrior_(sample, true);
 }
 
 ///* @brief allocate memory for all GSL-matrix and GSL-vector local variables used in calculating the loglikelihood

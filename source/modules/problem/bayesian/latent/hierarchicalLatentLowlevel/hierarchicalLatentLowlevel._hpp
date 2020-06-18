@@ -44,8 +44,15 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
                     "Latent Variables" should be a vector of vectors, one * transformed * latent variable vector per individual. The order is
                     assumed to be the same as the order of variables according to their indices at problem definition
                     (["Variables"][THE_INDEX]["some property"] = ...).
+    @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
+                    whether "Latent Variables" are the untransformed values.
   * @returns sample["Log Prior"], a vector, with one log-prior for each latent variable.
  */
+  void evaluateLogPrior_(korali::Sample &sample, bool zForm = true);
+  /**
+    @brief Same as evaluateLogPrior_(..., zForm = true)
+    @param sample: See other function description
+    */
   void evaluateLogPrior(korali::Sample &sample) override;
 
   /**
@@ -55,8 +62,15 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
                     Data was given at problem creation.
                     "Mean" should be a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors.
                     (No special encoding of the cov.)
+    @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
+                    whether "Latent Variables" are the untransformed values.
      @returns sample["Log Posterior"], a single value.
  */
+  void evaluateLogPosterior_(korali::Sample &sample, bool zForm = true ) ;
+    /**
+    @brief Same as evaluateLogPosterior_(..., zForm = true)
+    @param sample: See other function description
+    */
   void evaluateLogPosterior(korali::Sample &sample) override;
 
   /**
@@ -73,8 +87,15 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
             assigned to the individual, given latent variables.
             Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).
      @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
+     @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
+                    whether "Latent Variables" are the untransformed values.
      @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
  */
+  void evaluateLoglikelihood_(korali::Sample &sample, bool zForm = true);
+ /**
+    @brief Same as evaluateLoglikelihood_(..., zForm = true)
+    @param sample: See other function description
+    */
   void evaluateLoglikelihood(korali::Sample &sample) override;
 
   /**
