@@ -1,0 +1,6 @@
+# The optimizing hyperparameter (the mean):
+# 	0.844
+# Original mean (used to create data):
+# 	1
+# Original hyperparameter variance:
+# 	w^2 with w == 2.0
