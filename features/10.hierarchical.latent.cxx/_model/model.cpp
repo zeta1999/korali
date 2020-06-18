@@ -18,7 +18,7 @@ Model 4:
  (see python tutorial, in basic/...)
 */
 
-ConditionalDistribution4::ConditionalDistribution4()
+HierarchicalDistribution4::HierarchicalDistribution4()
 {
   _p = simplePopulationData();
 };
@@ -30,7 +30,7 @@ ConditionalDistribution4::ConditionalDistribution4()
 //            draw psi_i ~ N(theta, omega**2)
 //            draw x_i ~ N(psi_i, sigma**2)
 //
-void ConditionalDistribution4::conditional_p(korali::Sample &s)
+void HierarchicalDistribution4::conditional_p(korali::Sample &s)
 {
   std::vector<double> latentVariables = s["Latent Variables"];
   std::vector<double> dataPoint = s["Data Point"];
@@ -55,5 +55,51 @@ void ConditionalDistribution4::conditional_p(korali::Sample &s)
 
   s["Conditional LogLikelihood"] = logp;
 };
+
+
+
+/*
+Model 5:
+ - multiple dimensions
+ - multiple distribution types
+ - latent variable coordinates are correlated
+ - p(datapoint | latent) is still a normal distribution N(latent, sigma**2)
+*/
+HierarchicalDistribution5::HierarchicalDistribution5()
+{
+  _p = populationData();
+};
+
+void HierarchicalDistribution5::conditional_p(korali::Sample &s)
+{
+  std::vector<double> latentVariables = s["Latent Variables"];
+  std::vector<double> dataPoint = s["Data Point"];
+  assert(latentVariables.size() == _p.nDimensions);
+  assert(dataPoint.size() == _p.nDimensions);
+
+  double sigma = _p.sigma;
+
+  // log(p(data | mean=latent variable, sigma ))
+  double logp = 0;
+  for (size_t i=0; i < _p.nDimensions; i++){
+    double pt = dataPoint[i];
+    double mean = latentVariables[i];
+    std::vector<double> pt_vec({pt});
+    std::vector<double> mean_vec({mean});
+    double p = univariate_gaussian_probability(mean_vec, sigma, pt_vec);
+    logp += log(p);
+  }
+
+  s["Conditional LogLikelihood"] = logp;
+};
+
+
+
+
+
+
+
+
+
 
 #endif

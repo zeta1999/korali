@@ -75,7 +75,9 @@ pointsInfoStructAdvanced &populationData()
 {
   FILE *problemFile;
   FILE *problemFile2;
+
   size_t nIndividuals = 0;
+  size_t nDimensions = 0;
   size_t maxNSamples = 0;
   std::vector<size_t> nSamplesEach;
   double sigma = 0;
@@ -96,6 +98,7 @@ pointsInfoStructAdvanced &populationData()
   }
   problemFile2 = fopen(filenm.c_str(), "r");
   fscanf(problemFile, "%lu", &nIndividuals);
+  fscanf(problemFile, "%lu", &nDimensions);
   fscanf(problemFile, "%lu", &maxNSamples);
   fscanf(problemFile, "%le", &sigma);
   fscanf(problemFile, "%lu", &dNormal);
@@ -103,22 +106,37 @@ pointsInfoStructAdvanced &populationData()
   fscanf(problemFile, "%lu", &dLogitnormal);
 
   __pa.data.resize(nIndividuals);
+  nSamplesEach.resize(nIndividuals);
+  size_t nSamples;
+  char discardChar[2];
+  double val;
 
-//  for (size_t i = 0; i < nIndividuals; i++)
-//  { // TODO: Continue here
-//    __p.data[i].resize(nSamplesEach);
-//    double val;
-//    for (size_t j = 0; j < nSamplesEach; j++)
-//    {
-//      fscanf(problemFile, "%le ", &val);
-//      __p.data[i][j] = val;
-//    }
-//  }
-//  fclose(problemFile);
-//  __p.nIndividuals = nIndividuals;
-//  __p.nSamplesEach = nSamplesEach;
-//  __p.sigma = sigma;
-//  __p.omega = omega;
+  for (size_t i = 0; i < nIndividuals; i++)
+  {
+     fscanf(problemFile, "%1s ", discardChar);
+     assert(discardChar[0] == 'N');
+     fscanf(problemFile, "%lu ", &nSamples);
+     __pa.data[i].resize(nSamples);
+     nSamplesEach[i] = nSamples;
+     for (size_t j=0; j < nSamples; j++ ){
+       __pa.data[i][j].resize(nDimensions);
+       for (size_t dim = 0; dim < nDimensions; dim++)
+        {
+          fscanf(problemFile, "%le ", &val);
+          __pa.data[i][j][dim] = val;
+        }
+     }
+  }
+  fclose(problemFile);
+
+  __pa.nIndividuals = nIndividuals;
+  __pa.nDimensions = nDimensions;
+  __pa.maxNSamples = maxNSamples;
+  __pa.nSamplesEach = nSamplesEach;
+  __pa.sigma = sigma;
+  __pa.dNormal = dNormal;
+  __pa.dLognormal = dLognormal;
+  __pa.dLogitnormal = dLogitnormal;
 
   return __pa;
 };

@@ -8,6 +8,10 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 
+
+#include <iostream>
+#include <fstream>
+
 /* The problem initialization.*/
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::initialize()
 {
@@ -217,7 +221,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   // -- need a multivariate log-gaussian function for this
   // += conditional log-llh (log[p(data | latent)])
 
-  std::vector<std::vector<double>> latentVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
+  std::vector<std::vector<double>> latentZVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
   std::vector<double> mean = sample["Mean"].get<std::vector<double>>();
   size_t N = mean.size(); // Number of latent variables
   auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
@@ -225,18 +229,19 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   assert(N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
   for (std::vector<double> v : covMatrix)
     assert(v.size() == N);
-  //  gsl_matrix* covMatrixGSL = sample["Covariance Matrix"].get<gsl_matrix*>(); // todo: does this work? - No, need to pass a correct type for the pointer, instead of matrix*
-  //  assert (covMatrixGSL.size1 == N);
-  //  assert (covMatrixGSL.size2 == N);
 
   //gsl_matrix_const_view covMatrixGSL = gsl_matrix_const_view_array(&covMatrix[0][0], N, N); // This works, but for memcopy below we need a proper matrix
   gsl_matrix *covMatrixGSL = gsl_matrix_alloc(N, N);
-  covMatrixGSL->data = &covMatrix[0][0]; // todo does this work?
+  for (size_t i = 0; i < N; i++)
+    for (size_t j = 0; j < N; j++)
+      gsl_matrix_set (covMatrixGSL, i, j, covMatrix[i][j]);
 
   // First, calculate the cholesky decomposition, cov = L'*L
   gsl_matrix *chol = gsl_matrix_alloc(N, N);
   gsl_matrix_memcpy(chol, covMatrixGSL);
+
   int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+  assert(status == 0);
 
   // --> log(det(covariance)) = sum(log( diag(L) ))
   double logdet = 0;
@@ -260,14 +265,15 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   for (size_t i = 0; i < _numberIndividuals; i++)
   {
     // Get i-th vector of latent variables:
+//    std::vector<double> latentZ = latentToZ(latentZVariables[i]);
     for (size_t j = 0; j < _latentSpaceDimensions; j++)
     {
       //size_t v_idx = _latentIndex[i][j];
-      gsl_vector_set(latent_minus_mean, j, latentVariables[i][j]);
+      gsl_vector_set(latent_minus_mean, j, latentZVariables[i][j]);
     }
 
     gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
-    //std::vector<double> latent_minus_mean(latentVariables); // should copy -?
+    //std::vector<double> latent_minus_mean(latentZVariables); // should copy -?
     //std::transform(latent_minus_mean.begin(), latent_minus_mean.end(), mean.begin(), latent_minus_mean.begin(), std::minus<double>());
 
     //  // for inversion/solving a linear eqation, could add a small positive diagonal matrix:
@@ -303,7 +309,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 
 /*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
     @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Data
-                    was given at problem creation.
+                    was given at problem creation. Latent variables should be in untransformed form.
                     "Mean" should be a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
          TODO: test it.
@@ -319,6 +325,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   //               log(p) =         log(p(y | latent))                   + log(p(latent | hyperparams))
   sample["Log Posterior"] = std::accumulate(llhs.begin(), llhs.end(), 0) + std::accumulate(lpriors.begin(), lpriors.end(), 0);
 }
+
 
 std::vector<double> korali::problem::bayesian::latent::HierarchicalLatentLowlevel::zToLatent(std::vector<double> z)
 {
@@ -339,12 +346,41 @@ std::vector<double> korali::problem::bayesian::latent::HierarchicalLatentLowleve
   }
   for (size_t i : _logitnormalLatentIndices)
   {
-    if ((z[i] < 0) || (z[i] >= 1))
-      KORALI_LOG_ERROR("Any value of a logit-normally distributed variable needs to be in range [0, 1).");
     theta[i] = 1.0 / (1.0 + exp(-z[i])); // z= logit(theta)
     counter++;
   }
   assert(counter == _latentSpaceDimensions); // Else implementation error. The indices overlap, that should not be possible.
 
   return theta;
+}
+
+
+std::vector<double> korali::problem::bayesian::latent::HierarchicalLatentLowlevel::latentToZ(std::vector<double> v){
+  if (v.size() != _latentSpaceDimensions)
+    KORALI_LOG_ERROR("Error, vector passed to latentToZ() had the wrong number of coordinates.");
+
+  std::vector<double> z(_latentSpaceDimensions);
+  size_t counter = 0;
+  for (size_t i : _normalLatentIndices)
+  {
+    z[i] = v[i];
+    counter++;
+  }
+  for (size_t i : _lognormalLatentIndices)
+  {
+    if (v[i] <= 0)
+      KORALI_LOG_ERROR("Any value of a log-normally distributed variable needs to be in range [0, 1).");
+    z[i] = log(v[i]);
+    counter++;
+  }
+  for (size_t i : _logitnormalLatentIndices)
+  {
+    if ((v[i] < 0) || (v[i] >= 1))
+      KORALI_LOG_ERROR("Any value of a logit-normally distributed variable needs to be in range [0, 1).");
+    z[i] =log( v[i] / (1.0 - v[i]));
+    counter++;
+  }
+  assert(counter == _latentSpaceDimensions); // Else implementation error. The indices overlap, that should not be possible.
+
+  return z;
 }

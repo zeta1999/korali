@@ -1,4 +1,4 @@
-BINARIES =  run-saem-hierarchical
+BINARIES =  run-saem-hierarchical  run-saem-hierarchical-n-d
 KORALICXX=$(shell python3 -m korali.cxx --compiler)
 KORALICFLAGS=`python3 -m korali.cxx --cflags`
 KORALILIBS=`python3 -m korali.cxx --libs`

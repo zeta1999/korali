@@ -61,7 +61,7 @@ def draw_from_hierarchical(n_individuals, sigma, cov, mean, max_n_samples, d_nor
         indiv_results = []
         for j in range(n_samples):
             # sample data point
-            pt = np.random.multivariate_normal(latents[j], np.eye(d) * sigma**2)
+            pt = np.random.multivariate_normal(latents[i], np.eye(d) * sigma**2)
             indiv_results.append(pt)
         results.append(indiv_results)
     return results, latents, latents_z
@@ -113,16 +113,17 @@ def generate_data_advanced():
         multiple dimensions and multiple data points per individual possible
         given latent variables, the sampled points simply are normally distributed, with sdev sigma, around the latent variable
         '''
-    n_individuals = 10
-    max_n_samples = 4 # each individual has between 1 and this number of data points assigned
+    n_individuals = 3
+    max_n_samples = 10 # each individual has between 1 and this number of data points assigned
     sigma = .5
     omega1 = 1.
     omega2 = 0.5
     omega3 = 2.
-    d_normal = 1
+    d_normal = 0
     d_logn = 1
-    d_logitn = 2
+    d_logitn = 1
     d_latent = d_normal + d_logn + d_logitn
+    d = d_latent
     # The hyperparameter
     mean = np.arange(d_latent)
     Omega = np.eye(d_latent) # the covariance matrix
@@ -139,17 +140,20 @@ def generate_data_advanced():
 
     # store to file:
     with open(output_file, "w") as fd:
-        fd.write(str(n_individuals) +" " + str(max_n_samples) + " " + str(sigma) + " " + str(d_normal) + " " + str(d_logn)  + " " + str(d_logitn)  +"\n")
+        fd.write(str(n_individuals) +" "+ str(d) +" " + str(max_n_samples) + " " + str(sigma) + " " + str(d_normal) + " " + str(d_logn)  + " " + str(d_logitn)  +"\n")
         for i in range(n_individuals):
             n_samples = len(data[i])
             fd.write("N "+str(n_samples)+"\n") # how many points there are for this individual
             lines = [" ".join([str(data[i][j][k]) for k in range(d_latent)])  + "\n"   for j in range(n_samples)]
             fd.writelines(lines)
+        fd.write("# Header info: \n")
+        fd.write("# nr individuals | data dimension | max nr samples each | sigma | d_normal | d_lognormal | d_logitnormal ")
 
     # store ground truth to another file:
     with open(info_output_file, "w") as fd:
         fd.write(" ### This file contains the generation information for "+output_file+" ###\n\n")
         fd.write("n_individuals: "+str(n_individuals) + "\n")
+        fd.write("d, data dimensions: "+str(d) + "\n")
         fd.write("sigma: "+str(sigma) + "\n")
         fd.write("d_normal: "+str(d_normal) + "| "+"d_logn: "+str(d_logn)+ "| " +"d_logitn: "+str(d_logitn) + "\n")
         fd.write("Mean (around which transformed latents are scattered): \n")

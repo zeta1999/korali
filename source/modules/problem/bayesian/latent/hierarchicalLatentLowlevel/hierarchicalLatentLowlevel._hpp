@@ -84,6 +84,14 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
   * @returns A vector with "true", not-transformed latent variable values.
  */
   std::vector<double> zToLatent(std::vector<double> z);
+
+  /**
+  * @brief transform each coordinate of the latent variable vector into "z form": z = log(l) for l log-normal,
+  *        z = logit(l) for l logit-normal.
+  * @param v: A vector with latent variables.
+  * @returns A vector with transfored, "z form" latent variables.
+ */
+  std::vector<double> latentToZ(std::vector<double> v);
 };
 
 } // namespace latent

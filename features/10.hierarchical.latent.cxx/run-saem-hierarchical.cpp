@@ -4,7 +4,7 @@
 
 #include <vector>
 
-ConditionalDistribution4 distrib4 = ConditionalDistribution4();
+HierarchicalDistribution4 distrib4 = HierarchicalDistribution4();
 
 void distrib4_conditional_p(korali::Sample &s);
 void distrib4_conditional_p(korali::Sample &s)
@@ -20,7 +20,6 @@ int main(int argc, char *argv[])
   int nIndividuals = distrib4._p.nIndividuals;
 
   e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent";
-  // the distribution already "contains" the data, it implements the function: latent --> p(data | latent)
   e["Problem"]["Conditional Log Likelihood Function"] = &distrib4_conditional_p; // defined in model.cpp
 
   // We need to add one dimension to _p.data, because one individual in the general case could have
@@ -38,8 +37,12 @@ int main(int argc, char *argv[])
 
   e["Solver"]["Type"] = "HSAEM";
   e["Solver"]["Number Samples Per Step"] = 5; // reduce further to speed up
-  e["Solver"]["Use Simulated Annealing"] = false;
   e["Solver"]["Termination Criteria"]["Max Generations"] = 30;
+  // Set up simulated annealing
+  e["Solver"]["Use Simulated Annealing"] = true;
+  e["Solver"]["Simulated Annealing Decay Factor"] = 0.8;
+  e["Solver"]["Simulated Annealing Initial Variance" ] = 5.;
+  e["Solver"]["K1"] = 10;
 
   e["Distributions"][0]["Name"] = "Uniform 0";
   e["Distributions"][0]["Type"] = "Univariate/Uniform";
@@ -60,7 +63,7 @@ int main(int argc, char *argv[])
     e["Variables"][i]["Prior Distribution"] = "Uniform 0"; // not used (?) but required
   }
   e["File Output"]["Frequency"] = 50;
-  e["Console Output"]["Frequency"] = 10;
+  e["Console Output"]["Frequency"] = 1;
   e["Console Output"]["Verbosity"] = "Detailed";
 
   k.run(e);

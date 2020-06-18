@@ -5,6 +5,12 @@
 #include <vector>
 #include <sstream>
 
+#include <gsl/gsl_math.h>       // todo: Do I need this here? I need a few of them for sure.
+#include <gsl/gsl_randist.h>    // todo: Do I need this here?
+#include <gsl/gsl_rng.h>        // todo: Do I need this here?
+#include <gsl/gsl_sf.h>         // todo: Do I need this here?
+
+
 void korali::solver::HSAEM::runGeneration()
 {
   if (_k->_currentGeneration == 1) setInitialConfiguration();
@@ -52,6 +58,9 @@ void korali::solver::HSAEM::initialize()
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     if (std::isfinite(_k->_variables[i]->_initialValue) == false)
       KORALI_LOG_ERROR("Initial Value of variable \'%s\' not defined (no defaults can be calculated).\n", _k->_variables[i]->_name.c_str());
+
+  if ((_delta < 0. ) || (_delta > 1.))
+     KORALI_LOG_ERROR("Value of 'delta' must be between 0 and 1. delta was: %.2f\n", _delta);
 }
 
 /* @brief Run once, before the first generation */
@@ -90,14 +99,14 @@ void korali::solver::HSAEM::setInitialConfiguration()
   _currentCholesky.resize(_latentSpaceDimensions);
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     _currentCholesky[i].resize(_latentSpaceDimensions);
-  _mcmcVariances.resize(_latentSpaceDimensions);
-  std::fill(_mcmcVariances.begin(), _mcmcVariances.end(), 1.0);
+  _mcmcStandardDeviations.resize(_latentSpaceDimensions);
+  std::fill(_mcmcStandardDeviations.begin(), _mcmcStandardDeviations.end(), 1.0);
 
   _annealedCovariance.resize(_latentSpaceDimensions * _latentSpaceDimensions);
   std::fill(_annealedCovariance.begin(), _annealedCovariance.end(), 0);
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     // diagonal matrix, flattened
-    _annealedCovariance[i + i * _latentSpaceDimensions] = 1.0; // "high" initial covariance values; adjust if needed
+    _annealedCovariance[i + i * _latentSpaceDimensions] = _simulatedAnnealingInitialVariance; // "high" initial covariance values; adjust if needed
 
   // Set starting values for hyperparameters - just copy them over, we already set them in the problem initialization
   _currentHyperparametersMean.resize(_latentSpaceDimensions);
@@ -212,6 +221,9 @@ void korali::solver::HSAEM::sampleLatent()
 {
   updateAnnealedDistribution(); // because we want to draw from it below
 
+  std::fill(_acceptanceRateDenominator.begin(), _acceptanceRateDenominator.end(), 0.0);
+  std::fill(_acceptanceRateNominator.begin(), _acceptanceRateNominator.end(), 0.0);
+
   // int NStepsPerChain = _mcmcOuterSteps * (_n1 + _n2 + _n3);
   //  std::vector<std::vector<std::vector<std::vector<double>>>> allSamples;    // nChains x nSamples x nIndividuals x nDimensions
   //allSamples.clear();
@@ -321,14 +333,19 @@ void korali::solver::HSAEM::sampleLatent()
       {
         for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
         {
-          // we will use this to sample, and then update _mcmcVariances after step 2, and then again after step 3
-          _univariateNormalGenerator->updateProperty("Standard Deviation", _mcmcVariances[dim]);
+          // we will use this to sample, and then update _mcmcStandardDeviations after step 2, and then again after step 3
+          _univariateNormalGenerator->updateProperty("Standard Deviation", _mcmcStandardDeviations[dim]);
           _univariateNormalGenerator->updateDistribution();
+          assert(_univariateNormalGenerator->_standardDeviation == 1.);
+          // \_ The lines above don't seem to work; this catches it if that behaviour ever changes.
+          //    -- then, need drop the modification of the random variable again, below.
 
           std::vector<std::vector<double>> localZ = chainZ;
           for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
           {
             double eta = _univariateNormalGenerator->getRandomNumber(); // Todo: Adjust covariance below - check whether we count acceptance for each coordinate or how
+            // Adjust eta, eta is ~ N(0, 1) and we need other sdev
+            eta *= _mcmcStandardDeviations[dim];
             localZ[indiv][dim] += eta;
           }
 
@@ -365,7 +382,8 @@ void korali::solver::HSAEM::sampleLatent()
       for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
       {
         _acceptanceRate[dim] = _acceptanceRateNominator[dim] / _acceptanceRateDenominator[dim];
-        _mcmcVariances[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
+        _mcmcStandardDeviations[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
+        assert(_mcmcStandardDeviations[dim] > 0.);
       }
 
 
@@ -389,10 +407,16 @@ void korali::solver::HSAEM::sampleLatent()
 
         std::vector<std::vector<double>> localZ = chainZ;
         for (size_t dim : randomCoords){
-          _univariateNormalGenerator->updateProperty("Standard Deviation", _mcmcVariances[dim]);
+          _univariateNormalGenerator->updateProperty("Standard Deviation", _mcmcStandardDeviations[dim]);
           _univariateNormalGenerator->updateDistribution();
+          assert(_univariateNormalGenerator->_standardDeviation == 1.);
+          // \_ The lines above don't seem to work; this catches it if that behaviour ever changes.
+          //    -- then, need drop the modification of the random variable again, below.
+
           for (size_t indiv=0; indiv < _numberIndividuals; indiv++){
             double eta = _univariateNormalGenerator->getRandomNumber();
+            // Adjust eta, eta is ~ N(0, 1) and we need other sdev
+            eta *= _mcmcStandardDeviations[dim];
             localZ[indiv][dim] += eta;
           }
         }
@@ -432,7 +456,8 @@ void korali::solver::HSAEM::sampleLatent()
         for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
         {
           _acceptanceRate[dim] = _acceptanceRateNominator[dim] / _acceptanceRateDenominator[dim];
-          _mcmcVariances[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
+          _mcmcStandardDeviations[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
+          assert(_mcmcStandardDeviations[dim] > 0.);
         }
 
 
@@ -566,14 +591,14 @@ void korali::solver::HSAEM::printGenerationBefore()
 
 void korali::solver::HSAEM::printGenerationAfter()
 {
-  _k->_logger->logInfo("Normal", "Finished to generation %lu...\n", _k->_currentGeneration);
+  _k->_logger->logInfo("Normal", "Finished generation %lu...\n", _k->_currentGeneration);
 
   _k->_logger->logInfo("Normal", "    Current Total LogLikelihood:          %.2e\n", _currentLogLikelihood);
   _k->_logger->logInfo("Normal", "    Best Total LogLikelihood:             %.2e\n", _bestLogLikelihood);
   // ** Show current hyperparameters
   _k->_logger->logInfo("Normal", " Current hyperparameters, mean: \n");
   for (size_t dim = 0; dim < _latentSpaceDimensions; dim++){
-    size_t idx = _latentProblem->_firstIndividualLatentIndices[idx];
+    size_t idx = _latentProblem->_firstIndividualLatentIndices[dim];
     std::string varName = _latentProblem->_k->_variables[idx]->_name;
     _k->_logger->logInfo("Normal", "\tMean of %s etc:\n", varName.c_str());
     _k->_logger->logInfo("Normal", "\t\t%.2f  \n",_currentHyperparametersMean[dim]);
@@ -614,7 +639,7 @@ void korali::solver::HSAEM::printGenerationAfter()
       }
       _k->_logger->logInfo("Detailed", "    - Acceptance rates, chain %d: \n", c_idx);
       for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
-        _k->_logger->logInfo("Detailed", "      Dim %d: %.2f \n", dim, _acceptanceRate[dim]);
+        _k->_logger->logInfo("Detailed", "      Dim %d: %.3f \n", dim, _acceptanceRate[dim]);
   }
 
   //* Show current mean log-likelihood across samples -- Todo: Need to update these.

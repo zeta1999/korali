@@ -18,6 +18,7 @@ typedef struct pointsInfoStructAdvanced
 {
   std::vector<std::vector<std::vector<double>>> data;
   size_t nIndividuals;
+  size_t nDimensions;
   size_t maxNSamples;
   std::vector<size_t> nSamplesEach;
   double sigma;

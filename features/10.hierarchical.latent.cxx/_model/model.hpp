@@ -2,6 +2,7 @@
 #define _MODEL_HPP_
 
 #include "korali.hpp"
+
 #include "load_data.hpp"
 #include "utils.hpp"
 
@@ -9,12 +10,20 @@
 #include <random>
 #include <vector>
 
-class ConditionalDistribution4
+class HierarchicalDistribution4
 {
   public:
-  ConditionalDistribution4();
+  HierarchicalDistribution4();
   void conditional_p(korali::Sample &k);
   pointsInfoStruct _p;
+};
+
+class HierarchicalDistribution5
+{
+  public:
+  HierarchicalDistribution5();
+  void conditional_p(korali::Sample &k);
+  pointsInfoStructAdvanced _p;
 };
 
 #endif
