@@ -253,7 +253,22 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   gsl_matrix_memcpy(chol, covMatrixGSL);
 
   int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
-  assert(status == 0);
+  if (status != 0){
+    assert(status == 1);
+    /* TODO: If you rewrite hSAEM entirely so that it calls a sub-solver , hSAEMLowlevel or so, then, and only then, can
+     *       you enable the line below: */
+    //_k->_logger->logWarning("Normal", "Estimated covariance matrix was not positive definite.");
+    /* If status == 1, covMatrixGSL was not positive definite.
+     * Let's add a small diagonal matrix. */
+    double eps = 1.e-4; // 1.e-8 is too small. Maybe GSL has low precision for matrix operations?   
+    for (size_t i = 0; i < N; i++){
+      for (size_t j = 0; j < N; j++)
+        gsl_matrix_set (chol, i, j, covMatrix[i][j]);
+      gsl_matrix_set (chol, i, i, covMatrix[i][i] + eps);
+    }
+    int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+    assert(status == 0); // Now it failed for real. Is it negative definite?
+  }
 
   // --> log(det(covariance)) = sum(log( diag(L) ))
   double logdet = 0;
