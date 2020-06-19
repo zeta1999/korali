@@ -75,10 +75,10 @@ void korali::solver::HSAEM::setInitialConfiguration()
     for (size_t j = 0; j < _numberIndividuals; j++)
       _currentSamples[i][j].resize(_latentSpaceDimensions);
   }
-  _currentSampleMeans.resize(_latentSpaceDimensions);
+//  _currentSampleMeans.resize(_latentSpaceDimensions);
   _currentSampleLogLikelihoods.resize(_mcmcNumberChains);
   _currentSampleLogPriors.resize(_mcmcNumberChains);
-  for (size_t i = 0; i < _latentSpaceDimensions; i++)
+  for (size_t i = 0; i < _mcmcNumberChains; i++)
   {
     _currentSampleLogLikelihoods[i].resize(_numberIndividuals);
     _currentSampleLogPriors[i].resize(_numberIndividuals);
