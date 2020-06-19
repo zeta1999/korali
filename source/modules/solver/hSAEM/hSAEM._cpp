@@ -276,22 +276,16 @@ void korali::solver::HSAEM::sampleLatent()
       for (size_t i = 0; i < _n1; i++)
       {
         // Proposals q1: Drawn from p(latent | hyperparam)
-        std::vector<std::vector<double>> newZeta(_numberIndividuals); // NrIndividuals x NrDimensions
-        std::vector<double> tempZeta(_latentSpaceDimensions);
+        std::vector<std::vector<double>> newZ(_numberIndividuals); // NrIndividuals x NrDimensions
+        std::vector<double> tempZ(_latentSpaceDimensions);
         for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
         {
-          _annealedNormalGenerator->getRandomVector(&tempZeta[0], _latentSpaceDimensions); // == Previous samples minus par.beta --Why?
-          newZeta[indiv] = tempZeta;                                                       // TODO: Check that this is not copy-by-reference or something
-        }
-        // transform each z into its latent variable
-        std::vector<std::vector<double>> latentVars(_numberIndividuals);
-        for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
-        {
-          latentVars[indiv] = _latentProblem->zToLatent(newZeta[indiv]);
+          _annealedNormalGenerator->getRandomVector(&tempZ[0], _latentSpaceDimensions); // == Previous samples minus par.beta --Why?
+          newZ[indiv] = tempZ;                                                       // TODO: Check that this is not copy-by-reference or something
         }
 
         // generate acceptance probabilities: new llh / former llh
-        sample["Latent Variables"] = latentVars;
+        sample["Latent Variables"] = newZ; // Note: We need not transform to non-Z form; the function called with "Evaluate logLikelihood" expects Z form
         sample["Operation"] = "Evaluate logLikelihood";
         _conduit->start(sample);
         _conduit->wait(sample);
@@ -304,7 +298,7 @@ void korali::solver::HSAEM::sampleLatent()
           if (log(rval) < logAcceptanceProb)
           {
             // update zeta, update likelihood
-            chainZ[indiv] = newZeta[indiv];
+            chainZ[indiv] = newZ[indiv];
             // Todo: Do not write to currentZ directly here, instead create a temporary array and write back everything
             //             only after the loop over all chains? I don't know enough about the optimization / what will be
             //             parallelized in both cases. It could help.

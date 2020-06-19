@@ -32,6 +32,23 @@ needs to be given by the user. # Todo: simulated annealing
 We exactly follow the method described in section 9.2.4.1 in `Lavielle's book <http://www.cmap.polytechnique.fr/~lavielle/book.html>`_ .
 
 
+
+Parameters that influence runtime
+---------------------------------
+- The number of MCMC steps per generation is (`"Number Samples Per Step"`) *
+  (`"N1"` + `"N2"` + `"N3"`) * (`"mcmc Outer Steps"`).
+  If hSAEM takes too long, check whether you can reduce this number without impacting accuracy.
+- Other parameters influence how many iterations are needed until convergence:
+
+  - If convergence is slow, try reducing `"Alpha 1"`, while keeping
+    sufficiently many `"Number Initial Steps"` during which `"Alpha 1"`
+    is active.
+  - Note: `"Alpha 1"` is only active in genrations `"K1"` to  `"Number Initial Steps"`.
+  - Simulated Annealing (SA): Increasing the initial SA variance and
+    decreasing its decay factor will increase stochasticity.
+  - Note: SA only has an effect if the SA variance is larger than some of the
+    diagonal entries of the estimated covariance matrix.
+
 ## TODO: Describe how to use it or refer to a tutorial
 ------------------------------------------------------
 
