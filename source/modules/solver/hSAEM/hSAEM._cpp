@@ -388,10 +388,10 @@ void korali::solver::HSAEM::sampleLatent()
       for (size_t i = 0; i < _n3; i++)
       {
         // pick a number of coordinates to change simultaneously
-        double nRandCoords_d = _uniformGenerator->getRandomNumber() * static_cast<double>(_latentSpaceDimensions) + 1.;
-        if (static_cast<size_t>(nRandCoords_d) == _latentSpaceDimensions + 1) // Todo: Check the cast work
+        double nRandCoords_d = _uniformGenerator->getRandomNumber() * double(_latentSpaceDimensions) + 1.;
+        if (size_t(nRandCoords_d) == _latentSpaceDimensions + 1) // Todo: Check the cast work
           nRandCoords_d = 1.;
-        size_t nRandCoords = static_cast<size_t>(nRandCoords_d); // Todo: Check the cast work
+        size_t nRandCoords = size_t(nRandCoords_d); // Todo: Check the cast work
 
         std::vector<size_t> randomCoords(_latentSpaceDimensions);
         std::iota(randomCoords.begin(), randomCoords.end(), 0);
@@ -495,7 +495,7 @@ void korali::solver::HSAEM::updateS()
     alpha = _alpha1;
 
   // --> decay factor gamma
-  double curGen = static_cast<double>(_k->_currentGeneration);
+  double curGen = double(_k->_currentGeneration);
   if (curGen <= _k1)
     _gamma = 1.0;
   else
@@ -508,7 +508,7 @@ void korali::solver::HSAEM::updateS()
     for (size_t chain = 0; chain < _mcmcNumberChains; chain++)
       for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
         sumZ += _currentZ[chain][indiv][dim];
-    _currentS1[dim] = _currentS1[dim] + _gamma * (sumZ / _mcmcNumberChains - _currentS1[dim]);
+    _currentS1[dim] = _currentS1[dim] + _gamma * (sumZ / double(_mcmcNumberChains) - _currentS1[dim]);
   }
   // * update S2
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
@@ -519,7 +519,7 @@ void korali::solver::HSAEM::updateS()
       for (size_t chain = 0; chain < _mcmcNumberChains; chain++)
         for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
           sumZiZj += _currentZ[chain][indiv][i] * _currentZ[chain][indiv][j];
-      _currentS2[i][j] = _currentS2[i][j] + _gamma * (sumZiZj / _mcmcNumberChains - _currentS2[i][j]);
+      _currentS2[i][j] = _currentS2[i][j] + _gamma * (sumZiZj / double(_mcmcNumberChains) - _currentS2[i][j]);
     }
   }
 }
@@ -530,7 +530,8 @@ void korali::solver::HSAEM::updateHyperparameters()
     _currentHyperparametersMean[i] = _currentS1[i] / double(_numberIndividuals);
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     for (size_t j = 0; j < _latentSpaceDimensions; j++)
-      _currentHyperparametersCovariance[i][j] = _currentS2[i][j] / double(_numberIndividuals) - _currentHyperparametersMean[i] * _currentHyperparametersMean[j];
+      _currentHyperparametersCovariance[i][j] = _currentS2[i][j] / double(_numberIndividuals)
+                                                    - _currentHyperparametersMean[i] * _currentHyperparametersMean[j];
   // No simulated annealing here, that is only done with the 'annealed normal distribution' used in sampling.
 }
 
@@ -566,7 +567,7 @@ void korali::solver::HSAEM::updateProbabilities(){
     LLHSum = std::accumulate(_currentSampleLogLikelihoods[c_idx].begin(), _currentSampleLogLikelihoods[c_idx].end(), LLHSum);
     LLHSum = std::accumulate(_currentSampleLogPriors[c_idx].begin(), _currentSampleLogPriors[c_idx].end(), LLHSum);
   }
-  _currentLogLikelihood = LLHSum / static_cast<double>(_mcmcNumberChains);
+  _currentLogLikelihood = LLHSum / double(_mcmcNumberChains);
   if (_currentLogLikelihood > _bestLogLikelihood)
     _bestLogLikelihood = _currentLogLikelihood;
 

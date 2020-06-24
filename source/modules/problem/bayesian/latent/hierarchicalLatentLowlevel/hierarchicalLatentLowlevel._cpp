@@ -254,7 +254,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 
   int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
   if (status != 0){
-    assert(status == 1);
+    if (status != 1)  KORALI_LOG_ERROR("Status == 1 would have indicated an invalid input, such as not positive definite (e.g. very small eigenvalues). But the GSL error code was: %d. Please report this if you think it is a bug.", status, status);
+//    assert(status == 1);
     /* TODO: If you rewrite hSAEM entirely so that it calls a sub-solver , hSAEMLowlevel or so, then, and only then, can
      *       you enable the line below: */
     //_k->_logger->logWarning("Normal", "Estimated covariance matrix was not positive definite.");
@@ -267,7 +268,9 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
       gsl_matrix_set (chol, i, i, covMatrix[i][i] + eps);
     }
     int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
-    assert(status == 0); // Now it failed for real. Is it negative definite?
+
+    if(status != 0) // Now it failed for real. Is it negative definite?
+      KORALI_LOG_ERROR("GSL error code: %d. If ==1: Covariance matrix was invalid; this could mean it had a negative eigenvalue (that should be impossible) or one of its entries was NaN. Please report this if you think it is a bug.", status);
   }
 
   // --> log(det(covariance)) = sum(log( diag(L) ))
