@@ -33,6 +33,7 @@ import functions
 import class_Variables
 import class_Distributions
 import class_BrowserFrame
+import class_KORALI
 
 
 ## Frame Variables:
@@ -143,7 +144,11 @@ def crearVariables(DB):
             else:
                 variables[DB[key]['config']] = {}
         else:
-            variables[DB[key]['config']] = {}            
+            variables[DB[key]['config']] = {}
+    print('CREATION OF VARIABLES : \n')
+    print(key,variables[DB[key]['config']])
+    print('EEEEEEEEEEEEEEEEEEEEEEND VARIABLES CREATION')
+    
 ### End - VARIABLES dictionary.
 
 ### START - Creating Cascade Menus for Problem and Solver.
@@ -208,11 +213,11 @@ def cascade(mainPath,DB,cont,selectedtab,experiments):
 
 class FirstFrame():
     def __init__(self,master,whichtab,exp):
-        global experiments
-        global selectedtab
 
         selectedtab = whichtab
         experiments = exp
+        if selectedtab != 'Experiment 1':
+            functions.popupmsgwarning('THIS IS THE NEW SELECTEDTAB = '+selectedtab)
         
         ff = tk.Frame(master,bg=selectorColor,width=266,height=930,borderwidth= 3,relief='solid')
         ff.grid(column=0,row=0)
@@ -232,12 +237,9 @@ class FirstFrame():
         canvasff.background = img  # Keep a reference in case this code is put in a function.
         bg = canvasff.create_image(0, 0, anchor=tk.NW, image=img)
         canvasff.place(x=0,y=700)
-        
 
 class SecondFrame():
     def __init__(self,master,whichtab,exp):
-        global experiments
-        global selectedtab
         
         selectedtab = whichtab
         experiments = exp
@@ -294,7 +296,7 @@ class SecondFrame():
 
 class ThirdFrame():
     def __init__(self,master,selectedtab,experiments):
-        
+
         tf = experiments[selectedtab]['thirdFrame']
         
         self.browser_frame = class_BrowserFrame.BrowserFrame(tf)
@@ -306,6 +308,8 @@ class ThirdFrame():
         if self.browser_frame:
             return self.browser_frame.browser
         return None
+
+
 
 
 configTreeDB = {}

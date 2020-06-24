@@ -1,5 +1,21 @@
-import tkinter as tk
-from tkinter import *
+'''
+*Usage*                                                                                                                                   #####
+*Creates and Displays/Raise the GeneralSettings Frame and Initiate the GeneralSettings key of the main dictionary -> results.             #####                                                                                 #####
+                                                                                                                                          #####
+*Functions and Classes*                                                                                                                   #####
+*1 class: GeneralSettings                                                                                                                 #####
+*Main Function: display_generalSettings - Is in charge of managing the creation of the General Settings Frame in the SecondFrame          #####
+                                                                                                                                          #####
+*MAIN DICTIONARY KEY = 'Random Seed'                                                                                                                  #####
+'''
+try:
+    import tkinter as tk
+    from tkinter import *
+    from tkinter import ttk
+except ImportError:
+    import Tkinter as tk
+    from Tkinter import *
+    from Tkinter import ttk
 import json
 
 #FILES import
@@ -10,16 +26,13 @@ import functions
 # Frame Variables:
 selectorColor = 'aliceblue'
 forbidden = ['Variables','Problem','Solver']
-##general_first_time = True
 
 
 class GeneralSettings():
     def __init__(self,master,selectedtab,experiments):
-        # master is the frame from the previous class where we want to insert data.
-##        global general_first_time
+        # master is the frame from the previous class where we want to insert data.      
         
-        
-        if class_KORALI.general_first_time == False:
+        if experiments[selectedtab]['general_first_time'] == False:
             self.Show_frame(experiments,selectedtab)
             return
         
@@ -55,21 +68,16 @@ class GeneralSettings():
         else:
             functions.popupmsgwarning("There is not an 'experiment.config' file !")
             
-        class_KORALI.general_first_time = False
+        experiments[selectedtab]['general_first_time'] = False
 
     def Show_frame(self,experiments,selectedtab):
+        print('THIS IS THE EXPERIMENT = ',experiments)
+        print('AND THIS IS THE SELECTEDTAB = ',selectedtab)
         general_settings = experiments[selectedtab]['generalSettings']
         general_settings.tkraise()
 
-        
     def display_generalSettings(self,gs,r,c,cont,selectedtab,experiments):
-        # self.gs = master.
-##        global experiments
-
-        c=0
-##        experiments = classes_FRAMES.experiments
-##        selectedtab = classes_FRAMES.selectedtab
-        
+        c=0   
         results = experiments[selectedtab]['results']
         mainConf = experiments[selectedtab]['mainConf']
         titulos = []
@@ -94,6 +102,7 @@ class GeneralSettings():
                                         e2.grid(row=r, column=c,columnspan= 1,pady = 25 ,padx=4, sticky='w')
                                         titulos.append(titulo)
                                         cont=titulo
+                                        print('THIS IS THE TITULO = ',cont)
                                         results[cont] = {}
                                 else:
                                     texto = texto[0] # Get the element inside list.

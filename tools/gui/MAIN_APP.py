@@ -8,7 +8,7 @@ Welcome to the Korali Graphical-User-Interface created by Mark Martori Lopez (ma
 *Defines the KORALI Version.                                                                                                              #####
 '''
 
-# if python.7 Tkinter. ttk is like the CSS.
+# if python2.7 Tkinter. ttk is like the CSS.
 from cefpython3 import cefpython as cef
 try:
     import tkinter as tk
@@ -21,10 +21,10 @@ except ImportError:
 
 # Files import:
 import class_KORALI
-import class_BrowserFrame
 
 # KORALI's VERSION:
 version = 'Korali v1.0.4 (03/05/2020)'
+version_no_date = 'KORALI 1.0.4'
 
 
 
@@ -32,6 +32,7 @@ if __name__ == "__main__":
     app = class_KORALI.KORALI()
     app.geometry("1500x1000") # Size of our appliication.
     app.minsize("1500","1000")
+    app.title(version_no_date)
     cef.Initialize()
     app.mainloop()
     cef.Shutdown()

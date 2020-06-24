@@ -1,9 +1,25 @@
-import tkinter as tk
-from tkinter import *
+'''
+*Usage*                                                                                                                                   #####
+*Main Window App CLASS                                                                                                                    #####
+                                                                                                                                          #####
+*Functions and Classes*                                                                                                                   #####
+*1 class: KORALI                                                                                                                          #####
+*Main Function: crear_tab() - In charge of calling the 3 main classes/FRAMES and displaying and managing the window toolbar               #####                                                                                                                 #####
+'''
+try:
+    import tkinter as tk
+    from tkinter import *
+    from tkinter import ttk
+except ImportError:
+    import Tkinter as tk
+    from Tkinter import *
+    from Tkinter import ttk
 import os, sys
 import json
 from PIL import Image, ImageTk
 from tkinter.messagebox import showerror, showwarning, showinfo
+
+
 import webbrowser
 
 #FILES import:
@@ -14,7 +30,7 @@ import class_GeneralSettings
 import MAIN_APP
 
 
-## Main Variables:
+## Variables
 HUGE_FONT = ("Verdana",22)
 LARGE_FONT = ("Verdana",10) #Font and size.
 NORM_FONT = ("Verdana",6) #Font and size.
@@ -26,25 +42,13 @@ darkColor ='lightseagreen'
 lightColor = '#00A3E0'
 extraColor = '#183A54'
 selectorColor = 'aliceblue'
-##general_first_time = True
 
-contador = 0
-##times_dist = 1
-times_var = 1
-general_first_time = True
-dist_first_time = True
-dist_times = 1
-rows = 0
-first_time_p = True
-first_time_s = True
-
-variables_accessible = True
-
-
+# Globals
 experiments = {}
 selectedtab = ''
+       
 
-### MAIN FUNCTIONS:
+### FUNCTIONS:
 def popupmsgwarning(text):
     Tk().withdraw()
     showwarning(title = 'Warning',message=text)
@@ -62,13 +66,8 @@ class KORALI(tk.Tk): #Inherited tk.tk
     def __init__(self,*args,**kwargs): # Self is implied, you don't need to pass self, but is a must.
         tk.Tk.__init__(self,*args,**kwargs)
  
-        tk.Tk.wm_title(self,'KORALI')
+##        tk.Tk.wm_title(self,'KORALI')
 
-##        global times_dist
-        global times_var
-        global experiments
-        global selectedtab
-        
 
         ## MAIN TOOLBAR ----------
         # FILE MENU:
@@ -92,7 +91,6 @@ class KORALI(tk.Tk): #Inherited tk.tk
         self.experimentMenu.add_separator()
 
         self.newMenu.add_command(label = 'Experiment', command = lambda:self.crearTab(self.totalTabs,experiments,selectedtab))
-        self.newMenu.add_command(label = 'Variable', command = lambda: print('New Variable have not been done yet'))
         self.newMenu.add_command(label = 'Distribution', command = lambda: class_Distributions.Distributions)
 
         self.deleteMenu.add_command(label = 'Experiment', command = lambda:self.deleteTab(self.totalTabs))
@@ -132,18 +130,35 @@ class KORALI(tk.Tk): #Inherited tk.tk
         
         self.toolbar.pack(side='bottom', fill='x')
         ## END DOWN TOOLBAR
-        self.crearTab(self.totalTabs,experiments,selectedtab)
-        
+
+        self.crearTab(self.totalTabs,experiments,selectedtab)             
+    
+    # In Which Experiment are we? selectedtab.
     def on_tab_selected(self,event):
         global selectedtab
         tabb = event.widget.select()
-        selectedtab = event.widget.tab(tabb,'text')
+        selectedtab = event.widget.tab(tabb,'text')       
 
+    def getNextExperimentName(self,totalTabs):
+        for n in range(1,8): # 7 MAX ALLOWED NUM EXPERIMENTS.
+            existe = False
+            exp_name = 'Experiment '+str(n)
+            for a in range(0,len(totalTabs.tabs())):
+                exp = totalTabs.tab(a,"text")
+                if exp == exp_name:
+                    existe = True
+                    break
+            if existe == False:
+                return n
+        return -1
+
+        
+    #### START - TUTORIAL
     def tutorial(self):
         def openweb(url):
             webbrowser.open(url,new=1)
         def page2():
-##            tut.destroy()
+            #tut.destroy()
             tut2 = tk.Toplevel()
             tut2.geometry('600x600+650+100')
             tut2.minsize("600","400")
@@ -175,18 +190,14 @@ class KORALI(tk.Tk): #Inherited tk.tk
             frame_tut.pack_propagate(0)
             label = tk.Label(frame_tut, text='How do I export the data?',fg='black', font = 'Arial 25 bold',background='snow')
             label.place(x=105,y=30)
-            text = tk.Label(frame_tut, text ="Korali provides an option to Export the data provided:\n"+
+            text = tk.Label(frame_tut, text ="Korali provides an option to Export the current data:\n"+
                             "'Settings -> Export File As...'.\n\n\n"+
                             "However, the file can only be saved as:\n"+
                             "'.config', '.txt' or '.log'.",
                 font = 'Arial 16', background = 'snow', fg='black')
             text.place(x=55,y=100)
             tut3.mainloop()
-
- 
             
-
-
         tut = tk.Toplevel()
         tut.geometry('1300x900+350+80')
         tut.minsize("1300","900")
@@ -196,13 +207,12 @@ class KORALI(tk.Tk): #Inherited tk.tk
         frame_tut.pack()
         
         canvas = tk.Canvas(frame_tut, width=1300, height=900)
-        img = ImageTk.PhotoImage(Image.open('images_KORALI/korali_screen.png').resize((1300, 1100), Image.ANTIALIAS)) # resize((1083, 930) 
+        img = ImageTk.PhotoImage(Image.open('images_KORALI/korali_screen.png').resize((1300, 1100), Image.ANTIALIAS))
         canvas.background = img  # Keep a reference in case this code is put in a function.
         bg = canvas.create_image(0, 0, anchor=tk.NW, image=img)
         canvas.pack()
         frame_tut.pack_propagate(0)
 
-        
         label = tk.Label(canvas, text='What do you need help with?', font = 'Arial 30 bold',background='white')
         label.place(x=350,y=30)
 
@@ -227,69 +237,64 @@ class KORALI(tk.Tk): #Inherited tk.tk
                                activebackground= selectorColor,font= 'Arial 20 bold', command = lambda: openweb('https://www.cse-lab.ethz.ch/'))
         B3.place(x=750,y=600)
 
-        version = tk.Label(canvas,text = MAIN_APP.version, font='Times 14 bold', fg='black',background='white')
+        version = tk.Label(canvas,text = MAIN_APP.version, font='Times 12 bold', fg='black',background='white')
         version.place(x=575,y=850)
 
         canvas.pack_propagate(0)
         tut.mainloop()
+    ##### END - TUTORIAL
 
+    # Call the 3 main frames and displays the main frame attached to the window.
     def crearTab(self,totalTabs,experiments,selectedtab):
-        global contador
-        contador+=1
+        print('Creating a NEW experiment !! \n')
+        print('This is the experiment Dictionary : \n')
+        for keys in experiments.keys():
+            print(experiments[keys])
 
-        if contador < 7:
-            general_first_time = True
-            self.tab = tk.Frame(totalTabs,bg='gray')
-            selectedtab = 'Experiment '+str(contador)
-            experiments[selectedtab] = {}
-            self.totalTabs.add(self.tab, text = selectedtab)
-            self.totalTabs.bind('<<NotebookTabChanged>>', self.on_tab_selected)
-            classes_FRAMES.FirstFrame(self.tab,selectedtab,experiments)
-            classes_FRAMES.SecondFrame(self.tab,selectedtab,experiments)
-            classes_FRAMES.ThirdFrame(self.tab,selectedtab,experiments)
-            
-        else:
+        general_first_time = True
+        self.tab = tk.Frame(totalTabs,bg='gray')
+        position = self.getNextExperimentName(totalTabs)
+        if position == -1:
             functions.popupmsgwarning('Number of experiments exceeded!')
-            contador += 1
+            return
+        selectedtab = 'Experiment '+str(position)
+        experiments[selectedtab] = {}
+
+        experiments[selectedtab]['times_var'] = 1
+        experiments[selectedtab]['general_first_time'] = True
+        experiments[selectedtab]['dist_first_time'] = True
+        experiments[selectedtab]['dist_times'] = 1
+        experiments[selectedtab]['rows'] = 0
+        experiments[selectedtab]['first_time_p'] = True
+        experiments[selectedtab]['first_time_s'] = True
+        experiments[selectedtab]['variables_accessible'] = True
+        experiments[selectedtab]['frame_problem'] = ''
+        experiments[selectedtab]['frame_solver'] = ''
+        experiments[selectedtab]['problems_ind'] = ''
+        experiments[selectedtab]['solvers_ind'] = ''
+        experiments[selectedtab]['ro_var'] = 4
+        experiments[selectedtab]['rows_counter_var'] = 0
+        experiments[selectedtab]['linktoVariables'] = []
+        experiments[selectedtab]['linktoVariables0'] = ''
+        experiments[selectedtab]['linktoVariables1'] = ''
+        
+        self.totalTabs.add(self.tab, text = selectedtab)
+        self.totalTabs.bind('<<NotebookTabChanged>>', self.on_tab_selected)
+        classes_FRAMES.FirstFrame(self.tab,selectedtab,experiments)
+        classes_FRAMES.SecondFrame(self.tab,selectedtab,experiments)
+        classes_FRAMES.ThirdFrame(self.tab,selectedtab,experiments)
+        last = len(totalTabs.tabs())
+        self.totalTabs.select(last-1)
+       
         
     def deleteTab(self,totalTabs):
-        global contador
-        if contador >2:
+        if len(totalTabs.tabs()) >1:
             for item in totalTabs.winfo_children():
                 if str(item)==totalTabs.select():
                     item.destroy()
-                    contador -=1
                     return
         else:
-            popupmsgwarning('At least 2 experiments to delete 1')
-
-    def hide(self):
-        """
-        hides main frame
-        """
-        print('HIDING')
-
-
-class Information(tk.Toplevel):
-    #----------------------------------------------------------------------
-    def __init__(self,directorio,link):
-        """Constructor"""
-        tk.Toplevel.__init__(self)
-        self.geometry("400x300")
-        self.title("Information")
-##        self.grab_set()
-        print('hello')
-        # create the button
-        webview.create_window(directorio, link)
-        webview.start()
-
-
-##    def onClose(self):
-##        """
-##        closes the frame and sends a message to the main frame
-##        """
-##        self.destroy()
-##        pub.sendMessage("otherFrameClosed", arg1="data")
+            popupmsgwarning('At least 1 Experiment must remain.')
 
 ## --------------- END OF CLASSES ------------------------    
 ########################################################    

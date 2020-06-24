@@ -1,28 +1,21 @@
 Mark Martori Lopez
 
 
-Tuesday 11 June 2020
+Tuesday 24 June 2020
 
 Tasks:
 
-CURRENT GOAL: Layout of the app changed. Folders of the app changed. Recode it + HTML + finish the app.
+CURRENT GOAL: Finish the app.
 
 
-0- [Solved] HTML CSE-Lab EMBEDED IN APP.
+0 - [Solved] Allow Multiple Experiments without missinterprating any variable.
 
-1- [Solved] General Settings fully FINISHED -> button, frame and conections, Import/Export.
+1 - [Solved] Finish the Tutorial Window.
 
-2- [Solved] Distributions fully FINISHED -> buttons + number of Distributions + deletion of Distributions, frame and conections and Import/Export.
+2 - [Solved] Fix Importing after having already set some variables.
 
-3- [Solved] Problem FINISHED -> Buttons, frame and Import/Export, Conections between problem/solver/variables.
+3 - [Solved] Create an Initial window asking to Import files. Can not be done, without removing the Website. Ask if we should do it or not.
 
-4- [Solved] Solver FINISHED -> Buttons, frame and Import/Export, Conections between problem/solver/variables.
-
-5- [Semi-Solved] Variables FINISHED -> Buttons + number of Variables + deletion of Variables, frame and Export,  conections between problem/solver/variables. Missing: Finish Import.
-
-6- [Solved] New Layout of the app aswell as style.
-
-function.py stores all the important functinos.
 
 
 

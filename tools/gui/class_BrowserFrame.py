@@ -28,7 +28,7 @@ WINDOWS = (platform.system() == "Windows")
 LINUX = (platform.system() == "Linux")
 MAC = (platform.system() == "Darwin")
 
-# Globals
+# Globals 
 logger = _logging.getLogger("tkinter_.py")
 
 browser_frame = None # Initial Value
