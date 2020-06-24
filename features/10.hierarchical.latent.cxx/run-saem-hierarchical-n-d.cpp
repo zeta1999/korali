@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
   e["Problem"]["Latent Space Dimensions"] = nDimensions;
 
   e["Solver"]["Type"] = "HSAEM";
-  e["Solver"]["Number Samples Per Step"] = 1; // reduce further to speed up
+  e["Solver"]["Number Samples Per Step"] = 3; // reduce further to speed up
   e["Solver"]["Termination Criteria"]["Max Generations"] = 30;
   e["Solver"]["Delta"] = 0.7;
   // Set up simulated annealing - or disable

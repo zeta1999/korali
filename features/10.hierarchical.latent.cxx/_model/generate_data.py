@@ -27,10 +27,11 @@ def logit(p):
 def transform_to_z(point, d_normal, d_lognormal, d_logitnormal):
     ''' Assumes coordinates in :param point are ordered: normal, then lognormal, then logitnormal.'''
     z = np.zeros_like(point)
+    eps = 1.e-15 # cannot be smaller than around 1.e-17
     d =  d_normal + d_lognormal + d_logitnormal
     z[ : d_normal] = point[ : d_normal]
-    z[ d_normal : d_normal+d_lognormal] = [ (np.log(p) if p > 0 else 0) for p in point[d_normal : d_normal+d_lognormal] ]
-    z[ d - d_logitnormal : ] = [(logit(p) if (0 <= p < 1) else (0 if (p < 0) else 1) )
+    z[ d_normal : d_normal+d_lognormal] = [ (np.log(p) if p > 0 else np.log(eps)) for p in point[d_normal : d_normal+d_lognormal] ]
+    z[ d - d_logitnormal : ] = [(logit(p) if (0 <= p < 1) else (logit(eps) if (p < 0) else logit(1 - eps)) )
                                 for p in point[d - d_logitnormal : ] ]
     return z
 
@@ -143,19 +144,20 @@ def generate_data_advanced():
         multiple dimensions and multiple data points per individual possible
         given latent variables, the sampled points simply are normally distributed, with sdev sigma, around the latent variable
         '''
-    n_individuals = 15
+    n_individuals = 5
     max_n_samples = 10 # each individual has between 1 and this number of data points assigned
-    sigma = .25
-    omega1 = 0.25
-    omega2 = 0.2
+    sigma = .5
+    omega1 = 1.0
+    omega2 = 0.25
     omega3 = 0.5
-    d_normal = 1
-    d_logn = 1
-    d_logitn = 1
+    d_normal = 0
+    d_logn = 0
+    d_logitn = 4
     d_latent = d_normal + d_logn + d_logitn
     d = d_latent
     # The hyperparameter
     mean = np.arange(d_latent)
+    mean = [-2, 0 , 1, 2]
     Omega = np.eye(d_latent) # the covariance matrix
     Omega *= omega1
     Omega[0,1] = omega2
@@ -233,8 +235,8 @@ def generate_data_advanced():
         individual_z_mean_mean = np.mean(individual_z_mean, axis=0)
         fd.write("\t[" + ", ".join(individual_z_mean_mean.astype(str)) + "]\n")
 
-        fd.write("\n'Sample' covariance, using the individual means as samples:\n")
-        sample_cov = np.cov(np.array(individual_z_mean).transpose())
+        fd.write("\n'Sample' covariance, using the individuals' data means as samples:\n")
+        sample_cov = np.cov(np.array(individual_z_mean).transpose(), bias=True) # (H)SAEM also uses a biased estimate.
         fd.write("\t[\n")
         for i in range(d_latent):
             fd.write("\t ["+ ", ".join(sample_cov[i, :].astype(str)) + "],\n")

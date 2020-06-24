@@ -74,8 +74,11 @@ Two Examples
    - :math:`f(z_k) = exp(z_k)` for log-normal :math:`\theta_k`, and
    - :math:`f(z_k) = \frac{1}{1 + exp(-z_k)}` for logit-normal :math:`\theta_k` (sigmoid is the inverse logit).
 
-   Data for this example can be generated with different parameters for
 
+Data for both examples can be generated with different parameters using the script `model/generate_data.py`.
+This will also write detailed information about the second example into `_model/data_advanced_info.txt`. Please
+refer to this for an estimate how difficult the generated data will be to estimate - it generates
+a number of proxies for the optimizers. These can be compared to the true / original parameter values.
 
 
 

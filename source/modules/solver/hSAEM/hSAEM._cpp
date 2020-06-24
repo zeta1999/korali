@@ -88,7 +88,12 @@ void korali::solver::HSAEM::setInitialConfiguration()
   _acceptanceRateDenominator.resize(_latentSpaceDimensions);
   std::fill(_acceptanceRateNominator.begin(), _acceptanceRateNominator.end(), 0.0);
   std::fill(_acceptanceRateDenominator.begin(), _acceptanceRateDenominator.end(), 0.0);
-  _currentSampleStandardDeviations.resize(_latentSpaceDimensions);
+  _currentSampleStandardDeviations.resize(_numberIndividuals);
+  _currentSampleMeans.resize(_numberIndividuals);
+  for(size_t i=0; i < _numberIndividuals; i++){
+    _currentSampleStandardDeviations[i].resize(_latentSpaceDimensions);
+    _currentSampleMeans[i].resize(_latentSpaceDimensions);
+  }
   _currentS1.resize(_latentSpaceDimensions);
   _currentS2.resize(_latentSpaceDimensions);
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
@@ -96,9 +101,9 @@ void korali::solver::HSAEM::setInitialConfiguration()
   std::fill(_currentS1.begin(), _currentS1.end(), 0);
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     std::fill(_currentS2[i].begin(), _currentS2[i].end(), 0);
-  _currentCholesky.resize(_latentSpaceDimensions);
-  for (size_t i = 0; i < _latentSpaceDimensions; i++)
-    _currentCholesky[i].resize(_latentSpaceDimensions);
+//  _currentCholesky.resize(_latentSpaceDimensions);
+//  for (size_t i = 0; i < _latentSpaceDimensions; i++)
+//    _currentCholesky[i].resize(_latentSpaceDimensions);
   _mcmcStandardDeviations.resize(_latentSpaceDimensions);
   std::fill(_mcmcStandardDeviations.begin(), _mcmcStandardDeviations.end(), 1.0);
 
@@ -158,6 +163,26 @@ void korali::solver::HSAEM::setInitialConfiguration()
 
   if (_latentSpaceDimensions == 1)
     _n3 = 0;
+
+  if (_logAllSamples){
+    _allSamplesThisIteration.resize(_mcmcNumberChains);
+    _allLoglikelihoodsThisIteration.resize(_mcmcNumberChains);
+    _allPriorsThisIteration.resize(_mcmcNumberChains);
+    for (size_t c = 0; c < _mcmcNumberChains; c++){
+      size_t allSteps = _mcmcOuterSteps * (_n1 + _n2 + _n3);
+      _allSamplesThisIteration[c].resize(allSteps);
+      _allLoglikelihoodsThisIteration[c].resize(allSteps);
+      _allPriorsThisIteration[c].resize(allSteps);
+      for (size_t st = 0; st < allSteps; st++)
+      {
+        _allSamplesThisIteration[c][st].resize(_numberIndividuals);
+        _allLoglikelihoodsThisIteration[c][st].resize(_numberIndividuals);
+        _allPriorsThisIteration[c][st].resize(_numberIndividuals);
+        for (size_t j = 0; j < _numberIndividuals; j++)
+          _allSamplesThisIteration[c][st][j].resize(_latentSpaceDimensions);
+      }
+    }
+  }
 
   _bestLogLikelihood = -korali::Inf;
 }
@@ -224,6 +249,12 @@ void korali::solver::HSAEM::sampleLatent()
   std::fill(_acceptanceRateDenominator.begin(), _acceptanceRateDenominator.end(), 0.0);
   std::fill(_acceptanceRateNominator.begin(), _acceptanceRateNominator.end(), 0.0);
 
+  // only needed if we log all samples
+  std::vector<std::vector<std::vector<double>>> allSamples;
+  std::vector<std::vector<double>> allLLHs;
+  std::vector<std::vector<double>> allPriors;
+  size_t counter;
+
   // int NStepsPerChain = _mcmcOuterSteps * (_n1 + _n2 + _n3);
   //  std::vector<std::vector<std::vector<std::vector<double>>>> allSamples;    // nChains x nSamples x nIndividuals x nDimensions
   //allSamples.clear();
@@ -244,6 +275,19 @@ void korali::solver::HSAEM::sampleLatent()
     std::vector<double> acceptanceRates(0);
     // Access _currentZ only twice for each chain, and hope that this allows parallelism - use chainZ in between:
     std::vector<std::vector<double>> chainZ = _currentZ[c_idx];
+    if (_logAllSamples){
+      allSamples.resize(_mcmcOuterSteps * (_n1 + _n2 + _n3));
+      allLLHs.resize(_mcmcOuterSteps * (_n1 + _n2 + _n3));
+      allPriors.resize(_mcmcOuterSteps * (_n1 + _n2 + _n3));
+      for (size_t st=0; st < _mcmcOuterSteps * (_n1 + _n2 + _n3); st++){
+        allSamples[st].resize(_numberIndividuals);
+        allLLHs[st].resize(_numberIndividuals);
+        allPriors[st].resize(_numberIndividuals);
+        for (size_t i=0; i < _numberIndividuals; i++)
+          allSamples[st][i].resize(_latentSpaceDimensions);
+      }
+      counter = 0;
+    }
 
     korali::Sample sample;
     sample["Sample Id"] = 2564236;
@@ -305,6 +349,12 @@ void korali::solver::HSAEM::sampleLatent()
             // Todo: Look at (T)MCMC, how are separate chains managed there?
             currentLLHs[indiv] = newLLHs[indiv];
           }
+        }
+        if (_logAllSamples){
+          allSamples[counter] = chainZ;
+          allLLHs[counter] = currentLLHs;
+          allPriors[counter] = std::vector<double>(_numberIndividuals, 0); // we don't track priors here
+          counter++;
         }
       }
 
@@ -369,6 +419,12 @@ void korali::solver::HSAEM::sampleLatent()
             }
           }
           _acceptanceRateDenominator[dim] += _numberIndividuals;
+        }
+        if (_logAllSamples){
+          allSamples[counter] = chainZ;
+          allLLHs[counter] = currentLLHs;
+          allPriors[counter] = currentPriors;
+          counter++;
         }
       }
 
@@ -444,6 +500,12 @@ void korali::solver::HSAEM::sampleLatent()
             for (size_t dim : randomCoords)
               _acceptanceRateDenominator[dim] += 1.0;
         }
+        if (_logAllSamples){
+          allSamples[counter] = chainZ;
+          allLLHs[counter] = currentLLHs;
+          allPriors[counter] = currentPriors;
+          counter++;
+        }
       }
       // **  update variances
       if (_n3 > 0)
@@ -466,7 +528,39 @@ void korali::solver::HSAEM::sampleLatent()
       _currentSamples[c_idx][indiv] = _latentProblem->zToLatent(chainZ[indiv]);
       }
 
+    if (_logAllSamples){
+      _allPriorsThisIteration[c_idx] = allPriors;
+      _allLoglikelihoodsThisIteration[c_idx] = allLLHs;
+      _allSamplesThisIteration[c_idx] = allSamples;
+    }
+
   } // Loop over all chains end
+
+
+   // mean and variance:
+  auto transposed3D = transpose3D(_currentSamples);
+  for (size_t indiv = 0; indiv < _numberIndividuals; indiv++){
+    auto transposed2D = transposed3D[indiv];
+    assert (transposed2D.size() == _latentSpaceDimensions);
+    _currentSampleMeans[indiv] = std::vector<double>(transposed2D.size(), 0.0);
+    _currentSampleStandardDeviations[indiv] = std::vector<double>(transposed2D.size(), 0.0);
+
+    for (size_t i = 0; i < transposed2D.size(); i++)
+    {
+      std::vector<double> mean_and_sdev = meanAndSDev(transposed2D[i]);
+      _currentSampleMeans[indiv][i] = mean_and_sdev[0];
+      _currentSampleStandardDeviations[indiv][i] = mean_and_sdev[1];
+    }
+  }
+  _currentMeanLogProbability = 0;
+  for (size_t c_idx = 0; c_idx < _mcmcNumberChains; c_idx++){
+    _currentMeanLogProbability = std::accumulate(_currentSampleLogLikelihoods[c_idx].begin(),
+                                                        _currentSampleLogLikelihoods[c_idx].end(), _currentMeanLogProbability);
+    _currentMeanLogProbability = std::accumulate(_currentSampleLogPriors[c_idx].begin(),
+                                                        _currentSampleLogPriors[c_idx].end(), _currentMeanLogProbability);
+  }
+  _currentMeanLogProbability /= double(_mcmcNumberChains);
+
 }
 
 //* @brief Update internal distribution representation of p(latent | hyper), and anneal the covariance if needed.
@@ -573,11 +667,41 @@ void korali::solver::HSAEM::updateProbabilities(){
 
 }
 
-//void korali::solver::HSAEM::updateCholesky(){
-//
-//  // TODO ?
-//
-//}
+
+/** @brief Utility function to calculate mean and standard deviation of the values in vector v. */
+std::vector<double> korali::solver::HSAEM::meanAndSDev(std::vector<double> v)
+{
+  // Todo: To save space and not duplicate code, use gsl_stats_mean() and gsl_stats_sd_m() instead.
+
+  // Origin: https://stackoverflow.com/questions/7616511/calculate-mean-and-standard-deviation-from-a-vector-of-samples-in-c-using-boos
+  double sum = std::accumulate(v.begin(), v.end(), 0.0);
+  double mean = sum / double(v.size());
+
+  std::vector<double> diff(v.size());
+  std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
+  double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  double stdev = std::sqrt(sq_sum / double(v.size()));
+  std::vector<double> result = {mean, stdev};
+  return result;
+}
+
+/** @brief Utility function, "transposes" a vector of vectors of vectors @param data, so that
+             data[i][j][k] will be moved to result[j][k][i].
+    */
+std::vector<std::vector<std::vector<double>>> korali::solver::HSAEM::transpose3D(const std::vector<std::vector<std::vector<double>>> data)
+{
+  /* From: https://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors */
+  // this assumes that all inner vectors have the same size
+  std::vector<std::vector<std::vector<double>>> result(data[0].size(), std::vector<std::vector<double>>(data[0][0].size(),
+                                                                              std::vector<double>(data.size())));
+  for (std::vector<double>::size_type j = 0; j < data[0].size(); j++)
+    for (std::vector<double>::size_type k = 0; k < data[0][0].size(); k++)
+      for (std::vector<double>::size_type i = 0; i < data.size(); i++)
+        result[j][k][i] = data[i][j][k];
+  return result;
+}
+
+
 
 void korali::solver::HSAEM::printGenerationBefore()
 {
