@@ -1,5 +1,5 @@
 #include "modules/conduit/conduit.hpp"
-#include "modules/solver/hSAEM/hSAEM.hpp"
+#include "modules/solver/HSAEM/HSAEM.hpp"
 
 #include <algorithm>
 #include <vector>
