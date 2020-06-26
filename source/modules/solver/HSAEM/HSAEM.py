@@ -120,6 +120,7 @@ def plotVariables(genList):
     for indiv in range(numIndividuals):
       ax.errorbar(x=generations, y=sample_means[:, indiv, dim], yerr=sample_sdevs[:, indiv, dim], c=colors(indiv))
     ax.set_title("All individuals, " + latentVars[dim]["Name"])
+    plt.xlabel("Generation")
 
   # fig, ax = plt.subplots(nrows=max(numLatent, numHyper) + 1, ncols=1, figsize=(15,8))
   # 2nd column: The "mean"-hyperparameters
@@ -127,6 +128,7 @@ def plotVariables(genList):
     ax = fig.add_subplot(nrows, ncols, ncols * dim + 2)
     ax.plot(generations, hyperparams_mean[:, dim])
     ax.set_title("Mean for transformed " + latentVars[dim]["Name"])
+    plt.xlabel("Generation")
 
   # 3rd column: Eigenvalues of the covariance-matrix-hyperparameter
   assert hyperparams_cov.shape[0] == numgens
@@ -150,13 +152,14 @@ def plotVariables(genList):
   ax = fig.add_subplot(nrows, ncols, ncols * 1 + 3)
   ax.plot(generations, gammas)
   ax.set_title("Gamma (Robbins-Monro decay)")
+  plt.xlabel("Generation")
 
   # Log-probabilities across generations
   ax = fig.add_subplot(nrows, ncols, ncols * 2 + 3)
   ax.plot(generations, total_logprobab, c='k')
   ax.plot(generations, total_logllh, c='orange')
   ax.plot(generations, total_logprior, c='yellow')
-  plt.xlabel("Generations")
+  plt.xlabel("Generation")
   ax.set_title("Black: Total log-probability \n Orange: Total log-likelihood \n Yellow: Total log-priors \n (mean over chains)")
   #plt.title("Log-Probability", y=1.03, fontdict={'fontweight': 8, 'fontsize': 20})
   # Additional figure: All samples
@@ -225,7 +228,7 @@ def plotVariables(genList):
       ax.plot(all_samples_x[c], all_priors[c][:, indiv], c=colors(indiv), alpha=0.6, lw=0.3)
   prior_mean = np.mean(np.array(all_priors), axis=(0,2))
   ax.plot(all_samples_x[0], prior_mean,c='k', alpha=1, lw=0.4)
-  plt.xlabel("Generation \n(Black line: mean over all individuals and chains)")
+  plt.xlabel("Generation \n\n(Black lines: mean over all individuals and chains)")
   plt.ylabel("Log-Prior")
 
   return (fig, fig2), ax
