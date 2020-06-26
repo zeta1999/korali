@@ -7,7 +7,6 @@ Creates the 3 MAIN FRAMES of the GUI..                                          
 *3 classes: FirstFrame, SecondFrame and ThirdFrame.                                                                                       #####
 *Main Function: ReadDirs - Is in charge of managing the creation and the amount of Distributions in the SecondFrame                       #####
                                                                                                                                           #####
-*MAIN DICTIONARY KEY = 4                                                                                                                  #####
 *CONT = 0 for PROBLEM.                                                                                                                    #####
 *CONT = 1 for SOLVER.                                                                                                                     #####
 *CONT = 2 for VARIABLES.                                                                                                                  #####
@@ -145,10 +144,6 @@ def crearVariables(DB):
                 variables[DB[key]['config']] = {}
         else:
             variables[DB[key]['config']] = {}
-    print('CREATION OF VARIABLES : \n')
-    print(key,variables[DB[key]['config']])
-    print('EEEEEEEEEEEEEEEEEEEEEEND VARIABLES CREATION')
-    
 ### End - VARIABLES dictionary.
 
 ### START - Creating Cascade Menus for Problem and Solver.
@@ -191,7 +186,8 @@ def cascade(mainPath,DB,cont,selectedtab,experiments):
             titulo = directorio
             break
     ff = experiments[selectedtab]['firstFrame']
-    menuButton = tk.Menubutton(ff, text = ' +   '+DB[titulo]['names'],fg =extraColor,highlightcolor=selectorColor,
+    button_name = DB[titulo]['names'][:-1]
+    menuButton = tk.Menubutton(ff, text = ' +   '+button_name,fg =extraColor,highlightcolor=selectorColor,
                                borderwidth = 0, background = selectorColor, anchor = 'w',activeforeground='teal',
                                activebackground= selectorColor,font= 'Arial 17 bold')
     menuButton.config(cursor = 'fleur')
@@ -207,29 +203,22 @@ def cascade(mainPath,DB,cont,selectedtab,experiments):
     for directorio in DB.keys():
         createMenu(menuPadre,directorio,DB,cont,x_pos,y_pos,selectedtab,experiments)
     menus.clear() # Allows creating different experiments by emptying the menus list.
-
-####### END - Creating
-
+    
+####### END - Creating Cascade Menus
 
 class FirstFrame():
     def __init__(self,master,whichtab,exp):
 
         selectedtab = whichtab
         experiments = exp
-        if selectedtab != 'Experiment 1':
-            functions.popupmsgwarning('THIS IS THE NEW SELECTEDTAB = '+selectedtab)
-        
+       
         ff = tk.Frame(master,bg=selectorColor,width=266,height=930,borderwidth= 3,relief='solid')
         ff.grid(column=0,row=0)
         ff.grid_propagate(0)
 
         # STORE A DICTIONARY WITH ALL THE FRAMES ON IT TO BE CALLED ON ANY FUNCTION AND AVOID PASSING FRAMES.
         experiments[selectedtab]['results'] = {}
-        experiments[selectedtab]['firstFrame'] = ff
-
-        self.HELP = tk.Button(ff,text = "How's it going ?", command = lambda: functions.howsitgoing(experiments,selectedtab))
-##        self.HELP.place(x=0,y=620)
-        
+        experiments[selectedtab]['firstFrame'] = ff      
 
         canvasff = tk.Canvas(ff, width=255, height=220,borderwidth = 3, relief = 'solid')
 
@@ -263,7 +252,6 @@ class SecondFrame():
         self.tf.grid(column=2,row=0)
         self.tf.grid_propagate(0)
         canvas.pack()
-        
 
         ## General Settings Button:
         ff = experiments[selectedtab]['firstFrame']
@@ -273,7 +261,8 @@ class SecondFrame():
         space2.grid(row=1,column=0)
         general_settings = tk.Button(ff,text = '+  General Settings',fg =extraColor,highlightcolor=selectorColor,
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
-                               activebackground= selectorColor,font= 'Arial 17 bold', command = lambda:class_GeneralSettings.GeneralSettings(self.sf,selectedtab,experiments))
+                               activebackground= selectorColor,font= 'Arial 17 bold',
+                                     command = lambda:class_GeneralSettings.GeneralSettings(self.sf,selectedtab,experiments))
         general_settings.config(highlightbackground=selectorColor)
         general_settings.place(x = 0, y = 100)
 
@@ -284,13 +273,15 @@ class SecondFrame():
 
         variables = tk.Button(ff,text = '+  Variables',fg =extraColor,highlightcolor=selectorColor,
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
-                               activebackground= selectorColor,font= 'Arial 17 bold', command = lambda:class_Variables.Variables.Show_frame(experiments,selectedtab))
+                               activebackground= selectorColor,font= 'Arial 17 bold',
+                              command = lambda:class_Variables.Variables.Show_frame(experiments,selectedtab))
         variables.config(highlightbackground=selectorColor)
         variables.place(x = 0, y= 445)
 
         distributions = tk.Button(ff,text = '+  Distributions',fg =extraColor,highlightcolor=selectorColor,
                                relief = 'flat', background = selectorColor, anchor = 'w',activeforeground='teal',
-                               activebackground= selectorColor,font= 'Arial 17 bold', command = lambda: class_Distributions.Distributions(self.sf,selectedtab,experiments))
+                               activebackground= selectorColor,font= 'Arial 17 bold',
+                                  command = lambda: class_Distributions.Distributions(self.sf,selectedtab,experiments))
         distributions.config(highlightbackground=selectorColor)
         distributions.place(x = 0, y= 555)
 

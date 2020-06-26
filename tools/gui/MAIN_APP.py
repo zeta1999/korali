@@ -8,7 +8,7 @@ Welcome to the Korali Graphical-User-Interface created by Mark Martori Lopez (ma
 *Defines the KORALI Version.                                                                                                              #####
 '''
 
-# if python2.7 Tkinter. ttk is like the CSS.
+# if python2.7 Tkinter. ttk -> CSS.
 from cefpython3 import cefpython as cef
 try:
     import tkinter as tk

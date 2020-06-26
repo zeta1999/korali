@@ -114,7 +114,6 @@ def importFile(self):
         popupmsgwarning('File is not readable')
     finally:
         file.close()
-    ##    bottomrightFrame = experiments[selectedtab]['variables']
     
     if parsedFile != '': # If file is readable
         valuesProblem = []
@@ -161,31 +160,28 @@ def importFile(self):
                 experiments[selectedtab]['rows_counter_var'] = 0
                 sf = experiments[selectedtab]['secondFrame']                
                 if 2 in results.keys():
-##                    print('VARIABLES ANTES DE IMPORTAR ',results[2])
-##                    for widget in selfV.winfo_children():
-##                        widget.destroy()
                     del results[2]
                 class_Variables.Variables(sf,experiments,selectedtab)
                 v = 0 # If there are several Variables Tabs in the imported file...
                 for dictionary in parsedFile[directorio]:
                     if v>0:
-                        #ro += 4
+                        experiments[selectedtab]['times_var'] += 1
                         results = experiments[selectedtab]['results']
                         res_var = experiments[selectedtab]['labels_var']
                         results[cont][experiments[selectedtab]['times_var']] = {}
                         res_var[cont][experiments[selectedtab]['times_var']] = {}
-                        ro = 7
+##                        ro = 7
+                        experiments[selectedtab]['ro_var'] += 1
                         ##            photo = PhotoImage(file = "trash1.ico")   image = photo,  -> añadir a button.
                         var = res_var[2][experiments[selectedtab]['times_var']]            
                         var['a'] =tk.Label(selfV, text='', fg=selectorColor, bg=selectorColor)
-                        var['a'].grid(row=ro, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
+                        var['a'].grid(row=experiments[selectedtab]['ro_var'], column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
+                        experiments[selectedtab]['ro_var'] += 1
                         var['b'] =tk.Button(selfV, text='Variable '+str(experiments[selectedtab]['times_var']),activebackground=selectorColor, font="Arial 16", fg='black', bg='snow',
-                                          borderwidth=1,relief='solid',command = lambda: delVar(selfV,experiments[selectedtab]['times_var'],experiments,selectedtab)) #bg = 'darkcyan', fg='white')
-                        var['b'].grid(row=ro+1, column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
-                        ro += 2
-                        printVariables2(selfV,experiments,selectedtab,cont)
-                        experiments[selectedtab]['times_var'] += 1
+                                          borderwidth=1,relief='solid',command = lambda: delVar(selfV,experiments[selectedtab]['times_var'],experiments,selectedtab))
+                        var['b'].grid(row=experiments[selectedtab]['ro_var'], column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
                         
+                        printVariables2(selfV,experiments,selectedtab,cont)
                         for key in dictionary.keys():
                             valuesVariables.append(dictionary[key])
                         v+=1
@@ -208,8 +204,7 @@ def importFile(self):
                         button.config(highlightbackground='snow')
                         button.grid(row=0,column=0,columnspan = 4)
                         printVariables2(selfV,experiments,selectedtab,cont)
-                        experiments[selectedtab]['ro_var'] += 1 # CHECK THIS ONE.
-                        experiments[selectedtab]['times_var'] += 1
+#                        experiments[selectedtab]['ro_var'] += 1 # CHECK THIS ONE.
                         v+=1
                         results = experiments[selectedtab]['results']
                         for key in dictionary.keys():
@@ -219,7 +214,6 @@ def importFile(self):
                 for key in results[cont].keys():
                     for key2 in results[cont][key]:
                         e = results[cont][key][key2]
-                        print('ESTO ES LA E = ',e)
                         e.delete(0,tk.END)
                         e.insert(0,valuesVariables[numofentry])
                         numofentry+=1
@@ -279,13 +273,10 @@ def importFile(self):
 
 
 def exportFile():
-##    global selectedtab # To know at which experiment we are.
-##    global experiments
     global files # Types of files.
 
     experiments = class_KORALI.experiments
     selectedtab = class_KORALI.selectedtab
-
 
     results = experiments[selectedtab]['results']
     ### Avoiding that the user clicks create.config without choosing a problem/solver
@@ -318,15 +309,11 @@ def exportFile():
                     w = results2[frame][distr][texto]
                     if isinstance(w,str):
                         pass
-##                        results2[frame][texto] = w
                     else:                        
                         val = w.get()
                         results2[frame][distr][texto] = val
                 distribution = results2[frame][distr]
                 res.append(distribution)
-                
-##                if results2[frame] == distr:
-##                    results2[frame] == di
             results2[frame] = res
         else:
             for texto in results2[frame]:
@@ -346,13 +333,18 @@ def exportFile():
     filesaved.close()
     return
 
-def printt():
-    pass
+def validarstring(string_Var):
+    r = False
+    if string_Var.isalpha() or string_Var == '' or ' ' in string_Var:
+        r = True
+    return r
 
 def validardigit(num):
-    # Función para validar POSITIVOS Y NEGATIVOS.
+    # Function that validates >0, <0 and -+Inf.
     r = False
-    if num == '' or num == '-':
+    if num in 'Inf' or num in '-Inf' or num in 'inf' or num in '-inf':
+        r = True
+    elif num == '' or num == '-':
         r = True
     elif num[0] == '-':
         if num[1::].isdigit():
@@ -389,38 +381,29 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
 
     ff = experiments[selectedtab]['firstFrame']
     results = experiments[selectedtab]['results']
-    
+
+    under_name = nombre
     if len(nombre)>30:
         nombre = nombre[0:30]+'...'     
 
     if cont == 0:
-        print('Entrying checkFormulario as a Problem...')
         if experiments[selectedtab]['first_time_p'] == False:
-            print('Entrying as a problem not for first time')
             if directorio == experiments[selectedtab]['frame_problem']: # If we click on the same Problem as before...
                 class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf) # We only show the frame again.
             else: # If we are choosing a different problem and not for first time:
-                print('Different Problem than before chosen')
                 ANSWER = messagebox.askyesno("Different Problem","Are you sure you want to proceed? Previous variables will vanish.")
                 if ANSWER == False:
                     return
                 else: # If 'Yes':
-                    print('New problem chosen')
                     if 'variables' in experiments[selectedtab].keys(): # Remove VARIABLES and compute it again.
                         selfV = experiments[selectedtab]['variables']
                         # Restart the variables selection
                         experiments[selectedtab]['linktoVariables0'] = ''
                         experiments[selectedtab]['linktoVariables1'] = ''
-                        print('Problem changed, there are variables')
                         for widget in selfV.winfo_children():
-                            print('Destroying widget = ',widget)
                             widget.destroy()
                         if 2 in results.keys():
-                            print(' VARIABLES REMOVED = ',results[2])
                             del results[2]
-                            print('NEW RESULTS OF THE DICTIONARY = ', results.keys())
-                    else:
-                        print('There are no variables')
 
                 if experiments[selectedtab]['problems_ind'] != '': # If problem selected is not the same as the previously chosen and we can access it...
                     for widget in ff.winfo_children():
@@ -428,7 +411,7 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                             if widget['text'] == experiments[selectedtab]['problems_ind']:
                                 widget.destroy()
                 else:
-                    print('No file named '+directorio+'.rst')
+                    popupmsgwarning('No file named '+directorio+'.rst')
                 if experiments[selectedtab]['solvers_ind'] != '':
                     for widget in ff.winfo_children():
                         if not isinstance(widget,tk.Canvas):
@@ -436,18 +419,14 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                                 widget.destroy()
                             
                 experiments[selectedtab]['first_time_s'] = True
-                print('First time Solver = ',experiments[selectedtab]['first_time_s'])
                 if 1 in results.keys():
-                    print('If Solver in Results = ',results[1])
                     del results[1]
-                    print('Solver Deleted = ',results.keys())
                     
                 if 'solver' in experiments[selectedtab].keys():
                     solver_frame = experiments[selectedtab]['solver']
                     for widget in solver_frame.winfo_children():
                         widget.destroy()
                     popupmsginfo('When choosing a new Problem, the previous chosen Solver is removed.')
-                    print('Solver frame cleaned too')
                 
                 which = tk.Button(ff,text = nombre,width=29, font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf))
                 which.config(cursor = 'watch')
@@ -455,12 +434,11 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
                 experiments[selectedtab]['problems_ind'] = nombre
                 experiments[selectedtab]['frame_problem'] = directorio # IF USERS ANSWERS YES...
                 experiments[selectedtab]['times_var'] = 1
-                class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
-                print('Calling again class_Problem')
+                class_Problem.Problems(sf,experiments,directorio,under_name,DB,cont,selectedtab)
 
         else: # IF ITS THE FIRST TIME WE CHOOSE A PROBLEM:         
             experiments[selectedtab]['first_time_p'] = False
-            class_Problem.Problems(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+            class_Problem.Problems(sf,experiments,directorio,under_name,DB,cont,selectedtab)
             experiments[selectedtab]['frame_problem'] = directorio
             which = tk.Button(ff,text = nombre,width=29,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
                               background = selectorColor,command = lambda:class_Problem.Problems.Show_frame(experiments,selectedtab,directorio,cont,tf))
@@ -472,96 +450,56 @@ def checkFormulario(sf,exp,whichtab, directorio,nombre,DB, cont,x_pos,y_pos,tf):
         
     elif cont == 1:
         experiments[selectedtab]['times_var'] = 1
-        color.write("Entrying as a Solver","STRING")
         if experiments[selectedtab]['first_time_s'] == False:
-            color.write("Entrying as a Solver NOT FOR first time","STRING")
             if directorio == experiments[selectedtab]['frame_solver']:
                 class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf)
             else:
-                color.write("If Solver selected is different from before...","STRING")
                 ANSWER = messagebox.askyesno("Different Solver","Are you sure you want to proceed? Previous variables will vanish.")
                 if ANSWER == False:
                     return
-                color.write("If YES...","STRING")
-                ##
                 for widget in ff.winfo_children():
                     if not isinstance(widget,tk.Canvas):
                         if widget['text'] == experiments[selectedtab]['solvers_ind']:
                             widget.destroy()
-                ##
                 # First thing to do, recalculate Variables. Delete previous ones in frame.
                 if 'variables' in experiments[selectedtab].keys(): # Remove VARIABLES and compute it again.
                     selfV = experiments[selectedtab]['variables']
                     results = experiments[selectedtab]['results']
                     experiments[selectedtab]['linktoVariables1'] = DB[directorio]['config']
-                    print('SOOOOLVEEER : Problem changed, there are variables')
                     for widget in selfV.winfo_children():
-                        print('SOOOOLVEEER : Destroying widget = ',widget)
                         widget.destroy()
                     if 2 in results.keys():
-                        print('SOOOOLVEEER : VARIABLES REMOVED = ',results[2])
                         del results[2]
-                        print('SOOOOLVEEER : NEW RESULTS OF THE DICTIONARY = ', results.keys())
-                else:
-                    print('SOOOOLVEEER : There are no variables')
+
                 if experiments[selectedtab]['solvers_ind'] != '':
                     for widget in ff.winfo_children():
-                        print('This is the widget = ',widget)
                         if not isinstance(widget,str):
                             pass #Avoiding an error: canvas widget doesnt have ['text'] option.
                         elif widget['text'] == experiments[selectedtab]['solvers_ind']:
-                            print("SOOOLVEEER = Destroying Solver Widget ==  ",widget)
                             widget.destroy()
                 else:
                     popupmsgwarning('Ups! Something went wrong... please restart the App')
                 if 1 in results.keys():
-                    print('SOOOOOLVEEEEEER = If Solver in Results = ',results[1])
                     del results[1]
-                    print('SOOOOOOLVER = Solver Deleted = ',results.keys())
                     
-                which2 = tk.Button(ff,text = nombre,width=29,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
+                which2 = tk.Button(ff,text = nombre,width=29,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0, background = selectorColor,
+                                   command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
                 which2.config(cursor = 'watch')
                 which2.place(x=x_pos,y=y_pos+40)
-                popupmsgwarning('CAMBIO SOLVER ID A = '+nombre)
                 experiments[selectedtab]['solvers_ind'] = nombre
                 experiments[selectedtab]['frame_solver'] = directorio # IF USERS ANSWERS YES...
-                color.write("Class_Solver being called again","STRING")
-                class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+                class_Solver.Solvers(sf,experiments,directorio,under_name,DB,cont,selectedtab)
         else:
-##            color.write("Entrying as a Solver FOR FIRST TIME","STRING")
             experiments[selectedtab]['first_time_s'] = False
-            class_Solver.Solvers(sf,experiments,directorio,nombre,DB,cont,selectedtab)
+            class_Solver.Solvers(sf,experiments,directorio,under_name,DB,cont,selectedtab)
             experiments[selectedtab]['frame_solver'] = directorio
             which2 = tk.Button(ff,text = nombre,width=29,font = 'Arial 11 bold',fg =extraColor,highlightcolor=selectorColor,borderwidth = 0,
                                background = selectorColor,command = lambda: class_Solver.Solvers.Show_frame(experiments,selectedtab,directorio,cont,tf))
             which2.config(cursor = 'watch')
             which2.place(x=x_pos,y=y_pos+40)
             experiments[selectedtab]['solvers_ind'] = nombre
-            
-def validardigit(num):
-    # Función para validar POSITIVOS Y NEGATIVOS.
-    r = False
-    if num == '' or num == '-':
-        r = True
-    elif num[0] == '-':
-        if num[1::].isdigit():
-            r= True
-    else:
-        if num.isdigit():
-            r = True
-        else:
-            r = False
-    return r
-                
-def validarstring(string_Var):
-    r = False
-    if string_Var.isalpha() or string_Var == '' or ' ' in string_Var:
-        r = True
-    return r
-
-
-
-def printdata(self,experiments,selectedtab,line, texto, r, c,cont,options):
+                     
+def printdata(self,experiments,selectedtab,line, texto, r, c,cont,options,dict_defaults):
     
     results = experiments[selectedtab]['results']
 
@@ -600,11 +538,17 @@ def printdata(self,experiments,selectedtab,line, texto, r, c,cont,options):
                 res[texto].config(validate = 'focus',validatecommand = (self.corrector,'%P')) # %P represents the parameter we want to pass to validate.
             else:
                 stringVar[texto] = tk.StringVar()
-                stringVar[texto].set("default") # default value
+                if isinstance(dict_defaults,dict):
+                    for key in dict_defaults.keys():
+                        if key == texto:
+                            default_variable = dict_defaults[key]
+                            stringVar[texto].set(default_variable) # default value
+                else:
+                    stringVar[texto].set("default") # default value
                 listoptions = []
                 for option in options:
                     listoptions.append(option['Value'])
-                res2[r] = OptionMenu(self,stringVar[texto],*listoptions)#,command = lambda _:getValOptionMenu(stringVar[texto]))
+                res2[r] = OptionMenu(self,stringVar[texto],*listoptions)
                 res2[r].config(font='Arial 13 bold',bg=color,activebackground = color,
                               width=11, foreground = 'darkcyan',disabledforeground = 'darkcyan',
                               relief = 'flat', cursor = 'fleur', highlightthickness = 0)
@@ -614,7 +558,7 @@ def printdata(self,experiments,selectedtab,line, texto, r, c,cont,options):
         elif line == 'double':
             res2[r]=tk.Label(self, text=texto, width = 25,justify='left', bg=color, anchor="w", font="Arial 15")
             res2[r].grid(row=r, column=c,pady = 2,padx=6, sticky='w')
-            res[texto] = Spinbox(self, width=18, from_=0,font='Arial 11', to=9999, wrap=True,
+            res[texto] = Spinbox(self, width=18, from_='-Infinity',font='Arial 11', to='Infinity', wrap=True,
                                  textvariable=num, state='normal',buttondownrelief = 'flat',
                                  buttonup = 'flat',highlightthickness=0)
             res[texto].grid(row=r, column=c+1, pady= 2,padx=6)
@@ -625,8 +569,9 @@ def printdata(self,experiments,selectedtab,line, texto, r, c,cont,options):
             res2[r]=tk.Label(self, text=texto, width = 25,justify='left',bg=color, anchor="w", font="Arial 15")
             res2[r].grid(row=r, column=c,pady = 2,padx=6, sticky='w')
             stringVar[texto] = tk.StringVar()
-            stringVar[texto].set("default") # default value
-            res2[r] = OptionMenu(self, stringVar[texto],"Yes", "No")#,command = lambda _:getValOptionMenu(stringVar[texto]))
+            
+            stringVar[texto].set("No") # default value
+            res2[r] = OptionMenu(self, stringVar[texto],"Yes", "No")
             res2[r].config(font='Arial 13 bold',bg=color,activebackground = color,
                               width=11, foreground = 'darkcyan',disabledforeground = 'darkcyan',
                               relief = 'flat', cursor = 'fleur', highlightthickness = 0)
@@ -676,13 +621,11 @@ def printVariables(sf,directorio,cont,experiments,selectedtab):
         res_var[2] = {}
         
         if experiments[selectedtab]['linktoVariables0'] !='':
-            print('AÑADIENDO DESDE PROBLEM A linktoVariables = ', experiments[selectedtab]['linktoVariables0'])
             experiments[selectedtab]['linktoVariables'].append(experiments[selectedtab]['linktoVariables0'])    # Añadimos las variables que vienen del Problem.
         else:
             popupmsgwarning('This Problem does not have Variables, choose another one.')
             return        
         if experiments[selectedtab]['linktoVariables1'] !='':
-            print('AÑADIENDO DESDE SOLVER A linktoVariables = ', experiments[selectedtab]['linktoVariables1'])
             experiments[selectedtab]['linktoVariables'].append(experiments[selectedtab]['linktoVariables1'])    # Añadimos las variables que vienen del Solver.
         else:
             popupmsgwarning('Solver does not have Variables, proceeding without them...')
@@ -711,7 +654,7 @@ def printVariables(sf,directorio,cont,experiments,selectedtab):
     else:
         results[2][experiments[selectedtab]['times_var']] = {}
         res_var[2][experiments[selectedtab]['times_var']] = {}
-        ##            photo = PhotoImage(file = "trash1.ico")   image = photo,  -> añadir a button.
+        ##            photo = PhotoImage(file = "trash1.ico")   image = photo,  -> Add to button to show a trash image next to it.
         var = res_var[2][experiments[selectedtab]['times_var']]
         times_var = experiments[selectedtab]['times_var']
         var['a'] =tk.Label(selfV, text='', fg=selectorColor, bg=selectorColor)
@@ -750,13 +693,12 @@ def delVar(self,which,experiments,selectedtab):
     experiments[selectedtab]['times_var'] -= 1
     experiments[selectedtab]['ro_var'] -= experiments[selectedtab]['rows_counter_var'] # Adding 2 due to the title of the variables.
     experiments[selectedtab]['ro_var'] -= 2
-    
-    
-    # Clean the frame:
-##    for widget in selfV.winfo_children():
-##            widget.destroy()
+
 def printVariables2(selfV,experiments,selectedtab,cont):
+    dict_defaults_var = ''
+    experiments[selectedtab]['avoid_repetition'] = []
     experiments[selectedtab]['rows_counter_var'] = 0
+    experiments[selectedtab]['ro_var'] += 1
     results = experiments[selectedtab]['results']
     co = 0
     variables = classes_FRAMES.variables
@@ -772,11 +714,14 @@ def printVariables2(selfV,experiments,selectedtab,cont):
                         options = llave['Options'] # options = list of diccionaries.
                     except:
                         options = 'None'
-                        
-                    printdata(selfV,experiments,selectedtab,line, texto, experiments[selectedtab]['ro_var'], co, cont,options)
-                    experiments[selectedtab]['ro_var']+=1
-                    experiments[selectedtab]['rows_counter_var'] += 1
-    
+                    if texto in experiments[selectedtab]['avoid_repetition']: # AVOID PROBLEM AND SOLVER ADDING SAME VARIABLE.
+                        pass
+                    else:
+                        experiments[selectedtab]['avoid_repetition'].append(texto)
+                        printdata(selfV,experiments,selectedtab,line, texto, experiments[selectedtab]['ro_var'], co, cont,options,dict_defaults_var)
+                        experiments[selectedtab]['ro_var']+=1
+                        experiments[selectedtab]['rows_counter_var'] += 1
+        
 
     
 def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
@@ -799,21 +744,19 @@ def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
     results = experiments[selectedtab]['results']
     results[cont] = {}
 
+    under_name = nombre
     if len(nombre) > 25:
         nombre = nombre[0:25]+'...'
-    # Start reading and printing on screen: # DON'T DELETE THIS COMMENT -> TITULO FRAMES : list(DB.keys())[0]
-##    self.titulo=tk.Label(self, text=directorio,justify='left', anchor="w", font="Arial 18", bg = 'darkcyan', fg='white')
-##    self.titulo.grid(row=r, column=c,pady = 10 ,padx=20, sticky='w', columnspan = 2)
+
     efake =tk.Label(self, text='', fg=colorProblem, bg=colorProblem)
     efake.grid(row=0, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
-    e =tk.Button(self, text=nombre,activebackground='aliceblue', font="Arial 20", fg='black', bg=colorProblem,borderwidth=2,relief='solid', command = lambda : functions.Clear(self.gs)) #bg = 'darkcyan', fg='white')
+    e =tk.Button(self, text=nombre,activebackground='aliceblue', font="Arial 20", fg='black', bg=colorProblem,borderwidth=2,relief='solid')
     e.grid(row=1, column=0,columnspan=4,pady = 4 ,padx=10, sticky='n')
-    edescr =tk.Label(self, text='Click title to clear the variables...', font="Arial 10", fg='navy', bg=colorProblem) #bg = 'darkcyan', fg='white')
+    edescr =tk.Label(self, text= under_name, font="Arial 10", fg='navy', bg=colorProblem)
     edescr.grid(row=2, column=0,columnspan=4,rowspan=1,pady = 4 ,padx=10, sticky='n')
     efake =tk.Label(self, text='', fg=colorProblem, bg=colorProblem)
     efake.grid(row=3, column=0,columnspan=4,pady = 10 ,padx=10, sticky='nw')
 
-##    chosen = titulo.cget('text')
     results[cont]['Type']= directorio #chosen
 
     config = DB[directorio]['herencia']
@@ -821,6 +764,13 @@ def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
 
     r = 4
     c = 0
+
+    dict_defaults = {}
+    ## Get Default Values:
+    if 'Module Defaults' in config.keys():
+        experiments[selectedtab]['dict_defaults'] = config['Module Defaults']
+    else:
+        experiments[selectedtab]['dict_defaults'] = ''
     
     if conf_sett in config.keys():
     # Loop through herencia.
@@ -835,7 +785,7 @@ def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
                         else:  
                             for key2 in dicc.keys():
                                 if key2 == 'Type':
-                                    # key2 son las llaves del diccionario, por ejemplo: Type, Function, Description, Produced By...
+                                    # key2 are dictionary keys, ex: Type, Function, Description, Produced By...
                                     texto = dicc['Name']
                                     texto = texto[0] # Remove the {} from the label name.
                                     description = dicc['Description']
@@ -844,7 +794,7 @@ def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
                                     except:
                                         options = 'None'
 
-                                    printdata(self,experiments,selectedtab,dicc[key2], texto, r, c,cont,options)                                    
+                                    printdata(self,experiments,selectedtab,dicc[key2], texto, r, c,cont,options,experiments[selectedtab]['dict_defaults'])                                    
                                 r+=1
     else:
         popupmsgwarning('No Configuration Settings found')
@@ -853,8 +803,7 @@ def printConfig(self,experiments,selectedtab,directorio,nombre,DB, cont):
 def popupmsgwarning(text):
     Tk().withdraw()
     showwarning(title = 'Warning',message=text)
-##    showinfo(title = 'Info',message=text)
-##    showerror(title = 'Error',message=text)
+
 def popupmsginfo(text):
     Tk().withdraw()
     showinfo(title = 'Info', message = text)

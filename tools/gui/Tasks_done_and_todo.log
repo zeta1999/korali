@@ -1,20 +1,22 @@
 Mark Martori Lopez
 
 
-Tuesday 24 June 2020
+Thursday 25 June 2020
 
 Tasks:
 
 CURRENT GOAL: Finish the app.
 
 
-0 - [Solved] Allow Multiple Experiments without missinterprating any variable.
+0 - [Solved] Open window before starting asking to Import. It is not possible due to multi thread when showing WEBSITE description of problem and solver.
 
-1 - [Solved] Finish the Tutorial Window.
+1 - [Solved] Fix buttons from First Frame.
 
-2 - [Solved] Fix Importing after having already set some variables.
+2 - [Solved] Fix INF and -INF options inside Double type variables.
 
-3 - [Solved] Create an Initial window asking to Import files. Can not be done, without removing the Website. Ask if we should do it or not.
+3 - [Solved] Fix DEFAULT options and convert them into the Default option found in the .config file under Modules Default.
+
+4 - [Solved] Prepare presentation for Tuesday 30/06/20.
 
 
 

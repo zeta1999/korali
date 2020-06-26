@@ -58,9 +58,9 @@ class Distributions():
         self.efake =tk.Label(self.dist, text='', fg=selectorColor, bg=selectorColor)
         self.efake.grid(row=0, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
         self.e =tk.Button(self.dist, text='Distributions',activebackground='aliceblue', font="Arial 20", fg='black', bg=selectorColor,
-                          borderwidth=2,relief='solid', command = lambda : self.display_Distributions(self.dist,c,4,selectedtab,experiments)) #bg = 'darkcyan', fg='white')
+                          borderwidth=2,relief='solid', command = lambda : self.display_Distributions(self.dist,c,4,selectedtab,experiments))
         self.e.grid(row=1, column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
-        self.edescr =tk.Label(self.dist, text='Click title to add a Distribution...', font="Arial 10", fg='navy', bg=selectorColor) #bg = 'darkcyan', fg='white')
+        self.edescr =tk.Label(self.dist, text='Click title to add a Distribution...', font="Arial 10", fg='navy', bg=selectorColor)
         self.edescr.grid(row=2, column=0,columnspan=4,rowspan=1,pady = 4 ,padx=10, sticky='n')
         self.efake =tk.Label(self.dist, text='', fg=selectorColor, bg=selectorColor)
         self.efake.grid(row=3, column=0,columnspan=4,pady = 10 ,padx=10, sticky='nw')
@@ -89,9 +89,6 @@ class Distributions():
 
     # Deletes the Distribution from the frame and its values from the results dictionary.
     def delDistr(self,which,selectedtab,experiments):
-        global rows_counter_var
-        print('ENTRO : ',experiments[selectedtab]['rows'])
-
         results = experiments[selectedtab]['results']
         for key in results[4].keys():
             if which > experiments[selectedtab]['dist_times']:
@@ -114,7 +111,6 @@ class Distributions():
         experiments[selectedtab]['rows'] -= 7       
     
     def display_Distributions(self,dist,c,cont,selectedtab,experiments):    # Displays the labels and the widgets regarding Distributions.
-        
         if experiments[selectedtab]['dist_times'] > 3:
             functions.popupmsgwarning('No more Distributions available')
             return
@@ -131,7 +127,7 @@ class Distributions():
             res2['l'].grid(row=experiments[selectedtab]['rows'], column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
             experiments[selectedtab]['rows']+=1
             res2['b'] =tk.Button(self.dist, text='Distribution '+str(experiments[selectedtab]['dist_times']),activebackground='aliceblue', font="Arial 16", fg='black', bg=selectorColor,
-                          borderwidth=1,relief='solid',command = lambda: self.delDistr(experiments[selectedtab]['dist_times'],selectedtab,experiments)) #bg = 'darkcyan', fg='white')
+                          borderwidth=1,relief='solid',command = lambda: self.delDistr(experiments[selectedtab]['dist_times'],selectedtab,experiments)) 
             res2['b'].grid(row=experiments[selectedtab]['rows'], column=0,columnspan=2,pady = 4 ,padx=10, sticky='n')
             experiments[selectedtab]['dist_times'] += 1
         else:

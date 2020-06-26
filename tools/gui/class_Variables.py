@@ -34,19 +34,19 @@ class Variables():
         # master is the frame from the previous class where we want to insert data.
       
         self.variables = tk.Frame(master,bg=selectorColor,width=495,height=925)
-##        self.variables.grid(column=0,row=0)
+##        self.variables.grid(column=0,row=0)  DO NOT GRID NOW, WAIT UNTIL CLICKING Variables Button.
 ##        self.variables.grid_propagate(0)
 
         experiments[selectedtab]['variables'] = self.variables
         res_var = {}
         experiments[selectedtab]['labels_var'] = res_var
+        
 
         efake =tk.Label(self.variables, text='', fg=colorProblem, bg=colorProblem)
 ##        efake.grid() No grid, to avoid displaying the widget but using its position.
-        e =tk.Button(self.variables, text='Variables',activebackground='aliceblue', font="Arial 20", fg='black', bg=colorProblem,borderwidth=2,relief='solid',
-                     command = lambda : functions.Clear(self.gs)) #bg = 'darkcyan', fg='white')
+        e =tk.Button(self.variables, text='Variables', font="Arial 20", fg='black', bg=colorProblem,borderwidth=2,relief='solid') 
         e.grid(row=1, column=0,columnspan=4,pady = 4 ,padx=10, sticky='n')
-        edescr =tk.Label(self.variables, text='Click title to clear the variables...', font="Arial 10", fg='navy', bg=colorProblem) #bg = 'darkcyan', fg='white')
+        edescr =tk.Label(self.variables, text='Click Add button to create new variables...', font="Arial 10", fg='navy', bg=colorProblem)
         edescr.grid(row=2, column=0,columnspan=4,rowspan=1,pady = 4 ,padx=10, sticky='n')
         efake1 =tk.Label(self.variables, text='', fg=colorProblem, bg=colorProblem)
         efake1.grid(row=3, column=0,columnspan=4,pady = 10 ,padx=5, sticky='nw')

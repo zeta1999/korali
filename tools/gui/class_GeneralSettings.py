@@ -6,7 +6,7 @@
 *1 class: GeneralSettings                                                                                                                 #####
 *Main Function: display_generalSettings - Is in charge of managing the creation of the General Settings Frame in the SecondFrame          #####
                                                                                                                                           #####
-*MAIN DICTIONARY KEY = 'Random Seed'                                                                                                                  #####
+*MAIN DICTIONARY KEY = 'Random Seed'                                                                                                      #####
 '''
 try:
     import tkinter as tk
@@ -55,9 +55,10 @@ class GeneralSettings():
             
             self.efake =tk.Label(self.gs, text='', fg=selectorColor, bg=selectorColor)
             self.efake.grid(row=0, column=0,columnspan=4,pady = 20 ,padx=10, sticky='nw')
-            self.e =tk.Button(self.gs, text='General Settings',activebackground='aliceblue', font="Arial 20", fg='black', bg=selectorColor,borderwidth=2,relief='solid', command = lambda : functions.Clear(self.gs)) #bg = 'darkcyan', fg='white')
+            self.e =tk.Button(self.gs, text='General Settings',activebackground='aliceblue', font="Arial 20", fg='black', bg=selectorColor,borderwidth=2,
+                              relief='solid')
             self.e.grid(row=1, column=0,columnspan=4,pady = 4 ,padx=10, sticky='n')
-            self.edescr =tk.Label(self.gs, text='Click title to clear the variables...', font="Arial 10", fg='navy', bg=selectorColor) #bg = 'darkcyan', fg='white')
+            self.edescr =tk.Label(self.gs, text='Main configuration variables...', font="Arial 10", fg='navy', bg=selectorColor)
             self.edescr.grid(row=2, column=0,columnspan=4,rowspan=1,pady = 4 ,padx=10, sticky='n')
             self.efake =tk.Label(self.gs, text='', fg=selectorColor, bg=selectorColor)
             self.efake.grid(row=3, column=0,columnspan=4,pady = 10 ,padx=10, sticky='nw')
@@ -71,13 +72,12 @@ class GeneralSettings():
         experiments[selectedtab]['general_first_time'] = False
 
     def Show_frame(self,experiments,selectedtab):
-        print('THIS IS THE EXPERIMENT = ',experiments)
-        print('AND THIS IS THE SELECTEDTAB = ',selectedtab)
         general_settings = experiments[selectedtab]['generalSettings']
         general_settings.tkraise()
 
     def display_generalSettings(self,gs,r,c,cont,selectedtab,experiments):
-        c=0   
+        c=0
+        dict_defaults = {"Verbosity": "Normal"}
         results = experiments[selectedtab]['results']
         mainConf = experiments[selectedtab]['mainConf']
         titulos = []
@@ -98,11 +98,10 @@ class GeneralSettings():
                                     titulo = texto[0]
                                     texto = texto[1]
                                     if titulo not in titulos:
-                                        e2 =tk.Label(self.gs, text=titulo,justify='left', anchor="w", font="Arial 18 bold", fg='navy', bg=selectorColor) #bg = 'darkcyan', fg='white')
+                                        e2 =tk.Label(self.gs, text=titulo,justify='left', anchor="w", font="Arial 18 bold", fg='navy', bg=selectorColor)
                                         e2.grid(row=r, column=c,columnspan= 1,pady = 25 ,padx=4, sticky='w')
                                         titulos.append(titulo)
                                         cont=titulo
-                                        print('THIS IS THE TITULO = ',cont)
                                         results[cont] = {}
                                 else:
                                     texto = texto[0] # Get the element inside list.
@@ -110,13 +109,13 @@ class GeneralSettings():
                                     break
                                 else:
                                     if key2 == 'Type':
-                                        # key2 son las llaves del diccionario, por ejemplo: Type, Function, Description, Produced By...
+                                        # key2 are the dictionary keys, example: Type, Function, Description, Produced By...
                                         description = dicc['Description']
                                         try:
                                             options = dicc['Options'] # options = list of diccionaries.
                                         except:
                                             options = 'None'
                                         fakedescription = description
-                                        functions.printdata(self.gs,experiments,selectedtab,dicc[key2], texto, r, c,cont,options)                                    
+                                        functions.printdata(self.gs,experiments,selectedtab,dicc[key2], texto, r, c,cont,options,dict_defaults)                                    
                                     r+=1
 

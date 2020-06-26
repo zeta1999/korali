@@ -33,7 +33,7 @@ class Problems():
         self.problem.grid(column=0,row=0)
         self.problem.grid_propagate(0)
 
-        # Sstore this frame in the experiments dictionary.
+        # Store this frame in the experiments dictionary.
         experiments[selectedtab]['problem'] = self.problem
 
         results = experiments[selectedtab]['results']

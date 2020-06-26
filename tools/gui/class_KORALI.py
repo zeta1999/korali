@@ -51,10 +51,7 @@ selectedtab = ''
 ### FUNCTIONS:
 def popupmsgwarning(text):
     Tk().withdraw()
-    showwarning(title = 'Warning',message=text)
-##    showinfo(title = 'Info',message=text)
-##    showerror(title = 'Error',message=text)
-    
+    showwarning(title = 'Warning',message=text)   
 
 ########
 ####### MAIN CLASS:
@@ -66,9 +63,6 @@ class KORALI(tk.Tk): #Inherited tk.tk
     def __init__(self,*args,**kwargs): # Self is implied, you don't need to pass self, but is a must.
         tk.Tk.__init__(self,*args,**kwargs)
  
-##        tk.Tk.wm_title(self,'KORALI')
-
-
         ## MAIN TOOLBAR ----------
         # FILE MENU:
         self.menubar = tk.Menu(self) # Menu in the container.
@@ -91,7 +85,6 @@ class KORALI(tk.Tk): #Inherited tk.tk
         self.experimentMenu.add_separator()
 
         self.newMenu.add_command(label = 'Experiment', command = lambda:self.crearTab(self.totalTabs,experiments,selectedtab))
-        self.newMenu.add_command(label = 'Distribution', command = lambda: class_Distributions.Distributions)
 
         self.deleteMenu.add_command(label = 'Experiment', command = lambda:self.deleteTab(self.totalTabs))
 
@@ -157,8 +150,8 @@ class KORALI(tk.Tk): #Inherited tk.tk
     def tutorial(self):
         def openweb(url):
             webbrowser.open(url,new=1)
+            
         def page2():
-            #tut.destroy()
             tut2 = tk.Toplevel()
             tut2.geometry('600x600+650+100')
             tut2.minsize("600","400")
@@ -179,7 +172,6 @@ class KORALI(tk.Tk): #Inherited tk.tk
             tut2.mainloop()
 
         def page3():
-##            tut.destroy()
             tut3 = tk.Toplevel()
             tut3.geometry('600x600+350+80')
             tut3.minsize("600","400")
@@ -246,10 +238,6 @@ class KORALI(tk.Tk): #Inherited tk.tk
 
     # Call the 3 main frames and displays the main frame attached to the window.
     def crearTab(self,totalTabs,experiments,selectedtab):
-        print('Creating a NEW experiment !! \n')
-        print('This is the experiment Dictionary : \n')
-        for keys in experiments.keys():
-            print(experiments[keys])
 
         general_first_time = True
         self.tab = tk.Frame(totalTabs,bg='gray')
