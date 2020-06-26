@@ -38,13 +38,14 @@ int main(int argc, char *argv[])
 
   e["Solver"]["Type"] = "HSAEM";
   e["Solver"]["Number Samples Per Step"] = 3; // reduce further to speed up
-  e["Solver"]["Termination Criteria"]["Max Generations"] = 30;
+  e["Solver"]["Termination Criteria"]["Max Generations"] = 40;
   e["Solver"]["Delta"] = 0.7;
   // Set up simulated annealing - or disable
   e["Solver"]["Use Simulated Annealing"] = false;
 //  e["Solver"]["Simulated Annealing Decay Factor"] = 0.8;
 //  e["Solver"]["Simulated Annealing Initial Variance" ] = 1.;
 //  e["Solver"]["K1"] = 10;
+  e["Solver"]["N1"] = 5;
 
   e["Distributions"][0]["Name"] = "Uniform 0";
   e["Distributions"][0]["Type"] = "Univariate/Uniform";
@@ -91,7 +92,7 @@ int main(int argc, char *argv[])
     e["Variables"][dimCounter]["Prior Distribution"] = "Uniform 2"; // not used (?) but required
     dimCounter++;
   }
-  e["File Output"]["Frequency"] = 50;
+  e["File Output"]["Frequency"] = 1;
   e["Console Output"]["Frequency"] = 1;
   e["Console Output"]["Verbosity"] = "Detailed";
 

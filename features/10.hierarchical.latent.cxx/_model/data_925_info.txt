@@ -1,5 +1,5 @@
 # The optimizing hyperparameter (the mean):
-# 	0.402
+# 	1.066
 # Original mean (used to create data):
 # 	1
 # Original hyperparameter variance:

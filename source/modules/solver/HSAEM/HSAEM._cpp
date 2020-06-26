@@ -163,6 +163,9 @@ void korali::solver::HSAEM::setInitialConfiguration()
 
   if (_latentSpaceDimensions == 1)
     _n3 = 0;
+  if (_latentProblem->_logitnormalLatentIndices.size() > 0.75 * (_latentSpaceDimensions))
+    _n1 = 0; // For Logit-Normal variables, the first "chain", first N1 steps, are very unstable. That is
+             // because the LLH is a bad indicator for logit-normals, and the first steps rely purely on LLH as acceptance criterion.
 
   if (_logAllSamples){
     _allSamplesThisIteration.resize(_mcmcNumberChains);
@@ -429,13 +432,18 @@ void korali::solver::HSAEM::sampleLatent()
       }
 
       // **  update variances
-      for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
+      if (_n2 > 0)
       {
-        _acceptanceRate[dim] = _acceptanceRateNominator[dim] / _acceptanceRateDenominator[dim];
-        _mcmcStandardDeviations[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
-        assert(_mcmcStandardDeviations[dim] > 0.);
+        for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
+        {
+          _acceptanceRate[dim] = ( _acceptanceRateNominator[dim]) /( _acceptanceRateDenominator[dim]);
+          _mcmcStandardDeviations[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
+          assert(_mcmcStandardDeviations[dim] > 0.);
+        }
+//        // ** reset acceptance rate tracker to zero
+//        std::fill(_acceptanceRateDenominator.begin(), _acceptanceRateDenominator.end(), 0.0);
+//        std::fill(_acceptanceRateNominator.begin(), _acceptanceRateNominator.end(), 0.0);
       }
-
 
       // *****************************
       // ** 3rd proposal distribution:
@@ -511,10 +519,15 @@ void korali::solver::HSAEM::sampleLatent()
       if (_n3 > 0)
         for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
         {
-          _acceptanceRate[dim] = _acceptanceRateNominator[dim] / _acceptanceRateDenominator[dim];
+          if (_acceptanceRateDenominator[dim] == 0)
+            continue; // This can happen if a coordinate is never selected as part of any random set
+          _acceptanceRate[dim] = (_acceptanceRateNominator[dim]) /( _acceptanceRateDenominator[dim]);
           _mcmcStandardDeviations[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
           assert(_mcmcStandardDeviations[dim] > 0.);
         }
+//        // ** reset acceptance rate tracker to zero
+//        std::fill(_acceptanceRateDenominator.begin(), _acceptanceRateDenominator.end(), 0.0);
+//        std::fill(_acceptanceRateNominator.begin(), _acceptanceRateNominator.end(), 0.0);
 
 
     } // Chain loop end
