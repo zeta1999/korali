@@ -23,7 +23,9 @@ def main():
   d2_initialLatentValues = np.random.normal(0.5, 0.5, (d2_numberLatentVars))
   d2_initialHyperparams = np.random.normal(0, 1, (d2_numberHyperparams))
 
-  gaussian_sampler_obj = MultimodalGaussianSampler(distrib2._p.points, distrib2._p.nDimensions, distrib2._p.nClusters)
+  gaussian_sampler_obj = MultimodalGaussianSampler(distrib2._p.points, 
+                                                   distrib2._p.nDimensions, 
+                                                   distrib2._p.nClusters)
 
   multimodal_gaussian_sampler = lambda s: gaussian_sampler_obj.sampleLatent(s)
 
@@ -61,10 +63,14 @@ def main():
     for dim in range(distrib2._p.nDimensions):
       e["Variables"][variable_counter]["Name"] = "mu_" + str(cluster_idx) + "_" + str(dim)
       e["Variables"][variable_counter]["Bayesian Type"] = "Hyperparameter"
-      e["Variables"][variable_counter]["Prior Distribution"] = "Uniform 1"  # not used (?) but required
-      e["Variables"][variable_counter]["Initial Value"] = d2_initialHyperparams[variable_counter]
-      e["Variables"][variable_counter]["Upper Bound"] = e["Distributions"][1]["Maximum"]
-      e["Variables"][variable_counter]["Lower Bound"] = e["Distributions"][1]["Minimum"]
+      e["Variables"][variable_counter][
+          "Prior Distribution"] = "Uniform 1"  # not used (?) but required
+      e["Variables"][variable_counter]["Initial Value"] = d2_initialHyperparams[
+          variable_counter]
+      e["Variables"][variable_counter]["Upper Bound"] = e["Distributions"][1][
+          "Maximum"]
+      e["Variables"][variable_counter]["Lower Bound"] = e["Distributions"][1][
+          "Minimum"]
 
       variable_counter += 1
 
@@ -79,10 +85,12 @@ def main():
   # * Latent variables
   latent_counter = 0
   for cluster_idx in range(distrib2._p.nPoints):
-    e["Variables"][variable_counter]["Name"] = "cluster_assignment_" + str(latent_counter)
+    e["Variables"][variable_counter]["Name"] = "cluster_assignment_" + str(
+        latent_counter)
     e["Variables"][variable_counter]["Bayesian Type"] = "Latent"
     e["Variables"][variable_counter]["Prior Distribution"] = "Multinomial 2"
-    e["Variables"][variable_counter]["Initial Value"] = d2_initialLatentValues[latent_counter]
+    e["Variables"][variable_counter]["Initial Value"] = d2_initialLatentValues[
+        latent_counter]
 
     variable_counter += 1
     latent_counter += 1

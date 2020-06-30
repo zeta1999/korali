@@ -34,7 +34,8 @@ e['Solver']['Covariance Function'] = 'CovSum ( CovSEiso, CovNoise)'
 
 e['Solver']['Optimizer']['Type'] = 'Optimizer/Rprop'
 e['Solver']['Optimizer']['Termination Criteria']['Max Generations'] = 1000
-e['Solver']['Optimizer']['Termination Criteria']['Parameter Relative Tolerance'] = 1e-8
+e['Solver']['Optimizer']['Termination Criteria'][
+    'Parameter Relative Tolerance'] = 1e-8
 
 e['Console Output']['Verbosity'] = 'Normal'
 e['Console Output']['Frequency'] = 10
@@ -46,7 +47,7 @@ k.run(e)
 
 x = np.linspace(0, 14, 1000)
 x = [[i] for i in x.tolist()]
-y = e.test(x)
+y = e.evaluate(x)
 
 z = [i + j for i, j in zip(x, y)]
 
