@@ -23,8 +23,8 @@ except ImportError:
 import class_KORALI
 
 # KORALI's VERSION:
-version = 'Korali v1.0.4 (03/05/2020)'
-version_no_date = 'KORALI 1.0.4'
+version = 'Korali v2.0.0 (15/06/2020)'
+version_no_date = 'Korali v2.0.0'
 
 
 
@@ -36,6 +36,7 @@ if __name__ == "__main__":
     cef.Initialize()
     app.mainloop()
     cef.Shutdown()
+
 
 
 
