@@ -46,10 +46,10 @@ class HSAEM : public korali::Solver
     */
   void updateProbabilities();
 
-  /**
-  * @brief initial things to run to test the hierarchical latent problem class. To be deleted.
-  */
-  void justTesting();
+//  /**
+//  * @brief initial things to run to test the hierarchical latent problem class. To be deleted.
+//  */
+//  void justTesting();
 
   /** @brief Utility function to convert a vector of vectors into a concatenated 1D vector.
   *   @param v: The vector of vectors to flatten

@@ -160,12 +160,12 @@ def plotVariables(genList):
   ax.plot(generations, total_logllh, c='orange')
   ax.plot(generations, total_logprior, c='yellow')
   plt.xlabel("Generation")
-  ax.set_title("Black: Total log-probability \n Orange: Total log-likelihood \n Yellow: Total log-priors \n (mean over chains)")
+  ax.set_title("Black: Total log-probability \n Orange: Total log-likelihood \n Yellow: Total log-prior \n (Mean over chains)")
   #plt.title("Log-Probability", y=1.03, fontdict={'fontweight': 8, 'fontsize': 20})
   # Additional figure: All samples
   numrows2 = numLatentSpaceDims + 3
   fig2, ax2 = plt.subplots(nrows=numrows2, ncols=1, figsize=(20,26))
-  plt.suptitle(
+  plt.suptitle( "SAEM Plotter, Page 2:\n"
       "Latent Variables, All Samples\n",
       fontweight='bold',
       fontsize=20)
