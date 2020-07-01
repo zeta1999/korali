@@ -26,7 +26,7 @@ def main():
 
     # We need to add one dimension to _p.data, because one individual in the general case could have
     # more than one data point assigned
-    data_vector = [[]] * distrib._p.nIndividuals
+    data_vector = [[] for _ in range(distrib._p.nIndividuals)]
     for i in range(distrib._p.nIndividuals):
         data_vector[i].append([distrib._p.data[i]])
     # e["Problem"]["Data"] = data_vector
