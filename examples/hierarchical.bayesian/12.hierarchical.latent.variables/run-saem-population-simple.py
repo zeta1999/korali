@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('./_model')
+sys.path.append('./_model/simple_example_Lavielle')
 from model import *
 from tutorial_samplers import *
 
@@ -71,7 +71,11 @@ def main():
 
     k.run(e)
 
-
+    print("------------ Experiment finished ------------\n")
+    print(" --- Compare results to true optimizer in ")
+    print("     '_data/simple_example_Lavielle/data_925_info.txt' ")
+    print(" --- Plot experiment stats with ")
+    print("     'python3 -m korali.plotter'")
 
 
 if __name__ == '__main__':

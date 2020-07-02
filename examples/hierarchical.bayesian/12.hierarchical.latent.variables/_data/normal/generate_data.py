@@ -1,14 +1,14 @@
 import numpy as np
-import pandas as pd
 
-import sys
-sys.path.append('./_model/normal')
-sys.path.append('../../_model/normal')
+import sys, os
+scriptdir = os.path.dirname(os.path.abspath(__file__))
+# sys.path.append('./_model/normal')
+sys.path.append(os.path.join(scriptdir, '../../_model/normal'))
 from model import *
 
-def generate_logistic_data(N, x):
+def generate_normal_data(N=None, x=None):
     '''
-    :param N:
+    :param N: Num individuals
     :param x: list of time points
     :returns: y: The observed values at each time point in x
               theta: Latent variable vectors, one for each individual
@@ -18,31 +18,22 @@ def generate_logistic_data(N, x):
 
 
     FLAG = 1
-    N = 10 # number individuals
-    x =  np.array([np.arange(0,10.1,0.5) for _ in range(N)])
-
-
-    Nx = x.shape[1]
+    if N is None:
+        N = 200 # ?
+    Nx = 1
+    if x is None:
+        x =  np.array([0 for _ in range(N)])
 
     y = np.zeros((N, Nx))
-    theta = np.zeros((N, 3))
+    theta = np.zeros((N, 2))
 
     for i in range(N):
+        theta[i, 0] = np.random.normal(5, 0.1)
+        theta[i, 1] = 1
 
-        theta[i, 0] = np.random.normal(200, 20)
-        theta[i, 1] = np.random.normal(40, 10)
-        theta[i, 2] = np.random.normal(1, 0.1)
-        theta[i, 3] = 5
-
-        y[i,:] = my_model(x[i,:], theta[i, 1: 3] )
-        error =  np.random.normal(0, theta[i, 4], size=(1, Nx))
+        y[i,:] = normalModel(x[i], theta[i, 0] )
+        error =  np.random.normal(0, theta[i, 1], size=(1, Nx))
         y[i,:] = y[i,:] + error
-
-        # df =
-        # data.x = x[i,:]
-        # data.y = y[i,:]
-        # data.theta = theta[i, 0:3]
-        # data.std_data = theta[i, 3]
 
         file_name = f'{folder_name}data_set_{i:3d}.mat'
         # with open(file_name, 'w') as fd:
@@ -58,3 +49,7 @@ def generate_logistic_data(N, x):
         fd.writelines([ '%f \t %f \t %f\n' % (id, x_, y_) for id, x_, y_ in zip(all_data_ids, all_data_x, all_data_y)])
 
     return y, theta, FLAG
+
+
+if __name__ == '__main__':
+    generate_normal_data()

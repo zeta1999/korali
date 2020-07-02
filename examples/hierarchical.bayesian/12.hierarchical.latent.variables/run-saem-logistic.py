@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('./_model/normal')
+sys.path.append('./_model/logistic')
 sys.path.append('./_model')
 from model import *
 from utils import generate_variable
@@ -12,7 +12,7 @@ import korali
 
 def main():
     # Initialize the distribution
-    distrib = NormalConditionalDistribution()
+    distrib = LogisticConditionalDistribution()
 
     # # rng = np.random.default_rng()
     # # initial_hyperparams = rng.standard_normal(2) # 1d mean and cov
@@ -36,7 +36,10 @@ def main():
 
     e["Solver"]["Type"] = "HSAEM"
     e["Solver"]["Number Samples Per Step"] = 5
-    e["Solver"]["Termination Criteria"]["Max Generations"] = 40
+    e["Solver"]["Use Simulated Annealing"] = True
+    e["Solver"]["Simulated Annealing Decay Factor"] = 0.9
+    e["Solver"]["Simulated Annealing Initial Variance"] = 100 # -> sdev = 10
+    e["Solver"]["Termination Criteria"]["Max Generations"] = 200
 
     e["Distributions"][0]["Name"] = "Uniform 0"
     e["Distributions"][0]["Type"] = "Univariate/Uniform"
@@ -75,7 +78,7 @@ def main():
 
     e["File Output"]["Frequency"] = 1
     e["Console Output"]["Frequency"] = 1
-    e["Console Output"]["Verbosity"] = "Normal" # "Detailed" results in all latent variable means being printed - we have 200 of them here, so better suppress this.
+    e["Console Output"]["Verbosity"] = "Detailed"
 
     k.run(e)
 

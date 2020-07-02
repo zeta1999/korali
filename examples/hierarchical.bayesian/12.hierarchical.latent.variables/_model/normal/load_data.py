@@ -15,13 +15,18 @@ class NormalData():
     def __init__(self):
         self.nIndividuals = None
         self.nDataTotal = None
+        self.nDataDimensions = 1
+        self.nLatentSpaceDimensions = None
+        self.dNormal = None
+        self.dLognormal = None
+        self.dLogitnormal = None
 
         self.error = "ind" # no other choice
         self.error_model = "constant" # might add "proportional" option
 
         self.nSamplesEach = []
         self.data = []
-        filename = '../../_data/normal/all_data.txt'
+        filename = '_data/normal/all_data.txt'
         delimiterIn = '\t'
         print(f"Loading data from {filename} ... \n")
         with open(filename, "r") as fd:
@@ -37,15 +42,26 @@ class NormalData():
                 self.nSamplesEach[i] = np.sum(data[:, 0] == i)
             assert np.sum(self.nSamplesEach) == len(data)
 
-        self.beta = 2
-        self.omega = [[1**2]]
-        self.alpha = 1
-        self.Nmp = self.N = 1
-        self.transf = 0
+        for i in range(self.nIndividuals):
+            self.data.append(data[data[:, 0] == i])
+
+        self.beta = [2, 2]
+        self.omega = np.eye(2)
+        self.Nmp = len(self.beta) - 1
+        self.N = len(self.beta)
+        self.nLatentSpaceDimensions = len(self.beta)
         self.omega_chol = np.linalg.cholesky(self.omega)
         self.sigma = 1 * np.eye(self.N)
 
-        self.data = data
+        self.transf = 0
+        self.err_transf = 1
+        self.dNormal = np.sum(self.transf == 0) + np.sum(self.err_transf == 0)
+        self.dLognormal = np.sum(self.transf == 1) + np.sum(self.err_transf == 1)
+        self.dProbitnormal = np.sum(self.transf == 2) + np.sum(self.err_transf == 2)
+        self.dLogitnormal = np.sum(self.transf == 3) + np.sum(self.err_transf == 3)
+        assert self.dProbitnormal == 0, "Probitnormal variables not yet implemented"
+
+
 
     #
     # def reset_to(self, nIndividuals, sigma, omega, data, nSamplesEach=1):

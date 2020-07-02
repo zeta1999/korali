@@ -1,70 +1,65 @@
 import numpy as np
 
-import sys
-sys.path.append('./_model/logistic')
-sys.path.append('../../_model/logistic')
+import sys, os
+scriptdir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(scriptdir, '../../_model/logistic'))
 from model import *
 
-
-def generate_logistic_data(N, x, FLAG):
-    ''' '''
-
-
-% function[y, theta] = make_data(N, x, FLAG)
-
-folder_name = './';
-
-addpath('../../models/logistic/');
-
-FLAG = 1;
-
-N = 10;
-x = repmat(0:0.5: 10, N, 1 );
+def generate_logistic_data(N=None, x=None):
+    '''
+    :param N: Num individuals
+    :param x: list of time points
+    :returns: y: The observed values at each time point in x
+              theta: Latent variable vectors, one for each individual
+              FLAG: 1, to indicate that ...
+    '''
+    folder_name = './'
 
 
-Nx = size(x, 2);
-
-y = zeros(N, Nx);
-theta = zeros(N, 3);
-
-for i = 1:N
-
-theta(i, 1) = normrnd(200, 20);
-theta(i, 2) = normrnd(40, 10);
-theta(i, 3) = normrnd(1, 0.1);
-theta(i, 4) = 5;
-
-y(i,:) = my_model(x(i,:), theta(i, 1: 3) );
+    FLAG = 1
+    if N is None:
+        N = 10 # number individuals
+    if x is None:
+        x =  np.array([np.arange(0,10.1,0.5) for _ in range(N)])
 
 
-error = normrnd(0, theta(i, 4), 1, Nx);
-y(i,:) = y(i,:) + error;
+    Nx = x.shape[1]
 
-data.x = x(i,:);
-data.y = y(i,:);
-data.theta = theta(i, 1:3);
-data.std_data = theta(i, 4);
+    y = np.zeros((N, Nx))
+    theta = np.zeros((N, 4))
 
-file_name = [folder_name 'data_set_' sprintf('%03d', i) '.mat'];
-save(file_name, 'data');
+    for i in range(N):
 
-end
+        theta[i, 0] = np.random.normal(200, 20)
+        theta[i, 1] = np.random.normal(40, 10)
+        theta[i, 2] = np.random.normal(1, 0.1)
+        theta[i, 3] = 5
 
-all_data = [reshape(repmat(1:N, Nx, 1), N * Nx, 1 ), reshape(x
-',N*Nx,1 ) , reshape( y', N * Nx, 1 )];
+        y[i,:] = logisticModel(x[i,:], theta[i, :3] )
+        error =  np.random.normal(0, theta[i, 3], size=(1, Nx))
+        y[i,:] = y[i,:] + error
 
-fileID = fopen('all_data.txt', 'w');
-fprintf(fileID, '%6s \t %6s \t %s\n', 'ID', 'time', 'y');
-fprintf(fileID, '%f \t %f \t %f\n', all_data
-');
-fclose(fileID);
+        # df =
+        # data.x = x[i,:]
+        # data.y = y[i,:]
+        # data.theta = theta[i, 0:3]
+        # data.std_data = theta[i, 3]
 
-clf
-plot(x
-',y', '-o', 'LineWidth', 2)
-ax = gca;
+        file_name = f'{folder_name}data_set_{i:3d}.mat'
+        # with open(file_name, 'w') as fd:
+        #     fd.writelines([f'{x_} {y_} {}'])
+        # save(file_name, 'data')
 
-ax.FontSize = 15;
+    all_data_ids = np.array([np.arange(N) for _ in range(Nx)]).flatten()[:, np.newaxis]
+    all_data_x = x.flatten()[:, np.newaxis]
+    all_data_y = y.flatten()[:, np.newaxis]
+    assert len(all_data_ids) == len(all_data_x) == len(all_data_y)
+    with open('all_data.txt', 'w') as fd:
+        fd.write( '%6s \t %6s \t %s\n' % ("ID", "time", "y"))
+        fd.writelines([ '%f \t %f \t %f\n' % (id, x_, y_) for id, x_, y_ in zip(all_data_ids, all_data_x, all_data_y)])
 
-grid
-on
+    return y, theta, FLAG
+
+
+if __name__ == '__main__':
+    generate_logistic_data()

@@ -15,13 +15,22 @@ class LogisticData():
     def __init__(self):
         self.nIndividuals = None
         self.nDataTotal = None
+        self.nDataDimensions = 1
+        self.nLatentSpaceDimensions = None
+        # par_transf = [0 0 0]; --> three variables, all normal
+        self.dNormal = None
+        self.dLognormal = None
+        self.dProbitnormal = None
+        self.dLogitnormal = None
 
-        self.error = "ind" # no other choice
+
+        self.error = "ind" # no other choice than individual errors
         self.error_model = "constant" # might add "proportional" option
 
         self.nSamplesEach = []
         self.data = []
-        filename = '../../_data/logistic/all_data.txt'
+        # Must be run from the example top directory, i.e. the place where _data and _model are subdirectories
+        filename = '_data/logistic/all_data.txt'
         delimiterIn = '\t'
         print(f"Loading data from {filename} ... \n")
         with open(filename, "r") as fd:
@@ -37,15 +46,27 @@ class LogisticData():
                 self.nSamplesEach[i] = np.sum(data[:, 0] == i)
             assert np.sum(self.nSamplesEach) == len(data)
 
-        self.beta = [100, 1, 1]
-        self.omega = 2 * np.diag([1, 1, 1])
-        self.alpha = 1
-        self.Nmp = self.N = len(self.beta)
-        self.transf = [0, 0, 0]
+        for i in range(self.nIndividuals):
+            self.data.append(data[data[:, 0] == i])
+
+        self.beta = [1, 1, 1, 1]
+        self.omega = 100 * np.diag([1, 1, 1, 1])
+        # self.alpha = 1
+        self.Nmp = len(self.beta) - 1
+        self.N = len(self.beta)
+        self.nLatentSpaceDimensions = len(self.beta)
         self.omega_chol = np.linalg.cholesky(self.omega)
         self.sigma = 1 * np.eye(self.N)
 
-        self.data = data
+        self.transf = np.array([0, 0, 0])
+        self.err_transf = 1
+        self.dNormal = np.sum(self.transf == 0) + np.sum(self.err_transf == 0)
+        self.dLognormal = np.sum(self.transf == 1) + np.sum(self.err_transf == 1)
+        self.dProbitnormal = np.sum(self.transf == 2) + np.sum(self.err_transf == 2)
+        self.dLogitnormal = np.sum(self.transf == 3) + np.sum(self.err_transf == 3)
+        assert self.dProbitnormal == 0, "Probitnormal variables not yet implemented"
+
+
 
     #
     # def reset_to(self, nIndividuals, sigma, omega, data, nSamplesEach=1):

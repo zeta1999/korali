@@ -20,7 +20,8 @@ class SimplePopulationData():
         self.data = []
 
         print("Loading data from data_925.in ... \n")
-        with open("_data/data_925.in", "r") as fd:
+        # Must be run from the example top directory, i.e. the place where _data and _model are subdirectories
+        with open("_data/simple_example_Lavielle/data_925.in", "r") as fd:
             firstline = fd.readline().strip("\n ").split(" ")
             self.nIndividuals, self.nSamplesEach = map(int, firstline[:2])
             self.sigma, self.omega = map(float, firstline[2:])
@@ -39,38 +40,38 @@ class SimplePopulationData():
         self.nSamplesEach = nSamplesEach
         assert len(data) == nIndividuals
 
-
-class PopulationData():
-    def __init__(self):
-        self.nIndividuals = None
-        self.nDimensions = None
-        self.maxNSamples = None
-        self.nSamplesEach = []
-        self.sigma = None
-        self.dNormal = None
-        self.dLognormal = None
-        self.dLogitnormal = None
-        self.data = None
-
-        filenm = "data_advanced.in"
-        print(f"Loading data from {filenm} ... ")
-        with open(f'_data/{filenm}', "r") as fd:
-            firstline = fd.readline().strip("\n ").split(" ")
-            self.nIndividuals, self.nDimensions, self.maxNSamples = map(int, firstline[:3])
-            self.sigma = float(firstline[3])
-            self.dNormal, self.dLognormal, self.dLogitnormal = map(int, firstline[4:])
-            self.data = [[] for _ in range(self.nIndividuals)]
-            self.nSamplesEach = np.zeros((self.nIndividuals))
-
-            for i in range(self.nIndividuals):
-                c, numSamples = fd.readline().strip("\n ").split(" ")
-                numSamples = int(numSamples)
-                self.nSamplesEach[i] = numSamples
-                assert c == "N"
-                self.data[i] = np.zeros((numSamples, self.nDimensions))
-                for j in range(numSamples):
-                    self.data[i][j] = extr(fd.readline(), tofloat=True)
-
-        # test
-        print(self.data[0].shape)
-        print(len(self.data))
+#
+# class PopulationData():
+#     def __init__(self):
+#         self.nIndividuals = None
+#         self.nDimensions = None
+#         self.maxNSamples = None
+#         self.nSamplesEach = []
+#         self.sigma = None
+#         self.dNormal = None
+#         self.dLognormal = None
+#         self.dLogitnormal = None
+#         self.data = None
+#
+#         filenm = "data_advanced.in"
+#         print(f"Loading data from {filenm} ... ")
+#         with open(f'_data/{filenm}', "r") as fd:
+#             firstline = fd.readline().strip("\n ").split(" ")
+#             self.nIndividuals, self.nDimensions, self.maxNSamples = map(int, firstline[:3])
+#             self.sigma = float(firstline[3])
+#             self.dNormal, self.dLognormal, self.dLogitnormal = map(int, firstline[4:])
+#             self.data = [[] for _ in range(self.nIndividuals)]
+#             self.nSamplesEach = np.zeros((self.nIndividuals))
+#
+#             for i in range(self.nIndividuals):
+#                 c, numSamples = fd.readline().strip("\n ").split(" ")
+#                 numSamples = int(numSamples)
+#                 self.nSamplesEach[i] = numSamples
+#                 assert c == "N"
+#                 self.data[i] = np.zeros((numSamples, self.nDimensions))
+#                 for j in range(numSamples):
+#                     self.data[i][j] = extr(fd.readline(), tofloat=True)
+#
+#         # test
+#         print(self.data[0].shape)
+#         print(len(self.data))
