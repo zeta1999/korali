@@ -50,7 +50,8 @@ def generate_logistic_data(N=None, x=None):
         #     fd.writelines([f'{x_} {y_} {}'])
         # save(file_name, 'data')
 
-    all_data_ids = np.array([np.arange(N) for _ in range(Nx)]).flatten()[:, np.newaxis]
+    all_data_ids = np.array([ [k] * len(np.arange(0,10.1,0.5)) for k in range(N)]).flatten()[:, np.newaxis]
+    #all_data_ids = np.array([np.arange(N) for _ in range(Nx)]).flatten()[:, np.newaxis]
     all_data_x = x.flatten()[:, np.newaxis]
     all_data_y = y.flatten()[:, np.newaxis]
     assert len(all_data_ids) == len(all_data_x) == len(all_data_y)

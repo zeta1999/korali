@@ -134,8 +134,8 @@ pointsInfoStructAdvanced &populationData()
   __pa.maxNSamples = maxNSamples;
   __pa.nSamplesEach = nSamplesEach;
   __pa.sigma = sigma;
-  __pa.dNormal = dNormal;
-  __pa.dLognormal = dLognormal;
+  __pa.dNormal = dNormal; //0
+  __pa.dLognormal = dLognormal; //2
   __pa.dLogitnormal = dLogitnormal;
 
   return __pa;

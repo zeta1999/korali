@@ -150,9 +150,9 @@ def generate_data_advanced():
     omega1 = 1.0
     omega2 = 0.25
     omega3 = 0.5
-    d_normal = 1
+    d_normal = 0
     d_logn = 2
-    d_logitn =  2
+    d_logitn =  0
     d_latent = d_normal + d_logn + d_logitn
     d = d_latent
     # The hyperparameter

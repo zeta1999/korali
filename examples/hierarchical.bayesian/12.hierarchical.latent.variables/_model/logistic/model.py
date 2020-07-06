@@ -11,7 +11,7 @@ import load_data
 def logisticModel(x, theta):
     assert len(theta) >= 3
     # logistic function
-    f = np.exp(theta[2] * x) # can give inf if theta[2] is very large
+    f = np.exp(float(theta[2]) * x) # can give inf if theta[2] is very large
     y = (theta[0] * theta[1] * f) / (theta[0] + theta[1] * (f - 1.))
 
     if np.isscalar(x):
@@ -25,8 +25,8 @@ def logisticModel(x, theta):
 
 class LogisticConditionalDistribution():
     ''' Model 7:
-        Data generation process: yi = f(xi, theta) + eps,
-                where eps ~ N(0, alpha) (alpha is the standard deviation and is known from the model.)
+        Data generation process: yi = f(xi, theta[:3]) + eps,
+                where eps ~ N(0, theta[3]) ( theta[3] is the standard deviation)
             Everything is one-dimensional.
 
     '''
@@ -70,5 +70,8 @@ class LogisticConditionalDistribution():
             sample["Conditional LogLikelihood"] = -1.e200
         else:
             log2pi = 0.5 * np.log(2 * np.pi)
-            logp = -log2pi - 0.5 * np.log(float(det)) - 0.5 * err / sigma2
+            if ( sigma2 == 0 ):
+                logp = -np.inf
+            else:
+                logp = -log2pi - 0.5 * np.log(float(det)) - 0.5 * err / sigma2
             sample["Conditional LogLikelihood"] = logp

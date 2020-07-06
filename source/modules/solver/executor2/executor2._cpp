@@ -1,0 +1,96 @@
+#include "modules/conduit/conduit.hpp"
+#include "modules/solver/executor2/executor2.hpp"
+
+/* Todo: Could add a "Test Function" as parameter, that will be evaluated on each sample after the evaluation
+          function has been run on it, and which has to return 0.
+
+    Feel free to add more parameter- and result types.
+    */
+
+namespace korali
+{
+namespace solver
+{
+/* @brief This is always run before (re-)starting the solver */
+void Executor2::initialize()
+{
+  _executionsPerGeneration = std::min(_executionsPerGeneration, _maxModelEvaluations - _modelEvaluationCount);
+   // For each result, resize the vectors to store them at each generation
+   for(std::string name : _doubleResultNames)
+     _doubleResultValues[name].resize(_executionsPerGeneration);
+   for(std::string name : _vectorResultNames)
+     _vectorResultValues[name].resize(_executionsPerGeneration);
+   for(std::string name : _vectorOfVectorsResultNames)
+     _vectorOfVectorsResultValues[name].resize(_executionsPerGeneration);
+}
+
+
+void Executor2::runGeneration()
+{
+  std::vector<Sample> samples(_executionsPerGeneration);
+
+  for (size_t i = 0; i < _executionsPerGeneration; i++)
+  {
+    _k->_logger->logInfo("Detailed", "Running sample %zu ", _modelEvaluationCount);
+     //with values:\n         ", _modelEvaluationCount);
+//    for (auto &x : sampleData) _k->_logger->logData("Detailed", " %le   ", x);
+    _k->_logger->logData("Detailed", "\n");
+
+    samples[i]["Module"] = "Problem";
+    samples[i]["Operation"] = _functionToExecute;
+
+    std::map<std::string, double>::iterator itd;
+    std::map<std::string, std::vector<double>>::iterator itv;
+    std::map<std::string, std::vector<std::vector<double>>>::iterator itvv;
+    for ( itd =  _doubleParameters.begin(); itd != _doubleParameters.end(); itd++ ){
+        std::string paramName =  itd->first;
+        samples[i][paramName] = itd->second;
+    }
+    for ( itv =  _vectorParameters.begin(); itv != _vectorParameters.end(); itv++ ){
+        std::string paramName =  itv->first;
+        samples[i][paramName] = itv->second;
+    }
+    for ( itvv =  _vectorOfVectorsParameters.begin(); itvv != _vectorOfVectorsParameters.end(); itvv++ ){
+        std::string paramName =  itvv->first;
+        samples[i][paramName] = itvv->second;
+    }
+    samples[i]["Sample Id"] = _modelEvaluationCount;
+    _conduit->start(samples[i]);
+    _modelEvaluationCount++;
+  }
+
+  _conduit->waitAll(samples);
+
+  if (_testFunction){
+    for (size_t i = 0; i < _executionsPerGeneration; i++)
+      samples[i].run(_testFunction);
+  }
+
+
+  for (size_t i = 0; i < _executionsPerGeneration; i++)
+  { // This looks a bit useless, but it's good if you want to print out the results or just look at it during debugging
+   for(std::string name : _doubleResultNames)
+     _doubleResultValues[name][i] = KORALI_GET(double, samples[i], name);
+//     _doubleResultValues[name][i] = samples[i][name].get<double>();
+   for(std::string name : _vectorResultNames)
+     _vectorResultValues[name][i] = KORALI_GET(std::vector<double>, samples[i], name);
+//     _vectorResultValues[name][i] =  samples[i][name].get<std::vector<double>>();
+   for(std::string name : _vectorOfVectorsResultNames)
+     _vectorOfVectorsResultValues[name][i] =  KORALI_GET(std::vector<std::vector<double>>, samples[i], name);  ;
+//     _vectorOfVectorsResultValues[name][i] = samples[i][name].get<std::vector<std::vector<double>>>();
+   }
+
+}
+
+void Executor2::printGenerationBefore()
+{
+}
+
+void Executor2::printGenerationAfter()
+{
+  _k->_logger->logInfo("Minimal", "Total Executions %lu.\n", _modelEvaluationCount);
+}
+
+} // namespace solver
+
+} // namespace korali

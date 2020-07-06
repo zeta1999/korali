@@ -16,6 +16,9 @@ void korali::solver::HSAEM::runGeneration()
   if (_k->_currentGeneration == 1) setInitialConfiguration();
 
   _k->_logger->logInfo("Normal", "Running generation %lu...\n", _k->_currentGeneration);
+//
+//  volatile int done = 0;
+//  while (!done) sleep(1);
 
   /* E1: Sample latent variable values */
   sampleLatent();
@@ -294,20 +297,20 @@ void korali::solver::HSAEM::sampleLatent()
     }
 
     korali::Sample sample;
-    sample["Sample Id"] = 2564236;
+    sample["Sample Id"] = 2564236; // Todo: is this a problem? Re-using the same Sample Id
     sample["Module"] = "Problem";
 
     // ** For each chain, the zeta values to restart from are: _currentZ
     //    - wait, then we have multiple _currentZ's, one for each chain? At least? So nrChains == nrMCMCSamples?
 
     // ** Chain initialization
-    std::vector<std::vector<double>> eta(_numberIndividuals); // NrIndividuals x NrDimensions
-    for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
-    {
-      eta[indiv].resize(_latentSpaceDimensions);
-      // current eta = current z - current mean
-      std::transform(chainZ[indiv].begin(), chainZ[indiv].end(), _currentHyperparametersMean.begin(), eta[indiv].begin(), std::minus<double>());
-    }
+//    std::vector<std::vector<double>> eta(_numberIndividuals); // NrIndividuals x NrDimensions
+//    for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
+//    {
+//      eta[indiv].resize(_latentSpaceDimensions);
+//      // current eta = current z - current mean
+//      std::transform(chainZ[indiv].begin(), chainZ[indiv].end(), _currentHyperparametersMean.begin(), eta[indiv].begin(), std::minus<double>());
+//    }
 
     // ** Loop over one chain
     for (size_t step = 0; step < _mcmcOuterSteps; step++)

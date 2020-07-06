@@ -23,29 +23,29 @@ int main(int argc, char *argv[])
   e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent";
   e["Problem"]["Conditional Log Likelihood Function"] = &distrib5_conditional_p; // defined in model.cpp
 
-  // We need to add one dimension to _p.data, because one individual in the general case could have
-  // more than one data point assigned
-//  std::vector<std::vector<std::vector<double>>> dataVector(nIndividuals);
-//  for (size_t i = 0; i < nIndividuals; i++)
-//  {
-//    dataVector[i].clear();
-//    dataVector[i].push_back(distrib5._p.data[i]);
-//  }
   e["Problem"]["Data"] = distrib5._p.data;  // data: length: nIndividuals; each of its entries is a vector of different length
   e["Problem"]["Data Dimensions"] = nDimensions;
   e["Problem"]["Number Individuals"] = nIndividuals;
   e["Problem"]["Latent Space Dimensions"] = nDimensions;
 
   e["Solver"]["Type"] = "HSAEM";
-  e["Solver"]["Number Samples Per Step"] = 3; // reduce further to speed up
-  e["Solver"]["Termination Criteria"]["Max Generations"] = 40;
+  e["Solver"]["Number Samples Per Step"] = 5; // reduce further to speed up
+  e["Solver"]["Termination Criteria"]["Max Generations"] = 250;
   e["Solver"]["Delta"] = 0.7;
   // Set up simulated annealing - or disable
-  e["Solver"]["Use Simulated Annealing"] = false;
-//  e["Solver"]["Simulated Annealing Decay Factor"] = 0.8;
-//  e["Solver"]["Simulated Annealing Initial Variance" ] = 1.;
-//  e["Solver"]["K1"] = 10;
-  e["Solver"]["N1"] = 5;
+  e["Solver"]["Use Simulated Annealing"] = true;
+  e["Solver"]["Simulated Annealing Decay Factor"] = 0.9;
+  e["Solver"]["Simulated Annealing Initial Variance" ] = 1.;
+ // e["Solver"]["K1"] = 10;
+//  e["Solver"]["N1"] = 5;
+  e["Solver"]["mcmc Outer Steps"] = 1;
+  e["Solver"]["mcmc Target Acceptance Rate"] = 0.3;
+  e["Solver"]["N1"] = 2;
+  e["Solver"]["N2"] = 2;
+  e["Solver"]["N3"] = 2;
+  e["Solver"]["Use Simulated Annealing"] = true;
+  e["Solver"]["Simulated Annealing Decay Factor"] = 0.95;
+  e["Solver"]["Simulated Annealing Initial Variance"] = 1.;
 
   e["Distributions"][0]["Name"] = "Uniform 0";
   e["Distributions"][0]["Type"] = "Univariate/Uniform";

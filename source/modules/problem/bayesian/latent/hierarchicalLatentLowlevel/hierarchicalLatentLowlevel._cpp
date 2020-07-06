@@ -391,8 +391,8 @@ std::vector<double> korali::problem::bayesian::latent::HierarchicalLatentLowleve
     counter++;
   }
   assert(counter == _latentSpaceDimensions); // Else implementation error. The indices overlap, that should not be possible.
-  for (size_t i=0; i<theta.size(); i++)
-    assert(!isinf(theta[i]));
+//  for (size_t i=0; i<theta.size(); i++)
+//    assert(!isinf(theta[i]));
   return theta;
 }
 

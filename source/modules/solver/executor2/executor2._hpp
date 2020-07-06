@@ -1,0 +1,42 @@
+#ifndef _KORALI_SOLVER_EXECUTOR2_HPP_
+#define _KORALI_SOLVER_EXECUTOR2_HPP_
+
+#include "modules/solver/solver.hpp"
+
+#include <vector>
+#include <map>
+
+namespace korali
+{
+namespace solver
+{
+class Executor2 : public Solver
+{
+  private:
+  public:
+  /**
+  * @brief Run when starting and re-starting the solver.
+  */
+  void initialize() override;
+
+  /**
+  * @brief Generate a sample and evaluate it.
+  */
+  void runGeneration() override;
+
+  /**
+  * @brief Console Output before generation runs.
+  */
+  void printGenerationBefore() override;
+
+  /**
+  * @brief Console output after generation.
+  */
+  void printGenerationAfter() override;
+
+};
+
+} // namespace solver
+} // namespace korali
+
+#endif // _KORALI_SOLVER_EXECUTIOR2_HPP_

@@ -22,7 +22,7 @@ class NormalData():
         self.dLogitnormal = None
 
         self.error = "ind" # no other choice
-        self.error_model = "constant" # might add "proportional" option
+        self.error_model = "constant" #  "proportional" might also work but is untested
 
         self.nSamplesEach = []
         self.data = []
@@ -53,7 +53,7 @@ class NormalData():
         self.omega_chol = np.linalg.cholesky(self.omega)
         self.sigma = 1 * np.eye(self.N)
 
-        self.transf = 0
+        self.transf = 1
         self.err_transf = 1
         self.dNormal = np.sum(self.transf == 0) + np.sum(self.err_transf == 0)
         self.dLognormal = np.sum(self.transf == 1) + np.sum(self.err_transf == 1)

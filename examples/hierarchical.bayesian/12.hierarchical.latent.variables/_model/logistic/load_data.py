@@ -44,6 +44,8 @@ class LogisticData():
             self.nSamplesEach = np.zeros((self.nIndividuals))
             for i in range(self.nIndividuals):
                 self.nSamplesEach[i] = np.sum(data[:, 0] == i)
+            import pdb
+            pdb.set_trace()
             assert np.sum(self.nSamplesEach) == len(data)
 
         for i in range(self.nIndividuals):
