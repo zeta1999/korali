@@ -83,7 +83,7 @@ def main():
 
     e["File Output"]["Frequency"] = 1
     e["Console Output"]["Frequency"] = 1
-    e["Console Output"]["Verbosity"] = "Normal" # "Detailed" results in all latent variable means being printed - we have 200 of them here, so better suppress this.
+    e["Console Output"]["Verbosity"] = "Detailed" #"Normal" # "Detailed" results in all latent variable means being printed - we have 200 of them here, so better suppress this.
 
     k.run(e)
 

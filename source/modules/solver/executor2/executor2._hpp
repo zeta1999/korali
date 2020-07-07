@@ -13,6 +13,11 @@ namespace solver
 class Executor2 : public Solver
 {
   private:
+  /**
+  * @brief Internal function, set user-defined parameters of different types for the sample before it is run.
+  */
+  void setParameters(korali::Sample& sample);
+
   public:
   /**
   * @brief Run when starting and re-starting the solver.

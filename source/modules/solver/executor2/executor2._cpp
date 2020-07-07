@@ -1,8 +1,8 @@
 #include "modules/conduit/conduit.hpp"
 #include "modules/solver/executor2/executor2.hpp"
 
-/* Todo: Could add a "Test Function" as parameter, that will be evaluated on each sample after the evaluation
-          function has been run on it, and which has to return 0.
+/* Todo: Could add a "Parameter Setter Function" as parameter, as alternative to defining the parameters at the start
+        -- Would have advantage: Can set different parameters each generation or execution
 
     Feel free to add more parameter- and result types.
     */
@@ -38,23 +38,9 @@ void Executor2::runGeneration()
 
     samples[i]["Module"] = "Problem";
     samples[i]["Operation"] = _functionToExecute;
-
-    std::map<std::string, double>::iterator itd;
-    std::map<std::string, std::vector<double>>::iterator itv;
-    std::map<std::string, std::vector<std::vector<double>>>::iterator itvv;
-    for ( itd =  _doubleParameters.begin(); itd != _doubleParameters.end(); itd++ ){
-        std::string paramName =  itd->first;
-        samples[i][paramName] = itd->second;
-    }
-    for ( itv =  _vectorParameters.begin(); itv != _vectorParameters.end(); itv++ ){
-        std::string paramName =  itv->first;
-        samples[i][paramName] = itv->second;
-    }
-    for ( itvv =  _vectorOfVectorsParameters.begin(); itvv != _vectorOfVectorsParameters.end(); itvv++ ){
-        std::string paramName =  itvv->first;
-        samples[i][paramName] = itvv->second;
-    }
     samples[i]["Sample Id"] = _modelEvaluationCount;
+    setParameters(samples[i]);
+
     _conduit->start(samples[i]);
     _modelEvaluationCount++;
   }
@@ -62,8 +48,12 @@ void Executor2::runGeneration()
   _conduit->waitAll(samples);
 
   if (_testFunction){
-    for (size_t i = 0; i < _executionsPerGeneration; i++)
+    for (size_t i = 0; i < _executionsPerGeneration; i++){
+      // Insert the parameters another time, in some functions, parameters are overwritten:
+      setParameters(samples[i]);
+
       samples[i].run(_testFunction);
+    }
   }
 
 
@@ -80,6 +70,26 @@ void Executor2::runGeneration()
 //     _vectorOfVectorsResultValues[name][i] = samples[i][name].get<std::vector<std::vector<double>>>();
    }
 
+}
+
+void Executor2::setParameters(korali::Sample& sample)
+{
+  std::map<std::string, double>::iterator itd;
+  std::map<std::string, std::vector<double>>::iterator itv;
+  std::map<std::string, std::vector<std::vector<double>>>::iterator itvv;
+
+  for ( itd =  _doubleParameters.begin(); itd != _doubleParameters.end(); itd++ ){
+    std::string paramName =  itd->first;
+    sample[paramName] = itd->second;
+  }
+  for ( itv =  _vectorParameters.begin(); itv != _vectorParameters.end(); itv++ ){
+     std::string paramName =  itv->first;
+     sample[paramName] = itv->second;
+  }
+  for ( itvv =  _vectorOfVectorsParameters.begin(); itvv != _vectorOfVectorsParameters.end(); itvv++ ){
+    std::string paramName =  itvv->first;
+    sample[paramName] = itvv->second;
+  }
 }
 
 void Executor2::printGenerationBefore()

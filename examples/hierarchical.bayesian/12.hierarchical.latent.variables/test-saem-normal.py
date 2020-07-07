@@ -1,9 +1,10 @@
 
 import sys
+import copy
 sys.path.append('./_model/normal')
 sys.path.append('./_model')
 from model import *
-from utils import generate_variable
+from utils import generate_variable, transform_from_z_by_ids
 
 import numpy as np
 import korali
@@ -13,21 +14,25 @@ def test_function(distrib, sample):
     mean = sample["Mean"]
     cov = sample["Covariance Matrix"]
     all_llhs = sample["Log Likelihood"]
+    logn_ids = [0,1]
+    logitn_ids = []
 
     import scipy.stats
 
     data = np.array(distrib._p.data)  # 200 x 1 x 3 -- last dim: id | x==0 | y
-    import pdb
-    pdb.set_trace()
+
     for indiv in range(len(data)):
       llh_korali = all_llhs[indiv]
       latents = all_latent_vars[indiv]
+      latents = transform_from_z_by_ids(latents, logn_ids, logitn_ids)
       llh = 0
       for point in data[indiv]:
           #print(f"LLH: {llh}")
           fx = normalModel(point[1], latents[0])
           llh_point = scipy.stats.norm.logpdf(point[2], fx, scale = latents[1])
           llh += llh_point
+      # import pdb
+      # pdb.set_trace()
       assert np.isclose(llh_korali, llh)
 
 
@@ -62,7 +67,7 @@ def main():
     parmap2 = {}
     parmap1["Mean"] = [0., 1.]
     # The latents are assumed to already be in z-form, that is, log(latent)
-    parmap2["Latent Variables"] = [[0.0, 1.1], [0.0, 1.1], [0.0, 1.1], [0.0, 1.1], [0.0, 1.1]]
+    parmap2["Latent Variables"] = [[0.0, 1.1]] * distrib._p.nIndividuals
     parmap2["Covariance Matrix"] = [[1.0, 0.0], [0., 1.]]
     e["Solver"][ "Vector Parameters" ] =  parmap1
     e["Solver"][ "Vector Of Vectors Parameters" ] =  parmap2

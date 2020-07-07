@@ -172,6 +172,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
 /*! @brief Evaluate each log-likelihood log(p(data for individual i | latent variables i)) across all data points
             assigned to the individual, given latent variables.
             Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).
+            Note: "Latent Variables" will be overwritten in the process!
      @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
      @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
                     whether "Latent Variables" are the untransformed values.
@@ -179,8 +180,11 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
      */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLoglikelihood_(korali::Sample &sample, bool zForm)
 {
-  std::vector<std::vector<double>> allLatentVars = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
+  std::vector<std::vector<double>> allLatentVars = KORALI_GET(std::vector<std::vector<double>>, sample, "Latent Variables");
+  assert (allLatentVars.size() == _numberIndividuals);
+   //sample["Latent Variables"].get<std::vector<std::vector<double>>>();
   std::vector<double> allLogP(_numberIndividuals);
+  assert (_data.size() == _numberIndividuals);
   for (size_t i = 0; i < _numberIndividuals; i++)
   {
     assert(_data[i].size() > 0); // && "We need non-empty data for each individual.");
@@ -193,7 +197,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
       sample["Latent Variables"] = latentVars;
       sample["Data Point"] = dataPoint;
       sample.run(_conditionalLogLikelihoodFunction);
-      logP += sample["Conditional LogLikelihood"].get<double>();
+      logP += KORALI_GET(double, sample, "Conditional LogLikelihood");   // sample["Conditional LogLikelihood"].get<double>();
     }
     allLogP[i] = logP;
   }
@@ -233,10 +237,10 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   // -- need a multivariate log-gaussian function for this
   // += conditional log-llh (log[p(data | latent)])
 
-  std::vector<std::vector<double>> _latentVariables = sample["Latent Variables"].get<std::vector<std::vector<double>>>();
-  std::vector<double> mean = sample["Mean"].get<std::vector<double>>();
+  std::vector<std::vector<double>> _latentVariables = KORALI_GET(std::vector<std::vector<double>>, sample, "Latent Variables");
+  std::vector<double> mean = KORALI_GET(std::vector<double>, sample, "Mean");
   size_t N = mean.size(); // Number of latent variables
-  auto covMatrix = sample["Covariance Matrix"].get<std::vector<std::vector<double>>>();
+  auto covMatrix = KORALI_GET(std::vector<std::vector<double>>, sample, "Covariance Matrix");
   assert(N == covMatrix.size());       // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
   assert(N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
   for (std::vector<double> v : covMatrix)
@@ -356,8 +360,8 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   evaluateLogPrior_(sample, zForm);
   evaluateLoglikelihood_(sample, zForm);
 
-  auto llhs = sample["Log Likelihood"].get<std::vector<double>>();
-  auto lpriors = sample["Log Prior"].get<std::vector<double>>();
+  auto llhs =  KORALI_GET(std::vector<double>, sample, "Log Likelihood");
+  auto lpriors =  KORALI_GET(std::vector<double>, sample, "Log Prior");
 
   //               log(p) =         log(p(y | latent))                   + log(p(latent | hyperparams))
   sample["Log Posterior"] = std::accumulate(llhs.begin(), llhs.end(), 0) + std::accumulate(lpriors.begin(), lpriors.end(), 0);

@@ -86,6 +86,7 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
     @brief Evaluate each log-likelihood log(p(data for individual i | latent variables i)) across all data points
             assigned to the individual, given latent variables.
             Uses sample["Latent Variables"] which must be a vector of vectors of latent variables (one vector per individual).
+            Note: "Latent Variables" will be overwritten in the process!
      @param sample: sample["Latent Variables"] should contain a list of lists / vector of vectors, one latent variable vector for each individual.
      @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
                     whether "Latent Variables" are the untransformed values.

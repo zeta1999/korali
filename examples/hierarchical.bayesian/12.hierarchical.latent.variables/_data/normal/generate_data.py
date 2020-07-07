@@ -26,10 +26,13 @@ def generate_normal_data(N=None, x=None):
 
     y = np.zeros((N, Nx))
     theta = np.zeros((N, 2))
+    mean_1 = 5
+    sdev_1 = 0.1
+    fixed_val_2 = 1
 
     for i in range(N):
-        theta[i, 0] = np.random.normal(5, 0.1)
-        theta[i, 1] = 1
+        theta[i, 0] = np.random.normal(mean_1, sdev_1)
+        theta[i, 1] = fixed_val_2
 
         y[i,:] = normalModel(x[i], theta[i, 0] )
         error =  np.random.normal(0, theta[i, 1], size=(1, Nx))
@@ -47,6 +50,15 @@ def generate_normal_data(N=None, x=None):
     with open('all_data.txt', 'w') as fd:
         fd.write( '%6s \t %6s \t %s\n' % ("ID", "time", "y"))
         fd.writelines([ '%f \t %f \t %f\n' % (id, x_, y_) for id, x_, y_ in zip(all_data_ids, all_data_x, all_data_y)])
+
+    with open("all_data_info.txt", "w") as fd:
+        fd.write( f'N: {N}\t Mean: [{mean_1}, {fixed_val_2}] (2nd is the noise sdev in the model)\n')
+        fd.write( f'True covariance: [[{sdev_1**2:.4f}, \t0.0],\n')
+        fd.write( f'                  [0.0, \t0.0]]\n')
+        fd.write("## True sampled latent variable vectors:\n")
+        for i, th in enumerate(theta):
+            fd.write( f"Indiv. {i}: \t["+ ", ".join([str(t) for t in th]) + "]\n")
+
 
     return y, theta, FLAG
 
