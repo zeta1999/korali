@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <sstream>
+#include <cmath>
 
 #include <gsl/gsl_math.h>       // todo: Do I need this here? I need a few of them for sure.
 #include <gsl/gsl_randist.h>    // todo: Do I need this here?
@@ -16,9 +17,11 @@ void korali::solver::HSAEM::runGeneration()
   if (_k->_currentGeneration == 1) setInitialConfiguration();
 
   _k->_logger->logInfo("Normal", "Running generation %lu...\n", _k->_currentGeneration);
-//
-//  volatile int done = 0;
-//  while (!done) sleep(1);
+
+//  if ( _k->_currentGeneration > 150){
+//    volatile int done = 0;
+//    while (!done) sleep(1);
+//  }
 
   /* E1: Sample latent variable values */
   sampleLatent();
@@ -108,8 +111,8 @@ void korali::solver::HSAEM::setInitialConfiguration()
 //  _currentCholesky.resize(_latentSpaceDimensions);
 //  for (size_t i = 0; i < _latentSpaceDimensions; i++)
 //    _currentCholesky[i].resize(_latentSpaceDimensions);
-  _mcmcStandardDeviations.resize(_latentSpaceDimensions);
-  std::fill(_mcmcStandardDeviations.begin(), _mcmcStandardDeviations.end(), 1.0);
+  _mcmcVariances.resize(_latentSpaceDimensions);
+  std::fill(_mcmcVariances.begin(), _mcmcVariances.end(), 1.0);
 
   _annealedCovariance.resize(_latentSpaceDimensions * _latentSpaceDimensions);
   std::fill(_annealedCovariance.begin(), _annealedCovariance.end(), 0);
@@ -268,10 +271,6 @@ void korali::solver::HSAEM::sampleLatent()
   //  std::vector<std::vector<double>> chainLogLikelihoods(_mcmcNumberChains); // nChains x nIndividuals, not sure if needed.
   //  std::vector<std::vector<double>> initialChainLogLikelihoods(_mcmcNumberChains); // nChains x nIndividuals
 
-  //
-  //  volatile int done = 0;
-  //  while (!done) sleep(1);
-
   // ** Loop over chains
   for (size_t c_idx = 0; c_idx < _mcmcNumberChains; c_idx++)
   {
@@ -299,6 +298,7 @@ void korali::solver::HSAEM::sampleLatent()
     korali::Sample sample;
     sample["Sample Id"] = 2564236; // Todo: is this a problem? Re-using the same Sample Id
     sample["Module"] = "Problem";
+    sample["Current Generation"] = _k->_currentGeneration;
 
     // ** For each chain, the zeta values to restart from are: _currentZ
     //    - wait, then we have multiple _currentZ's, one for each chain? At least? So nrChains == nrMCMCSamples?
@@ -384,8 +384,8 @@ void korali::solver::HSAEM::sampleLatent()
       {
         for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
         {
-          // we will use this to sample, and then update _mcmcStandardDeviations after step 2, and then again after step 3
-          _univariateNormalGenerator->_standardDeviation = _mcmcStandardDeviations[dim];
+          // we will use this to sample, and then update _mcmcVariances after step 2, and then again after step 3
+          _univariateNormalGenerator->_standardDeviation = sqrt(_mcmcVariances[dim]);
           _univariateNormalGenerator->updateDistribution();
 //          assert(_univariateNormalGenerator->_standardDeviation != 1.);
 
@@ -394,7 +394,7 @@ void korali::solver::HSAEM::sampleLatent()
           {
             double eta = _univariateNormalGenerator->getRandomNumber(); // Todo: Adjust covariance below - check whether we count acceptance for each coordinate or how
             // Adjust eta, eta is ~ N(0, 1) and we need other sdev
-//            eta *= _mcmcStandardDeviations[dim];
+//            eta *= sqrt(_mcmcVariances[dim]);
             localZ[indiv][dim] += eta;
           }
 
@@ -425,7 +425,7 @@ void korali::solver::HSAEM::sampleLatent()
               currentPriors[indiv] = newPriors[indiv];
             }
           }
-          _acceptanceRateDenominator[dim] += _numberIndividuals;
+          _acceptanceRateDenominator[dim] += float(_numberIndividuals);
         }
         if (_logAllSamples){
           allSamples[counter] = chainZ;
@@ -441,8 +441,8 @@ void korali::solver::HSAEM::sampleLatent()
         for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
         {
           _acceptanceRate[dim] = ( _acceptanceRateNominator[dim]) /( _acceptanceRateDenominator[dim]);
-          _mcmcStandardDeviations[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
-          assert(_mcmcStandardDeviations[dim] > 0.);
+          _mcmcVariances[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
+          assert(_mcmcVariances[dim] > 0.);
         }
       }
 
@@ -466,14 +466,14 @@ void korali::solver::HSAEM::sampleLatent()
 
         std::vector<std::vector<double>> localZ = chainZ;
         for (size_t dim : randomCoords){
-          _univariateNormalGenerator->_standardDeviation = _mcmcStandardDeviations[dim];
+          _univariateNormalGenerator->_standardDeviation = sqrt(_mcmcVariances[dim]);
           _univariateNormalGenerator->updateDistribution();
 //          assert(_univariateNormalGenerator->_standardDeviation != 1.);
 
           for (size_t indiv=0; indiv < _numberIndividuals; indiv++){
             double eta = _univariateNormalGenerator->getRandomNumber();
             // Adjust eta, eta is ~ N(0, 1) and we need other sdev
-//            eta *= _mcmcStandardDeviations[dim];
+//            eta *= _mcmcVariances[dim];
             localZ[indiv][dim] += eta;
           }
         }
@@ -523,8 +523,8 @@ void korali::solver::HSAEM::sampleLatent()
           if (_acceptanceRateDenominator[dim] == 0)
             continue; // This can happen if a coordinate is never selected as part of any random set
           _acceptanceRate[dim] = (_acceptanceRateNominator[dim]) /( _acceptanceRateDenominator[dim]);
-          _mcmcStandardDeviations[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
-          assert(_mcmcStandardDeviations[dim] > 0.);
+          _mcmcVariances[dim] *= (1.0 + _delta * (_acceptanceRate[dim] - _mcmcTargetAcceptanceRate));
+          assert(_mcmcVariances[dim] > 0.);
         }
 
     } // Chain loop end
@@ -633,10 +633,14 @@ void korali::solver::HSAEM::updateHyperparameters()
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
     _currentHyperparametersMean[i] = _currentS1[i] / double(_numberIndividuals);
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
-    for (size_t j = 0; j < _latentSpaceDimensions; j++)
+    for (size_t j = 0; j < _latentSpaceDimensions; j++){
       _currentHyperparametersCovariance[i][j] = _currentS2[i][j] / double(_numberIndividuals)
                                                     - _currentHyperparametersMean[i] * _currentHyperparametersMean[j];
+//      if (i != j)
+//        _currentHyperparametersCovariance[i][j] = 0;
+    }
   // No simulated annealing here, that is only done with the 'annealed normal distribution' used in sampling.
+  _currentHyperparametersMeanTransformed = _latentProblem->zToLatent(_currentHyperparametersMean);
 }
 
 /* Call after updating hyperparameters: Re-calculate the likelihood of all current samples.
@@ -647,6 +651,7 @@ void korali::solver::HSAEM::updateProbabilities(){
   {
     korali::Sample sample;
     sample["Sample Id"] = 2564242;
+    sample["Current Generation"] = _k->_currentGeneration;
     sample["Latent Variables"] = _currentZ[c_idx];
     sample["Operation"] = "Evaluate logLikelihood";
     sample["Module"] = "Problem";
@@ -730,7 +735,8 @@ void korali::solver::HSAEM::printGenerationAfter()
   for (size_t dim = 0; dim < _latentSpaceDimensions; dim++){
     size_t idx = _latentProblem->_firstIndividualLatentIndices[dim];
     std::string varName = _latentProblem->_k->_variables[idx]->_name;
-    _k->_logger->logInfo("Normal", "\tMean for %s etc: \t\t%.2f\n", varName.c_str(), _currentHyperparametersMean[dim]);
+    _k->_logger->logInfo("Normal", "\tMean for %s etc: \t%.2f\tBack-transf.: %.2f\n", varName.c_str(),
+                                    _currentHyperparametersMean[dim], _currentHyperparametersMeanTransformed[dim]);
    // _k->_logger->logInfo("Normal", "\t\t%.2f  \n",_currentHyperparametersMean[dim]);
   }
   std::ostringstream covLogStringStream;
@@ -776,7 +782,7 @@ void korali::solver::HSAEM::printGenerationAfter()
 
   _k->_logger->logInfo("Detailed",     "    - MCMC standard deviations after chain %d:\n", _mcmcNumberChains);
   for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
-    _k->_logger->logInfo("Detailed", "         Dim %d: %.3f \n", dim, _mcmcStandardDeviations[dim]);
+    _k->_logger->logInfo("Detailed", "         Dim %d: %.3f \n", dim, sqrt(_mcmcVariances[dim]));
 
   //* Todo?: Show current mean log-likelihood across samples
 }

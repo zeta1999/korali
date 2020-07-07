@@ -39,7 +39,11 @@ void Executor2::runGeneration()
     samples[i]["Module"] = "Problem";
     samples[i]["Operation"] = _functionToExecute;
     samples[i]["Sample Id"] = _modelEvaluationCount;
-    setParameters(samples[i]);
+    samples[i]["Current Generation"] = _k->_currentGeneration;
+    samples[i]["Evaluation Number"] = i;
+    if (_functionToPopulateSampleParameters)
+      samples[i].run(_functionToPopulateSampleParameters);
+    else setParameters(samples[i]);
 
     _conduit->start(samples[i]);
     _modelEvaluationCount++;
@@ -55,7 +59,6 @@ void Executor2::runGeneration()
       samples[i].run(_testFunction);
     }
   }
-
 
   for (size_t i = 0; i < _executionsPerGeneration; i++)
   { // This looks a bit useless, but it's good if you want to print out the results or just look at it during debugging

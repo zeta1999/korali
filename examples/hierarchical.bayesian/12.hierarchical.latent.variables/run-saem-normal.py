@@ -37,7 +37,7 @@ def main():
     e["Solver"]["Type"] = "HSAEM"
     e["Solver"]["Number Samples Per Step"] = 5
     e["Solver"]["mcmc Outer Steps"] = 1
-    e["Solver"]["mcmc Target Acceptance Rate"] = 0.3
+    e["Solver"]["mcmc Target Acceptance Rate"] = 0.4
     e["Solver"]["N1"] = 2
     e["Solver"]["N2"] = 2
     e["Solver"]["N3"] = 2
