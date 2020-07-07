@@ -33,7 +33,7 @@ def main():
     e["Problem"]["Data Dimensions"] = distrib._p.nDataDimensions
     e["Problem"]["Number Individuals"] = distrib._p.nIndividuals
     e["Problem"]["Latent Space Dimensions"] = distrib._p.nLatentSpaceDimensions
-    e["Problem"][ "Initial Variance" ] = 100
+    e["Problem"][ "Initial Variance" ] = 1
 
     e["Solver"]["Type"] = "HSAEM"
     e["Solver"]["Number Samples Per Step"] = 10
@@ -44,7 +44,7 @@ def main():
     e["Solver"]["N3"] = 2
     e["Solver"]["Use Simulated Annealing"] = True
     e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
-    e["Solver"]["Simulated Annealing Initial Variance"] = 100 # -> sdev = 10
+    e["Solver"]["Simulated Annealing Initial Variance"] = 1 # -> sdev = 10
     e["Solver"]["Termination Criteria"]["Max Generations"] = 250
 
     e["Distributions"][0]["Name"] = "Uniform 0"

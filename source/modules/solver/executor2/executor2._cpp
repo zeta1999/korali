@@ -54,7 +54,9 @@ void Executor2::runGeneration()
   if (_testFunction){
     for (size_t i = 0; i < _executionsPerGeneration; i++){
       // Insert the parameters another time, in some functions, parameters are overwritten:
-      setParameters(samples[i]);
+      if (_functionToPopulateSampleParameters)
+        samples[i].run(_functionToPopulateSampleParameters);
+      else setParameters(samples[i]);
 
       samples[i].run(_testFunction);
     }
