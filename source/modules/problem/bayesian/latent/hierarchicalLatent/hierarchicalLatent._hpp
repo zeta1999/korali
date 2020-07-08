@@ -62,18 +62,22 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
 
   /**
   * @brief Evaluate log of p(latent | hyperparameters), hyperparameter-dependent prior over each *transformed* latent variable.
-    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Here, "Mean" should be
-                    a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the covariance.)
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. or
+                    ["Covariance Cholesky Decomposition"]. Here, "Mean" should be a vector (size := n), "Covariance Matrix"
+                     or "Covariance Cholesky Decomposition" should be an nxn vector of vectors. (No special encoding of the covariance.)
                     "Latent Variables" should be a vector of vectors, one * transformed * latent variable vector per individual. The order is
                     assumed to be the same as the order of variables according to their indices at problem definition
                     (["Variables"][THE_INDEX]["some property"] = ...).
     @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
                     whether "Latent Variables" are the untransformed values.
+    @param cholesky: If true, the function expects a cholesky-decomposed covariance matrix in
+                    sample["Covariance Cholesky Decomposition"]. If false, expects a non-decomposed covariance in
+                    sample["Covariance Matrix"].
   * @returns sample["Log Prior"], a vector, with one log-prior for each latent variable.
  */
-  void evaluateLogPrior_(korali::Sample &sample, bool zForm = true);
+  void evaluateLogPrior_(korali::Sample &sample, bool zForm = true, bool cholesky = true);
   /**
-    @brief Same as evaluateLogPrior_(..., zForm = true)
+    @brief Same as evaluateLogPrior_(..., zForm = true, cholesky = true).
     @param sample: See other function description
     */
   void evaluateLogPrior(korali::Sample &sample) override;
@@ -81,17 +85,21 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
   /**
   * @brief Evaluate the total log-probability p(all data | all latent) * p(latent | hyperparameters).
             log[ p(all data | all latent) * p(all latent | hyperparameters) ]
-    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"].
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"] or
+                    ["Covariance Cholesky Decomposition"].
                     Data was given at problem creation.
-                    "Mean" should be a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors.
-                    (No special encoding of the cov.)
+                    "Mean" should be a vector (size := n), "Covariance Matrix"/ "Covariance Cholesky Decomposition" should
+                    be an nxn vector of vectors. (No special encoding of the cov, except as cholesky decomposition.)
     @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
                     whether "Latent Variables" are the untransformed values.
+    @param cholesky: If true, the function expects a cholesky-decomposed covariance matrix in
+                    sample["Covariance Cholesky Decomposition"]. If false, expects a non-decomposed covariance in
+                    sample["Covariance Matrix"].
      @returns sample["Log Posterior"], a single value.
  */
-  void evaluateLogPosterior_(korali::Sample &sample, bool zForm = true);
+  void evaluateLogPosterior_(korali::Sample &sample, bool zForm = true, bool cholesky = true);
   /**
-    @brief Same as evaluateLogPosterior_(..., zForm = true)
+    @brief Same as evaluateLogPosterior_(..., zForm = true, cholesky = true).
     @param sample: See other function description
     */
   void evaluateLogPosterior(korali::Sample &sample) override;

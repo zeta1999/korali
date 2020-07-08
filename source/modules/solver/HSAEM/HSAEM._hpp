@@ -7,6 +7,11 @@
 #include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
 #include "modules/solver/solver.hpp"
 
+#include <gsl/gsl_blas.h> // Todo: Find out which of those are not needed; we only need the cholesky decomp
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+
 namespace korali
 {
 namespace solver
@@ -34,11 +39,29 @@ class HSAEM : public korali::Solver
 
   /** @brief Update current estimates of the hyperparameters, using S1 and S2 statistics updated with new samples. */
   void updateHyperparameters();
-  // void updateCholesky();
 
-  /** @brief Update the distribution used during sampling with new hyperparameter values. If simulated annealing
-              is enabled, it will be applied here: In earlier generations, the covariance is enlarged so that
-              sampling happens across a wider range. */
+  /** @brief A function to combine these sub-steps in the right order:
+            - new covariance --> annealed covariance
+              (also needed without SA because we use _annealedCovariance everywhere (it's just the same if no SA))
+            - update chol of annealed covariance;
+              update chol of original covariance
+            - reset sampling distribution to new annealed covariance
+    */
+  void updateDistribution();
+
+  /** @brief  Call after "annealCovariance()". Re-calculates the cholesky decomposition of the annealed covariance matrix.
+              Also re-calculates a cholesky decomposition of the true current esimate of the covariance. */
+  void updateCholesky();
+
+  /** @brief  Call after updating hyperparameters: Updates the annealed covariance. If simulated annealing
+              is enabled, it will be applied here: In earlier generations, the covariance is increased so that
+              sampling happens across a wider range.
+
+              Need to be already set up: _currentHyperparametersMean and _currentHyperparametersCovariance.
+    */
+  void annealCovariance();
+
+  /** @brief Update the distribution used during sampling with new hyperparameter values.  */
   void updateAnnealedDistribution();
 
     /** @brief  Call after updating hyperparameters: Re-calculate the likelihood of all current samples.

@@ -32,9 +32,9 @@ void korali::solver::HSAEM::runGeneration()
 
   /* M:  Find argmax Q(theta), analytically */
   updateHyperparameters();
-  // updateCholesky(); // No
-
-   updateProbabilities();
+  // Todo: Might combine them / move them all into updateHyperparameters
+  updateDistribution();
+  updateProbabilities();
 }
 
 /* @brief This is always run before (re-)starting the solver */
@@ -114,11 +114,13 @@ void korali::solver::HSAEM::setInitialConfiguration()
   _mcmcVariances.resize(_latentSpaceDimensions);
   std::fill(_mcmcVariances.begin(), _mcmcVariances.end(), 1.0);
 
-  _annealedCovariance.resize(_latentSpaceDimensions * _latentSpaceDimensions);
-  std::fill(_annealedCovariance.begin(), _annealedCovariance.end(), 0);
+  _annealedCovariance.resize(_latentSpaceDimensions);
+  for (size_t j = 0; j < _latentSpaceDimensions; j++){
+    _annealedCovariance[j].resize(_latentSpaceDimensions);
+    std::fill(_annealedCovariance[j].begin(), _annealedCovariance[j].end(), 0);
+  }
   for (size_t i = 0; i < _latentSpaceDimensions; i++)
-    // diagonal matrix, flattened
-    _annealedCovariance[i + i * _latentSpaceDimensions] = _simulatedAnnealingInitialVariance; // "high" initial covariance values; adjust if needed
+    _annealedCovariance[i][i] = _simulatedAnnealingInitialVariance; // "high" initial covariance values; adjust if needed
 
   // Set starting values for hyperparameters - just copy them over, we already set them in the problem initialization
   _currentHyperparametersMean.resize(_latentSpaceDimensions);
@@ -138,6 +140,15 @@ void korali::solver::HSAEM::setInitialConfiguration()
       int idx = i * _latentProblem->_latentSpaceDimensions + j;
       _currentHyperparametersCovariance[i][j] = _latentProblem->_hyperparametersCovariance[idx]->_initialValue;
     }
+
+  _currentCovarianceCholesky.resize(_latentSpaceDimensions);
+  for (size_t i = 0; i < _latentSpaceDimensions; i++)
+    _currentCovarianceCholesky[i].resize(_latentSpaceDimensions);
+  _currentAnnealedCovarianceCholesky.resize(_latentSpaceDimensions);
+  for (size_t i = 0; i < _latentSpaceDimensions; i++)
+    _currentAnnealedCovarianceCholesky[i].resize(_latentSpaceDimensions);
+  annealCovariance();
+  updateCholesky();
 
   // Initialize the (transformed) latent variables
   updateAnnealedDistribution();
@@ -197,64 +208,9 @@ void korali::solver::HSAEM::setInitialConfiguration()
   _bestLogLikelihood = -korali::Inf;
 }
 
-/* initial things to run to test the hierarchical latent problem class */
-//void korali::solver::HSAEM::justTesting()
-//{
-//  // for simple population example: Only means of the data, 1-dimensional
-//  size_t nIndividuals = 10;
-//  std::vector<std::vector<double>> latent_vars = {{1.25}, {1.25}, {1.25}, {1.}, {1.}, {1.}, {0.9}, {0.75}, {0.75}, {0.75}};
-//  std::vector<double> mean = {1};
-//  std::vector<std::vector<double>> cov(1);
-//  cov[0] = std::vector<double>({0.5});
-//  // sigma (sdev of the distribution of which the latent variable is the mean), and the data points, are
-//  // set by the problem - we can't access them here
-//
-//  korali::Sample sample;
-//  sample["Sample Id"] = 2564235;
-//  sample["Latent Variables"] = latent_vars[0];
-//  sample["Data Point"] = {0.89};
-//  sample["Mean"] = mean;
-//  sample["Covariance Matrix"] = cov;
-//  sample["Module"] = "Problem";
-//  sample["Operation"] = "Evaluate LogLikelihood Single";
-//  sample["Sample Id"] = 1234567;
-//
-//  _conduit->start(sample);
-//  _conduit->wait(sample);
-//
-//  // * test evaluateConditionalLoglikelihood()
-//
-//  double cond_llh = sample["Conditional LogLikelihood"].get<double>();
-//  _k->_logger->logInfo("Normal", "Test: Conditional LLLH = %f evaluated for latent variables:\n", cond_llh);
-//  for (size_t i = 0; i < _latentProblem->_latentVariableIndices.size(); i++)
-//  {
-//    int idx = _latentProblem->_latentVariableIndices[i];
-//    _k->_logger->logInfo("Normal", "Test: \t %s : %e \n", _latentProblem->_k->_variables[idx]->_name.c_str(), latent_vars[i]);
-//  }
-//
-//  // * test evaluateLoglikelihood()
-//  sample["Latent Variables"] = latent_vars;
-//  sample["Operation"] = "Evaluate logPosterior";
-//  _conduit->start(sample);
-//  _conduit->wait(sample);
-//  double llh = sample["Log Posterior"].get<double>();
-//  _k->_logger->logInfo("Normal", "Test: LLH = %f evaluated for latent variables as above, plus mean:\n", llh);
-//  for (size_t i = 0; i < mean.size(); i++)
-//  {
-//    _k->_logger->logInfo("Normal", "Test: \t Mean %d: %e \n", i, mean[i]);
-//  }
-//  for (size_t i = 0; i < cov.size(); i++)
-//  {
-//    for (size_t j = 0; j < cov[0].size(); j++)
-//    {
-//      _k->_logger->logInfo("Normal", "Test: \t Cov[%d, %d]: %e \n", i, j, cov[i][j]);
-//    }
-//  }
-//}
-
 void korali::solver::HSAEM::sampleLatent()
 {
-  updateAnnealedDistribution(); // because we want to draw from it below
+//  updateAnnealedDistribution(); // because we want to draw from it below //moved to be run after updateHyperparameters()
 
   std::fill(_acceptanceRateDenominator.begin(), _acceptanceRateDenominator.end(), 0.0);
   std::fill(_acceptanceRateNominator.begin(), _acceptanceRateNominator.end(), 0.0);
@@ -264,12 +220,6 @@ void korali::solver::HSAEM::sampleLatent()
   std::vector<std::vector<double>> allLLHs;
   std::vector<std::vector<double>> allPriors;
   size_t counter;
-
-  // int NStepsPerChain = _mcmcOuterSteps * (_n1 + _n2 + _n3);
-  //  std::vector<std::vector<std::vector<std::vector<double>>>> allSamples;    // nChains x nSamples x nIndividuals x nDimensions
-  //allSamples.clear();
-  //  std::vector<std::vector<double>> chainLogLikelihoods(_mcmcNumberChains); // nChains x nIndividuals, not sure if needed.
-  //  std::vector<std::vector<double>> initialChainLogLikelihoods(_mcmcNumberChains); // nChains x nIndividuals
 
   // ** Loop over chains
   for (size_t c_idx = 0; c_idx < _mcmcNumberChains; c_idx++)
@@ -301,24 +251,10 @@ void korali::solver::HSAEM::sampleLatent()
     sample["Current Generation"] = _k->_currentGeneration;
 
     // ** For each chain, the zeta values to restart from are: _currentZ
-    //    - wait, then we have multiple _currentZ's, one for each chain? At least? So nrChains == nrMCMCSamples?
-
-    // ** Chain initialization
-//    std::vector<std::vector<double>> eta(_numberIndividuals); // NrIndividuals x NrDimensions
-//    for (size_t indiv = 0; indiv < _numberIndividuals; indiv++)
-//    {
-//      eta[indiv].resize(_latentSpaceDimensions);
-//      // current eta = current z - current mean
-//      std::transform(chainZ[indiv].begin(), chainZ[indiv].end(), _currentHyperparametersMean.begin(), eta[indiv].begin(), std::minus<double>());
-//    }
 
     // ** Loop over one chain
     for (size_t step = 0; step < _mcmcOuterSteps; step++)
     {
-      //std::vector<std::vector<double>> stepSamples;  // NrIndividuals x NrDimensions
-      //stepSamples.clear();
-
-
       // *****************************
       // ** 1st proposal distribution:
       // *****************************
@@ -368,7 +304,7 @@ void korali::solver::HSAEM::sampleLatent()
       // initialize log priors
       sample["Latent Variables"] = chainZ;
       sample["Mean"] = _currentHyperparametersMean;
-      sample["Covariance Matrix"] = _currentHyperparametersCovariance;
+      sample["Covariance Cholesky Decomposition"] = _currentAnnealedCovarianceCholesky;
       sample["Operation"] = "Evaluate logPrior";
       _conduit->start(sample);
       _conduit->wait(sample);
@@ -406,7 +342,7 @@ void korali::solver::HSAEM::sampleLatent()
 
           sample["Latent Variables"] = localZ;
           sample["Mean"] = _currentHyperparametersMean;
-          sample["Covariance Matrix"] = _currentHyperparametersCovariance;
+          sample["Covariance Cholesky Decomposition"] = _currentAnnealedCovarianceCholesky; // _currentHyperparametersCovariance;
           sample["Operation"] = "Evaluate logPrior";
           _conduit->start(sample);
           _conduit->wait(sample);
@@ -486,7 +422,7 @@ void korali::solver::HSAEM::sampleLatent()
 
         sample["Latent Variables"] = localZ;
         sample["Mean"] = _currentHyperparametersMean;
-        sample["Covariance Matrix"] = _currentHyperparametersCovariance;
+        sample["Covariance Cholesky Decomposition"] = _currentAnnealedCovarianceCholesky;
         sample["Operation"] = "Evaluate logPrior";
         _conduit->start(sample);
         _conduit->wait(sample);
@@ -573,20 +509,37 @@ void korali::solver::HSAEM::sampleLatent()
 
 }
 
-//* @brief Update internal distribution representation of p(latent | hyper), and anneal the covariance if needed.
-void korali::solver::HSAEM::updateAnnealedDistribution()
+//* @brief Anneal the covariance if needed.
+void korali::solver::HSAEM::annealCovariance()
 {
   if (_useSimulatedAnnealing)
   {
-    auto flatCov = flatten(_currentHyperparametersCovariance);
-    for (size_t i = 0; i < flatCov.size(); i++)
-      _annealedCovariance[i] = std::max(_annealedCovariance[i] * _simulatedAnnealingDecayFactor, flatCov[i]);
-    _annealedNormalGenerator->setProperty("Sigma", _annealedCovariance);
+    for (size_t i = 0; i < _latentSpaceDimensions; i++)
+      for (size_t j = 0; j < _latentSpaceDimensions; j++)
+        _annealedCovariance[i][j] = std::max(_annealedCovariance[i][j] * _simulatedAnnealingDecayFactor,
+                                             _currentHyperparametersCovariance[i][j]);
   }
   else
-    _annealedNormalGenerator->setProperty("Sigma", flatten(_currentHyperparametersCovariance));
+    _annealedCovariance = _currentHyperparametersCovariance;
+}
+
+//* @brief Update internal distribution representation of p(latent | hyper). ! Does not anneal the covariance.
+void korali::solver::HSAEM::updateAnnealedDistribution()
+{
+  _annealedNormalGenerator->setProperty("Sigma", flatten(_annealedCovariance));
   _annealedNormalGenerator->setProperty("Mean Vector", _currentHyperparametersMean);
   _annealedNormalGenerator->updateDistribution();
+//  if (_useSimulatedAnnealing)
+//  {
+//    auto flatCov = flatten(_currentHyperparametersCovariance);
+//    for (size_t i = 0; i < flatCov.size(); i++)
+//      _annealedCovariance[i] = std::max(_annealedCovariance[i] * _simulatedAnnealingDecayFactor, flatCov[i]);
+//    _annealedNormalGenerator->setProperty("Sigma", _annealedCovariance);
+//  }
+//  else
+//    _annealedNormalGenerator->setProperty("Sigma", flatten(_currentHyperparametersCovariance));
+//  _annealedNormalGenerator->setProperty("Mean Vector", _currentHyperparametersMean);
+//  _annealedNormalGenerator->updateDistribution();
 }
 
 void korali::solver::HSAEM::updateS()
@@ -663,7 +616,7 @@ void korali::solver::HSAEM::updateProbabilities(){
     sample["Operation"] = "Evaluate logPrior";
     sample["Latent Variables"] = _currentZ[c_idx];
     sample["Mean"] = _currentHyperparametersMean;
-    sample["Covariance Matrix"] = _currentHyperparametersCovariance;
+    sample["Covariance Cholesky Decomposition"] = _currentAnnealedCovarianceCholesky;
     _conduit->start(sample);
     _conduit->wait(sample);
     auto newPriors = sample["Log Prior"].get<std::vector<double>>();
@@ -682,6 +635,90 @@ void korali::solver::HSAEM::updateProbabilities(){
 
 }
 
+
+/* Re-calculate the cholesky decomposition of the annealed covariance matrix.
+   Also re-calculate a cholesky decomposition of the true current esimate of the covariance. */
+void korali::solver::HSAEM::updateCholesky(){
+
+  size_t N = _latentSpaceDimensions; // for brevity
+
+  gsl_matrix *covMatrixGSL = gsl_matrix_alloc(N, N);
+  for (size_t i = 0; i < N; i++)
+    for (size_t j = 0; j < N; j++)
+      gsl_matrix_set (covMatrixGSL, i, j, _annealedCovariance[i][j]);
+
+  // First, calculate the cholesky decomposition, cov = L'*L
+  gsl_matrix *chol = gsl_matrix_alloc(N, N);
+  gsl_matrix_memcpy(chol, covMatrixGSL);
+
+  int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+  if (status != 0){
+    if (status != 1)  KORALI_LOG_ERROR("Status == 1 would have indicated an invalid input, such as not positive definite (e.g. very small eigenvalues). But the GSL error code was: %d. Please report this if you think it is a bug.", status, status);
+    /* If status == 1, covMatrixGSL was not positive definite.
+     * Let's add a small diagonal matrix. */
+    double eps = 1.e-4; // 1.e-8 is too small. Maybe GSL has low precision for matrix operations?
+    for (size_t i = 0; i < N; i++){
+      for (size_t j = 0; j < N; j++)
+        gsl_matrix_set (chol, i, j, _annealedCovariance[i][j]);
+      gsl_matrix_set (chol, i, i, _annealedCovariance[i][i] + eps);
+    }
+    int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+
+    if(status != 0) // Now it failed for real. Is it negative definite?
+      KORALI_LOG_ERROR("GSL error code: %d. If ==1: Covariance matrix was invalid; this could mean it had a negative eigenvalue (that should be impossible) or one of its entries was NaN. Please report this if you think it is a bug.", status);
+  }
+  // Set the cholesky matrix
+  for (size_t i = 0; i < N; i++)
+    for (size_t j = 0; j < N; j++)
+      _currentAnnealedCovarianceCholesky[i][j] = gsl_matrix_get(chol, i, j);
+
+
+ /* Pt. 2: If we use SA, annealedCov != Cov, so keep track of the original covariance's cholesky decomp additionally.
+  */
+  if (_useSimulatedAnnealing){
+    for (size_t i = 0; i < N; i++)
+      for (size_t j = 0; j < N; j++)
+        gsl_matrix_set (covMatrixGSL, i, j, _currentHyperparametersCovariance[i][j]);
+    gsl_matrix_memcpy(chol, covMatrixGSL);
+
+    int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+    if (status != 0){
+      if (status != 1)  KORALI_LOG_ERROR("Status == 1 would have indicated an invalid input, such as not positive definite (e.g. very small eigenvalues). But the GSL error code was: %d. Please report this if you think it is a bug.", status, status);
+      /* If status == 1, covMatrixGSL was not positive definite.
+       * Let's add a small diagonal matrix. */
+      double eps = 1.e-4; // 1.e-8 is too small. Maybe GSL has low precision for matrix operations?
+      for (size_t i = 0; i < N; i++){
+        for (size_t j = 0; j < N; j++)
+          gsl_matrix_set (chol, i, j, _currentHyperparametersCovariance[i][j]);
+        gsl_matrix_set (chol, i, i, _currentHyperparametersCovariance[i][i] + eps);
+    }
+    int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+
+    if(status != 0) // Now it failed for real. Is it negative definite?
+      KORALI_LOG_ERROR("GSL error code: %d. If ==1: (Non-annealed) covariance matrix was invalid; this could mean it had a negative eigenvalue (that should be impossible) or one of its entries was NaN. Please report this if you think it is a bug.", status);
+  }
+  // Set the cholesky matrix
+  for (size_t i = 0; i < N; i++)
+    for (size_t j = 0; j < N; j++)
+      _currentCovarianceCholesky[i][j] = gsl_matrix_get(chol, i, j);
+  }
+
+  gsl_matrix_free(covMatrixGSL);
+  gsl_matrix_free(chol);
+}
+
+/** A function to combine the sub-steps in the right order:
+    - new covariance --> annealed covariance
+        (also needed without SA because we use _annealedCovariance everywhere (it's just the same if no SA))
+    - update chol of annealed covariance;
+      update chol of original covariance
+    - reset sampling distribution to new annealed covariance
+    */
+void korali::solver::HSAEM::updateDistribution(){
+  annealCovariance();
+  updateCholesky();
+  updateAnnealedDistribution(); // because the covariance changed
+}
 
 /** @brief Utility function to calculate mean and standard deviation of the values in vector v. */
 std::vector<double> korali::solver::HSAEM::meanAndSDev(std::vector<double> v)

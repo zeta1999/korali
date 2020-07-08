@@ -228,7 +228,99 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
                   -- first see where you will actually need this function
          ALso todo: But first, test it some more.
  */
-void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_(korali::Sample &sample, bool zForm)
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_(korali::Sample &sample, bool zForm, bool cholesky)
+{
+  std::vector<std::vector<double>> _latentVariables = KORALI_GET(std::vector<std::vector<double>>, sample, "Latent Variables");
+  std::vector<double> mean = KORALI_GET(std::vector<double>, sample, "Mean");
+  size_t N = mean.size(); // Number of latent variables
+  std::vector<std::vector<double>> covMatrix;
+  if (cholesky){
+    covMatrix = KORALI_GET(std::vector<std::vector<double>>, sample, "Covariance Cholesky Decomposition");}
+  else {
+    covMatrix = KORALI_GET(std::vector<std::vector<double>>, sample, "Covariance Matrix");}
+  assert(N == covMatrix.size());       // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
+  assert(N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
+  for (std::vector<double> v : covMatrix)
+    assert(v.size() == N);
+
+  std::vector<double> individualLLH(_numberIndividuals);
+
+  /* We want to find:
+     logp = log(1/(sqrt(2*pi)*det(cov))) - (latent - mean)'*cov*(latent - mean)
+     Or:
+     the multinomial-gaussian probability given cov, mean and the latent variables - product over all latent vars.
+  */
+
+  gsl_matrix *chol = gsl_matrix_alloc(N, N);
+  gsl_matrix *covMatrixGSL = gsl_matrix_alloc(N, N);
+
+  if (!cholesky){
+      for (size_t i = 0; i < N; i++)
+        for (size_t j = 0; j < N; j++)
+          gsl_matrix_set (covMatrixGSL, i, j, covMatrix[i][j]);
+
+      // First, calculate the cholesky decomposition, cov = L'*L
+//      gsl_matrix *chol = gsl_matrix_alloc(N, N);
+      gsl_matrix_memcpy(chol, covMatrixGSL);
+
+      int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+      if (status != 0){
+        if (status != 1)  KORALI_LOG_ERROR("Status == 1 would have indicated an invalid input, such as not positive definite (e.g. very small eigenvalues). But the GSL error code was: %d. Please report this if you think it is a bug.", status, status);
+        /* TODO: If you rewrite hSAEM entirely so that it calls a sub-solver , hSAEMLowlevel or so, then, and only then, can
+         *       you enable the line below: */
+        //_k->_logger->logWarning("Normal", "Estimated covariance matrix was not positive definite.");
+        /* If status == 1, covMatrixGSL was not positive definite.
+         * Let's add a small diagonal matrix. */
+        double eps = 1.e-4; // 1.e-8 is too small. Maybe GSL has low precision for matrix operations?
+        for (size_t i = 0; i < N; i++){
+          for (size_t j = 0; j < N; j++)
+            gsl_matrix_set (chol, i, j, covMatrix[i][j]);
+          gsl_matrix_set (chol, i, i, covMatrix[i][i] + eps);
+        }
+        int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+
+        if(status != 0) // Now it failed for real. Is it negative definite?
+          KORALI_LOG_ERROR("GSL error code: %d. If ==1: Covariance matrix was invalid; this could mean it had a negative eigenvalue (that should be impossible) or one of its entries was NaN. Please report this if you think it is a bug.", status);
+      }
+  }
+  else { // if the covariance was already passed as cholesky decomposition
+    for (size_t i = 0; i < N; i++)
+      for (size_t j = 0; j < N; j++)
+        gsl_matrix_set (chol, i, j, covMatrix[i][j]);
+  }
+
+  // Initialize the distribution:
+  std::vector<double> sigmaVec(N*N);
+  for (size_t i = 0; i < N; i++)
+    for (size_t j = 0; j < N; j++)
+      sigmaVec[i*N + j] = gsl_matrix_get(chol,i,j);
+  _multivariateNormalDistribution->_meanVector = mean;
+  _multivariateNormalDistribution->_sigma = sigmaVec; // Todo: Need to flatten it
+  _multivariateNormalDistribution->updateDistribution();
+//  if (sigmaVec[0] != 0){
+//    volatile int done = 0;
+//    while (!done) sleep(1);
+//  }
+
+  /* Calculate the log-probability for each individual, meaning each of the transformed-latent-variable vectors
+  following the same multivariate Gaussian distribution */
+  for (size_t i = 0; i < _numberIndividuals; i++)
+  {
+    // Get i-th vector of latent variables:
+    std::vector<double> latentZ = _latentVariables[i];
+    if (!zForm)
+      latentZ = latentToZ(latentZ);
+    double logP = 0;
+    _multivariateNormalDistribution->getLogDensity(&latentZ[0], &logP, latentZ.size());
+    individualLLH[i] = logP;
+  }
+  sample["Log Prior"] = individualLLH;
+
+  gsl_matrix_free(chol);
+  gsl_matrix_free(covMatrixGSL);
+}
+
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_old(korali::Sample &sample, bool zForm)
 {
   //  volatile int done = 0;
   //  while (!done) sleep(1);
@@ -240,7 +332,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   std::vector<std::vector<double>> _latentVariables = KORALI_GET(std::vector<std::vector<double>>, sample, "Latent Variables");
   std::vector<double> mean = KORALI_GET(std::vector<double>, sample, "Mean");
   size_t N = mean.size(); // Number of latent variables
-  auto covMatrix = KORALI_GET(std::vector<std::vector<double>>, sample, "Covariance Matrix");
+  auto covMatrix = KORALI_GET(std::vector<std::vector<double>>, sample, "Covariance Cholesky Decomposition");
   assert(N == covMatrix.size());       // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
   assert(N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
   for (std::vector<double> v : covMatrix)
@@ -344,20 +436,22 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 }
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior(korali::Sample &sample)
 {
-  evaluateLogPrior_(sample, true);
+  evaluateLogPrior_(sample, true, true);
 }
 
 
 /*! @brief Evaluate the total loglikelihood of the data (if any), given values for latent variables and hyperparameters.
-    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"]. Data
-                    was given at problem creation. Latent variables should be in untransformed form.
-                    "Mean" should be a vector (size := n), "Covariance Matrix" should be an nxn vector of vectors. (No special encoding of the cov.)
+    @param sample: Is expected to contain the fields ["Latent Variables"], ["Mean"] and ["Covariance Matrix"] or
+                    ["Covariance Cholesky Decomposition"]. Data was given at problem creation. Latent variables should be in
+                    untransformed form.
+                    "Mean" should be a vector (size := n), "Covariance Matrix" or "Covariance Cholesky Decomposition" should be an
+                    nxn vector of vectors. (No special encoding of the cov except as cholesky decomp..)
                     Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
          TODO: test it.
  */
-void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior_(korali::Sample &sample, bool zForm)
+void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior_(korali::Sample &sample, bool zForm, bool cholesky)
 {
-  evaluateLogPrior_(sample, zForm);
+  evaluateLogPrior_(sample, zForm, cholesky);
   evaluateLoglikelihood_(sample, zForm);
 
   auto llhs =  KORALI_GET(std::vector<double>, sample, "Log Likelihood");
@@ -368,7 +462,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 }
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPosterior(korali::Sample &sample)
 {
-  evaluateLogPosterior_(sample, true);
+  evaluateLogPosterior_(sample, true, true);
 }
 
 
