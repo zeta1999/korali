@@ -41,13 +41,13 @@ def main():
     e["Solver"]["N1"] = 2
     e["Solver"]["N2"] = 2
     e["Solver"]["N3"] = 2
-    e["Solver"]["K1"] = 200
-    e["Solver"]["Alpha 1"] = 0.99
-    e["Solver"]["Alpha 2"] = 0.99
+    e["Solver"]["K1"] = 250
+    e["Solver"]["Alpha 1"] = 0.25
+    e["Solver"]["Alpha 2"] = 0.5
     e["Solver"]["Use Simulated Annealing"] = True
     e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
     e["Solver"]["Simulated Annealing Initial Variance"] = 1
-    e["Solver"]["Termination Criteria"]["Max Generations"] = 250
+    e["Solver"]["Termination Criteria"]["Max Generations"] = 350
 
     e["Distributions"][0]["Name"] = "Uniform 0"
     e["Distributions"][0]["Type"] = "Univariate/Uniform"

@@ -43,8 +43,8 @@ def main():
     e["Solver"]["N2"] = 2
     e["Solver"]["N3"] = 2
     e["Solver"]["K1"] = 200
-    e["Solver"]["Alpha 1"] = 0.99
-    e["Solver"]["Alpha 2"] = 0.99
+    e["Solver"]["Alpha 1"] = 0.25
+    e["Solver"]["Alpha 2"] = 0.5
     e["Solver"]["Use Simulated Annealing"] = True
     e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
     e["Solver"]["Simulated Annealing Initial Variance"] = 1 # -> sdev = 10
