@@ -41,6 +41,9 @@ def main():
     e["Solver"]["N1"] = 2
     e["Solver"]["N2"] = 2
     e["Solver"]["N3"] = 2
+    e["Solver"]["K1"] = 200
+    e["Solver"]["Alpha 1"] = 0.99
+    e["Solver"]["Alpha 2"] = 0.99
     e["Solver"]["Use Simulated Annealing"] = True
     e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
     e["Solver"]["Simulated Annealing Initial Variance"] = 1
@@ -82,6 +85,7 @@ def main():
     assert dimCounter == distrib._p.dNormal + distrib._p.dLognormal + distrib._p.dLogitnormal + distrib._p.dProbitnormal
 
     e["File Output"]["Frequency"] = 1
+    e["File Output"]["Path"] = "_korali_result_normal/"
     e["Console Output"]["Frequency"] = 1
     e["Console Output"]["Verbosity"] = "Detailed" #"Normal" # "Detailed" results in all latent variable means being printed - we have 200 of them here, so better suppress this.
 

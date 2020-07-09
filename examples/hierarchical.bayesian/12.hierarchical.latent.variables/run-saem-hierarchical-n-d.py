@@ -78,6 +78,7 @@ def main():
     assert dimCounter == distrib._p.nDimensions
 
     e["File Output"]["Frequency"] = 1
+    e["File Output"]["Path"] = "_korali_result_n-d/"
     e["Console Output"]["Frequency"] = 1
     e["Console Output"]["Verbosity"] = "Detailed"
 

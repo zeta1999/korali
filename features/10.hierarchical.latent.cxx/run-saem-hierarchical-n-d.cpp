@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   e["Solver"]["Type"] = "HSAEM";
   e["Solver"]["Number Samples Per Step"] = 5; // reduce further to speed up
   e["Solver"]["Termination Criteria"]["Max Generations"] = 250;
-  e["Solver"]["Delta"] = 0.7;
+  e["Solver"]["Delta"] = 0.4;
   // Set up simulated annealing - or disable
   e["Solver"]["Use Simulated Annealing"] = true;
   e["Solver"]["Simulated Annealing Decay Factor"] = 0.9;

@@ -18,11 +18,6 @@ void korali::solver::HSAEM::runGeneration()
 
   _k->_logger->logInfo("Normal", "Running generation %lu...\n", _k->_currentGeneration);
 
-//  if ( _k->_currentGeneration > 150){
-//    volatile int done = 0;
-//    while (!done) sleep(1);
-//  }
-
   /* E1: Sample latent variable values */
   sampleLatent();
   _k->_logger->logInfo("Detailed", "Sampled generation: %d \n", _k->_currentGeneration);
@@ -205,7 +200,7 @@ void korali::solver::HSAEM::setInitialConfiguration()
     }
   }
 
-  _bestLogLikelihood = -korali::Inf;
+  _bestSampleLogProbability = -korali::Inf;
 }
 
 void korali::solver::HSAEM::sampleLatent()
@@ -498,14 +493,7 @@ void korali::solver::HSAEM::sampleLatent()
       _currentSampleStandardDeviations[indiv][i] = mean_and_sdev[1];
     }
   }
-  _currentMeanLogProbability = 0;
-  for (size_t c_idx = 0; c_idx < _mcmcNumberChains; c_idx++){
-    _currentMeanLogProbability = std::accumulate(_currentSampleLogLikelihoods[c_idx].begin(),
-                                                        _currentSampleLogLikelihoods[c_idx].end(), _currentMeanLogProbability);
-    _currentMeanLogProbability = std::accumulate(_currentSampleLogPriors[c_idx].begin(),
-                                                        _currentSampleLogPriors[c_idx].end(), _currentMeanLogProbability);
-  }
-  _currentMeanLogProbability /= double(_mcmcNumberChains);
+
 
 }
 
@@ -556,7 +544,7 @@ void korali::solver::HSAEM::updateS()
   if (curGen <= _k1)
     _gamma = 1.0;
   else
-    _gamma = std::pow(curGen, -alpha);
+    _gamma = std::pow( (curGen - _k1), -alpha);
 
   // * update S1
   for (size_t dim = 0; dim < _latentSpaceDimensions; dim++)
@@ -624,14 +612,31 @@ void korali::solver::HSAEM::updateProbabilities(){
 
 
   }
-  double LLHSum = 0;
-  for (size_t c_idx = 0; c_idx <_mcmcNumberChains; c_idx++){
-    LLHSum = std::accumulate(_currentSampleLogLikelihoods[c_idx].begin(), _currentSampleLogLikelihoods[c_idx].end(), LLHSum);
-    LLHSum = std::accumulate(_currentSampleLogPriors[c_idx].begin(), _currentSampleLogPriors[c_idx].end(), LLHSum);
+//  double LLHSum = 0;
+//  for (size_t c_idx = 0; c_idx <_mcmcNumberChains; c_idx++){
+//    LLHSum = std::accumulate(_currentSampleLogLikelihoods[c_idx].begin(), _currentSampleLogLikelihoods[c_idx].end(), LLHSum);
+//    LLHSum = std::accumulate(_currentSampleLogPriors[c_idx].begin(), _currentSampleLogPriors[c_idx].end(), LLHSum);
+//  }
+//  _currentLogLikelihood = LLHSum / double(_mcmcNumberChains);
+  _currentSampleLogProbability = 0;
+  _currentSampleLogPrior = 0;
+  _currentSampleLogLikelihood = 0;
+  for (size_t c_idx = 0; c_idx < _mcmcNumberChains; c_idx++){
+    _currentSampleLogLikelihood = std::accumulate(_currentSampleLogLikelihoods[c_idx].begin(),
+                                                 _currentSampleLogLikelihoods[c_idx].end(), _currentSampleLogLikelihood);
+    _currentSampleLogProbability = std::accumulate(_currentSampleLogLikelihoods[c_idx].begin(),
+                                                 _currentSampleLogLikelihoods[c_idx].end(), _currentSampleLogProbability);
+    _currentSampleLogProbability = std::accumulate(_currentSampleLogPriors[c_idx].begin(),
+                                                 _currentSampleLogPriors[c_idx].end(), _currentSampleLogProbability);
+    _currentSampleLogPrior = std::accumulate(_currentSampleLogPriors[c_idx].begin(),
+                                                 _currentSampleLogPriors[c_idx].end(), _currentSampleLogPrior);
   }
-  _currentLogLikelihood = LLHSum / double(_mcmcNumberChains);
-  if (_currentLogLikelihood > _bestLogLikelihood)
-    _bestLogLikelihood = _currentLogLikelihood;
+  _currentSampleLogProbability /= double(_mcmcNumberChains);
+  _currentSampleLogPrior /= double(_mcmcNumberChains);
+  _currentSampleLogLikelihood /= double(_mcmcNumberChains);
+
+  if (_currentSampleLogProbability > _bestSampleLogProbability)
+    _bestSampleLogProbability = _currentSampleLogProbability;
 
 }
 
@@ -764,8 +769,8 @@ void korali::solver::HSAEM::printGenerationAfter()
 {
   _k->_logger->logInfo("Normal", "Finished generation %lu...\n", _k->_currentGeneration);
 
-  _k->_logger->logInfo("Normal", "    Current Total LogLikelihood:          %.2e\n", _currentLogLikelihood);
-  _k->_logger->logInfo("Normal", "    Best Total LogLikelihood:             %.2e\n", _bestLogLikelihood);
+  _k->_logger->logInfo("Normal", "    Current Total Log Probability:       %.2e\n", _currentSampleLogProbability);
+  _k->_logger->logInfo("Normal", "    Best Total Log Probability:          %.2e\n", _bestSampleLogProbability);
   // ** Show current hyperparameters
   _k->_logger->logInfo("Normal", "\n");
   _k->_logger->logInfo("Normal", " Current hyperparameters, mean: \n");

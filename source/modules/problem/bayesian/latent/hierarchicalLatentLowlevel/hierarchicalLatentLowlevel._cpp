@@ -243,8 +243,6 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   for (std::vector<double> v : covMatrix)
     assert(v.size() == N);
 
-  std::vector<double> individualLLH(_numberIndividuals);
-
   /* We want to find:
      logp = log(1/(sqrt(2*pi)*det(cov))) - (latent - mean)'*cov*(latent - mean)
      Or:
@@ -254,13 +252,12 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   gsl_matrix *chol = gsl_matrix_alloc(N, N);
   gsl_matrix *covMatrixGSL = gsl_matrix_alloc(N, N);
 
-  if (!cholesky){
+  if (!cholesky)
+  {
       for (size_t i = 0; i < N; i++)
         for (size_t j = 0; j < N; j++)
-          gsl_matrix_set (covMatrixGSL, i, j, covMatrix[i][j]);
+          gsl_matrix_set(covMatrixGSL, i, j, covMatrix[i][j]);
 
-      // First, calculate the cholesky decomposition, cov = L'*L
-//      gsl_matrix *chol = gsl_matrix_alloc(N, N);
       gsl_matrix_memcpy(chol, covMatrixGSL);
 
       int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
@@ -283,17 +280,18 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
           KORALI_LOG_ERROR("GSL error code: %d. If ==1: Covariance matrix was invalid; this could mean it had a negative eigenvalue (that should be impossible) or one of its entries was NaN. Please report this if you think it is a bug.", status);
       }
   }
-  else { // if the covariance was already passed as cholesky decomposition
-    for (size_t i = 0; i < N; i++)
-      for (size_t j = 0; j < N; j++)
+  else
+  {
+    for (size_t i = 0; i < N; i++){
+      for (size_t j = 0; j < N; j++){
         gsl_matrix_set (chol, i, j, covMatrix[i][j]);
-  }
+  }}}
 
   // Initialize the distribution:
   std::vector<double> sigmaVec(N*N);
-  for (size_t i = 0; i < N; i++)
-    for (size_t j = 0; j < N; j++)
-      sigmaVec[i*N + j] = gsl_matrix_get(chol,i,j);
+  for (size_t i = 0; i < N; i++){
+    for (size_t j = 0; j < N; j++){
+      sigmaVec[i*N + j] = gsl_matrix_get(chol,i,j);}}
   _multivariateNormalDistribution->_meanVector = mean;
   _multivariateNormalDistribution->_sigma = sigmaVec; // Todo: Need to flatten it
   _multivariateNormalDistribution->updateDistribution();
@@ -304,6 +302,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
 
   /* Calculate the log-probability for each individual, meaning each of the transformed-latent-variable vectors
   following the same multivariate Gaussian distribution */
+  std::vector<double> individualLLH(_numberIndividuals);
   for (size_t i = 0; i < _numberIndividuals; i++)
   {
     // Get i-th vector of latent variables:
@@ -314,10 +313,11 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
     _multivariateNormalDistribution->getLogDensity(&latentZ[0], &logP, latentZ.size());
     individualLLH[i] = logP;
   }
-  sample["Log Prior"] = individualLLH;
-
   gsl_matrix_free(chol);
   gsl_matrix_free(covMatrixGSL);
+
+  sample["Log Prior"] = individualLLH;
+
 }
 
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_old(korali::Sample &sample, bool zForm)

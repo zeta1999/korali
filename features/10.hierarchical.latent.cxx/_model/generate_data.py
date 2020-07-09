@@ -145,14 +145,14 @@ def generate_data_advanced():
         given latent variables, the sampled points simply are normally distributed, with sdev sigma, around the latent variable
         '''
     n_individuals = 5
-    max_n_samples = 10 # each individual has between 1 and this number of data points assigned
+    max_n_samples = 50 # each individual has between 1 and this number of data points assigned
     sigma = .4  # Note: for logit-normal variables, a sigma of 0.5 is already pretty high.
     omega1 = 1.0
     omega2 = 0.25
     omega3 = 0.5
-    d_normal = 0
+    d_normal = 2
     d_logn = 2
-    d_logitn =  0
+    d_logitn =  2
     d_latent = d_normal + d_logn + d_logitn
     d = d_latent
     # The hyperparameter

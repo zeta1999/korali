@@ -38,10 +38,13 @@ def main():
     e["Solver"]["Type"] = "HSAEM"
     e["Solver"]["Number Samples Per Step"] = 10
     e["Solver"]["mcmc Outer Steps"] = 1
-    e["Solver"]["mcmc Target Acceptance Rate"] = 0.3
+    e["Solver"]["mcmc Target Acceptance Rate"] = 0.4
     e["Solver"]["N1"] = 2
     e["Solver"]["N2"] = 2
     e["Solver"]["N3"] = 2
+    e["Solver"]["K1"] = 200
+    e["Solver"]["Alpha 1"] = 0.99
+    e["Solver"]["Alpha 2"] = 0.99
     e["Solver"]["Use Simulated Annealing"] = True
     e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
     e["Solver"]["Simulated Annealing Initial Variance"] = 1 # -> sdev = 10
@@ -83,6 +86,7 @@ def main():
     assert dimCounter == distrib._p.dNormal + distrib._p.dLognormal + distrib._p.dLogitnormal + distrib._p.dProbitnormal
 
     e["File Output"]["Frequency"] = 1
+    e["File Output"]["Path"] = "_korali_result_logistic/"
     e["Console Output"]["Frequency"] = 1
     e["Console Output"]["Verbosity"] = "Detailed"
 

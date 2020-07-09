@@ -37,6 +37,7 @@ def plotVariables(genList):
   total_logprobab = np.zeros((numgens))
   total_logllh = np.zeros((numgens))
   total_logprior = np.zeros((numgens))
+  total_logprior_check = np.zeros((numgens))
 
   colors = get_cmap(numIndividuals)
   ncols = 3
@@ -60,12 +61,14 @@ def plotVariables(genList):
     hyperparams_mean[idx, ...] = genList[i]["Solver"]["Current Hyperparameters Mean"]
     hyperparams_cov[idx, ...] = np.array(genList[i]["Solver"][ "Current Hyperparameters Covariance"])
     gammas[idx] = genList[i]["Solver"]["Gamma"]
-    total_logprobab[idx] = genList[i]["Solver"]["Current Mean Log Probability" ]
-    total_logllh[idx] = genList[i]["Solver"][ "Current Log Likelihood"]
+    total_logprobab[idx] = genList[i]["Solver"]["Current Sample Log Probability" ]
+    total_logprior[idx] = genList[i]["Solver"][ "Current Sample Log Prior"]
+    total_logllh[idx] = genList[i]["Solver"][ "Current Sample Log Likelihood"]
     if genList[i]["Solver"]["Log All Samples"]:
         log_all_samples = True
 
-  total_logprior[:] = np.array([tot - l for tot, l in zip(total_logprobab, total_logllh)])
+  total_logprior_check[:] = np.array([tot - l for tot, l in zip(total_logprobab, total_logllh)])
+  assert np.all(np.isclose(total_logprior_check, total_logprior))
 
   # Get all samples across sampling steps, whenever available
   if log_all_samples:
@@ -228,7 +231,7 @@ def plotVariables(genList):
       ax.plot(all_samples_x[c], all_priors[c][:, indiv], c=colors(indiv), alpha=0.6, lw=0.3)
   prior_mean = np.mean(np.array(all_priors), axis=(0,2))
   ax.plot(all_samples_x[0], prior_mean,c='k', alpha=1, lw=0.4)
-  plt.xlabel("Generation \n\n(Black lines: mean over all individuals and chains)")
+  plt.xlabel("Generation\nNote: Prior is set to 0 for sub-steps 1 to N1 \n\n(Black lines: mean over all individuals and chains)")
   plt.ylabel("Log-Prior")
 
   return (fig, fig2), ax

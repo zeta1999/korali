@@ -55,6 +55,7 @@ def main():
         e["Variables"][i]["Prior Distribution"] = "Uniform 0"  # not used (?) but required
 
     e["File Output"]["Frequency"] = 50
+    e["File Output"]["Path"] = "_korali_result_hierarchical/"
     e["Console Output"]["Frequency"] = 10
     e["Console Output"]["Verbosity"] = "Detailed"
 
