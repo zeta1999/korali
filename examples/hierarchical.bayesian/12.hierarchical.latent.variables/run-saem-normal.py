@@ -41,13 +41,15 @@ def main():
     e["Solver"]["N1"] = 2
     e["Solver"]["N2"] = 2
     e["Solver"]["N3"] = 2
-    e["Solver"]["K1"] = 250
-    e["Solver"]["Alpha 1"] = 0.25
-    e["Solver"]["Alpha 2"] = 0.5
+    e["Solver"]["K1"] = 200
+    e["Solver"]["Ka"] = 200
+    e["Solver"]["Alpha 1"] = 0.9999
+    e["Solver"]["Alpha 2"] = 0.9999
     e["Solver"]["Use Simulated Annealing"] = True
     e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
     e["Solver"]["Simulated Annealing Initial Variance"] = 1
-    e["Solver"]["Termination Criteria"]["Max Generations"] = 350
+    e["Solver"]["Diagonal Covariance" ] = True
+    e["Solver"]["Termination Criteria"]["Max Generations"] = 250
 
     e["Distributions"][0]["Name"] = "Uniform 0"
     e["Distributions"][0]["Type"] = "Univariate/Uniform"
@@ -87,7 +89,7 @@ def main():
     e["File Output"]["Frequency"] = 1
     e["File Output"]["Path"] = "_korali_result_normal/"
     e["Console Output"]["Frequency"] = 1
-    e["Console Output"]["Verbosity"] = "Detailed" #"Normal" # "Detailed" results in all latent variable means being printed - we have 200 of them here, so better suppress this.
+    e["Console Output"]["Verbosity"] = "Normal" # "Detailed" results in all latent variable means being printed - we have 200 of them here, so better suppress this.
 
     k.run(e)
 

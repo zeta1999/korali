@@ -205,8 +205,6 @@ void korali::solver::HSAEM::setInitialConfiguration()
 
 void korali::solver::HSAEM::sampleLatent()
 {
-//  updateAnnealedDistribution(); // because we want to draw from it below //moved to be run after updateHyperparameters()
-
   std::fill(_acceptanceRateDenominator.begin(), _acceptanceRateDenominator.end(), 0.0);
   std::fill(_acceptanceRateNominator.begin(), _acceptanceRateNominator.end(), 0.0);
 
@@ -500,7 +498,7 @@ void korali::solver::HSAEM::sampleLatent()
 //* @brief Anneal the covariance if needed.
 void korali::solver::HSAEM::annealCovariance()
 {
-  if (_useSimulatedAnnealing)
+  if (_useSimulatedAnnealing & (_ka >= _k->_currentGeneration))
   { /* If I'm not mistaken, taking the max on the diagonal can never be a problem because it's the same as
        adding a positive (>=0) diagonal matrix to the covariance, which should preserve positive-definiteness.
        On the other hand, (by proof of 'it happened'), max on off-diagonals (that is, max(cov[i][j], 0) with i !=0)
@@ -521,7 +519,7 @@ void korali::solver::HSAEM::annealCovariance()
 //* @brief Update internal distribution representation of p(latent | hyper). ! Does not anneal the covariance.
 void korali::solver::HSAEM::updateAnnealedDistribution()
 {
-  _annealedNormalGenerator->setProperty("Sigma", flatten(_annealedCovariance));
+  _annealedNormalGenerator->setProperty("Sigma", flatten(_currentAnnealedCovarianceCholesky));
   _annealedNormalGenerator->setProperty("Mean Vector", _currentHyperparametersMean);
   _annealedNormalGenerator->updateDistribution();
 //  if (_useSimulatedAnnealing)
@@ -529,10 +527,10 @@ void korali::solver::HSAEM::updateAnnealedDistribution()
 //    auto flatCov = flatten(_currentHyperparametersCovariance);
 //    for (size_t i = 0; i < flatCov.size(); i++)
 //      _annealedCovariance[i] = std::max(_annealedCovariance[i] * _simulatedAnnealingDecayFactor, flatCov[i]);
-//    _annealedNormalGenerator->setProperty("Sigma", _annealedCovariance);
+//    _annealedNormalGenerator->setProperty("Sigma", _currentAnnealedCovarianceCholesky);
 //  }
 //  else
-//    _annealedNormalGenerator->setProperty("Sigma", flatten(_currentHyperparametersCovariance));
+//    _annealedNormalGenerator->setProperty("Sigma", flatten(_currentHyperparametersCovarianceCholesky));
 //  _annealedNormalGenerator->setProperty("Mean Vector", _currentHyperparametersMean);
 //  _annealedNormalGenerator->updateDistribution();
 }

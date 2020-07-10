@@ -14,10 +14,6 @@ def main():
     # Initialize the distribution
     distrib = LogisticConditionalDistribution()
 
-    # # rng = np.random.default_rng()
-    # # initial_hyperparams = rng.standard_normal(2) # 1d mean and cov
-    # initial_hyperparams = np.random.standard_normal(2) # 1d mean and cov
-
     k = korali.Engine()
     e = korali.Experiment()
 
@@ -47,7 +43,8 @@ def main():
     e["Solver"]["Alpha 2"] = 0.5
     e["Solver"]["Use Simulated Annealing"] = True
     e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
-    e["Solver"]["Simulated Annealing Initial Variance"] = 1 # -> sdev = 10
+    e["Solver"]["Simulated Annealing Initial Variance"] = 1
+    e["Solver"]["Diagonal Covariance" ] = True
     e["Solver"]["Termination Criteria"]["Max Generations"] = 250
 
     e["Distributions"][0]["Name"] = "Uniform 0"

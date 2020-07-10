@@ -38,9 +38,9 @@ class NormalConditionalDistribution():
         fx = normalModel(x, latent_vars[0])
         sigma2 = latent_vars[-1]**2
         eps = 1e-10
-        if sample["Current Generation"] > 200:
-            import pdb
-            pdb.set_trace()
+        # if sample["Current Generation"] > 200:
+        #     import pdb
+        #     pdb.set_trace()
         if self._p.error_model == "constant":
             err = (y - fx) ** 2
             det = sigma2
@@ -57,38 +57,3 @@ class NormalConditionalDistribution():
             log2pi = 0.5 * np.log(2 * np.pi)
             logp = -log2pi - 0.5 * np.log(det) - 0.5 * err / sigma2
             sample["Conditional LogLikelihood"] = logp
-
-        # Relevant part in Matlab code:
-        '''    # We have 2 x a set of parameters here it seems:
-                First, theta, the model parameters for f(x, theta) 
-                Second, the standard deviation of the noise around f(x, theta) -- here, one-dimensional.
-         
-                theta = model.par_transf( theta ); # the inverse transfomr, z -> latent, This is already automated by Korali
-                error = z(par.N,:); # N = len(beta), seems to be the latent space dimensions.
-                                    # What's the second dimension index for in z?
-                                    # Seems it's the number of individuals. 
-                error = model.err_par_transf( error ); # --> lognormal "error"=covariance; so  
-                sigma2 = error(k)^2;
-
-                ind = ( data.id == data.uid(k) ); 
-                y = model.fun( theta(:,k), data.x(ind) );
-
-            switch model.error_model
-                case 'constant'
-                    sserr(k) = sum( (y-data.y(ind)).^2 );
-                    tmp = sigma2*ones(1,data.Ndi(k));
-                case 'proportional'
-                    y2 = max(eps,y.^2);
-                    sserr(k) = sum(  ((y-data.y(ind)).^2) ./ y2   );
-                    tmp = sigma2*y2;
-                otherwise
-                    error('Unknown error model')
-            end
-
-            if( isfinite(sserr(k)) )
-                ll(k) = -data.Ndi(k)*log2pi - 0.5*sum(log(tmp)) - 0.5*sserr(k)/sigma2;   # THe last part is probably an implicit matrix inversion. Or elementwise division?
-                            \_ the constant    \_ the determinant       \_ the error part
-            else
-                ll(k) = -1e200;
-            end
-        '''

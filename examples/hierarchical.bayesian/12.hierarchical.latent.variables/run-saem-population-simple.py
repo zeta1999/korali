@@ -65,16 +65,16 @@ def main():
         e["Variables"][i + 1]["Initial Value"] = d3_initialLatentValues[latent_counter]
         latent_counter += 1
 
-    e["File Output"]["Frequency"] = 50
+    e["File Output"]["Frequency"] = 1
     e["Console Output"]["Frequency"] = 10
     e["Console Output"]["Verbosity"] = "Detailed"
 
     k.run(e)
 
     print("------------ Experiment finished ------------\n")
-    print(" --- Compare results to true optimizer in ")
+    print("   Compare results to true optimizer in ")
     print("     '_data/simple_example_Lavielle/data_925_info.txt' ")
-    print(" --- Plot experiment stats with ")
+    print("   Plot experiment stats with: ")
     print("     'python3 -m korali.plotter'")
 
 

@@ -37,6 +37,10 @@ def main():
 
     e["Solver"]["Type"] = "HSAEM"
     e["Solver"]["Number Samples Per Step"] = 5
+    e["Solver"]["mcmc Outer Steps"] = 1
+    e["Solver"]["N1"] = 2
+    e["Solver"]["N2"] = 2
+    e["Solver"]["N3"] = 2
     e["Solver"]["Termination Criteria"]["Max Generations"] = 30
 
     e["Distributions"][0]["Name"] = "Uniform 0"
@@ -62,9 +66,9 @@ def main():
     k.run(e)
 
     print("------------ Experiment finished ------------\n")
-    print(" --- Compare results to true optimizer in ")
+    print("   Compare results to true optimizer in ")
     print("     '_data/simple_example_Lavielle/data_925_info.txt' ")
-    print(" --- Plot experiment stats with ")
+    print("   Plot experiment stats with: ")
     print("     'python3 -m korali.plotter'")
 
 

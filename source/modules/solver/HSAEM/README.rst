@@ -49,20 +49,31 @@ Parameters that influence runtime
   - Note: SA only has an effect if the SA variance is larger than some of the
     diagonal entries of the estimated covariance matrix.
 
-## TODO: Describe how to use it or refer to a tutorial
-------------------------------------------------------
 
-You can add code:
+Simulated Annealing
+-------------------
+Simulated Annealing (SA, see `Kirkpatrick 1984 <https://link.springer.com/article/10.1007/BF01009452>`_ ) is a technique
+for stochastic optimization methods, where the probability distribution is widened artificially, by a factor decreasing
+with iterations, to allow more exploration and prevent getting stuck in local minima.
 
-.. code-block:: python
+Parameters that control SA in the SAEM solver are:
+
+.. code-block::
+
   
-  print('Hello World')
-  
-or formulae:
 
-.. math::
 
-  y = x^2
+Korali's implementation of SA for SAEM follows the proposal in chapter 9.2.6 in the `book by Lavielle <http://www.cmap.polytechnique.fr/~lavielle/book.html>`_ .
 
-And other rST devices.
+
+
+Examples
+--------
+
+Four examples how to use this solver can be found in example folder `examples/hierarchical.bayesian/latent.variables/`
+
+- `run-saem-hierarchical.py`
+- `run-saem-hierarchical-nd.py`
+- `run-saem-normal.py`
+- `run-saem-logistic.py`
 
