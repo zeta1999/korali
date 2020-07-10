@@ -33,6 +33,18 @@ We exactly follow the method described in section 9.2.4.1 in `Lavielle's book <h
 
 
 
+Examples
+--------
+
+Four examples how to use this solver can be found in example folder `examples/hierarchical.bayesian/latent.variables/`
+
+- `run-saem-hierarchical.py`
+- `run-saem-hierarchical-nd.py`
+- `run-saem-normal.py`
+- `run-saem-logistic.py`
+
+
+
 Parameters that influence runtime
 ---------------------------------
 - The number of MCMC steps per generation is (`"Number Samples Per Step"`) *
@@ -58,22 +70,25 @@ with iterations, to allow more exploration and prevent getting stuck in local mi
 
 Parameters that control SA in the SAEM solver are:
 
-.. code-block::
+.. code-block:: python
 
-  
+  # Setup before setting parameters
+  k = korali.Engine()
+  e = korali.Experiment()
+  e["Solver"]["Type"] = "HSAEM"
+
+  # First we need to enable it:
+  e["Solver"]["Use Simulated Annealing" ] = true
+  # Ka: Number of iterations during which SA is active.
+  e["Solver"]["Ka"] = 200
+  # SA works by replacing the sampling variance by something larger. So to let
+  #  SA do its job, make sure this variance is larger than what it replaces:
+  e["Solver"]["Simulated Annealing Initial Variance"] = 5.0
+  # The larger variance from SA will be decreased each iteration by:
+  e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
 
 
 Korali's implementation of SA for SAEM follows the proposal in chapter 9.2.6 in the `book by Lavielle <http://www.cmap.polytechnique.fr/~lavielle/book.html>`_ .
 
 
-
-Examples
---------
-
-Four examples how to use this solver can be found in example folder `examples/hierarchical.bayesian/latent.variables/`
-
-- `run-saem-hierarchical.py`
-- `run-saem-hierarchical-nd.py`
-- `run-saem-normal.py`
-- `run-saem-logistic.py`
 
