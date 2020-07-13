@@ -2,7 +2,7 @@
 import sys
 sys.path.append('./_model/simple_example_Lavielle')
 from model import *
-from tutorial_samplers import *
+from samplers import *
 
 import numpy as np
 import korali

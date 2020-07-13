@@ -111,8 +111,10 @@ class HSAEM : public korali::Solver
   /** @brief Print information after each generation */
   void printGenerationAfter() override;
 
-
-//  void finalize() override;
+  /**
+ * @brief Final console output at termination.
+ */
+  void finalize() override;
 };
 
 } // namespace solver

@@ -862,9 +862,38 @@ void korali::solver::HSAEM::printGenerationAfter()
 }
 
 
-//void finalize(){
-//
-//}
+void finalize(){
+  _k->_logger->logInfo("Normal", "Finished. Final hyperparameter estimates:\n");
+  // Only enable as soon as I have good estimates of that:
+//  _k->_logger->logInfo("Normal", "  Current Total Log Probability:       %.2e\n", ...);
+//  _k->_logger->logInfo("Normal", "  Best Total Log Probability:          %.2e\n", ...);
+
+  // * Set results and print them
+  (*_k)["Results"]["Mean"] = _currentHyperparametersMean;
+  (*_k)["Results"]["Mean transformed back"] = _currentHyperparametersMeanTransformed;
+  (*_k)["Results"]["Covariance Matrix"] = _currentHyperparametersCovariance;
+
+  for (size_t dim = 0; dim < _latentSpaceDimensions; dim++){
+    size_t idx = _latentProblem->_firstIndividualLatentIndices[dim];
+    std::string varName = _latentProblem->_k->_variables[idx]->_name;
+    _k->_logger->logInfo("Normal", "\tMean for %s etc: \t%.2f\tBack-transf.: %.2f\n", varName.c_str(),
+                                    _currentHyperparametersMean[dim], _currentHyperparametersMeanTransformed[dim]);
+  }
+
+  std::ostringstream covLogStringStream;
+  _k->_logger->logInfo("Normal", "Covariance matrix: \n");
+  _k->_logger->logInfo("Normal",   "  [\n");
+  for (size_t i = 0; i < _latentSpaceDimensions; i++)
+  {
+     covLogStringStream <<  "    [";
+     for (size_t j = 0; j < _latentSpaceDimensions; j++)
+       covLogStringStream << "\t" << _currentHyperparametersCovariance[i][j] << " ";
+     covLogStringStream << "],\n";
+     _k->_logger->logInfo("Normal", covLogStringStream.str().c_str());
+     covLogStringStream.str("");
+  }
+  _k->_logger->logInfo("Normal",   "  ]\n");
+}
 
 /** @brief: Utility function to convert a vector of vectors into a concatenated 1D vector.
   */
