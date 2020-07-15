@@ -247,7 +247,7 @@ void SAEM::QFunction(Sample &sample, size_t zetaFc, size_t phiFc)
 
   auto zeta = KORALI_GET(double, sample, "zeta");
   auto phi = KORALI_GET(std::vector<double>, sample, "phi");
-  auto currentS = KORALI_GET(std::vector<double>, sample, "Globals", "Current S");
+  auto currentS = sample.globals()["Current S"].get<std::vector<double>>();
 
   if (phi.size() != currentS.size())
     KORALI_LOG_ERROR("SAEM Internal model error. Current Robbins-Monro-averaged vector S did not have the same length as vector phi from the problem definition (from the model).\n");
@@ -285,11 +285,7 @@ void SAEM::updateHyperparameters()
     _numberGenerationsSmallLikelihoodChange++;
 }
 
-/** @brief Test whether index idx corresponds to a latent variable.
-
- @param idx The index of a variable, in the list of all variables. The order is given by the user when defining
-            variables, e.g. k["Variables"][3] will be the third variable. (typo possible.)
- */
+/** @brief Test whether index idx corresponds to a latent variable. */
 bool SAEM::isLatent(int idx)
 {
   /* checks whether the variable at index idx, i.e., k->_variables[idx], is latent or not*/
@@ -311,10 +307,7 @@ std::vector<double> SAEM::meanAndSDev(std::vector<double> v)
   return result;
 }
 
-/** @brief Utility function, "transposes" a vector of vectors @param data 
-
-    That is, data[i][j] will be moved to result[j][i].
-    */
+/** @brief Utility function, "transposes" a vector of vectors */
 std::vector<std::vector<double>> SAEM::transpose(const std::vector<std::vector<double>> data)
 {
   /* From: https://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors */
