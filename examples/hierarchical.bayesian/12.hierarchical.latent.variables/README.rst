@@ -177,9 +177,9 @@ In a shell from this directory, type, for example
 
 .. code-block::
 
-    $ python3 run-saem-population-simple.py
+    $ python3 run-saem-hierarchical.py
 
-
+to run the 'simple example' using HSAEM.
 
 
 
