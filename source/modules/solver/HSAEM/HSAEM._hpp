@@ -87,7 +87,7 @@ class HSAEM : public korali::Solver
   std::vector<double> meanAndSDev(std::vector<double> v);
 
   /**
-  *  @brief Utility function, "transposes" a vector of vectors of vectors @param data,
+  *  @brief Utility function, "transposes" a vector of vectors of vectors @param data
             so that data[i][j][k] will be moved to result[j][k][i].
   * @param data A vector of vectors. All sub-vectors are expected to have same length. Represents a 3D-array.
   * @return result, a 3D array, so that data[i][j][k] is moved to result[j][i][k].
@@ -111,9 +111,7 @@ class HSAEM : public korali::Solver
   /** @brief Print information after each generation */
   void printGenerationAfter() override;
 
-  /**
- * @brief Final console output at termination.
- */
+  /** @brief Final console output at termination. */
   void finalize() override;
 };
 

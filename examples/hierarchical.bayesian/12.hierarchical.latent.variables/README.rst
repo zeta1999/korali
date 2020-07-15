@@ -188,7 +188,8 @@ In a shell from this directory, type, for example
 Simple example using standard SA-EM
 --------------------------------------------
 
-This example is structured similarly to the examples in saem_examples_. Please refer to their readme
+This example is structured similarly to the examples in `these examples <../../bayesian.inference/latent/README.rst>`_.
+. Please refer to their readme
 for explanations.
 
 Simple example using HSAEM

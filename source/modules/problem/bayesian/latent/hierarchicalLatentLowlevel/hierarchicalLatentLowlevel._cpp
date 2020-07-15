@@ -319,121 +319,123 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   sample["Log Prior"] = individualLLH;
 
 }
+//
+//void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_old(korali::Sample &sample, bool zForm)
+//{
+//  //  volatile int done = 0;
+//  //  while (!done) sleep(1);
+//
+//  // calculate log[ p(latent | hyperparams) ]:
+//  // -- need a multivariate log-gaussian function for this
+//  // += conditional log-llh (log[p(data | latent)])
+//
+//  std::vector<std::vector<double>> _latentVariables = KORALI_GET(std::vector<std::vector<double>>, sample, "Latent Variables");
+//  std::vector<double> mean = KORALI_GET(std::vector<double>, sample, "Mean");
+//  size_t N = mean.size(); // Number of latent variables
+//  auto covMatrix = KORALI_GET(std::vector<std::vector<double>>, sample, "Covariance Cholesky Decomposition");
+//  assert(N == covMatrix.size());       // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
+//  assert(N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
+//  for (std::vector<double> v : covMatrix)
+//    assert(v.size() == N);
+//
+//  //gsl_matrix_const_view covMatrixGSL = gsl_matrix_const_view_array(&covMatrix[0][0], N, N); // This works, but for memcopy below we need a proper matrix
+//  gsl_matrix *covMatrixGSL = gsl_matrix_alloc(N, N);
+//  for (size_t i = 0; i < N; i++)
+//    for (size_t j = 0; j < N; j++)
+//      gsl_matrix_set (covMatrixGSL, i, j, covMatrix[i][j]);
+//
+//  // First, calculate the cholesky decomposition, cov = L'*L
+//  gsl_matrix *chol = gsl_matrix_alloc(N, N);
+//  gsl_matrix_memcpy(chol, covMatrixGSL);
+//
+//  int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+//  if (status != 0){
+//    if (status != 1)  KORALI_LOG_ERROR("Status == 1 would have indicated an invalid input, such as not positive definite (e.g. very small eigenvalues). But the GSL error code was: %d. Please report this if you think it is a bug.", status, status);
+////    assert(status == 1);
+//    /* TODO: If you rewrite hSAEM entirely so that it calls a sub-solver , hSAEMLowlevel or so, then, and only then, can
+//     *       you enable the line below: */
+//    //_k->_logger->logWarning("Normal", "Estimated covariance matrix was not positive definite.");
+//    /* If status == 1, covMatrixGSL was not positive definite.
+//     * Let's add a small diagonal matrix. */
+//    double eps = 1.e-4; // 1.e-8 is too small. Maybe GSL has low precision for matrix operations?
+//    for (size_t i = 0; i < N; i++){
+//      for (size_t j = 0; j < N; j++)
+//        gsl_matrix_set (chol, i, j, covMatrix[i][j]);
+//      gsl_matrix_set (chol, i, i, covMatrix[i][i] + eps);
+//    }
+//    int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
+//
+//    if(status != 0) // Now it failed for real. Is it negative definite?
+//      KORALI_LOG_ERROR("GSL error code: %d. If ==1: Covariance matrix was invalid; this could mean it had a negative eigenvalue (that should be impossible) or one of its entries was NaN. Please report this if you think it is a bug.", status);
+//  }
+//
+//  // --> log(det(covariance)) = sum(log( diag(L) ))
+//  double logdet = 0;
+//  for (size_t i = 0; i < N; i++)
+//  {
+//    logdet += log(gsl_matrix_get(chol, i, i));
+//    // We swallow the 2* and drop 1/2* further down (det(Sigma) = det(chol)**2 and we later take the root).
+//  }
+//
+//  // we'll need those
+//  gsl_vector_const_view mean_view = gsl_vector_const_view_array(&mean[0], N);
+//  gsl_vector *latent_minus_mean = gsl_vector_alloc(N);
+//  gsl_vector *x = gsl_vector_alloc(N);
+//  std::vector<double> individualLLH(_numberIndividuals);
+//  //  double lllh = 0;
+//  //gsl_vector_const_view b(&latent_minus_mean, N);
+//  //gsl_vector* b = gsl_vector_alloc(N);
+//
+//  /* Calculate the log-probability for each individual, meaning each of the transformed-latent-variable vectors
+//   following the same multivariate Gaussian distribution */
+//  for (size_t i = 0; i < _numberIndividuals; i++)
+//  {
+//    // Get i-th vector of latent variables:
+//    std::vector<double> latentZ = _latentVariables[i];
+//    if (!zForm)
+//      latentZ = latentToZ(latentZ);
+//    for (size_t j = 0; j < _latentSpaceDimensions; j++)
+//    {
+//      //size_t v_idx = _latentIndex[i][j];
+//      gsl_vector_set(latent_minus_mean, j, latentZ[j]);
+//    }
+//
+//    gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
+//    //std::vector<double> latent_minus_mean(_latentVariables); // should copy -?
+//    //std::transform(latent_minus_mean.begin(), latent_minus_mean.end(), mean.begin(), latent_minus_mean.begin(), std::minus<double>());
+//
+//    //  // for inversion/solving a linear eqation, could add a small positive diagonal matrix:
+//    //  double eps = 1.e-10;
+//    //  gsl_matrix* epsMatrix = gsl_matrix_alloc(N, N);
+//    //  gsl_matrix_set_identity(epsMatrix);
+//    //  gsl_matrix_scale(epsMatrix, eps);
+//
+//    // * "Invert" the covariance matrix using the cholesky decomposition cov = L'*L (solve a LSE for each 'individual')
+//    gsl_linalg_cholesky_solve(chol, latent_minus_mean, x); // -> x = Cov^-1 * (latent - mean)
+//
+//    // --> log(p( latent | mean, cov )) = || (latent - mean)*L^-1 ||^2 / 2
+//    //                                  = (latent - mean)^T * cov^-1 / 2 * (latent - mean)
+//    double lllh_i;
+//    gsl_blas_ddot(latent_minus_mean, x, &lllh_i);
+//    //    lllh -= lllh_i / 2.;
+//    individualLLH[i] -= lllh_i / 2.;
+//  }
+//
+//  // add the log of the normalization factor:
+//  double log_normn = (float(N) / 2. * log(2. * M_PI) + logdet);
+//  for (size_t i = 0; i < _numberIndividuals; i++)
+//    individualLLH[i] -= log_normn;
+//  //  lllh -= log_normn * float(_numberIndividuals);
+//  //  sample["Log Prior"] = lllh;
+//  sample["Log Prior"] = individualLLH;
+//
+//  gsl_matrix_free(covMatrixGSL);
+//  gsl_matrix_free(chol);
+//  gsl_vector_free(latent_minus_mean);
+//  gsl_vector_free(x);
+//}
 
-void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_old(korali::Sample &sample, bool zForm)
-{
-  //  volatile int done = 0;
-  //  while (!done) sleep(1);
 
-  // calculate log[ p(latent | hyperparams) ]:
-  // -- need a multivariate log-gaussian function for this
-  // += conditional log-llh (log[p(data | latent)])
-
-  std::vector<std::vector<double>> _latentVariables = KORALI_GET(std::vector<std::vector<double>>, sample, "Latent Variables");
-  std::vector<double> mean = KORALI_GET(std::vector<double>, sample, "Mean");
-  size_t N = mean.size(); // Number of latent variables
-  auto covMatrix = KORALI_GET(std::vector<std::vector<double>>, sample, "Covariance Cholesky Decomposition");
-  assert(N == covMatrix.size());       // "Error: Dimensions of covariance matrix passed to evaluateLogLikelihood did not fit to dimensions of the mean passed ");
-  assert(N == _latentSpaceDimensions); // "Error: Dimensions of the hyperparameters passed to evaluateLogLikelihood did not fit to the latent variable distribution defined during problem setup.")
-  for (std::vector<double> v : covMatrix)
-    assert(v.size() == N);
-
-  //gsl_matrix_const_view covMatrixGSL = gsl_matrix_const_view_array(&covMatrix[0][0], N, N); // This works, but for memcopy below we need a proper matrix
-  gsl_matrix *covMatrixGSL = gsl_matrix_alloc(N, N);
-  for (size_t i = 0; i < N; i++)
-    for (size_t j = 0; j < N; j++)
-      gsl_matrix_set (covMatrixGSL, i, j, covMatrix[i][j]);
-
-  // First, calculate the cholesky decomposition, cov = L'*L
-  gsl_matrix *chol = gsl_matrix_alloc(N, N);
-  gsl_matrix_memcpy(chol, covMatrixGSL);
-
-  int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
-  if (status != 0){
-    if (status != 1)  KORALI_LOG_ERROR("Status == 1 would have indicated an invalid input, such as not positive definite (e.g. very small eigenvalues). But the GSL error code was: %d. Please report this if you think it is a bug.", status, status);
-//    assert(status == 1);
-    /* TODO: If you rewrite hSAEM entirely so that it calls a sub-solver , hSAEMLowlevel or so, then, and only then, can
-     *       you enable the line below: */
-    //_k->_logger->logWarning("Normal", "Estimated covariance matrix was not positive definite.");
-    /* If status == 1, covMatrixGSL was not positive definite.
-     * Let's add a small diagonal matrix. */
-    double eps = 1.e-4; // 1.e-8 is too small. Maybe GSL has low precision for matrix operations?   
-    for (size_t i = 0; i < N; i++){
-      for (size_t j = 0; j < N; j++)
-        gsl_matrix_set (chol, i, j, covMatrix[i][j]);
-      gsl_matrix_set (chol, i, i, covMatrix[i][i] + eps);
-    }
-    int status = gsl_linalg_cholesky_decomp1(chol); //lower triangular part + diagonal of chol afterwards contain L from the cholesky decomposition cov = L*L'
-
-    if(status != 0) // Now it failed for real. Is it negative definite?
-      KORALI_LOG_ERROR("GSL error code: %d. If ==1: Covariance matrix was invalid; this could mean it had a negative eigenvalue (that should be impossible) or one of its entries was NaN. Please report this if you think it is a bug.", status);
-  }
-
-  // --> log(det(covariance)) = sum(log( diag(L) ))
-  double logdet = 0;
-  for (size_t i = 0; i < N; i++)
-  {
-    logdet += log(gsl_matrix_get(chol, i, i));
-    // We swallow the 2* and drop 1/2* further down (det(Sigma) = det(chol)**2 and we later take the root).
-  }
-
-  // we'll need those
-  gsl_vector_const_view mean_view = gsl_vector_const_view_array(&mean[0], N);
-  gsl_vector *latent_minus_mean = gsl_vector_alloc(N);
-  gsl_vector *x = gsl_vector_alloc(N);
-  std::vector<double> individualLLH(_numberIndividuals);
-  //  double lllh = 0;
-  //gsl_vector_const_view b(&latent_minus_mean, N);
-  //gsl_vector* b = gsl_vector_alloc(N);
-
-  /* Calculate the log-probability for each individual, meaning each of the transformed-latent-variable vectors
-   following the same multivariate Gaussian distribution */
-  for (size_t i = 0; i < _numberIndividuals; i++)
-  {
-    // Get i-th vector of latent variables:
-    std::vector<double> latentZ = _latentVariables[i];
-    if (!zForm)
-      latentZ = latentToZ(latentZ);
-    for (size_t j = 0; j < _latentSpaceDimensions; j++)
-    {
-      //size_t v_idx = _latentIndex[i][j];
-      gsl_vector_set(latent_minus_mean, j, latentZ[j]);
-    }
-
-    gsl_vector_sub(latent_minus_mean, &mean_view.vector); // todo: &... or just mean_view.vector?
-    //std::vector<double> latent_minus_mean(_latentVariables); // should copy -?
-    //std::transform(latent_minus_mean.begin(), latent_minus_mean.end(), mean.begin(), latent_minus_mean.begin(), std::minus<double>());
-
-    //  // for inversion/solving a linear eqation, could add a small positive diagonal matrix:
-    //  double eps = 1.e-10;
-    //  gsl_matrix* epsMatrix = gsl_matrix_alloc(N, N);
-    //  gsl_matrix_set_identity(epsMatrix);
-    //  gsl_matrix_scale(epsMatrix, eps);
-
-    // * "Invert" the covariance matrix using the cholesky decomposition cov = L'*L (solve a LSE for each 'individual')
-    gsl_linalg_cholesky_solve(chol, latent_minus_mean, x); // -> x = Cov^-1 * (latent - mean)
-
-    // --> log(p( latent | mean, cov )) = || (latent - mean)*L^-1 ||^2 / 2
-    //                                  = (latent - mean)^T * cov^-1 / 2 * (latent - mean)
-    double lllh_i;
-    gsl_blas_ddot(latent_minus_mean, x, &lllh_i);
-    //    lllh -= lllh_i / 2.;
-    individualLLH[i] -= lllh_i / 2.;
-  }
-
-  // add the log of the normalization factor:
-  double log_normn = (float(N) / 2. * log(2. * M_PI) + logdet);
-  for (size_t i = 0; i < _numberIndividuals; i++)
-    individualLLH[i] -= log_normn;
-  //  lllh -= log_normn * float(_numberIndividuals);
-  //  sample["Log Prior"] = lllh;
-  sample["Log Prior"] = individualLLH;
-
-  gsl_matrix_free(covMatrixGSL);
-  gsl_matrix_free(chol);
-  gsl_vector_free(latent_minus_mean);
-  gsl_vector_free(x);
-}
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior(korali::Sample &sample)
 {
   evaluateLogPrior_(sample, true, true);

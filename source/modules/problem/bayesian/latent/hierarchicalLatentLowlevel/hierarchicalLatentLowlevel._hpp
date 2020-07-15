@@ -54,7 +54,9 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
   * @returns sample["Log Prior"], a vector, with one log-prior for each latent variable.
  */
   void evaluateLogPrior_(korali::Sample &sample, bool zForm = true, bool cholesky = true);
-  void evaluateLogPrior_old(korali::Sample &sample, bool zForm = true);
+
+//  void evaluateLogPrior_old(korali::Sample &sample, bool zForm = true);
+
   /**
     @brief Same as evaluateLogPrior_(..., zForm = true, cholesky = true)
     @param sample: See other function description.

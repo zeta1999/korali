@@ -774,8 +774,8 @@ std::vector<double> korali::solver::HSAEM::meanAndSDev(std::vector<double> v)
   return result;
 }
 
-/** @brief Utility function, "transposes" a vector of vectors of vectors @param data, so that
-             data[i][j][k] will be moved to result[j][k][i].
+/** @brief Utility function, "transposes" a vector of vectors of vectors @param data
+        so that data[i][j][k] will be moved to result[j][k][i].
     */
 std::vector<std::vector<std::vector<double>>> korali::solver::HSAEM::transpose3D(const std::vector<std::vector<std::vector<double>>> data)
 {
@@ -862,7 +862,7 @@ void korali::solver::HSAEM::printGenerationAfter()
 }
 
 
-void finalize(){
+void korali::solver::HSAEM::finalize(){
   _k->_logger->logInfo("Normal", "Finished. Final hyperparameter estimates:\n");
   // Only enable as soon as I have good estimates of that:
 //  _k->_logger->logInfo("Normal", "  Current Total Log Probability:       %.2e\n", ...);

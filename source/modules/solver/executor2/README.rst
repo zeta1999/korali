@@ -18,6 +18,6 @@ For a complete example, see `test-saem-normal.py` in the `hierarchical.latent.va
 
 
 Setting Parameters
------------------
+-------------------
 
 .... todo
