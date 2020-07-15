@@ -51,9 +51,9 @@ int main(int argc, char *argv[])
   }
   //  std::generate(d2_initialHyperparams.begin(), d2_initialHyperparams.end(), random_normal);
 
-  //  MCMCLatentSampler distrib2_sampler_obj = MCMCLatentSampler(d2_numberLatentVars, d2_numberHyperparams, // @suppress("Type cannot be resolved") // @suppress("Function cannot be resolved")
+  //  MCMCLatentSampler distrib2_sampler_obj = MCMCLatentSampler(d2_numberLatentVars, d2_numberHyperparams,  
   //         d2_initialLatentValues, d2_initialHyperparams, distrib2_zeta, distrib2_S, distrib2_phi,
-  //		 true, 0, distrib2._p.nClusters - 1 ); // @suppress("Field cannot be resolved")
+  //		 true, 0, distrib2._p.nClusters - 1 ); 
   MultimodalGaussianSampler gaussian_sampler_obj = MultimodalGaussianSampler(distrib2._p.points, distrib2._p.nDimensions, distrib2._p.nClusters);
 
   /*void distrib2_sampler(korali::Sample& s)
@@ -98,10 +98,10 @@ int main(int argc, char *argv[])
   // * Define which hyperparameters we use (all mu, and sigma)
   int variable_counter = 0;
   for (size_t cluster_idx = 0; cluster_idx < distrib2._p.nClusters; cluster_idx++)
-  { // @suppress("Type cannot be resolved") // @suppress("Field cannot be resolved")
+  {  
     for (size_t dim = 0; dim < distrib2._p.nDimensions; dim++)
-    {                                                                                                             // @suppress("Type cannot be resolved") // @suppress("Field cannot be resolved")
-      e["Variables"][variable_counter]["Name"] = "mu_" + std::to_string(cluster_idx) + "_" + std::to_string(dim); // @suppress("Function cannot be resolved")
+    {                                                                                                              
+      e["Variables"][variable_counter]["Name"] = "mu_" + std::to_string(cluster_idx) + "_" + std::to_string(dim); 
       e["Variables"][variable_counter]["Bayesian Type"] = "Hyperparameter";
       e["Variables"][variable_counter]["Prior Distribution"] = "Uniform 1";                        // not used (?) but required
                                                                                                    //         e["Variables"][variable_counter]["Initial Mean"] = 0;
@@ -125,8 +125,8 @@ int main(int argc, char *argv[])
   // * Latent variables
   int latent_counter = 0;
   for (size_t cluster_idx = 0; cluster_idx < distrib2._p.nPoints; cluster_idx++)
-  {                                                                                                    // @suppress("Type cannot be resolved") // @suppress("Field cannot be resolved")
-    e["Variables"][variable_counter]["Name"] = "cluster_assignment_" + std::to_string(latent_counter); // @suppress("Function cannot be resolved")
+  {                                                                                                     
+    e["Variables"][variable_counter]["Name"] = "cluster_assignment_" + std::to_string(latent_counter); 
     e["Variables"][variable_counter]["Bayesian Type"] = "Latent";
     //e["Variables"][variable_counter]["Granularity"] = 1.0; // <- does not work
     e["Variables"][variable_counter]["Prior Distribution"] = "Multinomial 2";                   // not used but required

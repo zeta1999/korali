@@ -13,8 +13,8 @@ pointsInfoStruct &simplePopulationData()
 {
   FILE *problemFile;
   FILE *problemFile2;
-  size_t nIndividuals = 0;
-  size_t nSamplesEach = 0;
+  unsigned long nIndividuals = 0;
+  unsigned long nSamplesEach = 0;
   double sigma = 0;
   double omega = 0;
   // std::string filenm = "data_925_test.in";
@@ -76,14 +76,14 @@ pointsInfoStructAdvanced &populationData()
   FILE *problemFile;
   FILE *problemFile2;
 
-  size_t nIndividuals = 0;
-  size_t nDimensions = 0;
-  size_t maxNSamples = 0;
-  std::vector<size_t> nSamplesEach;
+  unsigned long nIndividuals = 0;
+  unsigned long nDimensions = 0;
+  unsigned long maxNSamples = 0;
+  std::vector<unsigned long> nSamplesEach;
   double sigma = 0;
-  size_t dNormal = 0;
-  size_t dLognormal = 0;
-  size_t dLogitnormal = 0;
+  unsigned long dNormal = 0;
+  unsigned long dLognormal = 0;
+  unsigned long dLogitnormal = 0;
   std::string filenm = "data_advanced.in";
 
   printf("Loading data from %s ... \n", filenm.c_str());
@@ -107,7 +107,7 @@ pointsInfoStructAdvanced &populationData()
 
   __pa.data.resize(nIndividuals);
   nSamplesEach.resize(nIndividuals);
-  size_t nSamples;
+  unsigned long nSamples;
   char discardChar[2];
   double val;
 

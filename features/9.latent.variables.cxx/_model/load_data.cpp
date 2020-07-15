@@ -12,8 +12,8 @@ pointsInfoStruct &univariateData()
 {
   FILE *problemFile;
   FILE *problemFile2;
-  size_t nPoints = 0;
-  size_t nDimensions = 0;
+  unsigned long nPoints = 0;
+  unsigned long nDimensions = 0;
 
   printf("Loading data from data_single.in ... \n");
   problemFile = fopen("_model/data_single.in", "r");
@@ -54,9 +54,9 @@ pointsInfoStruct &multivariateData()
   // Also contains assignment information; remove to be sure you are not using it
   FILE *problemFile;
 
-  size_t nPoints = 0;
-  size_t nDimensions = 0;
-  size_t nClusters = 0;
+  unsigned long nPoints = 0;
+  unsigned long nDimensions = 0;
+  unsigned long nClusters = 0;
 
   printf("Loading data from data_multiple.in ... \n");
   problemFile = fopen("_model/data_multiple.in", "r");
@@ -83,7 +83,7 @@ pointsInfoStruct &multivariateData()
       fscanf(problemFile, "%le ", &val_d);
       __p.points[i][j] = val_d;
     }
-    unsigned int val;
+    unsigned long val;
     fscanf(problemFile, "%lu ", &val);
     __p.assignments[i] = val;
   }
