@@ -4,14 +4,15 @@ Latent Variable Problem
 
 In a Bayesian *latent variable* problem, the model includes a set of unobserved variables, in addition to the variables parameterizing the distribution that we want to estimate.
 
-That is, we have a probability distribution of the following form:    
- :math:`p( d, z  | \psi )`
+That is, we have a probability distribution of the following form:
+
+:math:`p( d, z  | \psi )`
 
 Here, d are observed data points, z the latent variables, and :math:`\psi` the distribution parameters (aka hyperparameters).
 
 Do not use this class directly, but instead one of the subclasses `Exponential Latent`
 and `Hierarchical Latent`. An `Exponential Latent`
-problem makes less assumptions on the distribution - it assumes that it belongs to the
+problem makes fewer assumptions on the distribution - it assumes that it belongs to the
 exponential family. An `Hierarchical Latent` problem instead assumes a hierarchical
 probability structure. Please refer to their respective documentation.
 
@@ -28,7 +29,7 @@ For each variable you define, please set
 .. code-block:: python
 
     e["Variable"][your_index][ "Bayesian Type" ] = "Latent"
-    # or:
+    # or
     e["Variable"][your_index][ "Bayesian Type" ] = "Hyperparameter"
 
 to select what role this variable takes in the problem. Note that for `Hierarchical Latent`

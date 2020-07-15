@@ -10,7 +10,7 @@ all: $(BINARIES)
 $(BINARIES) : % : %.o _model/model.o  _model/load_data.o  _model/some_samplers.o _model/utils.o
 	$(KORALICXX) -o $@ $^ $(KORALILIBS)
 
-model/%.o:
+_model/%.o:
 	$(MAKE) -C _model all
 
 %.o: %.cpp
