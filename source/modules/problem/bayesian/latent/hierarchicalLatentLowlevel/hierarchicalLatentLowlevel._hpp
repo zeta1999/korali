@@ -1,9 +1,9 @@
 #ifndef _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_
 #define _KORALI_PROBLEM_HIERARCHICALLATENTLOWLEVEL_HPP_
 
+#include "modules/distribution/multivariate/normal/normal.hpp"
 #include "modules/problem/bayesian/bayesian.hpp"
 #include "modules/problem/bayesian/latent/latent.hpp"
-#include "modules/distribution/multivariate/normal/normal.hpp"
 
 //#include <memory>
 
@@ -55,7 +55,7 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
  */
   void evaluateLogPrior_(korali::Sample &sample, bool zForm = true, bool cholesky = true);
 
-//  void evaluateLogPrior_old(korali::Sample &sample, bool zForm = true);
+  //  void evaluateLogPrior_old(korali::Sample &sample, bool zForm = true);
 
   /**
     @brief Same as evaluateLogPrior_(..., zForm = true, cholesky = true)
@@ -78,8 +78,8 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
                     sample["Covariance Matrix"].
      @returns sample["Log Posterior"], a single value.
  */
-  void evaluateLogPosterior_(korali::Sample &sample, bool zForm = true, bool cholesky = true ) ;
-    /**
+  void evaluateLogPosterior_(korali::Sample &sample, bool zForm = true, bool cholesky = true);
+  /**
     @brief Same as evaluateLogPosterior_(..., zForm = true)
     @param sample: See other function description
     */
@@ -105,7 +105,7 @@ class HierarchicalLatentLowlevel : public korali::problem::bayesian::Latent
      @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
  */
   void evaluateLoglikelihood_(korali::Sample &sample, bool zForm = true);
- /**
+  /**
     @brief Same as evaluateLoglikelihood_(..., zForm = true)
     @param sample: See other function description
     */

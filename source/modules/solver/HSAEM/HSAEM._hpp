@@ -64,15 +64,15 @@ class HSAEM : public korali::Solver
   /** @brief Update the distribution used during sampling with new hyperparameter values.  */
   void updateAnnealedDistribution();
 
-    /** @brief  Call after updating hyperparameters: Re-calculate the likelihood of all current samples.
+  /** @brief  Call after updating hyperparameters: Re-calculate the likelihood of all current samples.
                 Need to be already set up: _currentHyperparametersMean and _currentHyperparametersCovariance and _currentZ
     */
   void updateProbabilities();
 
-//  /**
-//  * @brief initial things to run to test the hierarchical latent problem class. To be deleted.
-//  */
-//  void justTesting();
+  //  /**
+  //  * @brief initial things to run to test the hierarchical latent problem class. To be deleted.
+  //  */
+  //  void justTesting();
 
   /** @brief Utility function to convert a vector of vectors into a concatenated 1D vector.
   *   @param v: The vector of vectors to flatten
@@ -94,8 +94,6 @@ class HSAEM : public korali::Solver
   */
 
   std::vector<std::vector<std::vector<double>>> transpose3D(const std::vector<std::vector<std::vector<double>>> data);
-
-
 
   // void finalize() override;
 

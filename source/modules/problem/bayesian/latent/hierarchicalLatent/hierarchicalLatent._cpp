@@ -94,25 +94,30 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
     _koraliExperiment["Variables"][numberLatent + i]["Individual Index"] = -1;
     _koraliExperiment["Variables"][numberLatent + i]["Latent Space Coordinate"] = i;
     _koraliExperiment["Variables"][numberLatent + i]["Prior Distribution"] = "Dummy Prior";
-//    _koraliExperiment["Variables"][numberLatent + i]["Initial Value"] = var->_initialValue;
+    //    _koraliExperiment["Variables"][numberLatent + i]["Initial Value"] = var->_initialValue;
 
     /* initialize variable's mean with the user-defined initial value (from one example latent variable representing this coordinate/ distribution index): */
     std::string distribString = var->_latentVariableDistributionType;
     double ival = var->_initialValue;
-    if (distribString == "Normal"){
-      _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] =  ival;
+    if (distribString == "Normal")
+    {
+      _koraliExperiment["Variables"][numberLatent + i]["Initial Value"] = ival;
     }
-    else {
-      if (distribString == "Log-Normal"){
+    else
+    {
+      if (distribString == "Log-Normal")
+      {
         if (ival <= 0)
-           KORALI_LOG_ERROR("Initial value of log-normally distributed variable needs to be in range (0, infinity).");
-        _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = log(ival);
+          KORALI_LOG_ERROR("Initial value of log-normally distributed variable needs to be in range (0, infinity).");
+        _koraliExperiment["Variables"][numberLatent + i]["Initial Value"] = log(ival);
       }
-      else {
-        if (distribString == "Logit-Normal"){
-          if ((ival < 0) || (ival >= 1) )
-             KORALI_LOG_ERROR("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
-          _koraliExperiment["Variables"][ numberLatent + i ]["Initial Value"] = (ival / (1 - ival));
+      else
+      {
+        if (distribString == "Logit-Normal")
+        {
+          if ((ival < 0) || (ival >= 1))
+            KORALI_LOG_ERROR("Initial value of logit-normally distributed variable needs to be in range [0, 1).");
+          _koraliExperiment["Variables"][numberLatent + i]["Initial Value"] = (ival / (1 - ival));
         }
         else
           KORALI_LOG_ERROR("Unrecognized 'Latent Variable Distribution' %s ", distribString.c_str());

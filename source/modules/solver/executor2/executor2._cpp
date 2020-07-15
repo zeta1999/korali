@@ -15,15 +15,14 @@ namespace solver
 void Executor2::initialize()
 {
   _executionsPerGeneration = std::min(_executionsPerGeneration, _maxModelEvaluations - _modelEvaluationCount);
-   // For each result, resize the vectors to store them at each generation
-   for(std::string name : _doubleResultNames)
-     _doubleResultValues[name].resize(_executionsPerGeneration);
-   for(std::string name : _vectorResultNames)
-     _vectorResultValues[name].resize(_executionsPerGeneration);
-   for(std::string name : _vectorOfVectorsResultNames)
-     _vectorOfVectorsResultValues[name].resize(_executionsPerGeneration);
+  // For each result, resize the vectors to store them at each generation
+  for (std::string name : _doubleResultNames)
+    _doubleResultValues[name].resize(_executionsPerGeneration);
+  for (std::string name : _vectorResultNames)
+    _vectorResultValues[name].resize(_executionsPerGeneration);
+  for (std::string name : _vectorOfVectorsResultNames)
+    _vectorOfVectorsResultValues[name].resize(_executionsPerGeneration);
 }
-
 
 void Executor2::runGeneration()
 {
@@ -32,8 +31,8 @@ void Executor2::runGeneration()
   for (size_t i = 0; i < _executionsPerGeneration; i++)
   {
     _k->_logger->logInfo("Detailed", "Running sample %zu ", _modelEvaluationCount);
-     //with values:\n         ", _modelEvaluationCount);
-//    for (auto &x : sampleData) _k->_logger->logData("Detailed", " %le   ", x);
+    //with values:\n         ", _modelEvaluationCount);
+    //    for (auto &x : sampleData) _k->_logger->logData("Detailed", " %le   ", x);
     _k->_logger->logData("Detailed", "\n");
 
     samples[i]["Module"] = "Problem";
@@ -43,7 +42,8 @@ void Executor2::runGeneration()
     samples[i]["Evaluation Number"] = i;
     if (_functionToPopulateSampleParameters)
       samples[i].run(_functionToPopulateSampleParameters);
-    else setParameters(samples[i]);
+    else
+      setParameters(samples[i]);
 
     _conduit->start(samples[i]);
     _modelEvaluationCount++;
@@ -51,12 +51,15 @@ void Executor2::runGeneration()
 
   _conduit->waitAll(samples);
 
-  if (_testFunction){
-    for (size_t i = 0; i < _executionsPerGeneration; i++){
+  if (_testFunction)
+  {
+    for (size_t i = 0; i < _executionsPerGeneration; i++)
+    {
       // Insert the parameters another time, in some functions, parameters are overwritten:
       if (_functionToPopulateSampleParameters)
         samples[i].run(_functionToPopulateSampleParameters);
-      else setParameters(samples[i]);
+      else
+        setParameters(samples[i]);
 
       samples[i].run(_testFunction);
     }
@@ -64,35 +67,38 @@ void Executor2::runGeneration()
 
   for (size_t i = 0; i < _executionsPerGeneration; i++)
   { // This looks a bit useless, but it's good if you want to print out the results or just look at it during debugging
-   for(std::string name : _doubleResultNames)
-     _doubleResultValues[name][i] = KORALI_GET(double, samples[i], name);
-//     _doubleResultValues[name][i] = samples[i][name].get<double>();
-   for(std::string name : _vectorResultNames)
-     _vectorResultValues[name][i] = KORALI_GET(std::vector<double>, samples[i], name);
-//     _vectorResultValues[name][i] =  samples[i][name].get<std::vector<double>>();
-   for(std::string name : _vectorOfVectorsResultNames)
-     _vectorOfVectorsResultValues[name][i] =  KORALI_GET(std::vector<std::vector<double>>, samples[i], name);  ;
-//     _vectorOfVectorsResultValues[name][i] = samples[i][name].get<std::vector<std::vector<double>>>();
-   }
-
+    for (std::string name : _doubleResultNames)
+      _doubleResultValues[name][i] = KORALI_GET(double, samples[i], name);
+    //     _doubleResultValues[name][i] = samples[i][name].get<double>();
+    for (std::string name : _vectorResultNames)
+      _vectorResultValues[name][i] = KORALI_GET(std::vector<double>, samples[i], name);
+    //     _vectorResultValues[name][i] =  samples[i][name].get<std::vector<double>>();
+    for (std::string name : _vectorOfVectorsResultNames)
+      _vectorOfVectorsResultValues[name][i] = KORALI_GET(std::vector<std::vector<double>>, samples[i], name);
+    ;
+    //     _vectorOfVectorsResultValues[name][i] = samples[i][name].get<std::vector<std::vector<double>>>();
+  }
 }
 
-void Executor2::setParameters(korali::Sample& sample)
+void Executor2::setParameters(korali::Sample &sample)
 {
   std::map<std::string, double>::iterator itd;
   std::map<std::string, std::vector<double>>::iterator itv;
   std::map<std::string, std::vector<std::vector<double>>>::iterator itvv;
 
-  for ( itd =  _doubleParameters.begin(); itd != _doubleParameters.end(); itd++ ){
-    std::string paramName =  itd->first;
+  for (itd = _doubleParameters.begin(); itd != _doubleParameters.end(); itd++)
+  {
+    std::string paramName = itd->first;
     sample[paramName] = itd->second;
   }
-  for ( itv =  _vectorParameters.begin(); itv != _vectorParameters.end(); itv++ ){
-     std::string paramName =  itv->first;
-     sample[paramName] = itv->second;
+  for (itv = _vectorParameters.begin(); itv != _vectorParameters.end(); itv++)
+  {
+    std::string paramName = itv->first;
+    sample[paramName] = itv->second;
   }
-  for ( itvv =  _vectorOfVectorsParameters.begin(); itvv != _vectorOfVectorsParameters.end(); itvv++ ){
-    std::string paramName =  itvv->first;
+  for (itvv = _vectorOfVectorsParameters.begin(); itvv != _vectorOfVectorsParameters.end(); itvv++)
+  {
+    std::string paramName = itvv->first;
     sample[paramName] = itvv->second;
   }
 }

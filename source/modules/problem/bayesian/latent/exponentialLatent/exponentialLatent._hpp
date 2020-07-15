@@ -14,7 +14,6 @@ namespace latent
 class ExponentialLatent : public korali::problem::bayesian::Latent
 {
   public:
-
   /**
   * @brief Given sample['Latent Variables'], evaluate log of p(all data | latent variables).
   *       As opposed to evaluateConditionalLoglikelihood(), this will return a single value.

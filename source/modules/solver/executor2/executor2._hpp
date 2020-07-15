@@ -3,8 +3,8 @@
 
 #include "modules/solver/solver.hpp"
 
-#include <vector>
 #include <map>
+#include <vector>
 
 namespace korali
 {
@@ -16,7 +16,7 @@ class Executor2 : public Solver
   /**
   * @brief Internal function, set user-defined parameters of different types for the sample before it is run.
   */
-  void setParameters(korali::Sample& sample);
+  void setParameters(korali::Sample &sample);
 
   public:
   /**
@@ -38,7 +38,6 @@ class Executor2 : public Solver
   * @brief Console output after generation.
   */
   void printGenerationAfter() override;
-
 };
 
 } // namespace solver

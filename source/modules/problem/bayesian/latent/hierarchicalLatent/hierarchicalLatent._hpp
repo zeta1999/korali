@@ -45,7 +45,7 @@ class HierarchicalLatent : public korali::problem::bayesian::Latent
      @returns : sample['Log Likelihood'], a list/vector with one log-likelihood per individual.
  */
   void evaluateLoglikelihood_(korali::Sample &sample, bool zForm = true);
-   /**
+  /**
     @brief Same as evaluateLogLikelihood_(..., zForm = true)
     @param sample: See other function description
     */
