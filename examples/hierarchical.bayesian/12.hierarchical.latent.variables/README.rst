@@ -183,6 +183,8 @@ to run the 'simple example' using HSAEM.
 
 
 
+..
+   ################################################################################################
 
 
 Simple example using standard SA-EM
@@ -308,8 +310,25 @@ Now we can run the experiment and wait for the results.
 
     k.run(e)
 
+In the next section, we describe an example that adjusts more settings of `HSAEM`.
 
 
+..
+   ################################################################################################
+
+
+
+Optimizing a logistic model with HSAEM
+---------------------------------------
+
+This section describes step-by-step the contents of :code:`run-saem-logistic.py`. It runs `HSAEM` for the
+'logistic' problem (problem no. 4) described above.
+
+
+
+
+..
+   ################################################################################################
 
 
 References

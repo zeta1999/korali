@@ -45,7 +45,7 @@ def main():
   e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
   e["Solver"]["Simulated Annealing Initial Variance"] = 1
   e["Solver"]["Diagonal Covariance"] = True
-  e["Solver"]["Termination Criteria"]["Max Generations"] = 250
+  e["Solver"]["Termination Criteria"]["Max Generations"] = 150
 
   e["Distributions"][0]["Name"] = "Uniform 0"
   e["Distributions"][0]["Type"] = "Univariate/Uniform"

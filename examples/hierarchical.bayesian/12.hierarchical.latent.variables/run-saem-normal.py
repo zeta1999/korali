@@ -43,8 +43,8 @@ def main():
   e["Solver"]["N3"] = 2
   e["Solver"]["K1"] = 200
   e["Solver"]["Ka"] = 200
-  e["Solver"]["Alpha 1"] = 0.9999
-  e["Solver"]["Alpha 2"] = 0.9999
+  e["Solver"]["Alpha 1"] = 0.25
+  e["Solver"]["Alpha 2"] = 0.5
   e["Solver"]["Use Simulated Annealing"] = True
   e["Solver"]["Simulated Annealing Decay Factor"] = 0.95
   e["Solver"]["Simulated Annealing Initial Variance"] = 1
@@ -102,11 +102,18 @@ def main():
 
   assert dimCounter == distrib._p.dNormal + distrib._p.dLognormal + distrib._p.dLogitnormal + distrib._p.dProbitnormal
 
+  # Configure how results will be stored to a file:
   e["File Output"]["Frequency"] = 1
   e["File Output"]["Path"] = "_korali_result_normal/"
+  # We choose a non-default output directory -
+  # for plotting results, we can later set the directory with:
+  #   python3 -m korali.plotter --dir _korali_result_logistic/
+
+  # Configure console output:
   e["Console Output"]["Frequency"] = 1
-  e["Console Output"][
-      "Verbosity"] = "Normal"  # "Detailed" results in all latent variable means being printed - we have 200 of them here, so better suppress this.
+  e["Console Output"]["Verbosity"] = "Normal"  # "Detailed" results in all latent variable means being printed -
+                                               # we have 200 of them here, so we suppress this by choosing a less
+                                               # detailed output option.
 
   k.run(e)
 
