@@ -17,4 +17,4 @@ make -j4; check_result
 ##### Running Tests
 
 ./run-saem-hierarchical; check_result
-./run-cmaes-hierarchical-n-d; check_result
+./run-saem-hierarchical-n-d; check_result
