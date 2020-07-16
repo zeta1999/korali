@@ -215,17 +215,10 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogl
                     (["Variables"][THE_INDEX]["some property"] = ...).
     @param zForm:  A boolean indicating whether the latent variables are passed in z-Form (if zForm is true) or
                     whether "Latent Variables" are the untransformed values.
-                    Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance .."?
+                    Todo: Refactor to use "Hyperparameters" instead of "Mean" and "Covariance"?
 
-         TODO, updated: So this essentially implements a multivariate normal probability function. Though, that is already
-                implemented in the distribution multivariate/normal. So this is basically unnecessary. Well.
-                *** So: If this logPrior function turns out to malfunction, replace with one that uses multivariate/normal instead.
-
-         Former todo: Move calculation of cholesky decomposition out of this function, and into hSAEM. Don't want to
-                re-calculate this for every latent variable sample.
-                -- wait, the prior is calculated over _all_ latent variables at once
-                  -- first see where you will actually need this function
-         ALso todo: But first, test it some more.
+        Update: This uses korali's multivariate normal distribution and comes with the option to pass an already
+                cholesky-decomposed covariance.
  */
 void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_(korali::Sample &sample, bool zForm, bool cholesky)
 {
@@ -332,6 +325,9 @@ void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogP
   sample["Log Prior"] = individualLLH;
 }
 //
+//        This older function essentially implements a multivariate normal probability function. Though, that is already
+//                implemented in the distribution multivariate/normal. However, this old function seemed to work
+//                just as well.
 //void korali::problem::bayesian::latent::HierarchicalLatentLowlevel::evaluateLogPrior_old(korali::Sample &sample, bool zForm)
 //{
 //  //  volatile int done = 0;
