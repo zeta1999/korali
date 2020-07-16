@@ -1,14 +1,14 @@
 
 #include "_model/model.hpp"
+#include "engine.hpp"
 #include "korali.hpp"
 #include "modules/module.hpp"
-#include "engine.hpp"
-#include "modules/problem/problem.hpp"
 #include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
+#include "modules/problem/problem.hpp"
 
-#include <vector>
-#include <map>
 #include <iostream>
+#include <map>
+#include <vector>
 
 /* What to test:
     - Instatiate the hierarchicalLatentLowlevel problem and check that it returns the right
@@ -17,7 +17,6 @@
        - total.  ( evaluateLogPosterior(korali::Sample &sample)  )
 
 */
-
 
 HierarchicalDistribution5 distrib5 = HierarchicalDistribution5();
 
@@ -31,8 +30,8 @@ int main(int argc, char *argv[])
 {
   auto k = korali::Engine();
   auto e = korali::Experiment();
-//  auto e_ptr = new korali::Experiment();
-//  auto e = *e_ptr;
+  //  auto e_ptr = new korali::Experiment();
+  //  auto e = *e_ptr;
 
   int nIndividuals = distrib5._p.nIndividuals;
   int nDimensions = distrib5._p.nDimensions;
@@ -40,27 +39,27 @@ int main(int argc, char *argv[])
   e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent";
   e["Problem"]["Conditional Log Likelihood Function"] = &distrib5_conditional_p; // defined in model.cpp
 
-  e["Problem"]["Data"] = distrib5._p.data;  // data: length: nIndividuals; each of its entries is a vector of different length
+  e["Problem"]["Data"] = distrib5._p.data; // data: length: nIndividuals; each of its entries is a vector of different length
   e["Problem"]["Data Dimensions"] = nDimensions;
   e["Problem"]["Number Individuals"] = nIndividuals;
   e["Problem"]["Latent Space Dimensions"] = nDimensions;
 
   e["Solver"]["Type"] = "Executor2";
-  e["Solver"]["Executions Per Generation" ] = 1;
-  e["Solver"]["Function To Execute"] = "Evaluate logLikelihood" ;
-//  e["Solver"]["Function To Execute"] = "Evaluate logPrior"  ;
+  e["Solver"]["Executions Per Generation"] = 1;
+  e["Solver"]["Function To Execute"] = "Evaluate logLikelihood";
+  //  e["Solver"]["Function To Execute"] = "Evaluate logPrior"  ;
   std::map<std::string, std::vector<double>> parmap1;
   std::map<std::string, std::vector<std::vector<double>>> parmap2;
   parmap1["Mean"] = std::vector<double>({0., 1.});
- // parmap1["Data Point"] = std::vector<double>({1.25, 3.});
+  // parmap1["Data Point"] = std::vector<double>({1.25, 3.});
   //parmap1["Latent Variables"] = std::vector<double>({1.0, 3.0});
   // The latents are assumed to already be in z-form, that is, log(latent)
   parmap2["Latent Variables"] = std::vector<std::vector<double>>({{0.0, 1.1}, {0.0, 1.1}, {0.0, 1.1}, {0.0, 1.1}, {0.0, 1.1}});
   parmap2["Covariance Matrix"] = std::vector<std::vector<double>>({{1.0, 0.0}, {0., 1.}});
-  e["Solver"][ "Vector Parameters" ] =  parmap1 ;
-  e["Solver"][ "Vector Of Vectors Parameters" ] =  parmap2 ;
-  e["Solver"][ "Vector Result Names"] = std::vector({"Log Likelihood"});
-//  e["Solver"][ "Vector Result Names"] = std::vector({"Log Prior"});
+  e["Solver"]["Vector Parameters"] = parmap1;
+  e["Solver"]["Vector Of Vectors Parameters"] = parmap2;
+  e["Solver"]["Vector Result Names"] = std::vector({"Log Likelihood"});
+  //  e["Solver"][ "Vector Result Names"] = std::vector({"Log Prior"});
   e["Solver"]["Termination Criteria"]["Max Generations"] = 250;
   e["Solver"]["Termination Criteria"]["Max Model Evaluations"] = 100;
 
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < distrib5._p.dLogitnormal; i++)
   {
     e["Variables"][dimCounter]["Name"] = "(Logit-normal) latent mean " + std::to_string(dimCounter);
-    e["Variables"][dimCounter]["Initial Value"] = 0.5;  // Valid range: [0, 1)
+    e["Variables"][dimCounter]["Initial Value"] = 0.5; // Valid range: [0, 1)
     e["Variables"][dimCounter]["Bayesian Type"] = "Latent";
     e["Variables"][dimCounter]["Latent Variable Distribution Type"] = "Logit-Normal";
     e["Variables"][dimCounter]["Prior Distribution"] = "Uniform 2"; // not used (?) but required
@@ -113,16 +112,11 @@ int main(int argc, char *argv[])
   e["Console Output"]["Frequency"] = 1;
   e["Console Output"]["Verbosity"] = "Detailed";
 
-//  auto problem = korali::Module::getModule(e["Problem"], &e);
-//  auto highlevelProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatent*>(problem);
-//  std::cout << "Data dimension: " << highlevelProblem->_dataDimensions << "\n";
+  //  auto problem = korali::Module::getModule(e["Problem"], &e);
+  //  auto highlevelProblem = dynamic_cast<korali::problem::bayesian::latent::HierarchicalLatent*>(problem);
+  //  std::cout << "Data dimension: " << highlevelProblem->_dataDimensions << "\n";
 
   k.run(e);
-
-
-
-
-
 
   return 0;
 }

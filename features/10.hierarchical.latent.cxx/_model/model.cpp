@@ -56,8 +56,6 @@ void HierarchicalDistribution4::conditional_p(korali::Sample &s)
   s["Conditional LogLikelihood"] = logp;
 };
 
-
-
 /*
 Model 5:
  - multiple dimensions
@@ -81,7 +79,8 @@ void HierarchicalDistribution5::conditional_p(korali::Sample &s)
 
   // log(p(data | mean=latent variable, sigma ))
   double logp = 0;
-  for (size_t i=0; i < _p.nDimensions; i++){
+  for (size_t i = 0; i < _p.nDimensions; i++)
+  {
     double pt = dataPoint[i];
     double mean = latentVariables[i];
     std::vector<double> pt_vec({pt});
@@ -92,14 +91,5 @@ void HierarchicalDistribution5::conditional_p(korali::Sample &s)
 
   s["Conditional LogLikelihood"] = logp;
 };
-
-
-
-
-
-
-
-
-
 
 #endif

@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent";
   e["Problem"]["Conditional Log Likelihood Function"] = &distrib5_conditional_p; // defined in model.cpp
 
-  e["Problem"]["Data"] = distrib5._p.data;  // data: length: nIndividuals; each of its entries is a vector of different length
+  e["Problem"]["Data"] = distrib5._p.data; // data: length: nIndividuals; each of its entries is a vector of different length
   e["Problem"]["Data Dimensions"] = nDimensions;
   e["Problem"]["Number Individuals"] = nIndividuals;
   e["Problem"]["Latent Space Dimensions"] = nDimensions;
@@ -35,9 +35,9 @@ int main(int argc, char *argv[])
   // Set up simulated annealing - or disable
   e["Solver"]["Use Simulated Annealing"] = true;
   e["Solver"]["Simulated Annealing Decay Factor"] = 0.9;
-  e["Solver"]["Simulated Annealing Initial Variance" ] = 1.;
- // e["Solver"]["K1"] = 10;
-//  e["Solver"]["N1"] = 5;
+  e["Solver"]["Simulated Annealing Initial Variance"] = 1.;
+  // e["Solver"]["K1"] = 10;
+  //  e["Solver"]["N1"] = 5;
   e["Solver"]["mcmc Outer Steps"] = 1;
   e["Solver"]["mcmc Target Acceptance Rate"] = 0.3;
   e["Solver"]["N1"] = 2;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < distrib5._p.dLogitnormal; i++)
   {
     e["Variables"][dimCounter]["Name"] = "(Logit-normal) latent mean " + std::to_string(dimCounter);
-    e["Variables"][dimCounter]["Initial Value"] = 0.5;  // Valid range: [0, 1)
+    e["Variables"][dimCounter]["Initial Value"] = 0.5; // Valid range: [0, 1)
     e["Variables"][dimCounter]["Bayesian Type"] = "Latent";
     e["Variables"][dimCounter]["Latent Variable Distribution Type"] = "Logit-Normal";
     e["Variables"][dimCounter]["Prior Distribution"] = "Uniform 2"; // not used (?) but required

@@ -21,7 +21,7 @@ pointsInfoStruct &simplePopulationData()
   std::string filenm = "data_925.in";
 
   printf("Loading data from %s ... \n", filenm.c_str());
-  problemFile = fopen((std::string("_model/")+filenm).c_str(), "r");
+  problemFile = fopen((std::string("_model/") + filenm).c_str(), "r");
   if (!problemFile)
   {
     char cwd[PATH_MAX];
@@ -69,8 +69,6 @@ void reset_points(pointsInfoStruct &__p, std::vector<std::vector<double>> new_da
   return;
 }
 
-
-
 pointsInfoStructAdvanced &populationData()
 {
   FILE *problemFile;
@@ -87,7 +85,7 @@ pointsInfoStructAdvanced &populationData()
   std::string filenm = "data_advanced.in";
 
   printf("Loading data from %s ... \n", filenm.c_str());
-  problemFile = fopen((std::string("_model/")+filenm).c_str(), "r");
+  problemFile = fopen((std::string("_model/") + filenm).c_str(), "r");
   if (!problemFile)
   {
     char cwd[PATH_MAX];
@@ -113,19 +111,20 @@ pointsInfoStructAdvanced &populationData()
 
   for (size_t i = 0; i < nIndividuals; i++)
   {
-     fscanf(problemFile, "%1s ", discardChar);
-     assert(discardChar[0] == 'N');
-     fscanf(problemFile, "%lu ", &nSamples);
-     __pa.data[i].resize(nSamples);
-     nSamplesEach[i] = nSamples;
-     for (size_t j=0; j < nSamples; j++ ){
-       __pa.data[i][j].resize(nDimensions);
-       for (size_t dim = 0; dim < nDimensions; dim++)
-        {
-          fscanf(problemFile, "%le ", &val);
-          __pa.data[i][j][dim] = val;
-        }
-     }
+    fscanf(problemFile, "%1s ", discardChar);
+    assert(discardChar[0] == 'N');
+    fscanf(problemFile, "%lu ", &nSamples);
+    __pa.data[i].resize(nSamples);
+    nSamplesEach[i] = nSamples;
+    for (size_t j = 0; j < nSamples; j++)
+    {
+      __pa.data[i][j].resize(nDimensions);
+      for (size_t dim = 0; dim < nDimensions; dim++)
+      {
+        fscanf(problemFile, "%le ", &val);
+        __pa.data[i][j][dim] = val;
+      }
+    }
   }
   fclose(problemFile);
 
@@ -134,7 +133,7 @@ pointsInfoStructAdvanced &populationData()
   __pa.maxNSamples = maxNSamples;
   __pa.nSamplesEach = nSamplesEach;
   __pa.sigma = sigma;
-  __pa.dNormal = dNormal; //0
+  __pa.dNormal = dNormal;       //0
   __pa.dLognormal = dLognormal; //2
   __pa.dLogitnormal = dLogitnormal;
 
@@ -143,13 +142,12 @@ pointsInfoStructAdvanced &populationData()
 
 void reset_points_adv(pointsInfoStructAdvanced &__p, std::vector<std::vector<double>> new_data, double new_sigma)
 {
-//  __p.nIndividuals = new_data.size();
-//  __p.nSamplesEach = new_nSamplesEach;
-//  __p.sigma = new_sigma;
-//  __p.omega = new_omega;
-//  __p.data = new_data;
-//  for (std::vector<double> pt : new_data)
-//    assert(pt.size() == new_nSamplesEach && "... I think the inner dimension was over the samples per each individual. This is a primitive example with dimension == 1.");
+  //  __p.nIndividuals = new_data.size();
+  //  __p.nSamplesEach = new_nSamplesEach;
+  //  __p.sigma = new_sigma;
+  //  __p.omega = new_omega;
+  //  __p.data = new_data;
+  //  for (std::vector<double> pt : new_data)
+  //    assert(pt.size() == new_nSamplesEach && "... I think the inner dimension was over the samples per each individual. This is a primitive example with dimension == 1.");
   return;
 }
-

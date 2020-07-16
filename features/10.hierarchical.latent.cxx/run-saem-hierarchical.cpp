@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   // Set up simulated annealing
   e["Solver"]["Use Simulated Annealing"] = true;
   e["Solver"]["Simulated Annealing Decay Factor"] = 0.8;
-  e["Solver"]["Simulated Annealing Initial Variance" ] = 5.;
+  e["Solver"]["Simulated Annealing Initial Variance"] = 5.;
   e["Solver"]["K1"] = 10;
 
   e["Distributions"][0]["Name"] = "Uniform 0";

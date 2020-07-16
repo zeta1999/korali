@@ -20,8 +20,8 @@ namespace solver
 {
 class HSAEM : public korali::Solver
 {
- private:
-   std::mt19937 rng; //* @brief Random number generator, used in shuffle
+  private:
+  std::mt19937 rng; //* @brief Random number generator, used in shuffle
   public:
   /**
   * @brief Only needed at setup; could make this a local/temporary variable */

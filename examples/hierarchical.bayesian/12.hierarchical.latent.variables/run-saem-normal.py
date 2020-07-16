@@ -111,9 +111,10 @@ def main():
 
   # Configure console output:
   e["Console Output"]["Frequency"] = 1
-  e["Console Output"]["Verbosity"] = "Normal"  # "Detailed" results in all latent variable means being printed -
-                                               # we have 200 of them here, so we suppress this by choosing a less
-                                               # detailed output option.
+  e["Console Output"][
+      "Verbosity"] = "Normal"  # "Detailed" results in all latent variable means being printed -
+  # we have 200 of them here, so we suppress this by choosing a less
+  # detailed output option.
 
   k.run(e)
 
