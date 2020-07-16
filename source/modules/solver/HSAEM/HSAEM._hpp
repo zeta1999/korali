@@ -12,12 +12,16 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 
+#include <random>
+
 namespace korali
 {
 namespace solver
 {
 class HSAEM : public korali::Solver
 {
+ private:
+   std::mt19937 rng; //* @brief Random number generator, used in shuffle
   public:
   /**
   * @brief Only needed at setup; could make this a local/temporary variable */
