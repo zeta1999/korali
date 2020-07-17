@@ -20,6 +20,36 @@ namespace latent
 class HierarchicalLatentReference : public korali::problem::bayesian::Latent
 {
   private:
+  const double _log2pi = 1.83787706640934533908193770912476;
+
+  /**
+  * @brief Precomputes the square distance between two values (f and y) normalized by a third value (g).
+  *         Scalar version of the same function in bayesian/reference.
+  * @param f Single evaluation f(x, theta)
+  * @param g The normalization
+  * @param y "Measurement"
+  * @return Normalized square distance of the vectors
+  */
+  double compute_normalized_sse(double f, double g, double y);
+
+  /**
+  * @brief An implementation of the normal likelihood y~N(f,g), where f ang g are provided by the user.
+  * @param sample A Korali Sample
+  */
+  void loglikelihoodNormal(korali::Sample &sample);
+
+  /**
+  * @brief An implementation of the normal likelihood y~N(f,g) truncated at zero, where f ang g are provided by the user.
+  * @param sample A Korali Sample
+  */
+  void loglikelihoodPositiveNormal(korali::Sample &sample);
+
+  /**
+  * @brief Negative Binomial likelihood parametrized by mean and dispersion.
+  * @param sample A Korali Sample
+  */
+  void loglikelihoodNegativeBinomial(korali::Sample &sample);
+
   public:
   /** @brief The lowlevel problem containing actual calculations. */
   korali::problem::bayesian::latent::HierarchicalLatentLowlevel *_lowlevelProblem;
@@ -43,7 +73,9 @@ class HierarchicalLatentReference : public korali::problem::bayesian::Latent
                     the reference evaluation.
      @returns: Will set sample["logLikelihood"].
    */
-  void conditionalLogLikelihoodFunction(korali::Sample &sample);
+  std::function<void(korali::Sample & s)> conditionalLogLikelihoodFunction;
+//  void conditionalLogLikelihoodFunction(korali::Sample &sample);
+
   /**
     @brief Evaluate each log-likelihood log(p(data for individual i | latent variables i)) across all data points
             assigned to the individual, given latent variables.
@@ -61,12 +93,12 @@ class HierarchicalLatentReference : public korali::problem::bayesian::Latent
   void evaluateLoglikelihood(korali::Sample &sample) override;
 
   /**
-  * @brief Evaluate the user-defined function giving the conditional log-likelihood of one data point, given one
-            vector of latent variables (for a single, unspecified individual).
-            See the description of that function in the config for more information.
-           (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".)
-  * @param sample: Should contain fields "Latent Variables" and "Data Point".
- */
+  * @brief Evaluate the conditional log-likelihood of one data point, given its reference function value.
+  *         How it is calculated depends on the _likelihoodModel.
+  * @param sample: Should contain fields "Latent Variables" and "Data Point". The last dimension of "Data Point" is
+  *                 expected to be the reference function value, that is, point = [x1, x2, ... xd, y] where
+  *                 our x values have d dimensions.
+  */
   void evaluateLoglikelihoodSingle(korali::Sample &sample);
 
   /**

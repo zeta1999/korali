@@ -161,6 +161,7 @@ void korali::problem::bayesian::latent::HierarchicalLatentCustom::initialize()
 korali::problem::bayesian::latent::HierarchicalLatentCustom::~HierarchicalLatentCustom()
 {
   delete &_koraliExperiment;
+//  delete &_lowlevelProblem;
 }
 
 /**

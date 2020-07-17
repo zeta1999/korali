@@ -3,7 +3,6 @@ import sys, os
 
 scriptdir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(scriptdir, '../'))
-import utils
 import load_data
 
 
@@ -36,9 +35,6 @@ class NormalConditionalDistribution():
     fx = normalModel(x, latent_vars[0])
     sigma2 = latent_vars[-1]**2
     eps = 1e-10
-    # if sample["Current Generation"] > 200:
-    #     import pdb
-    #     pdb.set_trace()
     if self._p.error_model == "constant":
       err = (y - fx)**2
       det = sigma2

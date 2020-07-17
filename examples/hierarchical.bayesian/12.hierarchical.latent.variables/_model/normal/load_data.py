@@ -2,6 +2,7 @@ import numpy as np
 
 
 def extr(line, toint=True, tofloat=False, delim=" "):
+  ''' Helper for extracting file contents. '''
   result = line.strip("\n ").split(delim)
   if tofloat:
     result = [float(r) for r in result]
@@ -21,7 +22,7 @@ class NormalData():
     self.dLognormal = None
     self.dLogitnormal = None
 
-    self.error = "ind"  # no other choice
+    self.error = "ind"  # only 'individual' error parameters are possible
     self.error_model = "constant"  #  "proportional" might also work but is untested
 
     self.nSamplesEach = []

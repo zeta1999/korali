@@ -2,6 +2,7 @@ import numpy as np
 
 
 def extr(line, toint=True, tofloat=False, delim=" "):
+  ''' Helper for extracting file contents. '''
   result = line.strip("\n ").split(delim)
   if tofloat:
     result = [float(r) for r in result]

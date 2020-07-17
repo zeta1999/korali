@@ -13,6 +13,8 @@ class ConditionalDistribution5():
     '''
 
   def __init__(self):
+    ''' Load the data from disk.
+        self._p is an object that manages the data, and stores fixed parameter sigma, plus other information. '''
     self._p = load_data.PopulationData()
 
   def conditional_p(self, sample):
