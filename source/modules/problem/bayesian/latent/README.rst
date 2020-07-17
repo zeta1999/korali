@@ -6,7 +6,8 @@ In a Bayesian *latent variable* problem, the model includes a set of unobserved 
 
 That is, we have a probability distribution of the following form:
 
-:math:`p( d, z  | \psi )`
+.. math::
+  p( d, z  | \psi )
 
 Here, d are observed data points, z the latent variables, and :math:`\psi` the distribution parameters (aka hyperparameters).
 

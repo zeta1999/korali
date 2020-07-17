@@ -9,26 +9,20 @@ import korali
 
 
 def main():
-  # Initialize the distribution
+  # * Initialize the assumed data distribution
   distrib = NormalConditionalDistribution()
 
-  # # rng = np.random.default_rng()
-  # # initial_hyperparams = rng.standard_normal(2) # 1d mean and cov
-  # initial_hyperparams = np.random.standard_normal(2) # 1d mean and cov
 
   k = korali.Engine()
   e = korali.Experiment()
 
-  e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent"
-  # The computational model for the log-likelihood, log[ p(data point | latent) ]
-  e["Problem"][
-      "Conditional Log Likelihood Function"] = lambda sample: distrib.conditional_p(
-          sample)
+  e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatentCustom"
+  # * The computational model for the log-likelihood, log[ p(data point | latent) ]
+  e["Problem"]["Conditional Log Likelihood Function"] = lambda sample: distrib.conditional_p(sample)
 
   data_vector = [[] for _ in range(distrib._p.nIndividuals)]
   for i in range(distrib._p.nIndividuals):
     data_vector[i] = distrib._p.data[i].tolist()
-  # e["Problem"]["Data"] = data_vector
   e["Problem"]["Data"] = data_vector
   e["Problem"]["Data Dimensions"] = distrib._p.nDataDimensions
   e["Problem"]["Number Individuals"] = distrib._p.nIndividuals

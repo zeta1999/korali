@@ -1,6 +1,6 @@
-**************************
-HierarchicalLatent
-**************************
+************************************************************
+Hierarchical Latent-Variable Problem with Custom Likelihood
+************************************************************
 
 Hierarchical latent problems impose a specific hierarchical
 form on the total likelihood:
@@ -14,6 +14,7 @@ where
 - Vectors :math:`\theta_i` are latent variables, one per 'individual' :math:`i`
 - :math:`\psi` are a number of hyperparameters.
 
+In the *Custom* problem class, you are completely free in the construction of a likelihood function.
 
 Please refer to the corresponding tutorial / example for further explanation, such
 as the form that we impose on :math:`p(\theta | \psi)`.

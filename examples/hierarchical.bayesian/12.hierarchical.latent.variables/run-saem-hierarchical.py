@@ -12,7 +12,7 @@ def main():
   k = korali.Engine()
   e = korali.Experiment()
 
-  e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatent"
+  e["Problem"]["Type"] = "Bayesian/Latent/HierarchicalLatentCustom"
   # The computational model for the log-likelihood, log[ p(data point | latent) ]
   e["Problem"][
       "Conditional Log Likelihood Function"] = lambda sample: distrib.conditional_p(

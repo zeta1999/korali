@@ -1,4 +1,4 @@
-#include "modules/problem/bayesian/latent/hierarchicalLatent/hierarchicalLatent.hpp"
+#include "modules/problem/bayesian/latent/hierarchicalLatentCustom/hierarchicalLatentCustom.hpp"
 
 #include <map>
 #include <math.h>
@@ -10,7 +10,7 @@
 
 /* The problem initialization; here, create hyperparameter variables, add them to the problem's variable list,
     and set up index lists to find both types of variables in that list.*/
-void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::initialize()
 {
   korali::problem::bayesian::Latent::initialize();
 
@@ -157,9 +157,8 @@ void korali::problem::bayesian::latent::HierarchicalLatent::initialize()
     _koraliExperiment._problem);
 }
 
-/* De-allocate both vectors with hyperparameter korali-variables
-    -- Todo: Ask someone knowledgeable about a better way to deal with allocating these variables, not using "new" */
-korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent()
+
+korali::problem::bayesian::latent::HierarchicalLatentCustom::~HierarchicalLatentCustom()
 {
   delete &_koraliExperiment;
 }
@@ -171,41 +170,41 @@ korali::problem::bayesian::latent::HierarchicalLatent::~HierarchicalLatent()
            (It will set "Conditional LogLikelihood" and use "Latent Variables" and "Data Point".)
   * @param sample: Should contain fields "Latent Variables" and "Data Point".
  */
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihoodSingle(korali::Sample &sample)
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::evaluateLoglikelihoodSingle(korali::Sample &sample)
 {
   sample.run(_conditionalLogLikelihoodFunction);
 }
 
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood_(korali::Sample &sample, bool zForm)
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::evaluateLoglikelihood_(korali::Sample &sample, bool zForm)
 {
   _lowlevelProblem->evaluateLoglikelihood_(sample, zForm);
 }
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLoglikelihood(korali::Sample &sample)
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::evaluateLoglikelihood(korali::Sample &sample)
 {
   _lowlevelProblem->evaluateLoglikelihood_(sample, true);
 }
 
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPosterior_(korali::Sample &sample, bool zForm, bool cholesky)
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::evaluateLogPosterior_(korali::Sample &sample, bool zForm, bool cholesky)
 {
   _lowlevelProblem->evaluateLogPosterior_(sample, zForm, cholesky);
 }
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPosterior(korali::Sample &sample)
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::evaluateLogPosterior(korali::Sample &sample)
 {
   _lowlevelProblem->evaluateLogPosterior_(sample, true, true);
 }
 
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPrior_(korali::Sample &sample, bool zForm, bool cholesky)
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::evaluateLogPrior_(korali::Sample &sample, bool zForm, bool cholesky)
 {
   _lowlevelProblem->evaluateLogPrior_(sample, zForm, cholesky);
 }
-void korali::problem::bayesian::latent::HierarchicalLatent::evaluateLogPrior(korali::Sample &sample)
+void korali::problem::bayesian::latent::HierarchicalLatentCustom::evaluateLogPrior(korali::Sample &sample)
 {
   _lowlevelProblem->evaluateLogPrior_(sample, true, true);
 }
 
 ///* @brief allocate memory for all GSL-matrix and GSL-vector local variables used in calculating the loglikelihood
 //    @param nLatent: The number of latent variables in this problem.  */
-//void korali::problem::bayesian::latent::HierarchicalLatent::initializeGSLVariables(int nLatent){
+//void korali::problem::bayesian::latent::HierarchicalLatentCustom::initializeGSLVariables(int nLatent){
 //  covMatrixGSL = gsl_matrix_alloc(nLatent, nLatent);
 //  chol = gsl_matrix_alloc(nLatent, nLatent);
 //  latent_minus_mean = gsl_vector_alloc(nLatent);
